@@ -27,22 +27,9 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Optimization: Check for auth token in cookies first (cached), only call getUser if needed
-  const authToken = request.cookies.get('sb-auth-token')?.value
-  
-  // Only call expensive getUser() if we're going to protected routes or session expired
-  let user = null
-  if (authToken || request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/auth') {
-    const {
-      data: { user: sessionUser },
-    } = await supabase.auth.getUser()
-    user = sessionUser
-  } else if (!request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
-    // If no auth token and going to protected route, redirect to login without waiting
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (
     !user &&
