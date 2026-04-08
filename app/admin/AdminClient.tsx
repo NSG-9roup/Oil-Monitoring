@@ -1023,7 +1023,7 @@ export default function AdminClient({
   }
 
   return (
-    <div className="clean-ui min-h-screen bg-gradient-to-br from-industrial-50 via-white to-primary-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
+    <div className="clean-ui admin-orange-icons min-h-screen bg-gradient-to-br from-industrial-50 via-white to-primary-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
       <header className="bg-gradient-to-r from-primary-600 via-secondary-600 to-primary-600 shadow-lg backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1105,13 +1105,13 @@ export default function AdminClient({
           <div className="bg-gradient-to-r from-industrial-50 to-primary-50 border-b-2 border-primary-200 overflow-x-auto">
             <nav className="flex min-w-max">
               {[
-                { key: 'overview', icon: '📊', label: 'Overview' },
-                { key: 'customers', icon: '👥', label: 'Customers' },
-                { key: 'machines', icon: '⚙️', label: 'Machines' },
-                { key: 'products', icon: '🛢️', label: 'Products' },
-                { key: 'tests', icon: '🧪', label: 'Tests' },
-                { key: 'purchases', icon: '🛒', label: 'Purchases' },
-                { key: 'users', icon: '👤', label: 'Users' }
+                { key: 'overview', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l3-3 3 2 5-6" /></svg>, label: 'Overview' },
+                { key: 'customers', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, label: 'Customers' },
+                { key: 'machines', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Machines' },
+                { key: 'products', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>, label: 'Products' },
+                { key: 'tests', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>, label: 'Tests' },
+                { key: 'purchases', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H6.4M7 13 6.4 5M7 13l-2 2m2-2 1.2 2.4M17 13l1.2 2.4M6 21a1 1 0 100-2 1 1 0 000 2zm11 0a1 1 0 100-2 1 1 0 000 2" /></svg>, label: 'Purchases' },
+                { key: 'users', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A4 4 0 018 16h8a4 4 0 012.879 1.804M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Users' }
               ].map((tab) => (
                 <button
                   key={tab.key}

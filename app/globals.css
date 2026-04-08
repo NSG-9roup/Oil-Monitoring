@@ -40,6 +40,10 @@ body {
     border-width: 0 !important;
     border-color: transparent !important;
   }
+
+  .admin-orange-icons svg {
+    color: rgb(249 115 22) !important;
+  }
 }
 
 @keyframes blob {
