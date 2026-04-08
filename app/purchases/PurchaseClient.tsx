@@ -11,7 +11,7 @@ interface Purchase {
   purchase_date: string
   quantity: number
   unit_price: number
-  total_price: number
+  total_price?: number
   status: 'completed' | 'pending' | 'cancelled'
   product?: {
     product_name: string
@@ -71,7 +71,7 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
     return matchSearch && matchStatus
   })
 
-  const totalSpent = filteredPurchases.reduce((sum, p) => sum + (p.total_price || 0), 0)
+  const totalSpent = filteredPurchases.reduce((sum, p) => sum + (p.total_price ?? ((p.quantity || 0) * (p.unit_price || 0))), 0)
   const totalQuantity = filteredPurchases.reduce((sum, p) => sum + (p.quantity || 0), 0)
 
   return (
@@ -265,7 +265,7 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
                         Rp {purchase.unit_price ? purchase.unit_price.toLocaleString('id-ID') : '0'}
                       </td>
                       <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">
-                        Rp {purchase.total_price ? purchase.total_price.toLocaleString('id-ID') : '0'}
+                        Rp {(purchase.total_price ?? ((purchase.quantity || 0) * (purchase.unit_price || 0))) ? (purchase.total_price ?? ((purchase.quantity || 0) * (purchase.unit_price || 0))).toLocaleString('id-ID') : '0'}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full border-2 ${

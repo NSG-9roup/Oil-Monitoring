@@ -674,13 +674,14 @@ export default function AdminClient({
 
   const openEditPurchase = (purchase: any) => {
     setSelectedItem(purchase)
+    const computedTotal = (purchase.total_price ?? ((purchase.quantity || 0) * (purchase.unit_price || 0)))
     setFormData({
       customer_id: purchase.customer_id,
       product_id: purchase.product_id,
       purchase_date: purchase.purchase_date.split('T')[0],
       quantity: purchase.quantity,
       unit_price: purchase.unit_price,
-      total_price: purchase.total_price,
+      total_price: computedTotal,
       status: purchase.status
     })
     setModalOpen('edit-purchase')
@@ -689,27 +690,81 @@ export default function AdminClient({
   const handleSavePurchase = async () => {
     setLoading(true)
     try {
+      const toNumber = (value: any) => {
+        if (value === null || value === undefined) return 0
+        // Handle inputs like "1,250.50" or "1250,50" safely.
+        const raw = String(value).trim()
+        if (!raw) return 0
+        const normalized = raw.includes(',') && !raw.includes('.')
+          ? raw.replace(/\./g, '').replace(',', '.')
+          : raw.replace(/,/g, '')
+        const parsed = Number(normalized)
+        return Number.isFinite(parsed) ? parsed : 0
+      }
+
+      const round2 = (num: number) => Math.round(num * 100) / 100
+
+      const quantity = round2(toNumber(formData.quantity))
+      const unitPrice = round2(toNumber(formData.unit_price))
+      const totalPrice = round2(toNumber(formData.total_price) || (quantity * unitPrice))
+
+      const MAX_QUANTITY = 99999999.99 // NUMERIC(10,2)
+      const MAX_UNIT_PRICE = 9999999999.99 // NUMERIC(12,2)
+      const MAX_TOTAL_PRICE = 999999999999.99 // NUMERIC(14,2)
+
+      if (quantity > MAX_QUANTITY) {
+        throw new Error('Quantity terlalu besar. Maksimal 99,999,999.99')
+      }
+      if (unitPrice > MAX_UNIT_PRICE) {
+        throw new Error('Unit Price terlalu besar. Maksimal 9,999,999,999.99')
+      }
+      if (totalPrice > MAX_TOTAL_PRICE) {
+        throw new Error('Total Price terlalu besar. Maksimal 999,999,999,999.99')
+      }
+
       const purchaseData = {
         customer_id: formData.customer_id,
         product_id: formData.product_id,
         purchase_date: formData.purchase_date,
-        quantity: parseFloat(formData.quantity) || 0,
-        unit_price: parseFloat(formData.unit_price) || 0,
-        total_price: parseFloat(formData.total_price) || 0,
+        quantity,
+        unit_price: unitPrice,
+        total_price: totalPrice,
+        status: formData.status
+      }
+
+      const purchaseDataNoTotal = {
+        customer_id: formData.customer_id,
+        product_id: formData.product_id,
+        purchase_date: formData.purchase_date,
+        quantity,
+        unit_price: unitPrice,
         status: formData.status
       }
 
       if (modalOpen === 'add-purchase') {
-        const { error } = await supabase
+        let { error } = await supabase
           .from('oil_purchase_history')
           .insert([purchaseData])
+        if (error?.message?.includes("'total_price'")) {
+          const retry = await supabase
+            .from('oil_purchase_history')
+            .insert([purchaseDataNoTotal])
+          error = retry.error
+        }
         if (error) throw error
         alert('Purchase added successfully!')
       } else if (modalOpen === 'edit-purchase') {
-        const { error } = await supabase
+        let { error } = await supabase
           .from('oil_purchase_history')
           .update(purchaseData)
           .eq('id', selectedItem.id)
+        if (error?.message?.includes("'total_price'")) {
+          const retry = await supabase
+            .from('oil_purchase_history')
+            .update(purchaseDataNoTotal)
+            .eq('id', selectedItem.id)
+          error = retry.error
+        }
         if (error) throw error
         alert('Purchase updated successfully!')
       }
@@ -717,7 +772,11 @@ export default function AdminClient({
       await loadPurchases()
       setModalOpen(null)
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      if (error?.message?.toLowerCase().includes('numeric field overflow')) {
+        alert('Error: nilai angka terlalu besar untuk kolom database. Cek Quantity, Unit Price, dan Total Price.')
+      } else {
+        alert('Error: ' + error.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -2119,7 +2178,7 @@ export default function AdminClient({
                             Rp {purchase.unit_price?.toLocaleString('id-ID') || '0'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                            Rp {purchase.total_price?.toLocaleString('id-ID') || '0'}
+                            Rp {(purchase.total_price ?? ((purchase.quantity || 0) * (purchase.unit_price || 0)))?.toLocaleString('id-ID') || '0'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-3 py-1 text-xs font-bold rounded-full ${
