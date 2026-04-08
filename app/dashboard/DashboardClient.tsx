@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import type { User } from '@supabase/supabase-js'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
+import OilDropLoader from '@/app/components/OilDropLoader'
 
 interface Machine {
   id: string
@@ -570,6 +571,11 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
       loadFleetInsights()
     }
   }, [machines])
+
+  useEffect(() => {
+    router.prefetch('/purchases')
+    router.prefetch('/login')
+  }, [router])
 
   async function loadFleetInsights() {
     const machineIds = machines.map((machine) => machine.id)
@@ -1213,7 +1219,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-500"></div>
+            <OilDropLoader label="Calibrating oil insights..." />
           </div>
         )}
 
@@ -1232,7 +1238,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
 
         {/* Dashboard Content */}
         {!loading && selectedMachine && (
-          <div className="space-y-8">
+          <div className="space-y-8 motion-soft-enter">
             {/* Charts Section */}
             <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
               <div className="mb-6">

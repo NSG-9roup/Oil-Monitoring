@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
+import OilDropLoader from '@/app/components/OilDropLoader'
 
 interface Purchase {
   id: string
@@ -35,6 +36,11 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
     loadPurchases()
   }, [])
 
+  useEffect(() => {
+    router.prefetch('/dashboard')
+    router.prefetch('/login')
+  }, [router])
+
   const loadPurchases = async () => {
     setLoading(true)
     try {
@@ -55,7 +61,7 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push('/login')
+    router.replace('/login')
   }
 
   const filteredPurchases = purchases.filter(purchase => {
@@ -124,7 +130,7 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Title Card */}
-        <div className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-6 border-2 border-gray-100 overflow-hidden relative">
+        <div className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-6 border-2 border-gray-100 overflow-hidden relative motion-soft-enter">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-500/5 to-secondary-500/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-black text-gray-900">
@@ -135,7 +141,7 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 motion-soft-enter">
           <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-primary-100 hover:border-primary-300 transition-all transform hover:scale-105">
             <div className="flex items-center justify-between">
               <div>
@@ -212,8 +218,7 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-100">
           {loading ? (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600"></div>
-              <p className="text-gray-600 font-medium mt-4">Loading purchases...</p>
+              <OilDropLoader label="Flowing purchase records..." />
             </div>
           ) : filteredPurchases.length === 0 ? (
             <div className="text-center py-12 text-gray-500">

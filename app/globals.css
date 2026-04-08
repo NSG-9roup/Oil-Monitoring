@@ -44,6 +44,49 @@ body {
   .admin-orange-icons svg {
     color: rgb(249 115 22) !important;
   }
+
+  .motion-soft-enter {
+    animation: soft-enter 380ms ease-out both;
+  }
+
+  .motion-soft-float {
+    animation: soft-float 4.2s ease-in-out infinite;
+  }
+
+  .oil-drop-loader {
+    position: relative;
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    color: rgb(249 115 22);
+  }
+
+  .oil-drop-loader-lg {
+    width: 42px;
+    height: 42px;
+  }
+
+  .oil-drop-core {
+    position: absolute;
+    width: 70%;
+    height: 70%;
+    border-radius: 65% 65% 65% 65% / 72% 72% 50% 50%;
+    background: currentColor;
+    transform: rotate(45deg);
+    animation: oil-drop-bob 1s ease-in-out infinite;
+    box-shadow: 0 6px 14px rgba(249, 115, 22, 0.28);
+  }
+
+  .oil-drop-ripple {
+    position: absolute;
+    inset: 0;
+    border: 2px solid currentColor;
+    border-radius: 9999px;
+    opacity: 0;
+    animation: oil-ripple 1s ease-out infinite;
+  }
 }
 
 @keyframes blob {
@@ -58,6 +101,51 @@ body {
   }
   100% {
     transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes oil-drop-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(45deg) scale(1);
+  }
+  40% {
+    transform: translateY(2px) rotate(45deg) scale(0.96);
+  }
+  60% {
+    transform: translateY(-1px) rotate(45deg) scale(1.03);
+  }
+}
+
+@keyframes oil-ripple {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+@keyframes soft-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
   }
 }
 
