@@ -38,13 +38,14 @@ export default function LoginPage() {
           .eq('id', data.user.id)
           .single()
 
-        // Redirect based on role
+        // Redirect based on role - use refresh first to update session, then redirect
         if (profile?.role === 'admin' || profile?.role === 'sales') {
+          router.refresh()
           router.push('/admin')
         } else {
+          router.refresh()
           router.push('/dashboard')
         }
-        router.refresh()
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during login')

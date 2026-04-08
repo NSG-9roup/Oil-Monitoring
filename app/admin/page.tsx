@@ -35,36 +35,38 @@ export default async function AdminPage() {
     )
   }
 
-  // Get all customers with machine count
-  const { data: customers } = await supabase
-    .from('oil_customers')
-    .select(`
-      *,
-      machines:oil_machines(count)
-    `)
-    .order('company_name')
+  // Run all queries in parallel for faster initial load
+  const [customersResult, machinesResult, recentTestsResult] = await Promise.all([
+    supabase
+      .from('oil_customers')
+      .select(`
+        *,
+        machines:oil_machines(count)
+      `)
+      .order('company_name'),
+    supabase
+      .from('oil_machines')
+      .select(`
+        *,
+        customer:oil_customers(company_name),
+        lab_tests:oil_lab_tests(count)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabase
+      .from('oil_lab_tests')
+      .select(`
+        *,
+        machine:machine_id(machine_name, customer_id),
+        product:product_id(product_name)
+      `)
+      .order('test_date', { ascending: false })
+      .limit(20)
+  ])
 
-  // Get all machines
-  const { data: machines } = await supabase
-    .from('oil_machines')
-    .select(`
-      *,
-      customer:oil_customers(company_name),
-      lab_tests:oil_lab_tests(count)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(10)
-
-  // Get recent lab tests
-  const { data: recentTests } = await supabase
-    .from('oil_lab_tests')
-    .select(`
-      *,
-      machine:machine_id(machine_name, customer_id),
-      product:product_id(product_name)
-    `)
-    .order('test_date', { ascending: false })
-    .limit(20)
+  const customers = customersResult.data
+  const machines = machinesResult.data
+  const recentTests = recentTestsResult.data
 
   return (
     <AdminClient

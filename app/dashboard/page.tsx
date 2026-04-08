@@ -40,13 +40,15 @@ export default async function DashboardPage() {
     )
   }
 
-  // Get machines for this customer
-  const { data: machines } = await supabase
+  // Get machines for this customer - parallel with profile query for faster load
+  const machinesPromise = supabase
     .from('oil_machines')
     .select('*')
     .eq('customer_id', profile.customer_id)
     .eq('status', 'active')
     .order('machine_name')
+  
+  const { data: machines } = await machinesPromise
 
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
