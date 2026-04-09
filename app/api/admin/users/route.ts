@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { checkRateLimit, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
 
 // Create Supabase Admin client with service role key
 const supabaseAdmin = createClient(
@@ -128,6 +129,17 @@ async function getAdminProfile(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    pruneRateLimitStore()
+
+    const ip = getClientIp(request.headers)
+    const rate = checkRateLimit(`admin-users:${ip}`, 30, 60_000)
+    if (!rate.allowed) {
+      const response = jsonError('Too many requests. Please try again later.', 429)
+      response.headers.set('Retry-After', String(rate.retryAfterSeconds))
+      response.headers.set('X-RateLimit-Remaining', '0')
+      return response
+    }
+
     const contentLength = Number(request.headers.get('content-length') || '0')
     if (contentLength > 20_000) {
       return jsonError('Payload too large', 413)
@@ -145,12 +157,14 @@ export async function POST(request: NextRequest) {
       return jsonError('Invalid JSON payload', 400)
     }
 
-    const action = actionSchema.safeParse((body as any)?.action)
-    if (!action.success) {
+    const actionResult = z.object({ action: actionSchema }).passthrough().safeParse(body)
+    if (!actionResult.success) {
       return jsonError('Invalid action', 400)
     }
 
-    if (action.data === 'create') {
+    const action = actionResult.data.action
+
+    if (action === 'create') {
       const parsed = createUserSchema.safeParse(body)
       if (!parsed.success) {
         return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
@@ -196,8 +210,10 @@ export async function POST(request: NextRequest) {
         throw profileError
       }
 
-      return NextResponse.json({ success: true, user: authData.user })
-    } else if (action.data === 'delete') {
+      const response = NextResponse.json({ success: true, user: authData.user })
+      response.headers.set('X-RateLimit-Remaining', String(rate.remaining))
+      return response
+    } else if (action === 'delete') {
       const parsed = deleteUserSchema.safeParse(body)
       if (!parsed.success) {
         return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
@@ -227,8 +243,10 @@ export async function POST(request: NextRequest) {
       const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(parsed.data.userId)
       if (authError) throw authError
 
-      return NextResponse.json({ success: true })
-    } else if (action.data === 'update') {
+      const response = NextResponse.json({ success: true })
+      response.headers.set('X-RateLimit-Remaining', String(rate.remaining))
+      return response
+    } else if (action === 'update') {
       const parsed = updateUserSchema.safeParse(body)
       if (!parsed.success) {
         return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
@@ -260,11 +278,13 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error
 
-      return NextResponse.json({ success: true })
+      const response = NextResponse.json({ success: true })
+      response.headers.set('X-RateLimit-Remaining', String(rate.remaining))
+      return response
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('User management error:', error)
     return jsonError('An unexpected error occurred', 500)
   }

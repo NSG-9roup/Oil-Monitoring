@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import OilDropLoader from '@/app/components/OilDropLoader'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [isClient, setIsClient] = useState(false)
@@ -13,6 +14,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'An error occurred during login'
 
   useEffect(() => {
     setIsClient(true)
@@ -46,8 +50,8 @@ export default function LoginPage() {
           router.replace('/dashboard')
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login')
+    } catch (err: unknown) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -70,15 +74,20 @@ export default function LoginPage() {
         <div className="text-center mb-6 sm:mb-8">
           {/* NSG Logo + TotalEnergies Logo */}
           <div className="flex justify-center items-center gap-4 mb-4">
-            <img 
-              src="https://i.imgur.com/8nqsjFz.png" 
-              alt="Nabel Sakha Gemilang" 
+            <Image
+              src="https://i.imgur.com/8nqsjFz.png"
+              alt="Nabel Sakha Gemilang"
+              width={160}
+              height={48}
               className="h-10 sm:h-12 w-auto object-contain"
+              unoptimized
             />
             <div className="w-px h-10 sm:h-12 bg-gray-300"></div>
-            <img 
-              src="/logos/total-energies.png" 
-              alt="TotalEnergies" 
+            <Image
+              src="/logos/total-energies.png"
+              alt="TotalEnergies"
+              width={160}
+              height={40}
               className="h-8 sm:h-10 w-auto object-contain"
             />
           </div>

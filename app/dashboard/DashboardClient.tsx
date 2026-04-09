@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import type { User } from '@supabase/supabase-js'
+import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
 import OilDropLoader from '@/app/components/OilDropLoader'
 
@@ -29,7 +29,24 @@ interface OilSample {
   product?: {
     product_name: string
     product_type: string
+    baseline_viscosity_40c?: number
+    baseline_viscosity_100c?: number
+    baseline_tan?: number
   }
+}
+
+interface DashboardProfile {
+  id: string
+  full_name: string
+  email: string
+  role: string
+  customer_id: string | null
+  customer?: {
+    id?: string
+    company_name?: string
+    status?: string
+    logo_url?: string | null
+  } | null
 }
 
 interface LabReport {
@@ -55,7 +72,7 @@ interface LabReport {
 
 interface DashboardClientProps {
   user: { id: string; email?: string }
-  profile: any
+  profile: DashboardProfile
   initialMachines: Machine[]
 }
 
@@ -65,7 +82,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   const detailsRef = useRef<HTMLDivElement>(null)
   
   const [loading, setLoading] = useState(false)
-  const [machines, setMachines] = useState<Machine[]>(initialMachines)
+  const [machines] = useState<Machine[]>(initialMachines)
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(initialMachines[0] || null)
   const [oilSamples, setOilSamples] = useState<OilSample[]>([])
   const [labReports, setLabReports] = useState<LabReport[]>([])
@@ -110,9 +127,9 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error downloading PDF:', error)
-      alert('Failed to download PDF: ' + error.message)
+      alert(`Failed to download PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -172,7 +189,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
    * - TAN increase: -30 (critical), -15 (warning), -5 (caution)
    * - Test age penalty: -20 (>90d), -10 (>60d), -5 (>30d)
    */
-  const calculateHealthScore = (test: any) => {
+  const calculateHealthScore = (test: OilSample | LabReport | null) => {
     if (!test) return null
     let score = 100
     
@@ -181,7 +198,6 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     // ============================================================
     const evaluationMode = test.evaluation_mode || 'oil_type_based'
     const productType = test.product?.product_type || ''
-    const oilType = getOilType(productType)  // Centralized classification (ONCE)
     const waterThresholds = getWaterThresholds(productType)
     const oilTypeThresholds = getOilTypeThresholds(productType)
     
@@ -190,7 +206,6 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     const useProductSpecific = evaluationMode === 'product_specific' && hasBaseline
     
     const baseline40 = test.product?.baseline_viscosity_40c
-    const baseline100 = test.product?.baseline_viscosity_100c
     const baselineTan = test.product?.baseline_tan || 0.05
 
     /**
@@ -289,12 +304,16 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
    * 
    * No fallback logic. No string matching. Deterministic.
    */
-  const getStatus = (viscosity40c: number, waterContent: number, tanValue: number, product: any): { level: string; color: string; text: string } => {
+  const getStatus = (
+    viscosity40c: number,
+    waterContent: number,
+    tanValue: number,
+    product?: { product_type?: string; baseline_viscosity_40c?: number }
+  ): { level: string; color: string; text: string } => {
     // ============================================================
     // SETUP: Oil-type-based thresholds
     // ============================================================
     const productType = product?.product_type || ''
-    const oilType = getOilType(productType)
     const waterThresholds = getWaterThresholds(productType)
     const oilTypeThresholds = getOilTypeThresholds(productType)
     
@@ -371,8 +390,20 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
    * CRITICAL RULE: Recommendations MUST NOT mix modes.
    * If mode = oil_type_based, NO baseline comparisons should appear in text.
    */
-  const getRecommendations = (viscosity40c: number, waterContent: number, tanValue: number, product: any, previousTest: any, evaluationMode?: string) => {
-    const recommendations = []
+  const getRecommendations = (
+    viscosity40c: number,
+    waterContent: number,
+    tanValue: number,
+    product?: {
+      product_type?: string
+      baseline_viscosity_40c?: number
+      baseline_viscosity_100c?: number
+      baseline_tan?: number
+    },
+    previousTest?: LabReport | null,
+    evaluationMode?: string
+  ) => {
+    const recommendations: Array<{ icon: string; severity: 'critical' | 'warning' | 'normal'; text: string; action: string }> = []
     
     // ============================================================
     // SETUP: Determine mode and extract oil_type (ONCE)
@@ -560,24 +591,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     return recommendations
   }
 
-  useEffect(() => {
-    if (selectedMachine) {
-      loadMachineData(selectedMachine.id)
-    }
-  }, [selectedMachine])
-
-  useEffect(() => {
-    if (machines.length > 0) {
-      loadFleetInsights()
-    }
-  }, [machines])
-
-  useEffect(() => {
-    router.prefetch('/purchases')
-    router.prefetch('/login')
-  }, [router])
-
-  async function loadFleetInsights() {
+  const loadFleetInsights = useCallback(async () => {
     const machineIds = machines.map((machine) => machine.id)
     if (machineIds.length === 0) {
       setLatestTestByMachineId({})
@@ -599,9 +613,15 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
       }
 
       const latestMap: Record<string, OilSample> = {}
-      ;(data || []).forEach((test: any) => {
-        if (!latestMap[test.machine_id]) {
-          latestMap[test.machine_id] = test
+      ;(data || []).forEach((test) => {
+        const product = Array.isArray(test.product) ? test.product[0] : test.product
+        const normalizedTest = {
+          ...test,
+          product,
+        } as OilSample & { machine_id: string }
+
+        if (!latestMap[normalizedTest.machine_id]) {
+          latestMap[normalizedTest.machine_id] = normalizedTest
         }
       })
 
@@ -612,9 +632,9 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     } finally {
       setFleetInsightsLoading(false)
     }
-  }
+  }, [machines, supabase])
 
-  async function loadMachineData(machineId: string) {
+  const loadMachineData = useCallback(async (machineId: string) => {
     setLoading(true)
     try {
       // Get lab tests (these contain the sample data for charts)
@@ -632,7 +652,25 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    if (selectedMachine) {
+      loadMachineData(selectedMachine.id)
+    }
+  }, [loadMachineData, selectedMachine])
+
+  useEffect(() => {
+    if (machines.length > 0) {
+      loadFleetInsights()
+    }
+  }, [loadFleetInsights, machines])
+
+  useEffect(() => {
+    router.prefetch('/purchases')
+    router.prefetch('/login')
+  }, [router])
+
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -640,7 +678,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   }
 
   // Filter data based on time range
-  const filterByTimeRange = (data: any[]) => {
+  const filterByTimeRange = <T extends { test_date: string }>(data: T[]) => {
     if (timeRange === 'all') return data
     
     const now = new Date()
@@ -744,10 +782,13 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           <div className="flex justify-between items-center">
             {/* Left: NSG Logo + Brand */}
             <div className="flex items-center gap-3">
-              <img 
-                src="https://i.imgur.com/8nqsjFz.png" 
-                alt="Nabel Sakha Gemilang" 
+              <Image
+                src="https://i.imgur.com/8nqsjFz.png"
+                alt="Nabel Sakha Gemilang"
+                width={132}
+                height={40}
                 className="h-10 w-auto object-contain"
+                unoptimized
               />
               <div className="border-l-2 border-gray-300 pl-3">
                 <h1 className="text-xl font-bold text-gray-800">OilTrack™</h1>
@@ -758,7 +799,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
                 <p className="text-gray-500 text-xs">{profile?.customer?.company_name}</p>
-                <p className="text-gray-800 font-medium text-sm">{profile?.email}</p>
+                <p className="text-gray-800 font-medium text-sm">{profile?.email || user.email}</p>
               </div>
               <button
                 onClick={handleSignOut}
@@ -785,9 +826,12 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             <div className="mb-6">
               <p className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">Welcome back</p>
               <h1 className="text-4xl font-black text-gray-900">
-                {profile?.customer?.company_name?.split(' ').map((word: string, i: number) => 
-                  i === 0 ? word : <span key={i} className={i % 2 === 0 ? 'text-red-600' : 'text-orange-600'}>{word}</span>
-                ).reduce((prev: any, curr: any) => [prev, ' ', curr])}
+                {profile?.customer?.company_name?.split(' ').map((word: string, i: number) => (
+                  <span key={`${word}-${i}`} className={i > 0 && i % 2 === 0 ? 'text-red-600' : i > 0 ? 'text-orange-600' : ''}>
+                    {i > 0 ? ' ' : ''}
+                    {word}
+                  </span>
+                ))}
               </h1>
             </div>
 
@@ -796,10 +840,13 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <div className="flex-shrink-0">
                 <div className="w-40 h-32 rounded-2xl overflow-hidden bg-white border-2 border-gray-200 flex items-center justify-center shadow-xl p-4 hover:scale-105 transition-transform duration-300">
                   {profile?.customer?.logo_url ? (
-                    <img 
-                      src={profile.customer.logo_url} 
-                      alt={profile.customer.company_name}
+                    <Image
+                      src={profile.customer.logo_url}
+                      alt={profile.customer.company_name || 'Customer logo'}
+                      width={140}
+                      height={96}
                       className="max-w-full max-h-full object-contain"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center">
@@ -996,7 +1043,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           >
             {machines.map((machine) => {
               // Get latest test for this machine
-              const machineTests = labReports.filter((test: any) => test.machine_id === machine.id)
+              const machineTests = labReports.filter((test) => test.machine_id === machine.id)
               const latestTest = machineTests.length > 0 ? machineTests[0] : null
               const healthScore = latestTest ? calculateHealthScore(latestTest) : null
               const status = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product) : null
@@ -1430,7 +1477,9 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    const { data } = supabase.storage.from('lab-reports').getPublicUrl(report.pdf_path)
+                                    const pdfPath = report.pdf_path
+                                    if (!pdfPath) return
+                                    const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
                                     if (data?.publicUrl) {
                                       setCurrentPdfUrl(data.publicUrl)
                                       setPdfViewerOpen(true)
@@ -1640,7 +1689,9 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    const { data } = supabase.storage.from('lab-reports').getPublicUrl(report.pdf_path)
+                                    const pdfPath = report.pdf_path
+                                    if (!pdfPath) return
+                                    const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
                                     if (data?.publicUrl) {
                                       setCurrentPdfUrl(data.publicUrl)
                                       setPdfViewerOpen(true)
@@ -1657,7 +1708,9 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    handleDownloadPDF(report.pdf_path, report.test_date)
+                                    const pdfPath = report.pdf_path
+                                    if (!pdfPath) return
+                                    handleDownloadPDF(pdfPath, report.test_date)
                                   }}
                                   className="flex-1 bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-4 py-3 rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
                                 >
@@ -1695,9 +1748,11 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             {/* Right: TotalEnergies Logo with Label */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-500">Authorized Distributor</span>
-              <img 
-                src="/logos/total-energies.png" 
-                alt="TotalEnergies" 
+              <Image
+                src="/logos/total-energies.png"
+                alt="TotalEnergies"
+                width={150}
+                height={44}
                 className="h-11 w-auto object-contain"
               />
             </div>

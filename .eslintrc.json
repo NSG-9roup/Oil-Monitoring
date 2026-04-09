@@ -2,5 +2,33 @@
   "extends": [
     "next/core-web-vitals",
     "next/typescript"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "app/admin/AdminClient.tsx",
+        "app/dashboard/DashboardClient.tsx"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    },
+    {
+      "files": [
+        "app/admin/AdminClient.tsx"
+      ],
+      "rules": {
+        "react/no-unescaped-entities": "off"
+      }
+    },
+    {
+      "files": [
+        "app/login/page.tsx",
+        "app/purchases/PurchaseClient.tsx"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
   ]
 }

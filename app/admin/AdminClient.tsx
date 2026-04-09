@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import imageCompression from 'browser-image-compression'
 import OilDropLoader from '@/app/components/OilDropLoader'
+import Image from 'next/image'
+import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, AdminPurchase } from '@/lib/types'
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -21,15 +23,66 @@ const formatDate = (value?: string | number | Date) => {
   return dateFormatter.format(date)
 }
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Unknown error'
+
 interface AdminClientProps {
   user: User
-  profile: any
-  customers: any[]
-  machines: any[]
-  recentTests: any[]
+  profile: AdminProfile
+  customers: Customer[]
+  machines: AdminMachine[]
+  recentTests: AdminLabTest[]
 }
 
 type ModalType = 'add-customer' | 'edit-customer' | 'import-customers' | 'add-machine' | 'edit-machine' | 'add-test' | 'edit-test' | 'add-product' | 'edit-product' | 'import-products' | 'add-purchase' | 'edit-purchase' | 'add-user' | 'edit-user' | 'upload-logo' | null
+
+type SelectedItemType = Customer | AdminMachine | AdminLabTest | AdminProduct | AdminPurchase | AdminUser | null
+
+type TabKey = 'overview' | 'customers' | 'machines' | 'products' | 'tests' | 'purchases' | 'users'
+
+type FormValue = string | number | null | undefined | File
+
+type CsvRow = {
+  company_name?: string
+  status?: string
+  product_name?: string
+  product_type?: string
+  base_oil?: string | null
+  viscosity_grade?: string | null
+}
+
+interface FormDataState {
+  company_name?: string
+  machine_name?: string
+  customer_id?: string | null
+  product_name?: string
+  product_type?: string
+  test_date?: string
+  email?: string
+  role?: string
+  phone_number?: string
+  contact_email?: string
+  password?: string
+  status?: string
+  location?: string | null
+  serial_number?: string
+  model?: string
+  base_oil?: string | null
+  viscosity_grade?: string | null
+  machine_id?: string
+  product_id?: string
+  quantity?: string | number
+  unit_price?: string | number
+  total_price?: string | number
+  viscosity_40c?: string | number | null
+  viscosity_100c?: string | number | null
+  water_content?: string | number | null
+  water_content_unit?: 'PPM' | 'PERCENT'
+  tan_value?: string | number | null
+  pdf_path?: string | null
+  pdfFile?: File | null
+  [key: string]: FormValue
+}
 
 export default function AdminClient({
   user,
@@ -41,17 +94,17 @@ export default function AdminClient({
   const router = useRouter()
   const supabase = createClient()
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'machines' | 'products' | 'tests' | 'purchases' | 'users'>('overview')
+  const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [modalOpen, setModalOpen] = useState<ModalType>(null)
-  const [selectedItem, setSelectedItem] = useState<any>(null)
-  const [customers, setCustomers] = useState(initialCustomers)
-  const [machines, setMachines] = useState(initialMachines)
-  const [recentTests, setRecentTests] = useState(initialTests)
-  const [users, setUsers] = useState<any[]>([])
-  const [products, setProducts] = useState<any[]>([])
-  const [purchases, setPurchases] = useState<any[]>([])
+  const [selectedItem, setSelectedItem] = useState<SelectedItemType>(null)
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers)
+  const [machines, setMachines] = useState<AdminMachine[]>(initialMachines)
+  const [recentTests, setRecentTests] = useState<AdminLabTest[]>(initialTests)
+  const [users, setUsers] = useState<AdminUser[]>([])
+  const [products, setProducts] = useState<AdminProduct[]>([])
+  const [purchases, setPurchases] = useState<AdminPurchase[]>([])
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState<any>({})
+  const [formData, setFormData] = useState<FormDataState>({})
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -61,16 +114,14 @@ export default function AdminClient({
   const [customDateTo, setCustomDateTo] = useState<string>('')
   const [filterCompany, setFilterCompany] = useState<string>('all')
   const [filterMachine, setFilterMachine] = useState<string>('all')
-  const [csvFile, setCsvFile] = useState<File | null>(null)
-  const [csvData, setCsvData] = useState<any[]>([])
+  const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [importLoading, setImportLoading] = useState(false)
   const [importResult, setImportResult] = useState<{success: number, failed: number, errors: string[]} | null>(null)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null)
   const [quickAddModal, setQuickAddModal] = useState<'machine' | 'product' | null>(null)
-  const [quickAddData, setQuickAddData] = useState<any>({})
+  const [quickAddData, setQuickAddData] = useState<FormDataState>({})
   const [uniqueProductTypes, setUniqueProductTypes] = useState<string[]>([])
-  const [uniqueBaseOils] = useState<string[]>(['Mineral', 'Synthetic'])
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
 
@@ -95,17 +146,21 @@ export default function AdminClient({
   }
 
   // Load users
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     const { data, error } = await supabase
       .from('oil_profiles')
-      .select('id, full_name, email, phone_number, role, customer_id, created_at, customer:oil_customers(company_name)')
+      .select('id, full_name, email, phone_number, role, customer_id, created_at, updated_at, customer:oil_customers(company_name)')
       .order('created_at', { ascending: false })
     if (error) console.error('Failed to load users:', error.message)
-    setUsers(data || [])
-  }
+    const normalizedUsers: AdminUser[] = (data || []).map((row) => ({
+      ...row,
+      customer: Array.isArray(row.customer) ? (row.customer[0] ?? null) : row.customer,
+    }))
+    setUsers(normalizedUsers)
+  }, [supabase])
 
   // Load products
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     const { data, error } = await supabase
       .from('oil_products')
       .select('*')
@@ -118,10 +173,10 @@ export default function AdminClient({
       const types = [...new Set(data.map(p => p.product_type).filter(Boolean))]
       setUniqueProductTypes(types)
     }
-  }
+  }, [supabase])
 
   // Load recent tests
-  const loadTests = async () => {
+  const loadTests = useCallback(async () => {
     const { data, error } = await supabase
       .from('oil_lab_tests')
       .select(`
@@ -140,10 +195,10 @@ export default function AdminClient({
       .limit(50)
     if (error) console.error('Failed to load tests:', error.message)
     setRecentTests(data || [])
-  }
+  }, [supabase])
 
   // Load purchases
-  const loadPurchases = async () => {
+  const loadPurchases = useCallback(async () => {
     const { data, error } = await supabase
       .from('oil_purchase_history')
       .select('*, customer:oil_customers(company_name), product:oil_products(product_name)')
@@ -151,7 +206,7 @@ export default function AdminClient({
       .limit(100)
     if (error) console.error('Failed to load purchases:', error.message)
     setPurchases(data || [])
-  }
+  }, [supabase])
 
   // Load users when switching to users tab
   useEffect(() => {
@@ -170,7 +225,7 @@ export default function AdminClient({
     if (activeTab === 'purchases') {
       loadPurchases()
     }
-  }, [activeTab])
+  }, [activeTab, loadProducts, loadPurchases, loadTests, loadUsers])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -194,7 +249,7 @@ export default function AdminClient({
     setModalOpen('add-customer')
   }
 
-  const openEditCustomer = (customer: any) => {
+  const openEditCustomer = (customer: Customer) => {
     setSelectedItem(customer)
     setFormData({ company_name: customer.company_name, status: customer.status })
     setModalOpen('edit-customer')
@@ -210,17 +265,19 @@ export default function AdminClient({
         if (error) throw error
         alert('Customer added successfully!')
       } else if (modalOpen === 'edit-customer') {
+        const selectedItemId = selectedItem?.id
+        if (!selectedItemId) throw new Error('No customer selected')
         const { error } = await supabase
           .from('oil_customers')
           .update(formData)
-          .eq('id', selectedItem.id)
+          .eq('id', selectedItemId)
         if (error) throw error
         alert('Customer updated successfully!')
       }
       setModalOpen(null)
       refreshData()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -237,8 +294,8 @@ export default function AdminClient({
       if (error) throw error
       alert('Customer deleted successfully!')
       refreshData()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -295,7 +352,7 @@ export default function AdminClient({
   }
 
   // Logo Upload Functions
-  const openLogoUpload = (customer: any) => {
+  const openLogoUpload = (customer: Customer) => {
     setSelectedItem(customer)
     setLogoFile(null)
     setLogoPreview(customer.logo_url || null)
@@ -326,7 +383,8 @@ export default function AdminClient({
   }
 
   const handleUploadLogo = async () => {
-    if (!logoFile || !selectedItem) return
+    if (!logoFile || !selectedItem || !('company_name' in selectedItem)) return
+    const selectedCustomer = selectedItem as Customer
     
     setUploadingLogo(true)
     try {
@@ -342,19 +400,19 @@ export default function AdminClient({
       
       // Generate filename: customer_id.webp
       const fileExt = 'webp'
-      const fileName = `${selectedItem.id}.${fileExt}`
-      const filePath = `${selectedItem.id}/${fileName}`
+      const fileName = `${selectedCustomer.id}.${fileExt}`
+      const filePath = `${selectedCustomer.id}/${fileName}`
       
       // Delete old logo if exists
-      if (selectedItem.logo_url) {
-        const oldPath = selectedItem.logo_url.split('/').slice(-2).join('/')
+      if (selectedCustomer.logo_url) {
+        const oldPath = selectedCustomer.logo_url.split('/').slice(-2).join('/')
         await supabase.storage
           .from('customer-logos')
           .remove([oldPath])
       }
       
       // Upload new logo
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('customer-logos')
         .upload(filePath, compressedFile, {
           cacheControl: '3600',
@@ -375,29 +433,31 @@ export default function AdminClient({
           logo_url: publicUrl,
           logo_updated_at: new Date().toISOString()
         })
-        .eq('id', selectedItem.id)
+        .eq('id', selectedCustomer.id)
       
       if (updateError) throw updateError
       
       alert('Logo uploaded successfully!')
       setModalOpen(null)
       refreshData()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error)
-      alert('Error uploading logo: ' + error.message)
+      alert('Error uploading logo: ' + getErrorMessage(error))
     } finally {
       setUploadingLogo(false)
     }
   }
 
   const handleDeleteLogo = async () => {
-    if (!selectedItem || !selectedItem.logo_url) return
+    if (!selectedItem || !('company_name' in selectedItem)) return
+    const selectedCustomer = selectedItem as Customer
+    if (!selectedCustomer.logo_url) return
     if (!confirm('Are you sure you want to delete this logo?')) return
     
     setUploadingLogo(true)
     try {
       // Delete from storage
-      const oldPath = selectedItem.logo_url.split('/').slice(-2).join('/')
+      const oldPath = selectedCustomer.logo_url.split('/').slice(-2).join('/')
       await supabase.storage
         .from('customer-logos')
         .remove([oldPath])
@@ -406,15 +466,15 @@ export default function AdminClient({
       const { error } = await supabase
         .from('oil_customers')
         .update({ logo_url: null, logo_updated_at: new Date().toISOString() })
-        .eq('id', selectedItem.id)
+        .eq('id', selectedCustomer.id)
       
       if (error) throw error
       
       alert('Logo deleted successfully!')
       setModalOpen(null)
       refreshData()
-    } catch (error: any) {
-      alert('Error deleting logo: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error deleting logo: ' + getErrorMessage(error))
     } finally {
       setUploadingLogo(false)
     }
@@ -431,7 +491,7 @@ export default function AdminClient({
     setModalOpen('add-machine')
   }
 
-  const openEditMachine = (machine: any) => {
+  const openEditMachine = (machine: AdminMachine) => {
     setSelectedItem(machine)
     setFormData({
       machine_name: machine.machine_name,
@@ -452,17 +512,19 @@ export default function AdminClient({
         if (error) throw error
         alert('Machine added successfully!')
       } else if (modalOpen === 'edit-machine') {
+        const selectedItemId = selectedItem?.id
+        if (!selectedItemId) throw new Error('No machine selected')
         const { error } = await supabase
           .from('oil_machines')
           .update(formData)
-          .eq('id', selectedItem.id)
+          .eq('id', selectedItemId)
         if (error) throw error
         alert('Machine updated successfully!')
       }
       setModalOpen(null)
       refreshData()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -479,8 +541,8 @@ export default function AdminClient({
       if (error) throw error
       alert('Machine deleted successfully!')
       refreshData()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -519,8 +581,8 @@ export default function AdminClient({
       
       alert('Machine added successfully!')
       setQuickAddModal(null)
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -562,8 +624,8 @@ export default function AdminClient({
       
       alert('Product added successfully!')
       setQuickAddModal(null)
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -585,7 +647,7 @@ export default function AdminClient({
     setModalOpen('add-product')
   }
 
-  const openEditProduct = (product: any) => {
+  const openEditProduct = (product: AdminProduct) => {
     setSelectedItem(product)
     setFormData({
       product_name: product.product_name,
@@ -606,10 +668,12 @@ export default function AdminClient({
         if (error) throw error
         alert('Product added successfully!')
       } else if (modalOpen === 'edit-product') {
+        const selectedItemId = selectedItem?.id
+        if (!selectedItemId) throw new Error('No product selected')
         const { error } = await supabase
           .from('oil_products')
           .update(formData)
-          .eq('id', selectedItem.id)
+          .eq('id', selectedItemId)
         if (error) throw error
         alert('Product updated successfully!')
       }
@@ -620,8 +684,8 @@ export default function AdminClient({
         .select('*')
         .order('id')
       setProducts(productsData || [])
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -643,8 +707,8 @@ export default function AdminClient({
         .select('*')
         .order('id')
       setProducts(productsData || [])
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -672,7 +736,7 @@ export default function AdminClient({
     setModalOpen('add-purchase')
   }
 
-  const openEditPurchase = (purchase: any) => {
+  const openEditPurchase = (purchase: AdminPurchase) => {
     setSelectedItem(purchase)
     const computedTotal = (purchase.total_price ?? ((purchase.quantity || 0) * (purchase.unit_price || 0)))
     setFormData({
@@ -690,7 +754,7 @@ export default function AdminClient({
   const handleSavePurchase = async () => {
     setLoading(true)
     try {
-      const toNumber = (value: any) => {
+      const toNumber = (value: unknown) => {
         if (value === null || value === undefined) return 0
         // Handle inputs like "1,250.50" or "1250,50" safely.
         const raw = String(value).trim()
@@ -754,15 +818,17 @@ export default function AdminClient({
         if (error) throw error
         alert('Purchase added successfully!')
       } else if (modalOpen === 'edit-purchase') {
+        const selectedItemId = selectedItem?.id
+        if (!selectedItemId) throw new Error('No purchase selected')
         let { error } = await supabase
           .from('oil_purchase_history')
           .update(purchaseData)
-          .eq('id', selectedItem.id)
+          .eq('id', selectedItemId)
         if (error?.message?.includes("'total_price'")) {
           const retry = await supabase
             .from('oil_purchase_history')
             .update(purchaseDataNoTotal)
-            .eq('id', selectedItem.id)
+            .eq('id', selectedItemId)
           error = retry.error
         }
         if (error) throw error
@@ -771,11 +837,12 @@ export default function AdminClient({
       
       await loadPurchases()
       setModalOpen(null)
-    } catch (error: any) {
-      if (error?.message?.toLowerCase().includes('numeric field overflow')) {
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error).toLowerCase()
+      if (errorMessage.includes('numeric field overflow')) {
         alert('Error: nilai angka terlalu besar untuk kolom database. Cek Quantity, Unit Price, dan Total Price.')
       } else {
-        alert('Error: ' + error.message)
+        alert('Error: ' + getErrorMessage(error))
       }
     } finally {
       setLoading(false)
@@ -793,8 +860,8 @@ export default function AdminClient({
       if (error) throw error
       alert('Purchase deleted successfully!')
       await loadPurchases()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -823,7 +890,7 @@ export default function AdminClient({
     setModalOpen('add-test')
   }
 
-  const openEditTest = (test: any) => {
+  const openEditTest = (test: AdminLabTest) => {
     setSelectedItem(test)
     setFormData({
       machine_id: test.machine_id,
@@ -856,8 +923,9 @@ export default function AdminClient({
       let pdfPath = formData.pdf_path || null
       
       // Upload PDF if selected
-      if (formData.pdfFile) {
-        const file = formData.pdfFile
+      const pdfFile = formData.pdfFile
+      if (pdfFile instanceof File) {
+        const file = pdfFile
         const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
         const { data, error: uploadError } = await supabase.storage
           .from('lab-reports')
@@ -868,7 +936,7 @@ export default function AdminClient({
       }
       
       // Convert water content from PPM to decimal if needed
-      let waterContentDecimal = parseFloat(formData.water_content) || null
+      let waterContentDecimal = parseFloat(String(formData.water_content ?? '')) || null
       if (waterContentDecimal !== null && formData.water_content_unit === 'PPM') {
         waterContentDecimal = waterContentDecimal / 10000 // PPM to decimal (198 PPM = 0.0198)
       } else if (waterContentDecimal !== null && formData.water_content_unit === 'PERCENT') {
@@ -879,17 +947,12 @@ export default function AdminClient({
         machine_id: formData.machine_id,
         product_id: formData.product_id || null,
         test_date: formData.test_date,
-        viscosity_40c: parseFloat(formData.viscosity_40c) || null,
-        viscosity_100c: parseFloat(formData.viscosity_100c) || null,
+        viscosity_40c: parseFloat(String(formData.viscosity_40c ?? '')) || null,
+        viscosity_100c: parseFloat(String(formData.viscosity_100c ?? '')) || null,
         water_content: waterContentDecimal,
         water_content_unit: formData.water_content_unit || 'PPM',
-        tan_value: parseFloat(formData.tan_value) || null,
+        tan_value: parseFloat(String(formData.tan_value ?? '')) || null,
         pdf_path: pdfPath,
-      }
-      
-      // Remove file object before DB insert
-      if ('pdfFile' in testData) {
-        delete (testData as any).pdfFile
       }
       
       if (modalOpen === 'add-test') {
@@ -899,10 +962,12 @@ export default function AdminClient({
         if (error) throw error
         alert('Lab test added successfully!')
       } else if (modalOpen === 'edit-test') {
+        const selectedItemId = selectedItem?.id
+        if (!selectedItemId) throw new Error('No lab test selected')
         const { error } = await supabase
           .from('oil_lab_tests')
           .update(testData)
-          .eq('id', selectedItem.id)
+          .eq('id', selectedItemId)
         if (error) throw error
         alert('Lab test updated successfully!')
       }
@@ -912,8 +977,8 @@ export default function AdminClient({
       setModalOpen(null)
       clearLabTestDraft() // Clear draft after successful save
       refreshData()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -931,8 +996,8 @@ export default function AdminClient({
       alert('Lab test deleted successfully!')
       await loadTests()
       refreshData()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -950,7 +1015,7 @@ export default function AdminClient({
     setModalOpen('add-user')
   }
 
-  const openEditUser = (user: any) => {
+  const openEditUser = (user: AdminUser) => {
     setSelectedItem(user)
     setFormData({ 
       full_name: user.full_name, 
@@ -985,12 +1050,14 @@ export default function AdminClient({
         alert('User created successfully!')
         await loadUsers()
       } else if (modalOpen === 'edit-user') {
+        const selectedItemId = selectedItem?.id
+        if (!selectedItemId) throw new Error('No user selected')
         const response = await fetch('/api/admin/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'update',
-            userId: selectedItem.id,
+            userId: selectedItemId,
             full_name: formData.full_name,
             contact_email: formData.contact_email,
             phone_number: formData.phone_number,
@@ -1006,8 +1073,8 @@ export default function AdminClient({
         await loadUsers()
       }
       setModalOpen(null)
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -1031,8 +1098,8 @@ export default function AdminClient({
       
       alert('User deleted successfully!')
       await loadUsers()
-    } catch (error: any) {
-      alert('Error: ' + error.message)
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -1080,6 +1147,11 @@ export default function AdminClient({
     
     return true
   }
+
+  const selectedCustomerForLogo =
+    modalOpen === 'upload-logo' && selectedItem && 'company_name' in selectedItem
+      ? (selectedItem as Customer)
+      : null
 
   return (
     <div className="clean-ui admin-orange-icons admin-panel min-h-screen bg-gray-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
@@ -1177,7 +1249,7 @@ export default function AdminClient({
                 <button
                   key={tab.key}
                   onClick={() => {
-                    setActiveTab(tab.key as any)
+                    setActiveTab(tab.key as TabKey)
                     setSearchQuery('')
                     setDateFilter('all')
                     setCustomDateFrom('')
@@ -1337,7 +1409,7 @@ export default function AdminClient({
                       Recent Activity
                     </h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {recentTests.slice(0, 8).map((test, idx) => (
+                      {recentTests.slice(0, 8).map((test) => (
                         <div key={test.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="bg-primary-100 p-2 rounded-lg flex-shrink-0">
                             <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1363,7 +1435,7 @@ export default function AdminClient({
                     </h3>
                     <div className="space-y-3">
                       {(() => {
-                        const testsByCustomer = recentTests.reduce((acc: any, test) => {
+                        const testsByCustomer = recentTests.reduce<Record<string, { name: string; count: number }>>((acc, test) => {
                           const customerId = test.machine?.customer_id
                           const companyName = test.machine?.customer?.company_name || 'Unknown'
                           if (customerId) {
@@ -1376,9 +1448,9 @@ export default function AdminClient({
                         }, {})
                         
                         return Object.entries(testsByCustomer)
-                          .sort(([, a]: any, [, b]: any) => b.count - a.count)
+                          .sort(([, a], [, b]) => b.count - a.count)
                           .slice(0, 5)
-                          .map(([id, data]: any, idx) => (
+                          .map(([id, data], idx) => (
                             <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div className="flex items-center gap-3">
                                 <div className="bg-red-600 text-white font-black text-sm w-8 h-8 rounded-lg flex items-center justify-center">
@@ -1515,10 +1587,13 @@ export default function AdminClient({
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="w-16 h-12 rounded-lg overflow-hidden bg-white border-2 border-gray-200 flex items-center justify-center p-2">
                               {customer.logo_url ? (
-                                <img 
-                                  src={customer.logo_url} 
+                                <Image
+                                  src={customer.logo_url}
                                   alt={customer.company_name}
+                                  width={64}
+                                  height={48}
                                   className="max-w-full max-h-full object-contain"
+                                  unoptimized
                                 />
                               ) : (
                                 <div className="w-full h-full bg-red-600 rounded flex items-center justify-center">
@@ -1985,7 +2060,9 @@ export default function AdminClient({
                               <button
                                 onClick={() => {
                                   // Generate public URL from Supabase Storage
-                                  const { data } = supabase.storage.from('lab-reports').getPublicUrl(test.pdf_path)
+                                  const pdfPath = test.pdf_path
+                                  if (!pdfPath) return
+                                  const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
                                   if (data?.publicUrl) {
                                     setCurrentPdfUrl(data.publicUrl)
                                     setPdfViewerOpen(true)
@@ -2394,7 +2471,7 @@ export default function AdminClient({
       )}
 
       {/* Logo Upload Modal */}
-      {modalOpen === 'upload-logo' && selectedItem && (
+      {selectedCustomerForLogo && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border-2 border-primary-200 overflow-hidden">
             <div className="bg-orange-600 px-6 py-4">
@@ -2404,22 +2481,25 @@ export default function AdminClient({
                 </svg>
                 Upload Company Logo
               </h3>
-              <p className="text-blue-100 text-sm mt-1">{selectedItem.company_name}</p>
+              <p className="text-blue-100 text-sm mt-1">{selectedCustomerForLogo.company_name}</p>
             </div>
             <div className="p-6">
               {/* Preview */}
               <div className="mb-6 flex justify-center">
                 <div className="w-64 h-48 rounded-xl overflow-hidden bg-white border-4 border-gray-300 flex items-center justify-center p-6 shadow-lg">
                   {logoPreview ? (
-                    <img 
-                      src={logoPreview} 
+                    <Image
+                      src={logoPreview}
                       alt="Logo preview"
+                      width={220}
+                      height={150}
                       className="max-w-full max-h-full object-contain"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full bg-red-600 rounded-lg flex items-center justify-center">
                       <span className="text-white font-black text-6xl">
-                        {selectedItem.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+                        {selectedCustomerForLogo.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
                       </span>
                     </div>
                   )}
@@ -2461,7 +2541,7 @@ export default function AdminClient({
                   )}
                 </button>
                 
-                {selectedItem.logo_url && (
+                {selectedCustomerForLogo.logo_url && (
                   <button
                     onClick={handleDeleteLogo}
                     disabled={uploadingLogo}
@@ -2739,7 +2819,7 @@ export default function AdminClient({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
                 <input
                   type="date"
-                  value={formData.purchase_date || ''}
+                  value={String(formData.purchase_date ?? '')}
                   onChange={(e) => setFormData({...formData, purchase_date: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
@@ -2752,7 +2832,7 @@ export default function AdminClient({
                   value={formData.quantity || ''}
                   onChange={(e) => {
                     const qty = parseFloat(e.target.value) || 0
-                    const price = parseFloat(formData.unit_price) || 0
+                    const price = parseFloat(String(formData.unit_price ?? '')) || 0
                     setFormData({
                       ...formData, 
                       quantity: e.target.value,
@@ -2770,7 +2850,7 @@ export default function AdminClient({
                   step="0.01"
                   value={formData.unit_price || ''}
                   onChange={(e) => {
-                    const qty = parseFloat(formData.quantity) || 0
+                    const qty = parseFloat(String(formData.quantity ?? '')) || 0
                     const price = parseFloat(e.target.value) || 0
                     setFormData({
                       ...formData, 
@@ -2922,7 +3002,7 @@ export default function AdminClient({
                   />
                   <select
                     value={formData.water_content_unit || 'PPM'}
-                    onChange={(e) => setFormData({...formData, water_content_unit: e.target.value})}
+                    onChange={(e) => setFormData({...formData, water_content_unit: e.target.value as 'PPM' | 'PERCENT'})}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="PPM">PPM</option>
@@ -2931,7 +3011,7 @@ export default function AdminClient({
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   {formData.water_content_unit === 'PPM' 
-                    ? `${formData.water_content || 0} PPM = ${((parseFloat(formData.water_content || '0') / 10000) || 0).toFixed(4)}%`
+                    ? `${formData.water_content || 0} PPM = ${((parseFloat(String(formData.water_content ?? '0')) / 10000) || 0).toFixed(4)}%`
                     : `${formData.water_content || 0}%`
                   }
                 </p>
@@ -3024,7 +3104,7 @@ export default function AdminClient({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 <input
                   type="text"
-                  value={formData.full_name || ''}
+                  value={String(formData.full_name ?? '')}
                   onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="John Doe"
@@ -3112,9 +3192,11 @@ export default function AdminClient({
             {/* Right: TotalEnergies Logo with Label */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-500">Authorized Distributor</span>
-              <img 
-                src="/logos/total-energies.png" 
-                alt="TotalEnergies" 
+              <Image
+                src="/logos/total-energies.png"
+                alt="TotalEnergies"
+                width={120}
+                height={32}
                 className="h-8 w-auto object-contain"
               />
             </div>
@@ -3155,7 +3237,6 @@ export default function AdminClient({
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
-                          setCsvFile(file)
                           // Parse CSV
                           const reader = new FileReader()
                           reader.onload = (event) => {
@@ -3213,7 +3294,6 @@ export default function AdminClient({
                     <button
                       onClick={() => {
                         setModalOpen(null)
-                        setCsvFile(null)
                         setCsvData([])
                         setImportResult(null)
                       }}
@@ -3286,7 +3366,6 @@ export default function AdminClient({
                     <button
                       onClick={() => {
                         setModalOpen(null)
-                        setCsvFile(null)
                         setCsvData([])
                         setImportResult(null)
                       }}
@@ -3334,7 +3413,6 @@ export default function AdminClient({
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
-                          setCsvFile(file)
                           const reader = new FileReader()
                           reader.onload = (event) => {
                             const text = event.target?.result as string
@@ -3396,7 +3474,6 @@ export default function AdminClient({
                     <button
                       onClick={() => {
                         setModalOpen(null)
-                        setCsvFile(null)
                         setCsvData([])
                         setImportResult(null)
                       }}
@@ -3475,7 +3552,6 @@ export default function AdminClient({
                     <button
                       onClick={() => {
                         setModalOpen(null)
-                        setCsvFile(null)
                         setCsvData([])
                         setImportResult(null)
                       }}

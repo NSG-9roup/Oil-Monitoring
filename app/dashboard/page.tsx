@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   }
 
   // Get user profile
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile } = await supabase
     .from('oil_profiles')
     .select(`
       *,

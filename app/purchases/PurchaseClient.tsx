@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import OilDropLoader from '@/app/components/OilDropLoader'
+import Image from 'next/image'
+import type { AdminProfile } from '@/lib/types'
 
 interface Purchase {
   id: string
@@ -21,7 +23,7 @@ interface Purchase {
 
 interface PurchaseClientProps {
   user: User
-  profile: any
+  profile: AdminProfile
 }
 
 export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
@@ -32,16 +34,7 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending' | 'cancelled'>('all')
 
-  useEffect(() => {
-    loadPurchases()
-  }, [])
-
-  useEffect(() => {
-    router.prefetch('/dashboard')
-    router.prefetch('/login')
-  }, [router])
-
-  const loadPurchases = async () => {
+  const loadPurchases = useCallback(async () => {
     setLoading(true)
     try {
       const { data, error } = await supabase
@@ -57,7 +50,16 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [profile.customer_id, supabase])
+
+  useEffect(() => {
+    loadPurchases()
+  }, [loadPurchases])
+
+  useEffect(() => {
+    router.prefetch('/dashboard')
+    router.prefetch('/login')
+  }, [router])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -91,14 +93,17 @@ export default function PurchaseClient({ user, profile }: PurchaseClientProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
-              <img 
-                src="https://i.imgur.com/8nqsjFz.png" 
-                alt="Nabel Sakha Gemilang" 
+              <Image
+                src="https://i.imgur.com/8nqsjFz.png"
+                alt="Nabel Sakha Gemilang"
+                width={132}
+                height={40}
                 className="h-10 w-auto object-contain"
+                unoptimized
               />
               <div className="border-l-2 border-gray-300 pl-3">
                 <h1 className="text-xl font-bold text-gray-800">OilTrack™</h1>
-                <p className="text-xs text-gray-500">{profile.customer?.company_name}</p>
+                <p className="text-xs text-gray-500">{profile.customer?.company_name || user.email}</p>
               </div>
             </div>
             
