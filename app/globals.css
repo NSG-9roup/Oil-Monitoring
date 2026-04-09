@@ -42,7 +42,7 @@ body {
   }
 
   .admin-orange-icons svg {
-    color: rgb(249 115 22) !important;
+    color: rgb(220 38 38) !important;
   }
 
   .admin-orange-icons button svg,
@@ -155,71 +155,4 @@ body {
   }
 }
 
-.dark body {
-  --foreground-rgb: 229, 231, 235;
-  --background-start-rgb: 17, 24, 39;
-  --background-end-rgb: 15, 23, 42;
-}
-
-.dark .admin-panel,
-.dark .customer-panel {
-  color: #e5e7eb;
-}
-
-.dark .admin-panel .bg-white,
-.dark .customer-panel .bg-white {
-  background-color: #1f2937 !important;
-}
-
-.dark .admin-panel .bg-gray-50,
-.dark .admin-panel .bg-orange-50,
-.dark .admin-panel .bg-orange-100,
-.dark .customer-panel .bg-gray-50 {
-  background-color: #111827 !important;
-}
-
-.dark .admin-panel .text-gray-900,
-.dark .admin-panel .text-gray-800,
-.dark .customer-panel .text-gray-900,
-.dark .customer-panel .text-gray-800 {
-  color: #f9fafb !important;
-}
-
-.dark .admin-panel .text-gray-700,
-.dark .admin-panel .text-gray-600,
-.dark .admin-panel .text-gray-500,
-.dark .customer-panel .text-gray-700,
-.dark .customer-panel .text-gray-600,
-.dark .customer-panel .text-gray-500 {
-  color: #cbd5e1 !important;
-}
-
-.dark .admin-panel [class*='border-'],
-.dark .customer-panel [class*='border-'] {
-  border-color: #374151 !important;
-}
-
-.dark .admin-panel table thead,
-.dark .customer-panel table thead {
-  background-color: #111827 !important;
-}
-
-.dark .admin-panel table tbody,
-.dark .customer-panel table tbody {
-  background-color: #1f2937 !important;
-}
-
-.dark .admin-panel input,
-.dark .admin-panel select,
-.dark .customer-panel input,
-.dark .customer-panel select {
-  background-color: #111827 !important;
-  color: #f9fafb !important;
-  border-color: #374151 !important;
-}
-
-.dark .admin-panel .bg-grid-pattern,
-.dark .customer-panel .bg-grid-pattern {
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px) !important;
-}
 

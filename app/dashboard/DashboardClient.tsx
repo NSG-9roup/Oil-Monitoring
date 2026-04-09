@@ -75,22 +75,6 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
   const [latestTestByMachineId, setLatestTestByMachineId] = useState<Record<string, OilSample>>({})
   const [fleetInsightsLoading, setFleetInsightsLoading] = useState(false)
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
-
-  useEffect(() => {
-    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('oiltrack-theme') : null
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setTheme(savedTheme)
-      return
-    }
-    const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-    setTheme(prefersDark ? 'dark' : 'light')
-  }, [])
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem('oiltrack-theme', theme)
-  }, [theme])
 
   const toggleReport = (reportId: string) => {
     setExpandedReports(prev => {
@@ -776,21 +760,6 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                 <p className="text-gray-500 text-xs">{profile?.customer?.company_name}</p>
                 <p className="text-gray-800 font-medium text-sm">{profile?.email}</p>
               </div>
-              <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                title="Toggle theme"
-              >
-                {theme === 'dark' ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m8-9h1M3 12H2m15.364 6.364l.707.707M5.636 5.636l-.707-.707m12.728 0l.707-.707M5.636 18.364l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-              </button>
               <button
                 onClick={handleSignOut}
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"

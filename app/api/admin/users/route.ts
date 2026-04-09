@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 
 // Create Supabase Admin client with service role key
 const supabaseAdmin = createClient(
@@ -14,7 +15,74 @@ const supabaseAdmin = createClient(
   }
 )
 
-const allowedRoles = ['customer', 'admin', 'sales'] as const
+const panelRoles = ['admin', 'sales'] as const
+const assignableRoles = ['customer', 'admin', 'sales'] as const
+const actionSchema = z.enum(['create', 'update', 'delete'])
+
+const contactEmailSchema = z.union([z.string().trim().email().max(254), z.null(), z.undefined()])
+const phoneSchema = z.union([
+  z.string().trim().min(8).max(20).regex(/^[0-9+()\-\s]+$/, 'Invalid phone number format'),
+  z.null(),
+  z.undefined(),
+])
+
+const createUserSchema = z
+  .object({
+    action: z.literal('create'),
+    email: z.string().trim().email().max(254),
+    password: z
+      .string()
+      .min(12, 'Password must be at least 12 characters')
+      .max(72, 'Password is too long')
+      .regex(/[A-Z]/, 'Password must include an uppercase letter')
+      .regex(/[a-z]/, 'Password must include a lowercase letter')
+      .regex(/[0-9]/, 'Password must include a number'),
+    full_name: z.string().trim().min(2).max(100),
+    contact_email: contactEmailSchema,
+    phone_number: phoneSchema,
+    role: z.enum(assignableRoles),
+    customer_id: z.union([z.string().uuid(), z.null(), z.undefined()]),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.role === 'customer' && !value.customer_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['customer_id'],
+        message: 'customer_id is required for customer users',
+      })
+    }
+  })
+
+const updateUserSchema = z
+  .object({
+    action: z.literal('update'),
+    userId: z.string().uuid(),
+    full_name: z.string().trim().min(2).max(100),
+    contact_email: contactEmailSchema,
+    phone_number: phoneSchema,
+    role: z.enum(assignableRoles),
+    customer_id: z.union([z.string().uuid(), z.null(), z.undefined()]),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.role === 'customer' && !value.customer_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['customer_id'],
+        message: 'customer_id is required for customer users',
+      })
+    }
+  })
+
+const deleteUserSchema = z
+  .object({
+    action: z.literal('delete'),
+    userId: z.string().uuid(),
+  })
+  .strict()
+
+type PanelRole = (typeof panelRoles)[number]
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status })
@@ -50,44 +118,62 @@ async function getAdminProfile(request: NextRequest) {
     .eq('id', user.id)
     .single()
 
-  if (error || profile?.role !== 'admin') {
+  const role = profile?.role as PanelRole | undefined
+  if (error || !role || !panelRoles.includes(role)) {
     return { error: jsonError('Forbidden', 403) }
   }
 
-  return { user, profile }
+  return { user, profile: { role } }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const contentLength = Number(request.headers.get('content-length') || '0')
+    if (contentLength > 20_000) {
+      return jsonError('Payload too large', 413)
+    }
+
     const authResult = await getAdminProfile(request)
     if ('error' in authResult) {
       return authResult.error
     }
 
-    const body = await request.json()
-    const { action, userId, email, password, full_name, contact_email, phone_number, role, customer_id } = body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return jsonError('Invalid JSON payload', 400)
+    }
 
-    if (typeof action !== 'string') {
+    const action = actionSchema.safeParse((body as any)?.action)
+    if (!action.success) {
       return jsonError('Invalid action', 400)
     }
 
-    if (action === 'create') {
-      if (typeof email !== 'string' || typeof password !== 'string' || typeof full_name !== 'string' || typeof role !== 'string') {
-        return jsonError('Missing required fields', 400)
+    if (action.data === 'create') {
+      const parsed = createUserSchema.safeParse(body)
+      if (!parsed.success) {
+        return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
       }
 
-      if (!allowedRoles.includes(role as (typeof allowedRoles)[number])) {
-        return jsonError('Invalid role', 400)
+      if (authResult.profile.role === 'sales' && parsed.data.role !== 'customer') {
+        return jsonError('Sales can only create customer users', 403)
       }
 
-      if (role === 'customer' && typeof customer_id !== 'string') {
-        return jsonError('customer_id is required for customer users', 400)
-      }
+      const email = parsed.data.email.toLowerCase()
+      const fullName = parsed.data.full_name.trim()
+      const contactEmail = typeof parsed.data.contact_email === 'string'
+        ? parsed.data.contact_email.toLowerCase()
+        : null
+      const phoneNumber = typeof parsed.data.phone_number === 'string'
+        ? parsed.data.phone_number.trim()
+        : null
+      const customerId = parsed.data.role === 'customer' ? parsed.data.customer_id! : null
 
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
-        password,
+        password: parsed.data.password,
         email_confirm: true,
       })
 
@@ -98,11 +184,11 @@ export async function POST(request: NextRequest) {
         .from('oil_profiles')
         .insert([{
           id: authData.user.id,
-          full_name,
-          email: contact_email || null,
-          phone_number: phone_number || null,
-          role,
-          customer_id: role === 'customer' ? customer_id : null,
+          full_name: fullName,
+          email: contactEmail,
+          phone_number: phoneNumber,
+          role: parsed.data.role,
+          customer_id: customerId,
         }])
 
       if (profileError) {
@@ -111,36 +197,66 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true, user: authData.user })
-    } else if (action === 'delete') {
-      if (typeof userId !== 'string') {
-        return jsonError('userId is required', 400)
+    } else if (action.data === 'delete') {
+      const parsed = deleteUserSchema.safeParse(body)
+      if (!parsed.success) {
+        return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
+      }
+
+      if (parsed.data.userId === authResult.user.id) {
+        return jsonError('You cannot delete your own account', 400)
+      }
+
+      const { data: targetProfile, error: targetProfileError } = await supabaseAdmin
+        .from('oil_profiles')
+        .select('role')
+        .eq('id', parsed.data.userId)
+        .single()
+
+      if (targetProfileError || !targetProfile) {
+        return jsonError('User profile not found', 404)
+      }
+
+      if (authResult.profile.role === 'sales') {
+        if (targetProfile.role !== 'customer') {
+          return jsonError('Sales can only delete customer users', 403)
+        }
       }
 
       // Delete user from Supabase Auth
-      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(parsed.data.userId)
       if (authError) throw authError
 
       return NextResponse.json({ success: true })
-    } else if (action === 'update') {
-      if (typeof userId !== 'string' || typeof full_name !== 'string' || typeof role !== 'string') {
-        return jsonError('Missing required fields', 400)
+    } else if (action.data === 'update') {
+      const parsed = updateUserSchema.safeParse(body)
+      if (!parsed.success) {
+        return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
       }
 
-      if (!allowedRoles.includes(role as (typeof allowedRoles)[number])) {
-        return jsonError('Invalid role', 400)
+      if (authResult.profile.role === 'sales' && parsed.data.role !== 'customer') {
+        return jsonError('Sales can only update customer users', 403)
       }
+
+      const contactEmail = typeof parsed.data.contact_email === 'string'
+        ? parsed.data.contact_email.toLowerCase()
+        : null
+      const phoneNumber = typeof parsed.data.phone_number === 'string'
+        ? parsed.data.phone_number.trim()
+        : null
+      const customerId = parsed.data.role === 'customer' ? parsed.data.customer_id! : null
 
       // Update profile only (can't update auth email easily)
       const { error } = await supabaseAdmin
         .from('oil_profiles')
         .update({
-          full_name,
-          email: contact_email || null,
-          phone_number: phone_number || null,
-          role,
-          customer_id: role === 'customer' ? customer_id : null,
+          full_name: parsed.data.full_name.trim(),
+          email: contactEmail,
+          phone_number: phoneNumber,
+          role: parsed.data.role,
+          customer_id: customerId,
         })
-        .eq('id', userId)
+        .eq('id', parsed.data.userId)
 
       if (error) throw error
 
