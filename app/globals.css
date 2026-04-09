@@ -45,7 +45,6 @@ body {
     color: rgb(220 38 38) !important;
   }
 
-  .admin-orange-icons button svg,
   .admin-orange-icons button[class*='text-white'] svg,
   .admin-orange-icons .text-white svg {
     color: rgb(255 255 255) !important;
