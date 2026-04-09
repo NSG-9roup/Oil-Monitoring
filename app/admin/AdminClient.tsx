@@ -1082,8 +1082,8 @@ export default function AdminClient({
   }
 
   return (
-    <div className="clean-ui admin-orange-icons min-h-screen bg-gradient-to-br from-industrial-50 via-white to-primary-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
-      <header className="bg-gradient-to-r from-primary-600 via-secondary-600 to-primary-600 shadow-lg backdrop-blur-sm sticky top-0 z-50">
+    <div className="clean-ui admin-orange-icons min-h-screen bg-orange-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
+      <header className="bg-red-600 shadow-lg backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center space-x-3 sm:space-x-4">
@@ -1161,7 +1161,7 @@ export default function AdminClient({
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg mb-6 border-2 border-primary-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-industrial-50 to-primary-50 border-b-2 border-primary-200 overflow-x-auto">
+          <div className="bg-orange-100 border-b-2 border-primary-200 overflow-x-auto">
             <nav className="flex min-w-max">
               {[
                 { key: 'overview', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l3-3 3 2 5-6" /></svg>, label: 'Overview' },
@@ -1204,7 +1204,7 @@ export default function AdminClient({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                   <span className="tracking-tight">System</span>
-                  <span className="tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500">Overview</span>
+                  <span className="tracking-tight text-red-600">Overview</span>
                 </h2>
                 <p className="mb-6 text-sm font-medium text-gray-500">Live summary of customers, machines, tests, and products.</p>
 
@@ -1379,7 +1379,7 @@ export default function AdminClient({
                           .map(([id, data]: any, idx) => (
                             <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div className="flex items-center gap-3">
-                                <div className="bg-gradient-to-br from-primary-500 to-secondary-500 text-white font-black text-sm w-8 h-8 rounded-lg flex items-center justify-center">
+                                <div className="bg-red-600 text-white font-black text-sm w-8 h-8 rounded-lg flex items-center justify-center">
                                   {idx + 1}
                                 </div>
                                 <span className="font-bold text-gray-900 text-sm">{data.name}</span>
@@ -1403,7 +1403,7 @@ export default function AdminClient({
                     Machine Status Overview
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-4">
+                    <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-green-700 text-sm font-bold uppercase">Active</p>
@@ -1416,7 +1416,7 @@ export default function AdminClient({
                         </svg>
                       </div>
                     </div>
-                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 rounded-xl p-4">
+                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-yellow-700 text-sm font-bold uppercase">Maintenance</p>
@@ -1429,7 +1429,7 @@ export default function AdminClient({
                         </svg>
                       </div>
                     </div>
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-4">
+                    <div className="bg-orange-100 border-2 border-orange-200 rounded-xl p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-gray-700 text-sm font-bold uppercase">Inactive</p>
@@ -1454,7 +1454,7 @@ export default function AdminClient({
                     <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    All <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Customers</span>
+                    All <span className="text-red-600">Customers</span>
                   </h2>
                   <div className="flex gap-3 w-full sm:w-auto">
                     <button
@@ -1468,7 +1468,7 @@ export default function AdminClient({
                     </button>
                     <button
                       onClick={openAddCustomer}
-                      className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
+                      className="flex-1 sm:flex-none px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1496,7 +1496,7 @@ export default function AdminClient({
 
                 <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
                   <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
+                    <thead className="bg-orange-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Logo</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Company</th>
@@ -1519,7 +1519,7 @@ export default function AdminClient({
                                   className="max-w-full max-h-full object-contain"
                                 />
                               ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-primary-500 to-secondary-600 rounded flex items-center justify-center">
+                                <div className="w-full h-full bg-red-600 rounded flex items-center justify-center">
                                   <span className="text-white font-black text-xs">
                                     {customer.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
                                   </span>
@@ -1592,11 +1592,11 @@ export default function AdminClient({
                     <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                     </svg>
-                    All <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary-600 to-primary-600">Machines</span>
+                    All <span className="text-orange-600">Machines</span>
                   </h2>
                   <button
                     onClick={openAddMachine}
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
+                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1623,7 +1623,7 @@ export default function AdminClient({
 
                 <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
                   <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
+                    <thead className="bg-orange-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine Name</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
@@ -1692,7 +1692,7 @@ export default function AdminClient({
                     <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
-                    All <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Products</span>
+                    All <span className="text-red-600">Products</span>
                   </h2>
                   <div className="flex gap-3 w-full sm:w-auto">
                     <button
@@ -1706,7 +1706,7 @@ export default function AdminClient({
                     </button>
                     <button
                       onClick={openAddProduct}
-                      className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
+                      className="flex-1 sm:flex-none px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1734,7 +1734,7 @@ export default function AdminClient({
 
                 <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
                   <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
+                    <thead className="bg-orange-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product Name</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product Type</th>
@@ -1799,11 +1799,11 @@ export default function AdminClient({
                     <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
-                    Lab <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Tests</span>
+                    Lab <span className="text-orange-600">Tests</span>
                   </h2>
                   <button
                     onClick={openAddTest}
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
+                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1936,7 +1936,7 @@ export default function AdminClient({
 
                 <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
                   <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
+                    <thead className="bg-orange-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Test Date</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine</th>
@@ -2037,11 +2037,11 @@ export default function AdminClient({
                     <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    Purchase <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-primary-600">History</span>
+                    Purchase <span className="text-red-600">History</span>
                   </h2>
                   <button
                     onClick={openAddPurchase}
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
+                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2142,7 +2142,7 @@ export default function AdminClient({
 
                 <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
                   <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
+                    <thead className="bg-orange-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
@@ -2227,11 +2227,11 @@ export default function AdminClient({
                     <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    All <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Users</span> <span className="text-xl text-gray-500 font-medium">({users.length})</span>
+                    All <span className="text-red-600">Users</span> <span className="text-xl text-gray-500 font-medium">({users.length})</span>
                   </h2>
                   <button
                     onClick={openAddUser}
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
+                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2266,7 +2266,7 @@ export default function AdminClient({
                 {users.length > 0 && (
                   <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
                     <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-gradient-to-r from-primary-50 to-secondary-50">
+                    <thead className="bg-orange-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Name</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Email</th>
@@ -2334,7 +2334,7 @@ export default function AdminClient({
       {(modalOpen === 'add-customer' || modalOpen === 'edit-customer') && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border-2 border-primary-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-primary-600 to-secondary-600 px-6 py-4">
+            <div className="bg-red-600 px-6 py-4">
               <h3 className="text-xl font-black text-white flex items-center">
                 <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -2370,7 +2370,7 @@ export default function AdminClient({
                 <button
                   onClick={handleSaveCustomer}
                   disabled={loading}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 disabled:opacity-50 font-bold shadow-lg transition-all flex items-center justify-center"
+                  className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 font-bold shadow-lg transition-all flex items-center justify-center"
                 >
                   {loading ? (
                     <OilDropLoader compact label="Saving..." className="text-white" />
@@ -2395,7 +2395,7 @@ export default function AdminClient({
       {modalOpen === 'upload-logo' && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border-2 border-primary-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <div className="bg-orange-600 px-6 py-4">
               <h3 className="text-xl font-black text-white flex items-center">
                 <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -2415,7 +2415,7 @@ export default function AdminClient({
                       className="max-w-full max-h-full object-contain"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary-500 to-secondary-600 rounded-lg flex items-center justify-center">
+                    <div className="w-full h-full bg-red-600 rounded-lg flex items-center justify-center">
                       <span className="text-white font-black text-6xl">
                         {selectedItem.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
                       </span>
@@ -2445,7 +2445,7 @@ export default function AdminClient({
                 <button
                   onClick={handleUploadLogo}
                   disabled={!logoFile || uploadingLogo}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg transition-all flex items-center justify-center"
+                  className="flex-1 px-5 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg transition-all flex items-center justify-center"
                 >
                   {uploadingLogo ? (
                     <OilDropLoader compact label="Uploading..." className="text-white" />
@@ -3251,7 +3251,7 @@ export default function AdminClient({
                         if (results.success > 0) loadCustomers()
                       }}
                       disabled={csvData.length === 0 || importLoading}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                       {importLoading ? 'Importing...' : `Import ${csvData.length} Customers`}
                     </button>
@@ -3288,7 +3288,7 @@ export default function AdminClient({
                         setCsvData([])
                         setImportResult(null)
                       }}
-                      className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold transition-all"
+                      className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold transition-all"
                     >
                       Close
                     </button>
@@ -3440,7 +3440,7 @@ export default function AdminClient({
                         }
                       }}
                       disabled={csvData.length === 0 || importLoading}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                       {importLoading ? 'Importing...' : `Import ${csvData.length} Products`}
                     </button>
@@ -3477,7 +3477,7 @@ export default function AdminClient({
                         setCsvData([])
                         setImportResult(null)
                       }}
-                      className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-xl hover:from-primary-700 hover:to-secondary-700 font-bold transition-all"
+                      className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold transition-all"
                     >
                       Close
                     </button>
