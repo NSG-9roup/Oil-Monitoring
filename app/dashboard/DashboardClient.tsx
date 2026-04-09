@@ -75,6 +75,22 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
   const [latestTestByMachineId, setLatestTestByMachineId] = useState<Record<string, OilSample>>({})
   const [fleetInsightsLoading, setFleetInsightsLoading] = useState(false)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  useEffect(() => {
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('oiltrack-theme') : null
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme)
+      return
+    }
+    const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    setTheme(prefersDark ? 'dark' : 'light')
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    localStorage.setItem('oiltrack-theme', theme)
+  }, [theme])
 
   const toggleReport = (reportId: string) => {
     setExpandedReports(prev => {
@@ -737,7 +753,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   }))
 
   return (
-    <div className="clean-ui min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
+    <div className="clean-ui customer-panel min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
       {/* Header */}
       <header className="bg-white shadow-lg sticky top-0 z-50 border-b-2 border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -761,8 +777,23 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                 <p className="text-gray-800 font-medium text-sm">{profile?.email}</p>
               </div>
               <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                title="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m8-9h1M3 12H2m15.364 6.364l.707.707M5.636 5.636l-.707-.707m12.728 0l.707-.707M5.636 18.364l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+              <button
                 onClick={handleSignOut}
-                className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                 title="Sign Out"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -786,7 +817,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <p className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">Welcome back</p>
               <h1 className="text-4xl font-black text-gray-900">
                 {profile?.customer?.company_name?.split(' ').map((word: string, i: number) => 
-                  i === 0 ? word : <span key={i} className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">{word}</span>
+                  i === 0 ? word : <span key={i} className={i % 2 === 0 ? 'text-red-600' : 'text-orange-600'}>{word}</span>
                 ).reduce((prev: any, curr: any) => [prev, ' ', curr])}
               </h1>
             </div>
@@ -880,7 +911,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-3xl font-black text-gray-900">
-                Insight <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Engine</span>
+                Insight <span className="text-red-600">Engine</span>
               </h2>
               <p className="text-gray-600 font-medium mt-1">Phase 1 intelligence: health scoring, priority ranking, and maintenance actions</p>
             </div>
@@ -952,7 +983,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           <div className="mb-6 flex items-end justify-between">
             <div>
               <h2 className="text-3xl font-black text-gray-900">
-                Machine <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Health</span> Overview
+                Machine <span className="text-orange-600">Health</span> Overview
               </h2>
               <p className="text-gray-600 font-medium mt-1">Real-time monitoring of your equipment condition</p>
             </div>
@@ -1243,7 +1274,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
               <div className="mb-6">
                 <h2 className="text-3xl font-black text-gray-900">
-                  Performance <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Trends</span>
+                  Performance <span className="text-red-600">Trends</span>
                 </h2>
                 <p className="text-gray-600 font-medium mt-1">Monitor oil condition parameters over time</p>
               </div>
@@ -1351,7 +1382,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
               <div className="mb-6">
                 <h2 className="text-3xl font-black text-gray-900">
-                  Lab <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">Reports</span>
+                  Lab <span className="text-orange-600">Reports</span>
                 </h2>
                 <p className="text-gray-600 font-medium mt-1">
                   {filteredReports.length} {filteredReports.length === 1 ? 'report' : 'reports'} in selected time range

@@ -73,6 +73,22 @@ export default function AdminClient({
   const [uniqueBaseOils] = useState<string[]>(['Mineral', 'Synthetic'])
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  useEffect(() => {
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('oiltrack-theme') : null
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme)
+      return
+    }
+    const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    setTheme(prefersDark ? 'dark' : 'light')
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    localStorage.setItem('oiltrack-theme', theme)
+  }, [theme])
 
   // Load customers
   const loadCustomers = async () => {
@@ -1082,31 +1098,49 @@ export default function AdminClient({
   }
 
   return (
-    <div className="clean-ui admin-orange-icons min-h-screen bg-orange-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
-      <header className="bg-red-600 shadow-lg backdrop-blur-sm sticky top-0 z-50">
+    <div className="clean-ui admin-orange-icons admin-panel min-h-screen bg-gray-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
+      <header className="bg-white shadow-lg backdrop-blur-sm sticky top-0 z-50 border-b-2 border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-white flex items-center">
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center">
                   OilTrack™ Admin
-                  <span className="ml-2 sm:ml-3 inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm">
+                  <span className="ml-2 sm:ml-3 inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200">
                     <span className="w-2 h-2 bg-green-400 rounded-full mr-1.5 sm:mr-2 animate-pulse"></span>
                     Active
                   </span>
                 </h1>
-                <p className="text-xs sm:text-sm text-white/90 mt-1 font-medium truncate max-w-[250px] sm:max-w-none">{user.email} • {profile.role.toUpperCase()}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1 font-medium truncate max-w-[250px] sm:max-w-none">{user.email} • {profile.role.toUpperCase()}</p>
               </div>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl transition-all shadow-lg hover:shadow-xl border-2 border-white/30 flex items-center w-full sm:w-auto justify-center"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign Out
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center w-full sm:w-auto justify-center"
+                title="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m8-9h1M3 12H2m15.364 6.364l.707.707M5.636 5.636l-.707-.707m12.728 0l.707-.707M5.636 18.364l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+                {theme === 'dark' ? 'Light' : 'Dark'}
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center w-full sm:w-auto justify-center"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -1161,8 +1195,8 @@ export default function AdminClient({
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg mb-6 border-2 border-primary-100 overflow-hidden">
-          <div className="bg-orange-100 border-b-2 border-primary-200 overflow-x-auto">
-            <nav className="flex min-w-max">
+          <div className="bg-gray-100 border-b-2 border-primary-200 overflow-x-auto sm:overflow-visible dark:bg-gray-900">
+            <nav className="flex min-w-max sm:min-w-0 sm:w-full sm:justify-center">
               {[
                 { key: 'overview', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l3-3 3 2 5-6" /></svg>, label: 'Overview' },
                 { key: 'customers', icon: <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, label: 'Customers' },
@@ -1494,9 +1528,9 @@ export default function AdminClient({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
-                  <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50">
+                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
+                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
+                    <thead className="bg-orange-50 sticky top-0 z-10">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Logo</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Company</th>
@@ -1621,9 +1655,9 @@ export default function AdminClient({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
-                  <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50">
+                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
+                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
+                    <thead className="bg-orange-50 sticky top-0 z-10">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine Name</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
@@ -1732,9 +1766,9 @@ export default function AdminClient({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
-                  <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50">
+                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
+                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
+                    <thead className="bg-orange-50 sticky top-0 z-10">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product Name</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product Type</th>
@@ -1934,9 +1968,9 @@ export default function AdminClient({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
-                  <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50">
+                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
+                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
+                    <thead className="bg-orange-50 sticky top-0 z-10">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Test Date</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine</th>
@@ -2140,9 +2174,9 @@ export default function AdminClient({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
-                  <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50">
+                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
+                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
+                    <thead className="bg-orange-50 sticky top-0 z-10">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
@@ -2264,9 +2298,9 @@ export default function AdminClient({
                   </div>
                 )}
                 {users.length > 0 && (
-                  <div className="overflow-x-auto rounded-xl border-2 border-primary-100">
-                    <table className="min-w-full divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50">
+                  <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
+                    <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
+                    <thead className="bg-orange-50 sticky top-0 z-10">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Name</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Email</th>
