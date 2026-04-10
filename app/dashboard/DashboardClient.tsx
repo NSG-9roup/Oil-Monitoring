@@ -312,7 +312,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     waterContent: number,
     tanValue: number,
     product?: { product_type?: string; baseline_viscosity_40c?: number }
-  ): { level: string; color: string; text: string } => {
+  ): { level: FleetReportRow['statusLevel']; color: string; text: string } => {
     // ============================================================
     // SETUP: Oil-type-based thresholds
     // ============================================================
@@ -716,7 +716,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           machine,
           latestTest: null,
           healthScore: null,
-          status: { level: 'unknown', text: 'No Data' },
+          status: { level: 'unknown' as const, text: 'No Data' },
           daysSinceTest: null as number | null,
           priorityScore: 0,
           nextAction: 'Schedule initial sampling now',
