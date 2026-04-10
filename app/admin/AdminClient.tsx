@@ -8,6 +8,7 @@ import imageCompression from 'browser-image-compression'
 import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
 import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, AdminPurchase } from '@/lib/types'
+import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -38,7 +39,7 @@ type ModalType = 'add-customer' | 'edit-customer' | 'import-customers' | 'add-ma
 
 type SelectedItemType = Customer | AdminMachine | AdminLabTest | AdminProduct | AdminPurchase | AdminUser | null
 
-type TabKey = 'overview' | 'customers' | 'machines' | 'products' | 'tests' | 'purchases' | 'users'
+type TabKey = 'overview' | 'customers' | 'machines' | 'products' | 'tests' | 'alerts' | 'purchases' | 'users'
 
 type FormValue = string | number | null | undefined | File
 
@@ -124,6 +125,13 @@ export default function AdminClient({
   const [uniqueProductTypes, setUniqueProductTypes] = useState<string[]>([])
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
+  const [alertQueue, setAlertQueue] = useState<DashboardAlert[]>([])
+  const [reviewedAlertIds, setReviewedAlertIds] = useState<string[]>([])
+  const [emailedAlertIds, setEmailedAlertIds] = useState<string[]>([])
+  const [alertSeverityFilter, setAlertSeverityFilter] = useState<'all' | 'critical' | 'warning'>('all')
+  const [alertStatusFilter, setAlertStatusFilter] = useState<'all' | 'open' | 'reviewed' | 'emailed'>('all')
+  const [alertCustomerFilter, setAlertCustomerFilter] = useState<string>('all')
+  const [emailLanguage, setEmailLanguage] = useState<'id' | 'en'>('id')
 
   // Load customers
   const loadCustomers = async () => {
@@ -208,6 +216,125 @@ export default function AdminClient({
     setPurchases(data || [])
   }, [supabase])
 
+  const loadAlertQueue = useCallback(async () => {
+    try {
+      const [machinesResult, testsResult, profilesResult] = await Promise.all([
+        supabase
+          .from('oil_machines')
+          .select('id, machine_name, customer_id, customer:oil_customers(company_name)')
+          .eq('status', 'active'),
+        supabase
+          .from('oil_lab_tests')
+          .select('id, machine_id, test_date, water_content, tan_value')
+          .order('test_date', { ascending: false })
+          .limit(500),
+        supabase
+          .from('oil_profiles')
+          .select('customer_id, email, full_name')
+          .eq('role', 'customer')
+          .not('customer_id', 'is', null),
+      ])
+
+      if (machinesResult.error || testsResult.error || profilesResult.error) {
+        console.error('Failed to load alert queue:', {
+          machines: machinesResult.error?.message,
+          tests: testsResult.error?.message,
+          profiles: profilesResult.error?.message,
+        })
+        setAlertQueue([])
+        return
+      }
+
+      const latestByMachine = new Map<string, { test_date: string; water_content: number | null; tan_value: number | null }>()
+      ;(testsResult.data || []).forEach((test) => {
+        if (!latestByMachine.has(test.machine_id)) {
+          latestByMachine.set(test.machine_id, test)
+        }
+      })
+
+      const emailByCustomer = new Map<string, string>()
+      ;(profilesResult.data || []).forEach((profileItem) => {
+        if (!profileItem.customer_id || emailByCustomer.has(profileItem.customer_id)) return
+        emailByCustomer.set(profileItem.customer_id, profileItem.email || '')
+      })
+
+      const alertInputs = (machinesResult.data || []).map((machineItem) => {
+        const latestTest = latestByMachine.get(machineItem.id)
+        const water = latestTest?.water_content || 0
+        const tan = latestTest?.tan_value || 0
+        const daysSinceTest = latestTest?.test_date
+          ? Math.floor((Date.now() - new Date(latestTest.test_date).getTime()) / (1000 * 60 * 60 * 24))
+          : null
+
+        let statusLevel: 'critical' | 'warning' | 'normal' | 'unknown' = 'unknown'
+        let statusText = 'No data'
+        let nextAction = 'Schedule initial sampling now'
+        if (latestTest) {
+          if (water >= 0.15 || tan >= 1.0 || (daysSinceTest !== null && daysSinceTest > 60)) {
+            statusLevel = 'critical'
+            statusText = 'Critical trend from latest lab result'
+            nextAction = 'Send manual email today and ask customer to retest within 3 days'
+          } else if (water >= 0.08 || tan >= 0.5 || (daysSinceTest !== null && daysSinceTest > 30)) {
+            statusLevel = 'warning'
+            statusText = 'Warning trend from latest lab result'
+            nextAction = 'Send manual email reminder and schedule retest in 14 days'
+          } else {
+            statusLevel = 'normal'
+            statusText = 'Normal condition'
+            nextAction = 'Continue regular monthly monitoring'
+          }
+        }
+
+        const customerRelation = Array.isArray(machineItem.customer) ? machineItem.customer[0] : machineItem.customer
+        return {
+          machineId: machineItem.id,
+          customerId: machineItem.customer_id || null,
+          machineName: machineItem.machine_name,
+          customerName: customerRelation?.company_name || 'Unknown customer',
+          customerEmail: emailByCustomer.get(machineItem.customer_id) || '-',
+          statusLevel,
+          statusText,
+          nextAction,
+          testDate: latestTest?.test_date || null,
+          daysSinceTest,
+          healthScore: null,
+        }
+      })
+
+      const queue = buildDashboardAlerts(alertInputs)
+      setAlertQueue(queue)
+
+      if (queue.length > 0) {
+        const alertKeys = queue.map((item) => item.id)
+        const { data: actionRows, error: actionError } = await supabase
+          .from('oil_alert_actions')
+          .select('alert_key, action_type')
+          .in('alert_key', alertKeys)
+          .in('action_type', ['reviewed', 'email_sent'])
+
+        if (actionError) {
+          console.error('Failed to load alert action state:', actionError.message)
+        } else {
+          const reviewed = (actionRows || [])
+            .filter((row) => row.action_type === 'reviewed')
+            .map((row) => row.alert_key)
+          const emailed = (actionRows || [])
+            .filter((row) => row.action_type === 'email_sent')
+            .map((row) => row.alert_key)
+
+          setReviewedAlertIds(Array.from(new Set(reviewed)))
+          setEmailedAlertIds(Array.from(new Set(emailed)))
+        }
+      } else {
+        setReviewedAlertIds([])
+        setEmailedAlertIds([])
+      }
+    } catch (error) {
+      console.error('Unexpected alert queue error:', error)
+      setAlertQueue([])
+    }
+  }, [supabase])
+
   // Load users when switching to users tab
   useEffect(() => {
     if (activeTab === 'overview') {
@@ -222,10 +349,13 @@ export default function AdminClient({
     if (activeTab === 'tests') {
       loadTests()
     }
+    if (activeTab === 'alerts') {
+      loadAlertQueue()
+    }
     if (activeTab === 'purchases') {
       loadPurchases()
     }
-  }, [activeTab, loadProducts, loadPurchases, loadTests, loadUsers])
+  }, [activeTab, loadAlertQueue, loadProducts, loadPurchases, loadTests, loadUsers])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -239,9 +369,116 @@ export default function AdminClient({
     loadTests() // Always load tests for overview Recent Activity
     if (activeTab === 'users') loadUsers()
     if (activeTab === 'products') loadProducts()
+    if (activeTab === 'alerts') loadAlertQueue()
     if (activeTab === 'purchases') loadPurchases()
     router.refresh()
   }
+
+  const markAlertReviewed = (alertId: string) => {
+    const found = alertQueue.find((item) => item.id === alertId)
+    if (!found) return
+
+    void (async () => {
+      const { error } = await supabase.from('oil_alert_actions').upsert(
+        {
+          alert_key: found.id,
+          action_type: 'reviewed',
+          actor_id: user.id,
+          customer_id: found.customerId,
+          machine_id: found.machineId,
+          payload: {
+            machine_name: found.machineName,
+            customer_name: found.customerName,
+            severity: found.severity,
+          },
+        },
+        { onConflict: 'alert_key,action_type' }
+      )
+
+      if (error) {
+        alert(`Failed to mark alert as reviewed: ${error.message}`)
+        return
+      }
+
+      setReviewedAlertIds((prev) => (prev.includes(alertId) ? prev : [...prev, alertId]))
+    })()
+  }
+
+  const sendManualEmail = (alertItem: DashboardAlert) => {
+    const to = alertItem.customerEmail && alertItem.customerEmail !== '-' ? alertItem.customerEmail : ''
+    const subject =
+      emailLanguage === 'id'
+        ? `[OilTrack Alert] ${alertItem.severity.toUpperCase()} - ${alertItem.machineName}`
+        : `[OilTrack Alert] ${alertItem.severity.toUpperCase()} - ${alertItem.machineName}`
+    const body =
+      emailLanguage === 'id'
+        ? [
+            `Yth. ${alertItem.customerName},`,
+            '',
+            `Kami mendeteksi kondisi ${alertItem.severity} pada mesin ${alertItem.machineName}.`,
+            `Ringkasan: ${alertItem.message}`,
+            `Rekomendasi tindakan: ${alertItem.recommendedAction}`,
+            '',
+            'Mohon konfirmasi rencana maintenance dan jadwal retest Anda.',
+            '',
+            'Hormat kami,',
+            'Tim Admin OilTrack',
+          ].join('\n')
+        : [
+            `Dear ${alertItem.customerName},`,
+            '',
+            `We detected a ${alertItem.severity} condition on machine ${alertItem.machineName}.`,
+            `Summary: ${alertItem.message}`,
+            `Recommended action: ${alertItem.recommendedAction}`,
+            '',
+            'Please confirm your maintenance schedule and retest plan.',
+            '',
+            'Regards,',
+            'OilTrack Admin Team',
+          ].join('\n')
+
+    const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    window.open(mailtoUrl, '_blank')
+
+    void (async () => {
+      const { error } = await supabase.from('oil_alert_actions').upsert(
+        {
+          alert_key: alertItem.id,
+          action_type: 'email_sent',
+          actor_id: user.id,
+          customer_id: alertItem.customerId,
+          machine_id: alertItem.machineId,
+          payload: {
+            recipient: to,
+            subject,
+            language: emailLanguage,
+          },
+        },
+        { onConflict: 'alert_key,action_type' }
+      )
+
+      if (error) {
+        alert(`Failed to save email action: ${error.message}`)
+        return
+      }
+
+      setEmailedAlertIds((prev) => (prev.includes(alertItem.id) ? prev : [...prev, alertItem.id]))
+    })()
+  }
+
+  const filteredAlertQueue = alertQueue.filter((alertItem) => {
+    const severityMatch = alertSeverityFilter === 'all' || alertItem.severity === alertSeverityFilter
+    const customerMatch = alertCustomerFilter === 'all' || alertItem.customerId === alertCustomerFilter
+    const reviewed = reviewedAlertIds.includes(alertItem.id)
+    const emailed = emailedAlertIds.includes(alertItem.id)
+
+    let statusMatch = true
+    if (alertStatusFilter === 'open') statusMatch = !reviewed && !emailed
+    if (alertStatusFilter === 'reviewed') statusMatch = reviewed
+    if (alertStatusFilter === 'emailed') statusMatch = emailed
+
+    return severityMatch && customerMatch && statusMatch
+  })
 
   // Customer CRUD
   const openAddCustomer = () => {
@@ -1243,6 +1480,7 @@ export default function AdminClient({
                 { key: 'machines', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Machines' },
                 { key: 'products', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>, label: 'Products' },
                 { key: 'tests', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>, label: 'Tests' },
+                { key: 'alerts', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>, label: 'Alerts' },
                 { key: 'purchases', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H6.4M7 13 6.4 5M7 13l-2 2m2-2 1.2 2.4M17 13l1.2 2.4M6 21a1 1 0 100-2 1 1 0 000 2zm11 0a1 1 0 100-2 1 1 0 000 2" /></svg>, label: 'Purchases' },
                 { key: 'users', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A4 4 0 018 16h8a4 4 0 012.879 1.804M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Users' }
               ].map((tab) => (
@@ -2100,6 +2338,152 @@ export default function AdminClient({
                         <tr>
                           <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                             No lab tests found. Click "Add Lab Test" to create one.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'alerts' && (
+              <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
+                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    Alert <span className="text-red-600">Queue</span>
+                  </h2>
+                  <button
+                    onClick={loadAlertQueue}
+                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh Alerts
+                  </button>
+                </div>
+
+                <div className="mb-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+                  <select
+                    value={alertSeverityFilter}
+                    onChange={(e) => setAlertSeverityFilter(e.target.value as 'all' | 'critical' | 'warning')}
+                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
+                  >
+                    <option value="all">All Severity</option>
+                    <option value="critical">Critical</option>
+                    <option value="warning">Warning</option>
+                  </select>
+
+                  <select
+                    value={alertStatusFilter}
+                    onChange={(e) => setAlertStatusFilter(e.target.value as 'all' | 'open' | 'reviewed' | 'emailed')}
+                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="emailed">Emailed</option>
+                  </select>
+
+                  <select
+                    value={alertCustomerFilter}
+                    onChange={(e) => setAlertCustomerFilter(e.target.value)}
+                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
+                  >
+                    <option value="all">All Customers</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>{customer.company_name}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={emailLanguage}
+                    onChange={(e) => setEmailLanguage(e.target.value as 'id' | 'en')}
+                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
+                  >
+                    <option value="id">Email Template: Bahasa Indonesia</option>
+                    <option value="en">Email Template: English</option>
+                  </select>
+
+                  <button
+                    onClick={() => {
+                      setAlertSeverityFilter('all')
+                      setAlertStatusFilter('all')
+                      setAlertCustomerFilter('all')
+                    }}
+                    className="px-4 py-3 border-2 border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+
+                <div className="mb-5 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
+                  In-app alert only. Admin can review and send manual email notification when needed.
+                </div>
+
+                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
+                  <table className="w-full min-w-[1080px] divide-y-2 divide-primary-200">
+                    <thead className="bg-orange-50 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Severity</th>
+                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
+                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine</th>
+                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Summary</th>
+                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Next Action</th>
+                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y-2 divide-gray-100">
+                      {filteredAlertQueue.map((alertItem) => (
+                        <tr key={alertItem.id} className="hover:bg-primary-50/30 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border-2 ${
+                              alertItem.severity === 'critical'
+                                ? 'bg-red-100 text-red-800 border-red-300'
+                                : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                            }`}>
+                              {alertItem.severity.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-800 font-medium">
+                            <div>{alertItem.customerName}</div>
+                            <div className="text-xs text-gray-500">{alertItem.customerEmail || '-'}</div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-800 font-bold">{alertItem.machineName}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{alertItem.message}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{alertItem.recommendedAction}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-2">
+                            <button
+                              onClick={() => markAlertReviewed(alertItem.id)}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors ${
+                                reviewedAlertIds.includes(alertItem.id)
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                              }`}
+                            >
+                              {reviewedAlertIds.includes(alertItem.id) ? 'Reviewed' : 'Mark Reviewed'}
+                            </button>
+                            <button
+                              onClick={() => sendManualEmail(alertItem)}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors ${
+                                emailedAlertIds.includes(alertItem.id)
+                                  ? 'bg-blue-50 text-blue-700 border-blue-300'
+                                  : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                              }`}
+                            >
+                              {emailedAlertIds.includes(alertItem.id) ? 'Email Sent' : 'Send Email Manual'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredAlertQueue.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                            No alerts match current filters.
                           </td>
                         </tr>
                       )}

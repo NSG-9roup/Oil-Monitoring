@@ -7,6 +7,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
 import OilDropLoader from '@/app/components/OilDropLoader'
+import { exportFleetReportPdf, type FleetReportRow } from '@/lib/pdf/exportFleetReport'
+import { buildDashboardAlerts } from '@/lib/alerts/engine'
 
 interface Machine {
   id: string
@@ -92,6 +94,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
   const [latestTestByMachineId, setLatestTestByMachineId] = useState<Record<string, OilSample>>({})
   const [fleetInsightsLoading, setFleetInsightsLoading] = useState(false)
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([])
 
   const toggleReport = (reportId: string) => {
     setExpandedReports(prev => {
@@ -766,6 +769,114 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
       )
     : null
 
+  const fleetReportRows: FleetReportRow[] = machineInsights.map((item) => ({
+    machineName: item.machine.machine_name,
+    location: item.machine.location || '-',
+    lastTestDate: item.latestTest?.test_date || '',
+    daysSinceTest: item.daysSinceTest,
+    statusLevel: item.status.level,
+    statusText: item.status.text,
+    healthScore: item.healthScore,
+    nextAction: item.nextAction,
+  }))
+
+  const dashboardAlerts = buildDashboardAlerts(
+    machineInsights.map((item) => ({
+      machineId: item.machine.id,
+      customerId: profile?.customer?.id || null,
+      machineName: item.machine.machine_name,
+      customerName: profile?.customer?.company_name || 'Customer',
+      customerEmail: profile?.email || user.email || '-',
+      statusLevel: item.status.level,
+      statusText: item.status.text,
+      nextAction: item.nextAction,
+      testDate: item.latestTest?.test_date || null,
+      daysSinceTest: item.daysSinceTest,
+      healthScore: item.healthScore,
+    }))
+  )
+
+  const visibleAlerts = dashboardAlerts.filter((alertItem) => !dismissedAlertIds.includes(alertItem.id))
+
+  const handleExportFleetReport = () => {
+    exportFleetReportPdf(
+      {
+        companyName: profile?.customer?.company_name || 'Customer',
+        customerEmail: profile?.email || user.email || '-',
+        generatedBy: profile?.full_name || profile?.email || 'Customer User',
+        generatedAt: new Date(),
+        criticalCount,
+        warningCount,
+        healthyCount,
+        avgHealthScore,
+      },
+      fleetReportRows
+    )
+  }
+
+  const dismissAlert = (alertId: string) => {
+    const found = dashboardAlerts.find((item) => item.id === alertId)
+    if (!found) return
+
+    void (async () => {
+      const { error } = await supabase.from('oil_alert_actions').upsert(
+        {
+          alert_key: found.id,
+          action_type: 'customer_read',
+          actor_id: profile?.id || user.id,
+          customer_id: found.customerId,
+          machine_id: found.machineId,
+          payload: {
+            machine_name: found.machineName,
+            severity: found.severity,
+          },
+        },
+        { onConflict: 'alert_key,action_type' }
+      )
+
+      if (error) {
+        alert(`Failed to save alert read status: ${error.message}`)
+        return
+      }
+
+      setDismissedAlertIds((prev) => (prev.includes(alertId) ? prev : [...prev, alertId]))
+    })()
+  }
+
+  const resetAlertInbox = () => {
+    void (async () => {
+      const { error } = await supabase
+        .from('oil_alert_actions')
+        .delete()
+        .eq('action_type', 'customer_read')
+        .eq('actor_id', profile?.id || user.id)
+
+      if (error) {
+        alert(`Failed to reset inbox: ${error.message}`)
+        return
+      }
+
+      setDismissedAlertIds([])
+    })()
+  }
+
+  useEffect(() => {
+    void (async () => {
+      const { data, error } = await supabase
+        .from('oil_alert_actions')
+        .select('alert_key')
+        .eq('action_type', 'customer_read')
+        .eq('actor_id', profile?.id || user.id)
+
+      if (error) {
+        console.error('Failed to load customer alert read states:', error.message)
+        return
+      }
+
+      setDismissedAlertIds((data || []).map((row) => row.alert_key))
+    })()
+  }, [profile?.id, supabase, user.id])
+
   const chartData = filteredSamples.map(sample => ({
     date: new Date(sample.test_date).toLocaleDateString(),
     viscosity_40c: sample.viscosity_40c || 0,
@@ -800,6 +911,18 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <div className="text-right hidden sm:block">
                 <p className="text-gray-500 text-xs">{profile?.customer?.company_name}</p>
                 <p className="text-gray-800 font-medium text-sm">{profile?.email || user.email}</p>
+              </div>
+              <div className="relative" title="Dashboard alerts">
+                <div className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                {visibleAlerts.length > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[11px] font-bold flex items-center justify-center">
+                    {visibleAlerts.length}
+                  </span>
+                )}
               </div>
               <button
                 onClick={handleSignOut}
@@ -901,26 +1024,103 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           </div>
         </div>
 
-        {/* Purchase History Button */}
-        <button
-          onClick={() => router.push('/purchases')}
-          className="w-full mb-8 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
+        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Alert Management</h2>
+              <p className="text-sm text-gray-600 mt-1">Alerts appear inside dashboard only. No SMS or automatic email cost.</p>
             </div>
-            <div className="text-left">
-              <h3 className="text-xl font-black">Purchase History</h3>
-              <p className="text-white/90 text-sm font-medium mt-1">View detailed purchase records and transaction history</p>
+            <div className="flex gap-2">
+              <button
+                onClick={resetAlertInbox}
+                className="px-3 py-2 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Reset Inbox
+              </button>
             </div>
           </div>
-          <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+
+          {visibleAlerts.length === 0 ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 font-medium">
+              No open alerts. Monitoring status is healthy.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visibleAlerts.slice(0, 6).map((alertItem) => (
+                <div
+                  key={alertItem.id}
+                  className={`rounded-2xl border px-4 py-4 ${
+                    alertItem.severity === 'critical'
+                      ? 'border-red-200 bg-red-50/70'
+                      : 'border-amber-200 bg-amber-50/70'
+                  }`}
+                >
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-black uppercase tracking-wide ${alertItem.severity === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>
+                          {alertItem.severity}
+                        </span>
+                        <span className="text-xs text-gray-500">Machine: {alertItem.machineName}</span>
+                      </div>
+                      <p className="font-bold text-gray-900">{alertItem.title}</p>
+                      <p className="text-sm text-gray-700 mt-1">{alertItem.message}</p>
+                      <p className="text-sm text-gray-800 mt-2"><span className="font-semibold">Next action:</span> {alertItem.recommendedAction}</p>
+                    </div>
+                    <button
+                      onClick={() => dismissAlert(alertItem.id)}
+                      className="self-start px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                    >
+                      Mark as Read
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
+          <button
+            onClick={handleExportFleetReport}
+            className="w-full bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-900 hover:to-slate-800 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2h-5.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 0010.586 2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-black">Export Fleet Report (PDF)</h3>
+                <p className="text-white/90 text-sm font-medium mt-1">Download executive summary + machine priority queue in premium layout</p>
+              </div>
+            </div>
+            <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => router.push('/purchases')}
+            className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-black">Purchase History</h3>
+                <p className="text-white/90 text-sm font-medium mt-1">View detailed purchase records and transaction history</p>
+              </div>
+            </div>
+            <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
 
         {/* Phase 1: Rule-Based Insight Engine */}
         <section className="mb-8 bg-white/80 backdrop-blur rounded-3xl shadow-xl p-6 sm:p-8">
