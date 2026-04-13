@@ -7,6 +7,7 @@ export interface Customer {
   company_name: string
   logo_url?: string | null
   status: string
+  pin_configured?: boolean
   created_at: string
   updated_at: string
 }

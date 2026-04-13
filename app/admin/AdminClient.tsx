@@ -27,6 +27,20 @@ const formatDate = (value?: string | number | Date) => {
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unknown error'
 
+type CustomerWithPinHash = Customer & {
+  user_management_pin_hash?: string | null
+  pin_configured?: boolean
+}
+
+const normalizeCustomers = (rows: CustomerWithPinHash[]) =>
+  rows.map((row) => {
+    const { user_management_pin_hash, ...rest } = row
+    return {
+      ...rest,
+      pin_configured: row.pin_configured ?? Boolean(user_management_pin_hash),
+    }
+  })
+
 interface AdminClientProps {
   user: User
   profile: AdminProfile
@@ -35,7 +49,7 @@ interface AdminClientProps {
   recentTests: AdminLabTest[]
 }
 
-type ModalType = 'add-customer' | 'edit-customer' | 'import-customers' | 'add-machine' | 'edit-machine' | 'add-test' | 'edit-test' | 'add-product' | 'edit-product' | 'import-products' | 'add-purchase' | 'edit-purchase' | 'add-user' | 'edit-user' | 'upload-logo' | null
+type ModalType = 'add-customer' | 'edit-customer' | 'set-customer-pin' | 'import-customers' | 'add-machine' | 'edit-machine' | 'add-test' | 'edit-test' | 'add-product' | 'edit-product' | 'import-products' | 'add-purchase' | 'edit-purchase' | 'add-user' | 'edit-user' | 'upload-logo' | null
 
 type SelectedItemType = Customer | AdminMachine | AdminLabTest | AdminProduct | AdminPurchase | AdminUser | null
 
@@ -98,7 +112,7 @@ export default function AdminClient({
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [modalOpen, setModalOpen] = useState<ModalType>(null)
   const [selectedItem, setSelectedItem] = useState<SelectedItemType>(null)
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers)
+  const [customers, setCustomers] = useState<Customer[]>(normalizeCustomers(initialCustomers as CustomerWithPinHash[]))
   const [machines, setMachines] = useState<AdminMachine[]>(initialMachines)
   const [recentTests, setRecentTests] = useState<AdminLabTest[]>(initialTests)
   const [users, setUsers] = useState<AdminUser[]>([])
@@ -115,6 +129,7 @@ export default function AdminClient({
   const [customDateTo, setCustomDateTo] = useState<string>('')
   const [filterCompany, setFilterCompany] = useState<string>('all')
   const [filterMachine, setFilterMachine] = useState<string>('all')
+  const [customerPinFilter, setCustomerPinFilter] = useState<'all' | 'set' | 'not-set'>('all')
   const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [importLoading, setImportLoading] = useState(false)
   const [importResult, setImportResult] = useState<{success: number, failed: number, errors: string[]} | null>(null)
@@ -140,7 +155,7 @@ export default function AdminClient({
       .select('*')
       .order('company_name')
     if (error) console.error('Failed to load customers:', error.message)
-    setCustomers(data || [])
+    setCustomers(normalizeCustomers((data || []) as CustomerWithPinHash[]))
   }
 
   // Load machines
@@ -492,6 +507,12 @@ export default function AdminClient({
     setModalOpen('edit-customer')
   }
 
+  const openSetCustomerPin = (customer: Customer) => {
+    setSelectedItem(customer)
+    setFormData({ pin: '', confirm_pin: '' })
+    setModalOpen('set-customer-pin')
+  }
+
   const handleSaveCustomer = async () => {
     setLoading(true)
     try {
@@ -531,6 +552,53 @@ export default function AdminClient({
       if (error) throw error
       alert('Customer deleted successfully!')
       refreshData()
+    } catch (error: unknown) {
+      alert('Error: ' + getErrorMessage(error))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSetCustomerPin = async () => {
+    const selectedCustomer = selectedItem && 'company_name' in selectedItem ? (selectedItem as Customer) : null
+    if (!selectedCustomer) {
+      alert('No customer selected')
+      return
+    }
+
+    const pin = String(formData.pin || '').trim()
+    const confirmPin = String(formData.confirm_pin || '').trim()
+
+    if (pin.length < 6) {
+      alert('PIN must be at least 6 characters')
+      return
+    }
+
+    if (pin !== confirmPin) {
+      alert('PIN confirmation does not match')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/customers/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: selectedCustomer.id,
+          pin,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update PIN')
+      }
+
+      alert(`PIN updated for ${selectedCustomer.company_name}`)
+      setModalOpen(null)
+      setSelectedItem(null)
+      setFormData({})
     } catch (error: unknown) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
@@ -1346,6 +1414,12 @@ export default function AdminClient({
   const totalMachines = machines.length
   const totalTests = recentTests.length
   const activeCustomers = customers.filter(c => c.status === 'active').length
+  const filteredCustomers = customers.filter((customer) => {
+    const matchSearch = customer.company_name.toLowerCase().includes(searchQuery.toLowerCase())
+    const hasPin = Boolean(customer.pin_configured)
+    const matchPin = customerPinFilter === 'all' || (customerPinFilter === 'set' ? hasPin : !hasPin)
+    return matchSearch && matchPin
+  })
 
   // Date filter helper
   const filterByDate = (dateString: string) => {
@@ -1494,6 +1568,7 @@ export default function AdminClient({
                     setCustomDateTo('')
                     setFilterCompany('all')
                     setFilterMachine('all')
+                    setCustomerPinFilter('all')
                   }}
                   className={`px-6 sm:px-8 py-3 sm:py-4 text-xs sm:text-sm font-black border-b-4 transition-all whitespace-nowrap uppercase tracking-wide ${
                     activeTab === tab.key
@@ -1806,6 +1881,39 @@ export default function AdminClient({
                   </div>
                 </div>
 
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setCustomerPinFilter('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                      customerPinFilter === 'all'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setCustomerPinFilter('set')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                      customerPinFilter === 'set'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    }`}
+                  >
+                    PIN Set
+                  </button>
+                  <button
+                    onClick={() => setCustomerPinFilter('not-set')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                      customerPinFilter === 'not-set'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    }`}
+                  >
+                    PIN Not Set
+                  </button>
+                </div>
+
                 <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
                   <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
                     <thead className="bg-orange-50 sticky top-0 z-10">
@@ -1813,14 +1921,13 @@ export default function AdminClient({
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Logo</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Company</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">PIN</th>
                         <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Created</th>
                         <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {customers.filter(customer => 
-                        customer.company_name.toLowerCase().includes(searchQuery.toLowerCase())
-                      ).map((customer) => (
+                      {filteredCustomers.map((customer) => (
                         <tr key={customer.id} className="hover:bg-primary-50/30 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="w-16 h-12 rounded-lg overflow-hidden bg-white border-2 border-gray-200 flex items-center justify-center p-2">
@@ -1859,6 +1966,15 @@ export default function AdminClient({
                               {customer.status}
                             </span>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
+                              customer.pin_configured
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>
+                              PIN: {customer.pin_configured ? 'Set' : 'Not Set'}
+                            </span>
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
                             {formatDate(customer.created_at)}
                           </td>
@@ -1882,6 +1998,18 @@ export default function AdminClient({
                               </svg>
                               Edit
                             </button>
+                            {profile.role === 'admin' && (
+                              <button
+                                onClick={() => openSetCustomerPin(customer)}
+                                className="inline-flex items-center px-3 py-1.5 text-amber-700 hover:text-white bg-amber-100 hover:bg-amber-600 rounded-lg transition-all"
+                                title="Set User Management PIN"
+                              >
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.105 0 2 .895 2 2v3a2 2 0 11-4 0v-3c0-1.105.895-2 2-2zm0 0V8a4 4 0 118 0v3M5 12h2m-1-1v2" />
+                                </svg>
+                                Set PIN
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDeleteCustomer(customer.id)}
                               className="inline-flex items-center px-3 py-1.5 text-secondary-700 hover:text-white bg-secondary-100 hover:bg-secondary-600 rounded-lg transition-all"
@@ -2839,6 +2967,69 @@ export default function AdminClient({
                     <OilDropLoader compact label="Saving..." className="text-white" />
                   ) : (
                     <><svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Save</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setModalOpen(null)}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-bold transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalOpen === 'set-customer-pin' && selectedItem && 'company_name' in selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border-2 border-amber-200 overflow-hidden">
+            <div className="bg-amber-600 px-6 py-4">
+              <h3 className="text-xl font-black text-white flex items-center">
+                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.105 0 2 .895 2 2v3a2 2 0 11-4 0v-3c0-1.105.895-2 2-2zm0 0V8a4 4 0 118 0v3" />
+                </svg>
+                Set Customer PIN
+              </h3>
+              <p className="text-amber-100 text-sm mt-1">{selectedItem.company_name}</p>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">New PIN</label>
+                  <input
+                    type="password"
+                    value={String(formData.pin || '')}
+                    onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-medium transition-all"
+                    placeholder="At least 6 characters"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Confirm PIN</label>
+                  <input
+                    type="password"
+                    value={String(formData.confirm_pin || '')}
+                    onChange={(e) => setFormData({ ...formData, confirm_pin: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-medium transition-all"
+                    placeholder="Re-enter PIN"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+                PIN is stored as a secure hash in database and cannot be viewed after saving.
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handleSetCustomerPin}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 font-bold shadow-lg transition-all flex items-center justify-center"
+                >
+                  {loading ? (
+                    <OilDropLoader compact label="Saving..." className="text-white" />
+                  ) : (
+                    'Save PIN'
                   )}
                 </button>
                 <button
