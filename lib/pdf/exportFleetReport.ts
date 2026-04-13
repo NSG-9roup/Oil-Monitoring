@@ -138,6 +138,38 @@ const loadImageDataUrl = async (path: string) => {
   }
 }
 
+const loadImageDimensions = async (dataUrl: string) => {
+  return await new Promise<{ width: number; height: number } | null>((resolve) => {
+    const image = new Image()
+    image.onload = () => resolve({ width: image.naturalWidth || image.width, height: image.naturalHeight || image.height })
+    image.onerror = () => resolve(null)
+    image.src = dataUrl
+  })
+}
+
+const addImageContain = async (
+  doc: jsPDF,
+  dataUrl: string | null,
+  x: number,
+  y: number,
+  maxWidth: number,
+  maxHeight: number,
+  format: 'PNG' | 'JPEG' = 'PNG'
+) => {
+  if (!dataUrl) return
+
+  const dimensions = await loadImageDimensions(dataUrl)
+  if (!dimensions || !dimensions.width || !dimensions.height) return
+
+  const scale = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height)
+  const width = dimensions.width * scale
+  const height = dimensions.height * scale
+  const offsetX = x + (maxWidth - width) / 2
+  const offsetY = y + (maxHeight - height) / 2
+
+  doc.addImage(dataUrl, format, offsetX, offsetY, width, height)
+}
+
 export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetReportRow[], language: ReportLanguage = 'en') {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -149,7 +181,7 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
   ])
 
   if (headerImage) {
-    doc.addImage(headerImage, 'PNG', 0, 0, pageWidth, 72)
+    await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
   } else {
     doc.setFillColor(190, 24, 93)
     doc.rect(0, 0, pageWidth, 78, 'F')
@@ -269,10 +301,10 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page)
     if (headerImage) {
-      doc.addImage(headerImage, 'PNG', 0, 0, pageWidth, 72)
+      await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
     }
     if (footerImage) {
-      doc.addImage(footerImage, 'PNG', 0, pageHeight - 52, pageWidth, 52)
+      await addImageContain(doc, footerImage, 0, pageHeight - 52, pageWidth, 52)
     }
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
@@ -306,7 +338,7 @@ export async function exportTrustRoiSnapshotPdf(
     : 'Enterprise trust, traceability, and financial impact summary'
 
   if (headerImage) {
-    doc.addImage(headerImage, 'PNG', 0, 0, pageWidth, 72)
+    await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
   } else {
     doc.setFillColor(15, 23, 42)
     doc.rect(0, 0, pageWidth, 78, 'F')
@@ -444,8 +476,8 @@ export async function exportTrustRoiSnapshotPdf(
   const totalPages = doc.getNumberOfPages()
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page)
-    if (headerImage) doc.addImage(headerImage, 'PNG', 0, 0, pageWidth, 72)
-    if (footerImage) doc.addImage(footerImage, 'PNG', 0, pageHeight - 52, pageWidth, 52)
+    if (headerImage) await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
+    if (footerImage) await addImageContain(doc, footerImage, 0, pageHeight - 52, pageWidth, 52)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     doc.setTextColor(107, 114, 128)

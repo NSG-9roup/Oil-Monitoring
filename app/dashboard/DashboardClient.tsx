@@ -1799,6 +1799,7 @@ export default function DashboardClient({
     water: sample.water_content ? sample.water_content * 100 : 0,
     tan: sample.tan_value || 0
   }))
+  const latestTrendPoint = chartData[chartData.length - 1] || null
 
   return (
     <div className="clean-ui customer-panel min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
@@ -1975,6 +1976,81 @@ export default function DashboardClient({
             </div>
           </div>
         </div>
+
+        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{copy.performanceTitle}</h2>
+              <p className="text-sm text-gray-600 mt-1">{copy.performanceDesc}</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{copy.selectMachine}</p>
+              <p className="text-base font-black text-gray-900">{selectedMachine?.machine_name || copy.noMachineSelectedTitle}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            <div className="xl:col-span-3 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5">
+              <h3 className="text-lg font-black text-gray-900 mb-4">{language === 'id' ? 'Trend Utama' : 'Primary Trend'}</h3>
+              {chartData.length === 0 ? (
+                <div className="flex items-center justify-center h-[240px] rounded-2xl border border-dashed border-gray-200 bg-white text-gray-400">
+                  <div className="text-center">
+                    <p className="font-semibold">{copy.noSampleData}</p>
+                    <p className="text-sm mt-1">{copy.noMachineSelectedDesc}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[260px] sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                      <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '0',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#f97316" strokeWidth={3} dot={{ fill: '#f97316', r: 5 }} />
+                      {latestTrendPoint && (
+                        <ReferenceDot
+                          x={latestTrendPoint.date}
+                          y={latestTrendPoint.viscosity_40c}
+                          r={7}
+                          fill="#ef4444"
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                        />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            <div className="xl:col-span-2 grid gap-4">
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Latest Sample' : 'Latest Sample'}</p>
+                <p className="mt-2 text-3xl font-black text-gray-900">{chartData.length}</p>
+                <p className="text-sm text-gray-600 mt-1">{language === 'id' ? 'Jumlah titik tren yang tampil di grafik' : 'Number of trend points shown on the chart'}</p>
+              </div>
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{copy.trendAlertsTitle}</p>
+                <p className="mt-2 text-3xl font-black text-gray-900">{selectedMachineTrendAlerts.length}</p>
+                <p className="text-sm text-gray-600 mt-1">{copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}</p>
+              </div>
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Last Trend Date' : 'Last Trend Date'}</p>
+                <p className="mt-2 text-lg font-black text-gray-900">{latestTrendPoint?.date || '-'}</p>
+                <p className="text-sm text-gray-600 mt-1">{language === 'id' ? 'Update terakhir dari data sampel yang dipilih' : 'Last update from the selected sample data'}</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
