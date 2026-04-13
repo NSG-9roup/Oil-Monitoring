@@ -23,6 +23,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
     "browser-image-compression": "^2.0.2",
+    "caniuse-lite": "^1.0.30001787",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "next": "^15.1.3",

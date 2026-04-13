@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { checkRateLimit, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
+import { checkRateLimitDistributed, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     pruneRateLimitStore()
 
     const ip = getClientIp(request.headers)
-    const rate = checkRateLimit(`customer-actions:${ip}`, 30, 60_000)
+    const rate = await checkRateLimitDistributed(`customer-actions:${ip}`, 30, 60_000)
     if (!rate.allowed) {
       const response = jsonError('Too many requests. Please try again later.', 429)
       response.headers.set('Retry-After', String(rate.retryAfterSeconds))
@@ -215,7 +215,7 @@ export async function PATCH(request: NextRequest) {
     pruneRateLimitStore()
 
     const ip = getClientIp(request.headers)
-    const rate = checkRateLimit(`customer-actions:${ip}`, 40, 60_000)
+    const rate = await checkRateLimitDistributed(`customer-actions:${ip}`, 40, 60_000)
     if (!rate.allowed) {
       const response = jsonError('Too many requests. Please try again later.', 429)
       response.headers.set('Retry-After', String(rate.retryAfterSeconds))

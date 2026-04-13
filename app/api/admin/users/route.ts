@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { checkRateLimit, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
+import { checkRateLimitDistributed, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
 
 // Create Supabase Admin client with service role key
 const supabaseAdmin = createClient(
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     pruneRateLimitStore()
 
     const ip = getClientIp(request.headers)
-    const rate = checkRateLimit(`admin-users:${ip}`, 30, 60_000)
+    const rate = await checkRateLimitDistributed(`admin-users:${ip}`, 30, 60_000)
     if (!rate.allowed) {
       const response = jsonError('Too many requests. Please try again later.', 429)
       response.headers.set('Retry-After', String(rate.retryAfterSeconds))

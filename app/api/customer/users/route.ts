@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { checkRateLimit, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
+import { checkRateLimitDistributed, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     pruneRateLimitStore()
 
     const ip = getClientIp(request.headers)
-    const rate = checkRateLimit(`customer-users:${ip}`, 20, 60_000)
+    const rate = await checkRateLimitDistributed(`customer-users:${ip}`, 20, 60_000)
     if (!rate.allowed) {
       const response = jsonError('Too many requests. Please try again later.', 429)
       response.headers.set('Retry-After', String(rate.retryAfterSeconds))
@@ -111,12 +111,35 @@ export async function POST(request: NextRequest) {
     }
 
     const requiredPin = process.env.CUSTOMER_USER_MANAGEMENT_PIN
-    if (!requiredPin) {
-      return jsonError('User creation PIN is not configured', 500)
+    const inputPin = parsed.data.admin_pin.trim()
+
+    const { data: customerPinData, error: customerPinError } = await supabaseAdmin
+      .from('oil_customers')
+      .select('id, user_management_pin_hash')
+      .eq('id', authResult.profile.customer_id)
+      .single()
+
+    if (customerPinError || !customerPinData) {
+      return jsonError('Customer profile not found', 404)
     }
 
-    if (!secureStringEqual(requiredPin, parsed.data.admin_pin.trim())) {
-      return jsonError('Invalid PIN', 403)
+    const hasCustomerPin = Boolean(customerPinData.user_management_pin_hash)
+    if (hasCustomerPin) {
+      const { data: verifiedWithCustomerPin, error: verifyError } = await supabaseAdmin.rpc('verify_customer_user_management_pin', {
+        p_customer_id: authResult.profile.customer_id,
+        p_pin: inputPin,
+      })
+
+      if (verifyError || !verifiedWithCustomerPin) {
+        return jsonError('Invalid PIN', 403)
+      }
+    } else {
+      if (!requiredPin) {
+        return jsonError('User creation PIN is not configured', 500)
+      }
+      if (!secureStringEqual(requiredPin, inputPin)) {
+        return jsonError('Invalid PIN', 403)
+      }
     }
 
     const email = parsed.data.email.toLowerCase()

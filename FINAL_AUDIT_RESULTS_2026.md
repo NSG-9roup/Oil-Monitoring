@@ -537,8 +537,8 @@ Database:
 
 ### To Manually Verify Each Feature:
 
-- [ ] Login with admin@example.com / admin123456
-- [ ] Login with user1@apex.com / password123
+- [ ] Login with admin account credentials from secure secret manager
+- [ ] Login with customer account credentials from secure secret manager
 - [ ] Create new customer in admin panel
 - [ ] Upload customer logo
 - [ ] Create machine and associate with customer
