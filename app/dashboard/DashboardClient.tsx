@@ -186,6 +186,8 @@ const dashboardCopy = {
     teamFullName: 'Nama Lengkap',
     teamEmail: 'Email',
     teamPhone: 'No. Telepon',
+    teamPin: 'PIN Otorisasi',
+    teamPinHint: 'Hanya user yang punya PIN yang bisa menambah user baru.',
     teamPassword: 'Password',
     teamPasswordHint: 'Minimal 8 karakter, huruf besar, huruf kecil, dan angka.',
     teamCreateButton: 'Tambah User',
@@ -338,6 +340,8 @@ const dashboardCopy = {
     teamFullName: 'Full Name',
     teamEmail: 'Email',
     teamPhone: 'Phone Number',
+    teamPin: 'Authorization PIN',
+    teamPinHint: 'Only users with the PIN can add new users.',
     teamPassword: 'Password',
     teamPasswordHint: 'At least 8 characters with uppercase, lowercase, and a number.',
     teamCreateButton: 'Add User',
@@ -478,7 +482,7 @@ export default function DashboardClient({
   const [fleetInsightsLoading, setFleetInsightsLoading] = useState(false)
   const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialTeamMembers)
-  const [teamForm, setTeamForm] = useState({ full_name: '', email: '', phone_number: '', password: '' })
+  const [teamForm, setTeamForm] = useState({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
   const [teamSaving, setTeamSaving] = useState(false)
   const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
   const [maintenanceActionLogs] = useState<MaintenanceActionLog[]>(initialMaintenanceActionLogs)
@@ -1010,8 +1014,8 @@ export default function DashboardClient({
   }
 
   const handleCreateTeamUser = async () => {
-    if (!teamForm.full_name.trim() || !teamForm.email.trim() || !teamForm.password.trim()) {
-      alert(language === 'id' ? 'Nama, email, dan password wajib diisi.' : 'Name, email, and password are required.')
+    if (!teamForm.full_name.trim() || !teamForm.email.trim() || !teamForm.password.trim() || !teamForm.admin_pin.trim()) {
+      alert(language === 'id' ? 'Nama, email, PIN, dan password wajib diisi.' : 'Name, email, PIN, and password are required.')
       return
     }
 
@@ -1027,6 +1031,7 @@ export default function DashboardClient({
           full_name: teamForm.full_name.trim(),
           email: teamForm.email.trim(),
           phone_number: teamForm.phone_number.trim() || null,
+          admin_pin: teamForm.admin_pin.trim(),
           password: teamForm.password,
         }),
       })
@@ -1039,7 +1044,7 @@ export default function DashboardClient({
       if (payload.profile) {
         setTeamMembers((prev) => [payload.profile, ...prev])
       }
-      setTeamForm({ full_name: '', email: '', phone_number: '', password: '' })
+      setTeamForm({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
       alert(copy.teamCreateSuccess)
     } catch (error: unknown) {
       alert(`${copy.teamCreateError}: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -2496,6 +2501,16 @@ export default function DashboardClient({
                     onChange={(e) => setTeamForm((prev) => ({ ...prev, phone_number: e.target.value }))}
                     className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamPin}</span>
+                  <input
+                    type="password"
+                    value={teamForm.admin_pin}
+                    onChange={(e) => setTeamForm((prev) => ({ ...prev, admin_pin: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{copy.teamPinHint}</p>
                 </label>
                 <label className="block">
                   <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamPassword}</span>

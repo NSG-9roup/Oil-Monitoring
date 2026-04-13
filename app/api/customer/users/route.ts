@@ -20,6 +20,7 @@ const createUserSchema = z.object({
   full_name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(254),
   phone_number: z.union([z.string().trim().min(8).max(20), z.null(), z.undefined()]).optional(),
+  admin_pin: z.string().trim().min(4).max(32),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -28,6 +29,15 @@ const createUserSchema = z.object({
     .regex(/[a-z]/, 'Password must include a lowercase letter')
     .regex(/[0-9]/, 'Password must include a number'),
 }).strict()
+
+function secureStringEqual(a: string, b: string) {
+  if (a.length !== b.length) return false
+  let result = 0
+  for (let index = 0; index < a.length; index += 1) {
+    result |= a.charCodeAt(index) ^ b.charCodeAt(index)
+  }
+  return result === 0
+}
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status })
@@ -98,6 +108,15 @@ export async function POST(request: NextRequest) {
     const parsed = createUserSchema.safeParse(body)
     if (!parsed.success) {
       return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
+    }
+
+    const requiredPin = process.env.CUSTOMER_USER_MANAGEMENT_PIN
+    if (!requiredPin) {
+      return jsonError('User creation PIN is not configured', 500)
+    }
+
+    if (!secureStringEqual(requiredPin, parsed.data.admin_pin.trim())) {
+      return jsonError('Invalid PIN', 403)
     }
 
     const email = parsed.data.email.toLowerCase()
