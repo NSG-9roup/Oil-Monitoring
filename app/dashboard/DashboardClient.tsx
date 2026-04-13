@@ -187,7 +187,7 @@ const dashboardCopy = {
     teamEmail: 'Email',
     teamPhone: 'No. Telepon',
     teamPassword: 'Password',
-    teamPasswordHint: 'Minimal 12 karakter, huruf besar, huruf kecil, dan angka.',
+    teamPasswordHint: 'Minimal 8 karakter, huruf besar, huruf kecil, dan angka.',
     teamCreateButton: 'Tambah User',
     teamCreatingButton: 'Menambahkan...',
     teamCreateSuccess: 'User perusahaan berhasil ditambahkan.',
@@ -339,7 +339,7 @@ const dashboardCopy = {
     teamEmail: 'Email',
     teamPhone: 'Phone Number',
     teamPassword: 'Password',
-    teamPasswordHint: 'At least 12 characters with uppercase, lowercase, and a number.',
+    teamPasswordHint: 'At least 8 characters with uppercase, lowercase, and a number.',
     teamCreateButton: 'Add User',
     teamCreatingButton: 'Adding...',
     teamCreateSuccess: 'Company user added successfully.',
@@ -1885,9 +1885,9 @@ export default function DashboardClient({
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Customer Detail Card - Neuros Style */}
-        <div className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 overflow-hidden relative">
+        <div className="order-1 mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 overflow-hidden relative">
           {/* Decorative gradient overlay */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-500/5 to-secondary-500/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
           
@@ -1971,7 +1971,7 @@ export default function DashboardClient({
           </div>
         </div>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section className="order-2 mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
@@ -2052,7 +2052,7 @@ export default function DashboardClient({
           )}
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section className="order-3 mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{copy.alertManagementTitle}</h2>
@@ -2123,7 +2123,7 @@ export default function DashboardClient({
           )}
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section className="order-4 mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{language === 'id' ? 'Action Board Maintenance' : 'Maintenance Action Board'}</h2>
@@ -2334,7 +2334,7 @@ export default function DashboardClient({
           </div>
         </section>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
+        <div className="order-9 grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
           <button
             onClick={handleExportFleetReport}
             className="w-full bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-900 hover:to-slate-800 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
@@ -2401,7 +2401,7 @@ export default function DashboardClient({
         </div>
 
         {/* Phase 1: Rule-Based Insight Engine */}
-        <section className="mb-8 bg-white/80 backdrop-blur rounded-3xl shadow-xl p-6 sm:p-8">
+        <section className="order-7 mb-8 bg-white/80 backdrop-blur rounded-3xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.insightTitle}</h2>
@@ -2418,7 +2418,7 @@ export default function DashboardClient({
 
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section className="order-8 mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.teamManagementTitle}</h2>
@@ -2521,7 +2521,7 @@ export default function DashboardClient({
           </div>
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section className="order-5 mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
@@ -2625,7 +2625,7 @@ export default function DashboardClient({
         </section>
 
         {/* Machine Health Overview - Neuros Style with Horizontal Carousel */}
-        <div className="mb-8">
+        <div className="order-6 mb-8">
           <div className="mb-6 flex items-end justify-between">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.machineHealthTitle}</h2>

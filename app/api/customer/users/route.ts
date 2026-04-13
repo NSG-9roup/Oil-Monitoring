@@ -22,7 +22,7 @@ const createUserSchema = z.object({
   phone_number: z.union([z.string().trim().min(8).max(20), z.null(), z.undefined()]).optional(),
   password: z
     .string()
-    .min(12, 'Password must be at least 12 characters')
+    .min(8, 'Password must be at least 8 characters')
     .max(72, 'Password is too long')
     .regex(/[A-Z]/, 'Password must include an uppercase letter')
     .regex(/[a-z]/, 'Password must include a lowercase letter')
