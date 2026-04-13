@@ -197,6 +197,7 @@ const dashboardCopy = {
     noMachineSelectedTitle: 'Belum ada mesin dipilih',
     noMachineSelectedDesc: 'Silakan pilih mesin dari daftar di atas untuk melihat datanya.',
     lastTest: 'Tes terakhir',
+    lastTestLabel: 'Tes terakhir',
     statusLabel: 'Status',
     notAvailable: 'Tidak tersedia',
     daysAgo: 'hari lalu',
@@ -225,10 +226,6 @@ const dashboardCopy = {
     labReportsTitle: 'Laporan Laboratorium',
     labReportsEmpty: 'Belum ada laporan laboratorium pada rentang waktu yang dipilih',
     reportCountSuffix: (count: number) => `${count} ${count === 1 ? 'laporan' : 'laporan'} pada rentang waktu ini`,
-    criticalMachines: 'Mesin Kritis',
-    warningMachines: 'Mesin Waspada',
-    healthyMachines: 'Mesin Sehat',
-    averageHealth: 'Rata-rata Kesehatan',
     viscosityTrend: 'Tren Viskositas',
     waterContent: 'Kandungan Air',
     tanTrend: 'Total Acid Number (TAN)',
@@ -336,6 +333,7 @@ const dashboardCopy = {
     noMachineSelectedTitle: 'No Machine Selected',
     noMachineSelectedDesc: 'Please select a machine from the list above to view its data.',
     lastTest: 'Last Test',
+    lastTestLabel: 'Last test',
     statusLabel: 'Status',
     notAvailable: 'Not available',
     daysAgo: 'days ago',
@@ -364,10 +362,6 @@ const dashboardCopy = {
     labReportsTitle: 'Lab Reports',
     labReportsEmpty: 'No lab reports available for the selected time range',
     reportCountSuffix: (count: number) => `${count} report${count === 1 ? '' : 's'} in the selected time range`,
-    criticalMachines: 'Critical Machines',
-    warningMachines: 'Warning Machines',
-    healthyMachines: 'Healthy Machines',
-    averageHealth: 'Average Health',
     viscosityTrend: 'Viscosity Trend',
     waterContent: 'Water Content',
     tanTrend: 'Total Acid Number (TAN)',
@@ -1957,7 +1951,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       </div>
                     </div>
                     <div className="lg:text-right">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{copy.recommendedAction}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{copy.trend.recommendedAction}</p>
                       <p className="text-sm font-medium text-gray-800">{item.nextAction}</p>
                     </div>
                   </div>
@@ -2144,7 +2138,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           <div className="flex justify-center gap-2 mt-4">
             {machines.map((_, index) => (
               <button
-                                  {copy.viewReport}
+                key={index}
                 onClick={() => {
                   const container = document.getElementById('machine-carousel')
                   if (container) {
