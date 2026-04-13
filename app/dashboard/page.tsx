@@ -47,8 +47,40 @@ export default async function DashboardPage() {
     .eq('customer_id', profile.customer_id)
     .eq('status', 'active')
     .order('machine_name')
+
+  const teamMembersPromise = supabase
+    .from('oil_profiles')
+    .select('id, full_name, email, phone_number, created_at')
+    .eq('customer_id', profile.customer_id)
+    .eq('role', 'customer')
+    .order('created_at', { ascending: false })
+
+  const maintenanceActionsPromise = supabase
+    .from('oil_maintenance_actions')
+    .select(`
+      *,
+      machine:oil_machines(machine_name, location),
+      owner:oil_profiles!oil_maintenance_actions_owner_profile_id_fkey(full_name, email)
+    `)
+    .eq('customer_id', profile.customer_id)
+    .order('created_at', { ascending: false })
+
+  const maintenanceActionLogsPromise = supabase
+    .from('oil_maintenance_action_logs')
+    .select('id, action_id, actor_id, event_type, from_status, to_status, metadata, created_at')
+    .order('created_at', { ascending: false })
+
+  const purchaseHistoryPromise = supabase
+    .from('oil_purchase_history')
+    .select('id, quantity, unit_price, total_price, status, purchase_date')
+    .eq('customer_id', profile.customer_id)
+    .order('purchase_date', { ascending: false })
   
   const { data: machines } = await machinesPromise
+  const { data: teamMembers } = await teamMembersPromise
+  const { data: maintenanceActions } = await maintenanceActionsPromise
+  const { data: maintenanceActionLogs } = await maintenanceActionLogsPromise
+  const { data: purchaseHistory } = await purchaseHistoryPromise
 
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
@@ -70,6 +102,10 @@ export default async function DashboardPage() {
       user={{ id: user.id, email: user.email }}
       profile={sanitizedProfile}
       initialMachines={machines || []}
+      initialTeamMembers={teamMembers || []}
+      initialMaintenanceActions={maintenanceActions || []}
+      initialMaintenanceActionLogs={maintenanceActionLogs || []}
+      initialPurchaseHistory={purchaseHistory || []}
     />
   )
 }

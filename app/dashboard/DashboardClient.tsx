@@ -7,8 +7,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
 import OilDropLoader from '@/app/components/OilDropLoader'
-import { exportFleetReportPdf, type FleetReportRow } from '@/lib/pdf/exportFleetReport'
-import { buildDashboardAlerts } from '@/lib/alerts/engine'
+import { exportFleetReportPdf, exportTrustRoiSnapshotPdf, type FleetReportRow, type TrustRoiAuditRow } from '@/lib/pdf/exportFleetReport'
+import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
+import type { MaintenanceAction, MaintenanceActionLog, MaintenanceActionPriority, MaintenanceActionStatus, MaintenanceVerificationStatus } from '@/lib/types'
 
 interface Machine {
   id: string
@@ -51,6 +52,14 @@ interface DashboardProfile {
   } | null
 }
 
+interface TeamMember {
+  id: string
+  full_name: string
+  email: string | null
+  phone_number: string | null
+  created_at: string
+}
+
 interface LabReport {
   id: string
   test_date: string
@@ -76,31 +85,24 @@ interface DashboardClientProps {
   user: { id: string; email?: string }
   profile: DashboardProfile
   initialMachines: Machine[]
+  initialTeamMembers: TeamMember[]
+  initialMaintenanceActions: MaintenanceAction[]
+  initialMaintenanceActionLogs: MaintenanceActionLog[]
+  initialPurchaseHistory: PurchaseHistoryRecord[]
+}
+
+interface PurchaseHistoryRecord {
+  id: string
+  quantity: number
+  unit_price: number
+  total_price?: number | null
+  status: 'completed' | 'pending' | 'cancelled'
+  purchase_date: string
 }
 
 type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
-type ActionStatus = 'Pending' | 'Ongoing' | 'Completed'
-type SamplingState = 'on-schedule' | 'upcoming' | 'overdue'
 type TrendSeverity = 'Low' | 'Medium' | 'High'
 type Language = 'id' | 'en'
-
-interface MaintenanceActionItem {
-  id: string
-  label: string
-  status: ActionStatus
-  pic: string
-  dueDate: string
-  notes: string
-}
-
-interface SamplingOverview {
-  lastSamplingDate: string | null
-  intervalDays: number
-  nextDueDate: string | null
-  daysUntilDue: number | null
-  state: SamplingState
-  label: string
-}
 
 interface TrendAlertItem {
   id: string
@@ -111,6 +113,19 @@ interface TrendAlertItem {
   recommendedAction: string
   chartValue: number
   chartDate: string
+}
+
+interface ReliabilityInsight {
+  machineId: string
+  machineName: string
+  reliabilityScore: number
+  riskBand: 'stable' | 'watchlist' | 'fragile'
+  dataCompleteness: number
+  samplingDiscipline: number
+  executionReliability: number
+  trendStability: number
+  deteriorationSignal: boolean
+  recommendation: string
 }
 
 const formatLocalDateInput = (date: Date) => {
@@ -161,6 +176,22 @@ const dashboardCopy = {
     exportPdfDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format premium.',
     purchaseHistoryTitle: 'Riwayat Pembelian',
     purchaseHistoryDesc: 'Lihat catatan pembelian dan histori transaksi secara detail.',
+    teamManagementTitle: 'Manajemen User Perusahaan',
+    teamManagementDesc: 'Tambahkan anggota tim untuk perusahaan yang sama agar mereka bisa ikut mengakses dashboard dan data monitoring.',
+    teamMembersTitle: 'Daftar User Perusahaan',
+    teamMembersEmpty: 'Belum ada user lain pada perusahaan ini.',
+    teamRoleCustomer: 'Customer User',
+    teamAddFormTitle: 'Tambah User Baru',
+    teamAddFormDesc: 'User baru akan otomatis terhubung ke perusahaan yang sama dengan akun ini.',
+    teamFullName: 'Nama Lengkap',
+    teamEmail: 'Email',
+    teamPhone: 'No. Telepon',
+    teamPassword: 'Password',
+    teamPasswordHint: 'Minimal 12 karakter, huruf besar, huruf kecil, dan angka.',
+    teamCreateButton: 'Tambah User',
+    teamCreatingButton: 'Menambahkan...',
+    teamCreateSuccess: 'User perusahaan berhasil ditambahkan.',
+    teamCreateError: 'Gagal menambahkan user perusahaan',
     insightTitle: 'Mesin Prioritas & Insight Operasional',
     insightDesc: 'Intelijen tahap awal untuk penilaian kesehatan, peringkat prioritas, dan tindakan maintenance.',
     refreshInsights: 'Segarkan Insight',
@@ -297,6 +328,22 @@ const dashboardCopy = {
     exportPdfDesc: 'Download the executive summary and machine priority queue in a premium layout.',
     purchaseHistoryTitle: 'Purchase History',
     purchaseHistoryDesc: 'View detailed purchase records and transaction history.',
+    teamManagementTitle: 'Company User Management',
+    teamManagementDesc: 'Add team members for the same company so they can access the dashboard and monitoring data.',
+    teamMembersTitle: 'Company Users',
+    teamMembersEmpty: 'There are no additional users for this company yet.',
+    teamRoleCustomer: 'Customer User',
+    teamAddFormTitle: 'Add New User',
+    teamAddFormDesc: 'The new user will automatically be linked to the same company as this account.',
+    teamFullName: 'Full Name',
+    teamEmail: 'Email',
+    teamPhone: 'Phone Number',
+    teamPassword: 'Password',
+    teamPasswordHint: 'At least 12 characters with uppercase, lowercase, and a number.',
+    teamCreateButton: 'Add User',
+    teamCreatingButton: 'Adding...',
+    teamCreateSuccess: 'Company user added successfully.',
+    teamCreateError: 'Failed to add company user',
     insightTitle: 'Machine Priority & Operational Insights',
     insightDesc: 'Early-stage intelligence for health scoring, priority ranking, and maintenance actions.',
     refreshInsights: 'Refresh Insights',
@@ -401,7 +448,15 @@ const dashboardCopy = {
   },
 } as const
 
-export default function DashboardClient({ user, profile, initialMachines }: DashboardClientProps) {
+export default function DashboardClient({
+  user,
+  profile,
+  initialMachines,
+  initialTeamMembers,
+  initialMaintenanceActions,
+  initialMaintenanceActionLogs,
+  initialPurchaseHistory,
+}: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
   const detailsRef = useRef<HTMLDivElement>(null)
@@ -419,9 +474,26 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
   const [latestTestByMachineId, setLatestTestByMachineId] = useState<Record<string, OilSample>>({})
+  const [fleetHistoryByMachineId, setFleetHistoryByMachineId] = useState<Record<string, OilSample[]>>({})
   const [fleetInsightsLoading, setFleetInsightsLoading] = useState(false)
   const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([])
-  const [maintenanceActions, setMaintenanceActions] = useState<Record<string, MaintenanceActionItem[]>>({})
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialTeamMembers)
+  const [teamForm, setTeamForm] = useState({ full_name: '', email: '', phone_number: '', password: '' })
+  const [teamSaving, setTeamSaving] = useState(false)
+  const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
+  const [maintenanceActionLogs] = useState<MaintenanceActionLog[]>(initialMaintenanceActionLogs)
+  const [purchaseHistory] = useState<PurchaseHistoryRecord[]>(initialPurchaseHistory)
+  const [actionSaving, setActionSaving] = useState(false)
+  const [actionFilter, setActionFilter] = useState<'all' | MaintenanceActionStatus>('open')
+  const [actionForm, setActionForm] = useState({
+    machine_id: initialMachines[0]?.id || '',
+    title: '',
+    description: '',
+    priority: 'medium' as MaintenanceActionPriority,
+    due_date: '',
+    owner_profile_id: '',
+    alert_key: '',
+  })
 
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem('dashboard-language') as Language | null
@@ -433,6 +505,11 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   useEffect(() => {
     window.localStorage.setItem('dashboard-language', language)
   }, [language])
+
+  useEffect(() => {
+    // Initial maintenance actions are loaded from the server so the board stays persistent.
+    setMaintenanceActions(initialMaintenanceActions)
+  }, [initialMaintenanceActions])
 
   const toggleReport = (reportId: string) => {
     setExpandedReports(prev => {
@@ -932,86 +1009,182 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     return recommendations
   }
 
-  const buildDefaultMaintenanceActions = useCallback((item: {
-    machine: Machine
-    latestTest: OilSample | null
-    status: { level: 'critical' | 'warning' | 'normal' | 'unknown'; text: string }
-    daysSinceTest: number | null
-  }) => {
-    const owner = profile?.full_name || profile?.email || user.email || 'Technician'
-    const baseDate = new Date()
-    const isCritical = item.status.level === 'critical'
-    const isWarning = item.status.level === 'warning'
-    const dueOffset = isCritical ? 2 : isWarning ? 7 : 14
+  const handleCreateTeamUser = async () => {
+    if (!teamForm.full_name.trim() || !teamForm.email.trim() || !teamForm.password.trim()) {
+      alert(language === 'id' ? 'Nama, email, dan password wajib diisi.' : 'Name, email, and password are required.')
+      return
+    }
 
-    const actionTemplates = isCritical
-      ? copy.actionTemplates.critical
-      : isWarning
-      ? copy.actionTemplates.warning
-      : copy.actionTemplates.normal
+    setTeamSaving(true)
+    try {
+      const response = await fetch('/api/customer/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create',
+          full_name: teamForm.full_name.trim(),
+          email: teamForm.email.trim(),
+          phone_number: teamForm.phone_number.trim() || null,
+          password: teamForm.password,
+        }),
+      })
 
-    return actionTemplates.map((label, index) => ({
-      id: `${item.machine.id}:${label}`,
-      label,
-      status: index === 0 && isCritical ? 'Ongoing' as const : 'Pending' as const,
-      pic: index === 0 ? owner : '',
-      dueDate: formatLocalDateInput(addDays(baseDate, dueOffset + index * 3)),
-      notes: index === 0 && isCritical ? (language === 'id' ? 'Prioritaskan mesin ini berdasarkan tingkat alert.' : 'Prioritize this machine first based on alert severity.') : '',
-    }))
-  }, [copy.actionTemplates.critical, copy.actionTemplates.normal, copy.actionTemplates.warning, language, profile?.email, profile?.full_name, user.email])
-
-  const getSamplingOverview = (item: {
-    latestTest: OilSample | null
-    status: { level: 'critical' | 'warning' | 'normal' | 'unknown'; text: string }
-  }): SamplingOverview => {
-    const lastSamplingDate = item.latestTest?.test_date || null
-    const intervalDays = item.status.level === 'critical' ? 30 : item.status.level === 'warning' ? 60 : 90
-
-    if (!lastSamplingDate) {
-      return {
-        lastSamplingDate: null,
-        intervalDays,
-        nextDueDate: null,
-        daysUntilDue: null,
-        state: 'overdue',
-        label: copy.samplingInitialRequired,
+      const payload = await response.json()
+      if (!response.ok) {
+        throw new Error(payload.error || copy.teamCreateError)
       }
-    }
 
-    const lastDate = new Date(lastSamplingDate)
-    const nextDueDate = addDays(lastDate, intervalDays)
-    const daysUntilDue = Math.ceil((nextDueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-
-    if (daysUntilDue < 0) {
-      return {
-        lastSamplingDate,
-        intervalDays,
-        nextDueDate: nextDueDate.toISOString(),
-        daysUntilDue,
-        state: 'overdue',
-        label: copy.samplingOverdue(Math.abs(daysUntilDue)),
+      if (payload.profile) {
+        setTeamMembers((prev) => [payload.profile, ...prev])
       }
+      setTeamForm({ full_name: '', email: '', phone_number: '', password: '' })
+      alert(copy.teamCreateSuccess)
+    } catch (error: unknown) {
+      alert(`${copy.teamCreateError}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setTeamSaving(false)
+    }
+  }
+
+  const refreshMaintenanceAction = async (actionId: string) => {
+    const response = await fetch('/api/customer/actions')
+    const payload = await response.json()
+
+    if (!response.ok) {
+      throw new Error(payload.error || 'Failed to refresh maintenance actions')
     }
 
-    if (daysUntilDue <= 7) {
-      return {
-        lastSamplingDate,
-        intervalDays,
-        nextDueDate: nextDueDate.toISOString(),
-        daysUntilDue,
-        state: 'upcoming',
-        label: copy.nextSamplingIn(daysUntilDue),
+    const updatedAction = (payload.actions || []).find((action: MaintenanceAction) => action.id === actionId)
+    if (updatedAction) {
+      setMaintenanceActions((prev) => prev.map((action) => (action.id === actionId ? updatedAction : action)))
+    }
+  }
+
+  const handleUpdateMaintenanceAction = async (
+    actionId: string,
+    payload: {
+      status?: MaintenanceActionStatus
+      owner_profile_id?: string | null
+      verification_status?: MaintenanceVerificationStatus
+      due_date?: string | null
+      evidence_notes?: string | null
+    }
+  ) => {
+    setActionSaving(true)
+    try {
+      const response = await fetch('/api/customer/actions', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          action_id: actionId,
+          ...payload,
+        }),
+      })
+
+      const responsePayload = await response.json()
+      if (!response.ok) {
+        throw new Error(responsePayload.error || 'Failed to update maintenance action')
       }
+
+      if (responsePayload.action) {
+        setMaintenanceActions((prev) => prev.map((action) => (action.id === actionId ? responsePayload.action : action)))
+      } else {
+        await refreshMaintenanceAction(actionId)
+      }
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to update maintenance action')
+    } finally {
+      setActionSaving(false)
+    }
+  }
+
+  const handleCreateMaintenanceAction = async (overrides?: Partial<typeof actionForm> & { source_payload?: Record<string, unknown> }) => {
+    const machineId = overrides?.machine_id || actionForm.machine_id
+    const title = (overrides?.title || actionForm.title).trim()
+    const description = (overrides?.description ?? actionForm.description).trim()
+    const priority = overrides?.priority || actionForm.priority
+    const dueDate = overrides?.due_date || actionForm.due_date || null
+    const ownerProfileId = overrides?.owner_profile_id || actionForm.owner_profile_id || null
+    const alertKey = overrides?.alert_key || actionForm.alert_key || null
+
+    if (!machineId || !title) {
+      alert(language === 'id' ? 'Pilih machine dan isi judul action.' : 'Select a machine and enter an action title.')
+      return
     }
 
-    return {
-      lastSamplingDate,
-      intervalDays,
-      nextDueDate: nextDueDate.toISOString(),
-      daysUntilDue,
-      state: 'on-schedule',
-      label: copy.onSchedule(daysUntilDue),
+    setActionSaving(true)
+    try {
+      const response = await fetch('/api/customer/actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create',
+          machine_id: machineId,
+          title,
+          description: description || null,
+          priority,
+          due_date: dueDate,
+          owner_profile_id: ownerProfileId,
+          alert_key: alertKey,
+          source_payload: overrides?.source_payload || {
+            created_from: 'dashboard_action_board',
+          },
+        }),
+      })
+
+      const responsePayload = await response.json()
+      if (!response.ok) {
+        throw new Error(responsePayload.error || 'Failed to create maintenance action')
+      }
+
+      if (responsePayload.action) {
+        setMaintenanceActions((prev) => [responsePayload.action, ...prev.filter((action) => action.id !== responsePayload.action.id)])
+      }
+
+      setActionForm({
+        machine_id: initialMachines[0]?.id || '',
+        title: '',
+        description: '',
+        priority: 'medium',
+        due_date: '',
+        owner_profile_id: '',
+        alert_key: '',
+      })
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to create maintenance action')
+    } finally {
+      setActionSaving(false)
     }
+  }
+
+  const handleCreateActionFromAlert = async (alertItem: DashboardAlert) => {
+    const dueDate = alertItem.severity === 'critical'
+      ? formatLocalDateInput(addDays(new Date(), 3))
+      : alertItem.severity === 'warning'
+      ? formatLocalDateInput(addDays(new Date(), 7))
+      : formatLocalDateInput(addDays(new Date(), 14))
+
+    await handleCreateMaintenanceAction({
+      machine_id: alertItem.machineId,
+      title: alertItem.title,
+      description: `${alertItem.message}\n\n${alertItem.recommendedAction}`,
+      priority: alertItem.severity === 'critical' ? 'high' : 'medium',
+      due_date: dueDate,
+      alert_key: alertItem.id,
+      source_payload: {
+        alert_id: alertItem.id,
+        severity: alertItem.severity,
+        machine_name: alertItem.machineName,
+        next_action: alertItem.recommendedAction,
+      },
+    })
   }
 
   const buildTrendAlerts = (tests: LabReport[]): TrendAlertItem[] => {
@@ -1085,6 +1258,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     const machineIds = machines.map((machine) => machine.id)
     if (machineIds.length === 0) {
       setLatestTestByMachineId({})
+      setFleetHistoryByMachineId({})
       return
     }
 
@@ -1103,6 +1277,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
       }
 
       const latestMap: Record<string, OilSample> = {}
+      const historyMap: Record<string, OilSample[]> = {}
       ;(data || []).forEach((test) => {
         const product = Array.isArray(test.product) ? test.product[0] : test.product
         const normalizedTest = {
@@ -1110,15 +1285,22 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           product,
         } as OilSample & { machine_id: string }
 
+        if (!historyMap[normalizedTest.machine_id]) {
+          historyMap[normalizedTest.machine_id] = []
+        }
+        historyMap[normalizedTest.machine_id].push(normalizedTest)
+
         if (!latestMap[normalizedTest.machine_id]) {
           latestMap[normalizedTest.machine_id] = normalizedTest
         }
       })
 
       setLatestTestByMachineId(latestMap)
+      setFleetHistoryByMachineId(historyMap)
     } catch (error) {
       console.error('Fleet insight error:', error)
       setLatestTestByMachineId({})
+      setFleetHistoryByMachineId({})
     } finally {
       setFleetInsightsLoading(false)
     }
@@ -1299,63 +1481,195 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
 
   const visibleAlerts = dashboardAlerts.filter((alertItem) => !dismissedAlertIds.includes(alertItem.id))
 
-  useEffect(() => {
-    setMaintenanceActions((prev) => {
-      const next = { ...prev }
+  const teamMemberCount = teamMembers.length
+  const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
+  const todayIso = formatLocalDateInput(new Date())
+  const maintenanceActionStats = maintenanceActions.reduce(
+    (accumulator, action) => {
+      const isOverdue = Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
+      if (isOverdue) accumulator.overdue += 1
+      if (action.status === 'completed' || action.status === 'verified') accumulator.completed += 1
+      if (action.status === 'in_progress') accumulator.inProgress += 1
+      if (action.status === 'open' || action.status === 'assigned') accumulator.open += 1
+      return accumulator
+    },
+    { open: 0, inProgress: 0, completed: 0, overdue: 0 }
+  )
 
-      machineInsights.forEach((item) => {
-        if (!next[item.machine.id]) {
-          next[item.machine.id] = buildDefaultMaintenanceActions(item)
-        }
-      })
+  const visibleMaintenanceActions = maintenanceActions.filter((action) => {
+    if (actionFilter === 'all') return true
+    if (actionFilter === 'open') return action.status === 'open' || action.status === 'assigned'
+    if (actionFilter === 'overdue') {
+      return Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
+    }
+    return action.status === actionFilter
+  })
 
-      return next
-    })
-  }, [buildDefaultMaintenanceActions, machineInsights])
+  const reliabilityInsights: ReliabilityInsight[] = machineInsights.map((item) => {
+    const history = (fleetHistoryByMachineId[item.machine.id] || []).slice().sort((a, b) =>
+      new Date(a.test_date).getTime() - new Date(b.test_date).getTime()
+    )
+    const recentHistory = history.slice(-4)
+    const actionsForMachine = maintenanceActions.filter((action) => action.machine_id === item.machine.id)
 
-  const machineControlCards = machineInsights.map((item) => {
-    const actions = maintenanceActions[item.machine.id] || buildDefaultMaintenanceActions(item)
-    const sampling = getSamplingOverview(item)
-    const completedActions = actions.filter((action) => action.status === 'Completed').length
-    const pendingActions = actions.filter((action) => action.status !== 'Completed').length
-    const overdueActions = actions.filter(
-      (action) => action.status !== 'Completed' && new Date(action.dueDate) < new Date()
-    ).length
-    const progress = actions.length > 0 ? Math.round((completedActions / actions.length) * 100) : 0
+    const completenessChecks = history.flatMap((entry) => [entry.viscosity_40c, entry.viscosity_100c, entry.water_content, entry.tan_value])
+    const filledFields = completenessChecks.filter((value) => value !== null && value !== undefined).length
+    const dataCompleteness = Math.round(
+      Math.min(100, (history.length >= 4 ? 100 : history.length * 25) * 0.6 + (completenessChecks.length > 0 ? (filledFields / completenessChecks.length) * 100 : 0) * 0.4)
+    )
+
+    const daysSinceTest = item.daysSinceTest
+    let samplingDiscipline = 0
+    if (daysSinceTest === null) samplingDiscipline = 10
+    else if (daysSinceTest <= 30) samplingDiscipline = 100
+    else if (daysSinceTest <= 45) samplingDiscipline = 75
+    else if (daysSinceTest <= 60) samplingDiscipline = 45
+    else samplingDiscipline = 15
+
+    if (recentHistory.length >= 3) {
+      const intervals: number[] = []
+      for (let index = 1; index < recentHistory.length; index += 1) {
+        const prevDate = new Date(recentHistory[index - 1].test_date).getTime()
+        const nextDate = new Date(recentHistory[index].test_date).getTime()
+        intervals.push(Math.max(1, Math.round((nextDate - prevDate) / (1000 * 60 * 60 * 24))))
+      }
+      const minInterval = Math.min(...intervals)
+      const maxInterval = Math.max(...intervals)
+      const spreadPenalty = Math.min(35, (maxInterval - minInterval) * 1.2)
+      samplingDiscipline = Math.max(0, Math.round(samplingDiscipline - spreadPenalty))
+    }
+
+    const completedActions = actionsForMachine.filter((action) => action.status === 'completed' || action.status === 'verified').length
+    const verifiedActions = actionsForMachine.filter((action) => action.verification_status === 'passed').length
+    const failedVerificationActions = actionsForMachine.filter((action) => action.verification_status === 'failed').length
+    const executionReliability = actionsForMachine.length === 0
+      ? 55
+      : Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round((completedActions / actionsForMachine.length) * 65 + (verifiedActions / actionsForMachine.length) * 35 - failedVerificationActions * 8)
+          )
+        )
+
+    const waterSeries = recentHistory.map((entry) => (entry.water_content || 0) * 100)
+    const tanSeries = recentHistory.map((entry) => entry.tan_value || 0)
+    const viscSeries = recentHistory.map((entry) => entry.viscosity_40c || 0)
+
+    const isStrictlyIncreasing = (series: number[]) => series.length >= 3 && series[0] < series[1] && series[1] < series[2]
+    const waterIncreasing = isStrictlyIncreasing(waterSeries.slice(-3))
+    const tanIncreasing = isStrictlyIncreasing(tanSeries.slice(-3))
+
+    const viscChange = viscSeries.length >= 2 ? Math.abs(((viscSeries[viscSeries.length - 1] - viscSeries[0]) / Math.max(1, viscSeries[0])) * 100) : 0
+    const waterChange = waterSeries.length >= 2 ? waterSeries[waterSeries.length - 1] - waterSeries[0] : 0
+    const tanChange = tanSeries.length >= 2 ? tanSeries[tanSeries.length - 1] - tanSeries[0] : 0
+    const deteriorationSignal = waterIncreasing || tanIncreasing || waterChange > 20 || tanChange > 0.4 || viscChange > 15
+
+    const trendPenalty = Math.min(60, Math.max(0, Math.round(Math.abs(waterChange) * 0.8 + Math.abs(tanChange) * 30 + viscChange * 0.9)))
+    const trendStability = Math.max(0, 100 - trendPenalty)
+
+    const reliabilityScore = Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(dataCompleteness * 0.25 + samplingDiscipline * 0.25 + executionReliability * 0.25 + trendStability * 0.25 - (deteriorationSignal ? 8 : 0))
+      )
+    )
+
+    const riskBand: ReliabilityInsight['riskBand'] = reliabilityScore >= 80 ? 'stable' : reliabilityScore >= 60 ? 'watchlist' : 'fragile'
+    const recommendation = riskBand === 'stable'
+      ? language === 'id'
+        ? 'Pertahankan ritme sampling saat ini dan lanjutkan verifikasi rutin.'
+        : 'Maintain current sampling rhythm and keep routine verification.'
+      : riskBand === 'watchlist'
+      ? language === 'id'
+        ? 'Percepat interval sampling dan pastikan action critical diverifikasi.'
+        : 'Tighten sampling intervals and verify critical actions quickly.'
+      : language === 'id'
+      ? 'Aktifkan mode pemulihan: sampling dipercepat, action owner wajib, dan verifikasi pasca-maintenance.'
+      : 'Activate recovery mode: accelerated sampling, mandatory owners, and post-maintenance verification.'
 
     return {
-      ...item,
-      actions,
-      sampling,
-      completedActions,
-      pendingActions,
-      overdueActions,
-      progress,
+      machineId: item.machine.id,
+      machineName: item.machine.machine_name,
+      reliabilityScore,
+      riskBand,
+      dataCompleteness,
+      samplingDiscipline,
+      executionReliability,
+      trendStability,
+      deteriorationSignal,
+      recommendation,
     }
   })
 
-  const maintenancePendingTotal = machineControlCards.reduce((total, item) => total + item.pendingActions, 0)
-  const maintenanceCompletedTotal = machineControlCards.reduce((total, item) => total + item.completedActions, 0)
-  const maintenanceOverdueTotal = machineControlCards.reduce((total, item) => total + item.overdueActions, 0)
-  const samplingOnTimeTotal = machineControlCards.filter((item) => item.sampling.state !== 'overdue').length
-  const samplingOverdueTotal = machineControlCards.filter((item) => item.sampling.state === 'overdue').length
-  const samplingComplianceRate = machineControlCards.length > 0
-    ? Math.round((samplingOnTimeTotal / machineControlCards.length) * 100)
+  const fleetReliabilityScore = reliabilityInsights.length > 0
+    ? Math.round(reliabilityInsights.reduce((acc, item) => acc + item.reliabilityScore, 0) / reliabilityInsights.length)
     : 0
-  const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
+  const fragileReliabilityCount = reliabilityInsights.filter((item) => item.riskBand === 'fragile').length
+  const watchlistReliabilityCount = reliabilityInsights.filter((item) => item.riskBand === 'watchlist').length
+  const deteriorationCount = reliabilityInsights.filter((item) => item.deteriorationSignal).length
+  const topReliabilityRisks = reliabilityInsights
+    .slice()
+    .sort((a, b) => a.reliabilityScore - b.reliabilityScore)
+    .slice(0, 5)
 
-  const updateMaintenanceAction = (
-    machineId: string,
-    actionId: string,
-    patch: Partial<MaintenanceActionItem>
-  ) => {
-    setMaintenanceActions((prev) => ({
-      ...prev,
-      [machineId]: (prev[machineId] || []).map((action) => (
-        action.id === actionId ? { ...action, ...patch } : action
-      )),
-    }))
-  }
+  const completedPurchases = purchaseHistory.filter((item) => item.status === 'completed')
+  const totalSpend = completedPurchases.reduce(
+    (sum, item) => sum + (item.total_price ?? ((item.quantity || 0) * (item.unit_price || 0))),
+    0
+  )
+
+  const assignedActionsCount = maintenanceActions.filter((action) => Boolean(action.owner_profile_id)).length
+  const actionsWithDueDateCount = maintenanceActions.filter((action) => Boolean(action.due_date)).length
+  const verifiedPassedCount = maintenanceActions.filter((action) => action.verification_status === 'passed').length
+  const evidenceCoverageCount = maintenanceActions.filter((action) => Boolean(action.evidence_notes && action.evidence_notes.trim().length > 0)).length
+  const overdueOpenCount = maintenanceActions.filter(
+    (action) => Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
+  ).length
+
+  const logEventBreakdown = maintenanceActionLogs.reduce(
+    (accumulator, item) => {
+      accumulator[item.event_type] = (accumulator[item.event_type] || 0) + 1
+      return accumulator
+    },
+    {} as Record<MaintenanceActionLog['event_type'], number>
+  )
+
+  const actionCount = Math.max(1, maintenanceActions.length)
+  const assignmentCoverageRate = Math.round((assignedActionsCount / actionCount) * 100)
+  const dueDateCoverageRate = Math.round((actionsWithDueDateCount / actionCount) * 100)
+  const verificationPassRate = Math.round((verifiedPassedCount / actionCount) * 100)
+  const evidenceCoverageRate = Math.round((evidenceCoverageCount / actionCount) * 100)
+  const traceabilityRate = Math.round(Math.min(100, (maintenanceActionLogs.length / (actionCount * 2)) * 100))
+  const overdueRate = Math.round((overdueOpenCount / actionCount) * 100)
+
+  const enterpriseTrustScore = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        assignmentCoverageRate * 0.2 +
+          dueDateCoverageRate * 0.15 +
+          verificationPassRate * 0.25 +
+          evidenceCoverageRate * 0.15 +
+          traceabilityRate * 0.25 -
+          overdueRate * 0.2
+      )
+    )
+  )
+
+  const criticalActionsClosed = maintenanceActions.filter(
+    (action) => (action.status === 'completed' || action.status === 'verified') && action.source_payload && (action.source_payload as Record<string, unknown>).severity === 'critical'
+  ).length
+  const warningActionsClosed = maintenanceActions.filter(
+    (action) => (action.status === 'completed' || action.status === 'verified') && action.source_payload && (action.source_payload as Record<string, unknown>).severity === 'warning'
+  ).length
+  const avoidedDowntimeHours = criticalActionsClosed * 8 + warningActionsClosed * 4 + verifiedPassedCount * 2
+  const reliabilityProgramCost = maintenanceActions.length * 250000
+  const estimatedSavings = Math.round(totalSpend * 0.03 + avoidedDowntimeHours * 350000)
+  const netImpact = estimatedSavings - reliabilityProgramCost
+  const roiPercent = reliabilityProgramCost > 0 ? Math.round((netImpact / reliabilityProgramCost) * 100) : 0
 
   const handleExportFleetReport = async () => {
     await exportFleetReportPdf(
@@ -1370,6 +1684,42 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
         avgHealthScore,
       },
       fleetReportRows,
+      language
+    )
+  }
+
+  const handleExportTrustRoiSnapshot = async () => {
+    const auditRows: TrustRoiAuditRow[] = [
+      { eventType: 'created', count: logEventBreakdown.created || 0 },
+      { eventType: 'updated', count: logEventBreakdown.updated || 0 },
+      { eventType: 'status_changed', count: logEventBreakdown.status_changed || 0 },
+      { eventType: 'assigned', count: logEventBreakdown.assigned || 0 },
+      { eventType: 'completed', count: logEventBreakdown.completed || 0 },
+      { eventType: 'verified', count: logEventBreakdown.verified || 0 },
+      { eventType: 'reopened', count: logEventBreakdown.reopened || 0 },
+    ]
+
+    await exportTrustRoiSnapshotPdf(
+      {
+        companyName: profile?.customer?.company_name || 'Customer',
+        customerEmail: profile?.email || user.email || '-',
+        generatedBy: profile?.full_name || profile?.email || 'Customer User',
+        generatedAt: new Date(),
+        trustScore: enterpriseTrustScore,
+        reliabilityScore: fleetReliabilityScore,
+        roiPercent,
+        totalSpend,
+        estimatedSavings,
+        netImpact,
+        assignmentCoverageRate,
+        dueDateCoverageRate,
+        verificationPassRate,
+        evidenceCoverageRate,
+        traceabilityRate,
+        overdueRate,
+        avoidedDowntimeHours,
+      },
+      auditRows,
       language
     )
   }
@@ -1478,16 +1828,20 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                   <button
                     type="button"
                     onClick={() => setLanguage('id')}
-                    className={`px-3 py-1.5 rounded-md transition-colors ${language === 'id' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                    aria-label="Bahasa Indonesia"
+                    title="Bahasa Indonesia"
+                    className={`px-3 py-1.5 rounded-md transition-colors text-sm ${language === 'id' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
                   >
-                    {copy.languageLabel}
+                    🇮🇩
                   </button>
                   <button
                     type="button"
                     onClick={() => setLanguage('en')}
-                    className={`px-3 py-1.5 rounded-md transition-colors ${language === 'en' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                    aria-label="English"
+                    title="English"
+                    className={`px-3 py-1.5 rounded-md transition-colors text-sm ${language === 'en' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
                   >
-                    English
+                    🇬🇧
                   </button>
                 </div>
               </div>
@@ -1500,8 +1854,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     onChange={(e) => setLanguage(e.target.value as Language)}
                     className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800"
                   >
-                    <option value="id">{copy.languageLabel}</option>
-                    <option value="en">English</option>
+                    <option value="id">🇮🇩 {copy.languageLabel}</option>
+                    <option value="en">🇬🇧 English</option>
                   </select>
                 </label>
               </div>
@@ -1666,12 +2020,21 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       <p className="text-sm text-gray-700 mt-1">{alertItem.message}</p>
                       <p className="text-sm text-gray-800 mt-2"><span className="font-semibold">{copy.alertNextAction}:</span> {alertItem.recommendedAction}</p>
                     </div>
-                    <button
-                      onClick={() => dismissAlert(alertItem.id)}
-                      className="self-start px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100"
-                    >
-                      {copy.markAsRead}
-                    </button>
+                    <div className="flex flex-col gap-2 self-start">
+                      <button
+                        onClick={() => handleCreateActionFromAlert(alertItem)}
+                        disabled={actionSaving}
+                        className="px-3 py-1.5 rounded-lg bg-primary-600 border border-primary-600 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+                      >
+                        {language === 'id' ? 'Buat action' : 'Create action'}
+                      </button>
+                      <button
+                        onClick={() => dismissAlert(alertItem.id)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                      >
+                        {copy.markAsRead}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1679,7 +2042,218 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           )}
         </section>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
+        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{language === 'id' ? 'Action Board Maintenance' : 'Maintenance Action Board'}</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {language === 'id'
+                  ? 'Kelola pekerjaan maintenance dari insight, due date, dan penanggung jawab dalam satu alur.'
+                  : 'Manage maintenance work from insights, due dates, and owners in one workflow.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
+              <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">{language === 'id' ? 'Open' : 'Open'}</div>
+                <div className="text-lg font-black text-gray-900">{maintenanceActionStats.open}</div>
+              </div>
+              <div className="rounded-2xl bg-blue-50 border border-blue-200 px-3 py-2 text-center">
+                <div className="text-blue-700 uppercase tracking-wide">{language === 'id' ? 'Active' : 'Active'}</div>
+                <div className="text-lg font-black text-blue-900">{maintenanceActionStats.inProgress}</div>
+              </div>
+              <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-center">
+                <div className="text-emerald-700 uppercase tracking-wide">{language === 'id' ? 'Done' : 'Done'}</div>
+                <div className="text-lg font-black text-emerald-900">{maintenanceActionStats.completed}</div>
+              </div>
+              <div className="rounded-2xl bg-red-50 border border-red-200 px-3 py-2 text-center">
+                <div className="text-red-700 uppercase tracking-wide">{language === 'id' ? 'Overdue' : 'Overdue'}</div>
+                <div className="text-lg font-black text-red-900">{maintenanceActionStats.overdue}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-5">
+            {(['all', 'open', 'assigned', 'in_progress', 'completed', 'verified', 'overdue'] as const).map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => setActionFilter(status)}
+                className={`px-3 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
+                  actionFilter === status ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {status.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5 shadow-sm">
+              <h3 className="text-lg font-black text-gray-900">{language === 'id' ? 'Buat Action Baru' : 'Create New Action'}</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {language === 'id'
+                  ? 'Action bisa dibuat dari alert atau diinput manual oleh tim customer.'
+                  : 'Actions can be created from alerts or entered manually by the customer team.'}
+              </p>
+
+              <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Machine</span>
+                  <select
+                    value={actionForm.machine_id}
+                    onChange={(e) => setActionForm((prev) => ({ ...prev, machine_id: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">{language === 'id' ? 'Pilih machine' : 'Select machine'}</option>
+                    {machines.map((machine) => (
+                      <option key={machine.id} value={machine.id}>
+                        {machine.machine_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Title</span>
+                  <input
+                    type="text"
+                    value={actionForm.title}
+                    onChange={(e) => setActionForm((prev) => ({ ...prev, title: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Description</span>
+                  <textarea
+                    value={actionForm.description}
+                    onChange={(e) => setActionForm((prev) => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="block">
+                    <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Priority</span>
+                    <select
+                      value={actionForm.priority}
+                      onChange={(e) => setActionForm((prev) => ({ ...prev, priority: e.target.value as MaintenanceActionPriority }))}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Due date</span>
+                    <input
+                      type="date"
+                      value={actionForm.due_date}
+                      onChange={(e) => setActionForm((prev) => ({ ...prev, due_date: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </label>
+                </div>
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Owner</span>
+                  <select
+                    value={actionForm.owner_profile_id}
+                    onChange={(e) => setActionForm((prev) => ({ ...prev, owner_profile_id: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">{language === 'id' ? 'Belum ditugaskan' : 'Unassigned'}</option>
+                    {teamMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => handleCreateMaintenanceAction()}
+                  disabled={actionSaving}
+                  className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-secondary-500 px-4 py-3 text-white font-bold shadow-lg hover:from-primary-600 hover:to-secondary-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {actionSaving ? (language === 'id' ? 'Menyimpan...' : 'Saving...') : (language === 'id' ? 'Simpan Action' : 'Save Action')}
+                </button>
+              </div>
+            </div>
+
+            <div className="xl:col-span-3 space-y-3">
+              {visibleMaintenanceActions.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center text-gray-600">
+                  {language === 'id' ? 'Belum ada maintenance action untuk filter ini.' : 'No maintenance actions match this filter yet.'}
+                </div>
+              ) : (
+                visibleMaintenanceActions.map((action) => {
+                  const isOverdue = Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
+                  return (
+                    <div key={action.id} className={`rounded-2xl border px-4 py-4 ${isOverdue ? 'border-red-200 bg-red-50/70' : 'border-gray-200 bg-white'}`}>
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="text-xs font-black uppercase tracking-wide text-gray-500">{action.machine?.machine_name || '-'}</span>
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${action.priority === 'high' ? 'bg-red-100 text-red-700' : action.priority === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                              {action.priority}
+                            </span>
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${action.status === 'completed' || action.status === 'verified' ? 'bg-emerald-100 text-emerald-700' : action.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                              {action.status.replace('_', ' ')}
+                            </span>
+                            {isOverdue && <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-red-100 text-red-700">Overdue</span>}
+                          </div>
+                          <p className="font-bold text-gray-900">{action.title}</p>
+                          <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{action.description || (language === 'id' ? 'Tidak ada deskripsi.' : 'No description provided.')}</p>
+                          <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
+                            <span>{language === 'id' ? 'Due' : 'Due'}: {action.due_date || '-'}</span>
+                            <span>{language === 'id' ? 'Owner' : 'Owner'}: {action.owner?.full_name || (language === 'id' ? 'Belum ditugaskan' : 'Unassigned')}</span>
+                            <span>{language === 'id' ? 'Alert' : 'Alert'}: {action.alert_key || '-'}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 lg:justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'in_progress' })}
+                            disabled={actionSaving}
+                            className="px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-sm font-semibold disabled:opacity-60"
+                          >
+                            {language === 'id' ? 'Mulai' : 'Start'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'completed' })}
+                            disabled={actionSaving}
+                            className="px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-semibold disabled:opacity-60"
+                          >
+                            {language === 'id' ? 'Selesai' : 'Complete'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'verified', verification_status: 'passed' })}
+                            disabled={actionSaving}
+                            className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-semibold disabled:opacity-60"
+                          >
+                            {language === 'id' ? 'Verify OK' : 'Verify OK'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'open', verification_status: 'failed' })}
+                            disabled={actionSaving}
+                            className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm font-semibold disabled:opacity-60"
+                          >
+                            {language === 'id' ? 'Verify Fail' : 'Verify Fail'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
           <button
             onClick={handleExportFleetReport}
             className="w-full bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-900 hover:to-slate-800 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
@@ -1693,6 +2267,30 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <div className="text-left">
                 <h3 className="text-xl font-black">{copy.exportPdfTitle}</h3>
                 <p className="text-white/90 text-sm font-medium mt-1">{copy.exportPdfDesc}</p>
+              </div>
+            </div>
+            <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+
+          <button
+            onClick={handleExportTrustRoiSnapshot}
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-black">{language === 'id' ? 'Export Trust & ROI Snapshot' : 'Export Trust & ROI Snapshot'}</h3>
+                <p className="text-white/90 text-sm font-medium mt-1">
+                  {language === 'id'
+                    ? 'Unduh ringkasan trust enterprise, audit event, dan estimasi ROI.'
+                    : 'Download the enterprise trust, audit event, and ROI snapshot.'}
+                </p>
               </div>
             </div>
             <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1730,234 +2328,299 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             </div>
             <button
               onClick={loadFleetInsights}
-              className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+              disabled={fleetInsightsLoading}
+              className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
             >
-              {copy.refreshInsights}
+              {fleetInsightsLoading ? (language === 'id' ? 'Memuat...' : 'Loading...') : copy.refreshInsights}
             </button>
           </div>
 
-        <section className="mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.maintenancePending}</p>
-            <p className="text-3xl font-black text-gray-900">{maintenancePendingTotal}</p>
-            <p className="text-sm text-gray-600 mt-2">{copy.maintenanceSummaryPending}</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.maintenanceCompleted}</p>
-            <p className="text-3xl font-black text-emerald-600">{maintenanceCompletedTotal}</p>
-            <p className="text-sm text-gray-600 mt-2">{copy.maintenanceSummaryCompleted}</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.maintenanceOverdue}</p>
-            <p className="text-3xl font-black text-red-600">{maintenanceOverdueTotal}</p>
-            <p className="text-sm text-gray-600 mt-2">{copy.maintenanceSummaryOverdue}</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.samplingCompliance}</p>
-            <div className="flex items-end justify-between gap-3">
-              <p className="text-3xl font-black text-primary-600">{samplingComplianceRate}%</p>
-              <p className="text-sm text-gray-600 text-right">{samplingOnTimeTotal} {copy.onTime} / {samplingOverdueTotal} {copy.overdueSampling}</p>
-            </div>
-            <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-primary-500" style={{ width: `${samplingComplianceRate}%` }} />
-            </div>
-          </div>
         </section>
 
         <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
-              <h2 className="text-3xl font-black text-gray-900">{copy.maintenanceTitle}</h2>
-              <p className="text-gray-600 font-medium mt-1">{copy.maintenanceDesc}</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
+                {language === 'id' ? 'Reliability Intelligence' : 'Reliability Intelligence'}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {language === 'id'
+                  ? 'Pantau keandalan dari kualitas sampling, kestabilan tren, dan efektivitas eksekusi maintenance.'
+                  : 'Track reliability from sampling quality, trend stability, and maintenance execution effectiveness.'}
+              </p>
             </div>
-            <div className="flex flex-wrap gap-2 text-sm font-semibold">
-              <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">{copy.pending}: {maintenancePendingTotal}</span>
-              <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">{copy.completed}: {maintenanceCompletedTotal}</span>
-              <span className="px-3 py-1.5 rounded-full bg-red-100 text-red-700">{copy.overdue}: {maintenanceOverdueTotal}</span>
+            <div className={`px-4 py-3 rounded-2xl border ${fleetReliabilityScore >= 80 ? 'bg-emerald-50 border-emerald-200' : fleetReliabilityScore >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Fleet Reliability Pulse' : 'Fleet Reliability Pulse'}</p>
+              <p className={`text-3xl font-black ${fleetReliabilityScore >= 80 ? 'text-emerald-700' : fleetReliabilityScore >= 60 ? 'text-amber-700' : 'text-red-700'}`}>
+                {fleetReliabilityScore}
+              </p>
             </div>
           </div>
 
-          {machineControlCards.length === 0 ? (
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-5 text-xs font-semibold">
+            <div className="rounded-2xl bg-red-50 border border-red-200 px-3 py-2 text-center">
+              <div className="text-red-700 uppercase tracking-wide">{language === 'id' ? 'Fragile' : 'Fragile'}</div>
+              <div className="text-lg font-black text-red-900">{fragileReliabilityCount}</div>
+            </div>
+            <div className="rounded-2xl bg-amber-50 border border-amber-200 px-3 py-2 text-center">
+              <div className="text-amber-700 uppercase tracking-wide">{language === 'id' ? 'Watchlist' : 'Watchlist'}</div>
+              <div className="text-lg font-black text-amber-900">{watchlistReliabilityCount}</div>
+            </div>
+            <div className="rounded-2xl bg-blue-50 border border-blue-200 px-3 py-2 text-center">
+              <div className="text-blue-700 uppercase tracking-wide">{language === 'id' ? 'Signal Deteriorating' : 'Deteriorating Signal'}</div>
+              <div className="text-lg font-black text-blue-900">{deteriorationCount}</div>
+            </div>
+            <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
+              <div className="text-gray-700 uppercase tracking-wide">{language === 'id' ? 'Machines Scored' : 'Machines Scored'}</div>
+              <div className="text-lg font-black text-gray-900">{reliabilityInsights.length}</div>
+            </div>
+          </div>
+
+          {topReliabilityRisks.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center text-gray-600">
-              {copy.noMachineActions}
+              {language === 'id' ? 'Belum ada data cukup untuk reliability intelligence.' : 'Not enough data yet for reliability intelligence.'}
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              {machineControlCards.map((item) => (
-                <div key={item.machine.id} className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm">
-                  <div className="flex flex-col gap-3 mb-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-lg font-black text-gray-900">{item.machine.machine_name}</p>
-                        <p className="text-sm text-gray-600">{item.machine.location || copy.noLocation} • {item.daysSinceTest === null ? copy.noTestData : `${item.daysSinceTest} days since test`}</p>
-                      </div>
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
-                        item.sampling.state === 'overdue'
-                          ? 'bg-red-100 text-red-700 border-red-200'
-                          : item.sampling.state === 'upcoming'
-                          ? 'bg-amber-100 text-amber-700 border-amber-200'
-                          : 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                      }`}>
-                        {item.sampling.label}
-                      </span>
-                    </div>
-
+            <div className="space-y-3">
+              {topReliabilityRisks.map((insight) => (
+                <div key={insight.machineId} className={`rounded-2xl border px-4 py-4 ${insight.riskBand === 'fragile' ? 'border-red-200 bg-red-50/70' : insight.riskBand === 'watchlist' ? 'border-amber-200 bg-amber-50/70' : 'border-emerald-200 bg-emerald-50/70'}`}>
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
                     <div>
-                      <div className="flex items-center justify-between mb-2 text-sm">
-                        <span className="font-semibold text-gray-700">{copy.actionCompletion}</span>
-                        <span className="font-black text-gray-900">{item.progress}%</span>
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <p className="font-bold text-gray-900">{insight.machineName}</p>
+                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${insight.riskBand === 'fragile' ? 'bg-red-100 text-red-700' : insight.riskBand === 'watchlist' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {insight.riskBand}
+                        </span>
+                        {insight.deteriorationSignal && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-blue-100 text-blue-700">
+                            {language === 'id' ? 'Trend menurun' : 'Trend deteriorating'}
+                          </span>
+                        )}
                       </div>
-                      <div className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500" style={{ width: `${item.progress}%` }} />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold">
-                      <div className="rounded-xl bg-white border border-gray-200 px-3 py-2">
-                        <p className="text-gray-500 uppercase tracking-wide">{copy.pending}</p>
-                        <p className="mt-1 text-gray-900 text-base">{item.pendingActions}</p>
-                      </div>
-                      <div className="rounded-xl bg-white border border-gray-200 px-3 py-2">
-                        <p className="text-gray-500 uppercase tracking-wide">{copy.completed}</p>
-                        <p className="mt-1 text-emerald-600 text-base">{item.completedActions}</p>
-                      </div>
-                      <div className="rounded-xl bg-white border border-gray-200 px-3 py-2">
-                        <p className="text-gray-500 uppercase tracking-wide">{copy.overdue}</p>
-                        <p className="mt-1 text-red-600 text-base">{item.overdueActions}</p>
+                      <p className="text-sm text-gray-700">{insight.recommendation}</p>
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
+                        <span>{language === 'id' ? 'Data completeness' : 'Data completeness'}: {insight.dataCompleteness}</span>
+                        <span>{language === 'id' ? 'Sampling discipline' : 'Sampling discipline'}: {insight.samplingDiscipline}</span>
+                        <span>{language === 'id' ? 'Execution reliability' : 'Execution reliability'}: {insight.executionReliability}</span>
+                        <span>{language === 'id' ? 'Trend stability' : 'Trend stability'}: {insight.trendStability}</span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {item.actions.map((action) => {
-                      const isCompleted = action.status === 'Completed'
-                      const isOverdue = !isCompleted && new Date(action.dueDate) < new Date()
-
-                      return (
-                        <div key={action.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-                            <label className="flex items-start gap-3 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isCompleted}
-                                onChange={(e) => {
-                                  updateMaintenanceAction(item.machine.id, action.id, {
-                                    status: e.target.checked ? 'Completed' : 'Pending',
-                                  })
-                                }}
-                                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                              />
-                              <div>
-                                <p className="font-bold text-gray-900">{action.label}</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {isOverdue ? copy.actionOverdueLabel : action.status} • {copy.actionDuePrefix} {action.dueDate || copy.tbd}
-                                </p>
-                              </div>
-                            </label>
-
-                            <select
-                              value={action.status}
-                              onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { status: e.target.value as ActionStatus })}
-                              className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800"
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Ongoing">Ongoing</option>
-                              <option value="Completed">Completed</option>
-                            </select>
-                          </div>
-
-                          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <label className="block">
-                              <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">PIC</span>
-                              <input
-                                type="text"
-                                value={action.pic}
-                                onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { pic: e.target.value })}
-                                placeholder={copy.picPlaceholder}
-                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                              />
-                            </label>
-                            <label className="block">
-                              <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.dueDate}</span>
-                              <input
-                                type="date"
-                                value={action.dueDate}
-                                onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { dueDate: e.target.value })}
-                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                              />
-                            </label>
-                            <label className="block md:col-span-3">
-                              <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.notes}</span>
-                              <textarea
-                                value={action.notes}
-                                onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { notes: e.target.value })}
-                                placeholder={copy.notesPlaceholder}
-                                rows={2}
-                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                              />
-                            </label>
-                          </div>
-                        </div>
-                      )
-                    })}
+                    <div className="text-right">
+                      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Reliability Score' : 'Reliability Score'}</p>
+                      <p className={`text-3xl font-black ${insight.reliabilityScore >= 80 ? 'text-emerald-700' : insight.reliabilityScore >= 60 ? 'text-amber-700' : 'text-red-700'}`}>
+                        {insight.reliabilityScore}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </section>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-red-50 to-red-100/70 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-red-700 mb-1">{copy.criticalMachines}</p>
-              <p className="text-3xl font-black text-red-700">{criticalCount}</p>
+
+        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-3xl font-black text-gray-900">{copy.teamManagementTitle}</h2>
+              <p className="text-gray-600 font-medium mt-1">{copy.teamManagementDesc}</p>
             </div>
-            <div className="bg-gradient-to-br from-amber-50 to-yellow-100/70 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-1">{copy.warningMachines}</p>
-              <p className="text-3xl font-black text-amber-700">{warningCount}</p>
-            </div>
-            <div className="bg-gradient-to-br from-emerald-50 to-green-100/70 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-1">{copy.healthyMachines}</p>
-              <p className="text-3xl font-black text-emerald-700">{healthyCount}</p>
-            </div>
-            <div className="bg-gradient-to-br from-slate-50 to-gray-100 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-700 mb-1">{copy.averageHealth}</p>
-              <p className="text-3xl font-black text-slate-800">{avgHealthScore !== null ? `${avgHealthScore}/100` : '-'}</p>
+            <div className="flex flex-wrap gap-2 text-sm font-semibold">
+              <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">{teamMemberCount} {copy.user}</span>
+              <span className="px-3 py-1.5 rounded-full bg-primary-100 text-primary-700">{profile?.customer?.company_name}</span>
             </div>
           </div>
 
-          <div className="bg-gray-50/80 rounded-2xl p-5 mb-6">
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {criticalCount > 0
-                ? `Immediate focus required: ${criticalCount} machine${criticalCount > 1 ? 's are' : ' is'} in critical condition. Prioritize contamination source checks and repeat sampling within 72 hours.`
-                : warningCount > 0
-                ? `System is stable with caution: ${warningCount} machine${warningCount > 1 ? 's need' : ' needs'} closer monitoring. Plan verification sampling in the next 14 days.`
-                : 'System condition is healthy overall. Continue routine monthly sampling and keep contamination prevention controls active.'}
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-black text-gray-900 mb-3">{copy.maintenanceQueue}</h3>
-            {fleetInsightsLoading ? (
-              <p className="text-gray-500">{language === 'id' ? 'Menghitung prioritas mesin...' : 'Calculating machine priorities...'}</p>
-            ) : (
-              <div className="space-y-3">
-                {machineInsights.slice(0, 5).map((item, idx) => (
-                  <div key={item.machine.id} className="bg-white rounded-2xl px-4 py-3 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-                    <div className="flex items-start gap-3">
-                      <span className="w-7 h-7 rounded-full bg-gray-900 text-white text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            <div className="xl:col-span-3">
+              <h3 className="text-lg font-black text-gray-900 mb-3">{copy.teamMembersTitle}</h3>
+              {teamMembers.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center text-gray-600">
+                  {copy.teamMembersEmpty}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {teamMembers.map((member) => (
+                    <div key={member.id} className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                       <div>
-                        <p className="font-bold text-gray-900">{item.machine.machine_name}</p>
-                        <p className="text-xs text-gray-500">{item.machine.location || copy.noLocation} • {copy.lastTestLabel} {item.daysSinceTest === null ? copy.notAvailable : `${item.daysSinceTest} ${copy.daysAgo}`}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-gray-900">{member.full_name}</p>
+                          <span className="px-2.5 py-1 rounded-full bg-primary-50 text-primary-700 text-[11px] font-bold uppercase tracking-wide">{copy.teamRoleCustomer}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{member.email || '-'}</p>
+                        <p className="text-xs text-gray-500 mt-1">{member.phone_number || '-'}</p>
+                      </div>
+                      <div className="text-sm text-gray-500 md:text-right">
+                        <p className="font-semibold text-gray-700">
+                          {new Intl.DateTimeFormat(language === 'id' ? 'id-ID' : 'en-US', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          }).format(new Date(member.created_at))}
+                        </p>
+                        <p>{copy.user}</p>
                       </div>
                     </div>
-                    <div className="lg:text-right">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{copy.trend.recommendedAction}</p>
-                      <p className="text-sm font-medium text-gray-800">{item.nextAction}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5 shadow-sm">
+              <h3 className="text-lg font-black text-gray-900">{copy.teamAddFormTitle}</h3>
+              <p className="text-sm text-gray-600 mt-1">{copy.teamAddFormDesc}</p>
+
+              <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamFullName}</span>
+                  <input
+                    type="text"
+                    value={teamForm.full_name}
+                    onChange={(e) => setTeamForm((prev) => ({ ...prev, full_name: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamEmail}</span>
+                  <input
+                    type="email"
+                    value={teamForm.email}
+                    onChange={(e) => setTeamForm((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamPhone}</span>
+                  <input
+                    type="tel"
+                    value={teamForm.phone_number}
+                    onChange={(e) => setTeamForm((prev) => ({ ...prev, phone_number: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamPassword}</span>
+                  <input
+                    type="password"
+                    value={teamForm.password}
+                    onChange={(e) => setTeamForm((prev) => ({ ...prev, password: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{copy.teamPasswordHint}</p>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleCreateTeamUser}
+                  disabled={teamSaving}
+                  className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-secondary-500 px-4 py-3 text-white font-bold shadow-lg hover:from-primary-600 hover:to-secondary-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {teamSaving ? copy.teamCreatingButton : copy.teamCreateButton}
+                </button>
               </div>
-            )}
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
+                {language === 'id' ? 'Enterprise Trust & ROI' : 'Enterprise Trust & ROI'}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {language === 'id'
+                  ? 'Validasi kesiapan enterprise melalui traceability tindakan, kualitas verifikasi, dan dampak finansial yang terukur.'
+                  : 'Validate enterprise readiness through action traceability, verification quality, and measurable financial impact.'}
+              </p>
+            </div>
+            <div className={`px-4 py-3 rounded-2xl border ${enterpriseTrustScore >= 80 ? 'bg-emerald-50 border-emerald-200' : enterpriseTrustScore >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Enterprise Trust Score' : 'Enterprise Trust Score'}</p>
+              <p className={`text-3xl font-black ${enterpriseTrustScore >= 80 ? 'text-emerald-700' : enterpriseTrustScore >= 60 ? 'text-amber-700' : 'text-red-700'}`}>
+                {enterpriseTrustScore}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 xl:grid-cols-6 gap-3 mb-5 text-xs font-semibold">
+            <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
+              <div className="text-gray-600 uppercase tracking-wide">{language === 'id' ? 'Assignment' : 'Assignment'}</div>
+              <div className="text-lg font-black text-gray-900">{assignmentCoverageRate}%</div>
+            </div>
+            <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
+              <div className="text-gray-600 uppercase tracking-wide">{language === 'id' ? 'Due Date' : 'Due Date'}</div>
+              <div className="text-lg font-black text-gray-900">{dueDateCoverageRate}%</div>
+            </div>
+            <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-center">
+              <div className="text-emerald-700 uppercase tracking-wide">{language === 'id' ? 'Verify Pass' : 'Verify Pass'}</div>
+              <div className="text-lg font-black text-emerald-900">{verificationPassRate}%</div>
+            </div>
+            <div className="rounded-2xl bg-blue-50 border border-blue-200 px-3 py-2 text-center">
+              <div className="text-blue-700 uppercase tracking-wide">{language === 'id' ? 'Evidence' : 'Evidence'}</div>
+              <div className="text-lg font-black text-blue-900">{evidenceCoverageRate}%</div>
+            </div>
+            <div className="rounded-2xl bg-purple-50 border border-purple-200 px-3 py-2 text-center">
+              <div className="text-purple-700 uppercase tracking-wide">{language === 'id' ? 'Traceability' : 'Traceability'}</div>
+              <div className="text-lg font-black text-purple-900">{traceabilityRate}%</div>
+            </div>
+            <div className="rounded-2xl bg-red-50 border border-red-200 px-3 py-2 text-center">
+              <div className="text-red-700 uppercase tracking-wide">{language === 'id' ? 'Overdue' : 'Overdue'}</div>
+              <div className="text-lg font-black text-red-900">{overdueRate}%</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{language === 'id' ? 'Total Spend (Completed Purchase)' : 'Total Spend (Completed Purchase)'}</p>
+              <p className="text-2xl font-black text-gray-900">Rp {Math.round(totalSpend).toLocaleString('id-ID')}</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-1">{language === 'id' ? 'Estimated Savings' : 'Estimated Savings'}</p>
+              <p className="text-2xl font-black text-emerald-900">Rp {Math.round(estimatedSavings).toLocaleString('id-ID')}</p>
+            </div>
+            <div className={`rounded-2xl border px-4 py-4 ${netImpact >= 0 ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${netImpact >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{language === 'id' ? 'ROI Net Impact' : 'ROI Net Impact'}</p>
+              <p className={`text-2xl font-black ${netImpact >= 0 ? 'text-blue-900' : 'text-red-900'}`}>Rp {Math.round(netImpact).toLocaleString('id-ID')}</p>
+              <p className={`text-sm font-semibold mt-1 ${netImpact >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{roiPercent}% ROI</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+            <h3 className="text-lg font-black text-gray-900 mb-3">{language === 'id' ? 'Audit Event Summary' : 'Audit Event Summary'}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2 text-xs font-semibold">
+              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">created</div>
+                <div className="text-base font-black text-gray-900">{logEventBreakdown.created || 0}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">updated</div>
+                <div className="text-base font-black text-gray-900">{logEventBreakdown.updated || 0}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">status</div>
+                <div className="text-base font-black text-gray-900">{logEventBreakdown.status_changed || 0}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">assigned</div>
+                <div className="text-base font-black text-gray-900">{logEventBreakdown.assigned || 0}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">completed</div>
+                <div className="text-base font-black text-gray-900">{logEventBreakdown.completed || 0}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">verified</div>
+                <div className="text-base font-black text-gray-900">{logEventBreakdown.verified || 0}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                <div className="text-gray-500 uppercase tracking-wide">reopened</div>
+                <div className="text-base font-black text-gray-900">{logEventBreakdown.reopened || 0}</div>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-3">
+              {language === 'id'
+                ? 'Catatan: ROI adalah estimasi model berbasis histori purchase, verifikasi action, dan potensi downtime yang dihindari.'
+                : 'Note: ROI is a model estimate based on purchase history, action verification, and avoided downtime potential.'}
+            </p>
           </div>
         </section>
 
@@ -2013,10 +2676,20 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               const healthScore = latestTest ? calculateHealthScore(latestTest) : null
               const status = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product) : null
               const daysSinceTest = latestTest ? Math.floor((Date.now() - new Date(latestTest.test_date).getTime()) / (1000 * 60 * 60 * 24)) : null
-              const sampling = getSamplingOverview({
-                latestTest,
-                status: status || { level: 'unknown', text: copy.unknownStatus },
-              })
+              const samplingState = daysSinceTest === null
+                ? 'overdue'
+                : daysSinceTest > 60
+                ? 'overdue'
+                : daysSinceTest > 30
+                ? 'upcoming'
+                : 'on-schedule'
+              const samplingLabel = daysSinceTest === null
+                ? copy.noTestData
+                : samplingState === 'overdue'
+                ? copy.samplingInitialRequired
+                : samplingState === 'upcoming'
+                ? copy.nextSamplingIn(Math.max(1, 60 - daysSinceTest))
+                : copy.onSchedule(Math.max(1, 90 - daysSinceTest))
 
               return (
                 <div 
@@ -2028,7 +2701,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     }, 100)
                   }}
                   className={`group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden flex-shrink-0 w-80 snap-start ${
-                    sampling.state === 'overdue'
+                    samplingState === 'overdue'
                       ? 'border-red-200 hover:border-red-300'
                       : selectedMachine?.id === machine.id 
                       ? 'border-primary-500 ring-4 ring-primary-100' 
@@ -2065,13 +2738,13 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       <p className="text-sm text-gray-600 font-medium">{machine.location || copy.noLocation}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                          sampling.state === 'overdue'
+                          samplingState === 'overdue'
                             ? 'bg-red-100 text-red-700 border-red-200'
-                            : sampling.state === 'upcoming'
+                            : samplingState === 'upcoming'
                             ? 'bg-amber-100 text-amber-700 border-amber-200'
                             : 'bg-emerald-100 text-emerald-700 border-emerald-200'
                         }`}>
-                          {sampling.label}
+                          {samplingLabel}
                         </span>
                       </div>
                     </div>
