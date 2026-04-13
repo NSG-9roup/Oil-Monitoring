@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot } from 'recharts'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
 import OilDropLoader from '@/app/components/OilDropLoader'
@@ -78,10 +78,341 @@ interface DashboardClientProps {
   initialMachines: Machine[]
 }
 
+type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
+type ActionStatus = 'Pending' | 'Ongoing' | 'Completed'
+type SamplingState = 'on-schedule' | 'upcoming' | 'overdue'
+type TrendSeverity = 'Low' | 'Medium' | 'High'
+type Language = 'id' | 'en'
+
+interface MaintenanceActionItem {
+  id: string
+  label: string
+  status: ActionStatus
+  pic: string
+  dueDate: string
+  notes: string
+}
+
+interface SamplingOverview {
+  lastSamplingDate: string | null
+  intervalDays: number
+  nextDueDate: string | null
+  daysUntilDue: number | null
+  state: SamplingState
+  label: string
+}
+
+interface TrendAlertItem {
+  id: string
+  parameter: 'Viscosity' | 'Water content' | 'TAN'
+  severity: TrendSeverity
+  title: string
+  message: string
+  recommendedAction: string
+  chartValue: number
+  chartDate: string
+}
+
+const formatLocalDateInput = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const addDays = (date: Date, days: number) => {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+const dashboardCopy = {
+  id: {
+    languageLabel: 'Bahasa Indonesia',
+    languageShort: 'ID',
+    languageSelector: 'Bahasa',
+    welcomeBack: 'Selamat datang kembali',
+    status: 'Status',
+    machines: 'Mesin',
+    user: 'Pengguna',
+    active: 'Aktif',
+    inactive: 'Tidak aktif',
+    totalLabel: 'total',
+    noLocation: 'Tanpa lokasi',
+    noTestData: 'Belum ada data uji',
+    healthScore: 'Skor Kesehatan',
+    today: 'Hari ini',
+    yesterday: 'Kemarin',
+    never: 'Belum pernah',
+    markAsRead: 'Tandai dibaca',
+    actionOverdueLabel: 'Terlambat',
+    actionDuePrefix: 'Jatuh tempo',
+    tbd: 'Belum ditentukan',
+    dashboardAlerts: 'Alert dashboard',
+    signOut: 'Keluar',
+    alertManagementTitle: 'Manajemen Alert',
+    alertManagementDesc: 'Manajemen alert membantu tim memantau perubahan kondisi oli yang penting dan mengambil tindakan sebelum masalah menjadi kritis.',
+    alertEmpty: 'Belum ada alert aktif. Kondisi monitoring saat ini stabil.',
+    resetInbox: 'Reset Inbox',
+    alertSeverity: 'tingkat alert',
+    alertMachine: 'Mesin',
+    alertNextAction: 'Langkah berikutnya',
+    exportPdfTitle: 'Ekspor Laporan Fleet (PDF)',
+    exportPdfDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format premium.',
+    purchaseHistoryTitle: 'Riwayat Pembelian',
+    purchaseHistoryDesc: 'Lihat catatan pembelian dan histori transaksi secara detail.',
+    insightTitle: 'Mesin Prioritas & Insight Operasional',
+    insightDesc: 'Intelijen tahap awal untuk penilaian kesehatan, peringkat prioritas, dan tindakan maintenance.',
+    refreshInsights: 'Segarkan Insight',
+    criticalMachines: 'Mesin Kritis',
+    warningMachines: 'Mesin Waspada',
+    healthyMachines: 'Mesin Sehat',
+    averageHealth: 'Rata-rata Kesehatan',
+    focusCritical: (count: number) => `Butuh perhatian segera: ${count} mesin berada dalam kondisi kritis. Prioritaskan pemeriksaan sumber kontaminasi dan sampling ulang dalam 72 jam.`,
+    focusWarning: (count: number) => `Kondisi sistem masih terkendali tetapi waspada: ${count} mesin perlu pemantauan lebih dekat. Jadwalkan sampling verifikasi dalam 14 hari ke depan.`,
+    focusHealthy: 'Kondisi sistem sehat secara keseluruhan. Lanjutkan sampling rutin bulanan dan jaga kontrol pencegahan kontaminasi tetap aktif.',
+    maintenanceTitle: 'Tracker Tindakan Maintenance',
+    maintenanceDesc: 'Ubah insight dashboard menjadi pekerjaan yang bisa ditugaskan dan ditrack oleh engineer atau tim maintenance.',
+    pending: 'Pending',
+    completed: 'Selesai',
+    overdue: 'Terlambat',
+    actionCompletion: 'Penyelesaian action',
+    pic: 'PIC',
+    dueDate: 'Tanggal selesai',
+    notes: 'Catatan',
+    picPlaceholder: 'Engineer / teknisi',
+    notesPlaceholder: 'Komentar atau observasi teknisi',
+    samplingCompliance: 'Kepatuhan Sampling',
+    onTime: 'tepat waktu',
+    overdueSampling: 'terlambat',
+    maintenancePending: 'Action Pending',
+    maintenanceCompleted: 'Action Completed',
+    maintenanceOverdue: 'Overdue Actions',
+    maintenanceSummaryPending: 'Pekerjaan maintenance yang masih menunggu assignment atau penyelesaian.',
+    maintenanceSummaryCompleted: 'Pekerjaan yang sudah diselesaikan oleh tim maintenance.',
+    maintenanceSummaryOverdue: 'Pekerjaan yang melewati due date dan perlu tindak lanjut segera.',
+    machineHealthTitle: 'Ringkasan Kesehatan Mesin',
+    machineHealthDesc: 'Monitoring kondisi peralatan secara real-time.',
+    selectMachine: 'Pilih Mesin',
+    noMachineSelectedTitle: 'Belum ada mesin dipilih',
+    noMachineSelectedDesc: 'Silakan pilih mesin dari daftar di atas untuk melihat datanya.',
+    lastTest: 'Tes terakhir',
+    statusLabel: 'Status',
+    notAvailable: 'Tidak tersedia',
+    daysAgo: 'hari lalu',
+    unknownStatus: 'Tidak diketahui',
+    noDataStatus: 'Belum ada data',
+    initialSamplingAction: 'Jadwalkan sampling awal sekarang',
+    criticalLabel: 'Kritis',
+    warningLabel: 'Waspada',
+    normalLabel: 'Normal',
+    unknownLabel: 'Tidak diketahui',
+    viewDetails: 'Lihat detail',
+    viewReport: 'Lihat laporan',
+    timeRangeTitle: 'Rentang Waktu',
+    customRange: 'Kustom',
+    startDate: 'Tanggal Mulai',
+    endDate: 'Tanggal Selesai',
+    performanceTitle: 'Tren Kinerja',
+    performanceDesc: 'Pantau perubahan parameter kondisi oli dari waktu ke waktu.',
+    noSampleData: 'Tidak ada data sampel',
+    checkConsole: 'Periksa console browser untuk detail debug.',
+    noDataAvailable: 'Tidak ada data tersedia',
+    trendAlertsTitle: 'Alert Cerdas Berbasis Tren',
+    trendAlertsDesc: 'Deteksi pola kenaikan, perubahan abnormal, dan kondisi mendekati batas kritis.',
+    noTrendAlerts: 'Tidak ada anomali tren pada rentang waktu yang dipilih.',
+    activeTrendAlerts: (count: number) => `${count} alert tren aktif`,
+    labReportsTitle: 'Laporan Laboratorium',
+    labReportsEmpty: 'Belum ada laporan laboratorium pada rentang waktu yang dipilih',
+    reportCountSuffix: (count: number) => `${count} ${count === 1 ? 'laporan' : 'laporan'} pada rentang waktu ini`,
+    criticalMachines: 'Mesin Kritis',
+    warningMachines: 'Mesin Waspada',
+    healthyMachines: 'Mesin Sehat',
+    averageHealth: 'Rata-rata Kesehatan',
+    viscosityTrend: 'Tren Viskositas',
+    waterContent: 'Kandungan Air',
+    tanTrend: 'Total Acid Number (TAN)',
+    noMachineActions: 'Belum ada action mesin yang tersedia.',
+    maintenanceQueue: 'Antrian Prioritas Maintenance',
+    samplingOverdue: (days: number) => `Sampling terlambat ${days} hari`,
+    nextSamplingIn: (days: number) => `Sampling berikutnya dalam ${days} hari`,
+    onSchedule: (days: number) => `Sesuai jadwal, berikutnya ${days} hari lagi`,
+    samplingInitialRequired: 'Sampling terlambat - test awal diperlukan',
+    completeAnalysis: 'Analisis Lengkap',
+    evaluationBasedOnIndustryStandard: 'Evaluasi berdasarkan praktik standar industri oli',
+    machineLabel: 'Mesin',
+    productLabel: 'Produk',
+    viscosityLabel: 'Viskositas',
+    waterContentLabel: 'Kandungan Air',
+    tanValueLabel: 'Nilai TAN',
+    actionTemplates: {
+      critical: ['Uji ulang oil', 'Periksa kebocoran seal', 'Inspeksi kondisi filter'],
+      warning: ['Uji ulang oil', 'Periksa breather / sumber kontaminasi', 'Verifikasi kebersihan sampel'],
+      normal: ['Jadwalkan sampling rutin', 'Inspeksi kondisi filter', 'Catat follow-up'],
+    },
+    trend: {
+      viscosityTitle: 'Viscosity menunjukkan tren yang bergerak dari band normal',
+      viscosityAction: 'Periksa temperatur operasi, risiko dilution, dan stabilitas kondisi oil.',
+      waterTitle: 'Water content menunjukkan kenaikan yang konsisten',
+      waterAction: 'Periksa seal, breather, dan sumber kontaminasi. Lakukan retest setelah tindakan korektif.',
+      tanTitle: 'TAN naik lebih cepat dari laju normal',
+      tanAction: 'Tinjau faktor oksidasi dan jadwalkan sampling verifikasi.',
+      increasingTrend: 'menunjukkan kenaikan konsisten',
+      abnormalChange: 'berubah secara abnormal',
+      approachingCritical: 'mendekati batas kritis',
+      recommendedAction: 'Tindakan yang disarankan',
+      severityLow: 'Rendah',
+      severityMedium: 'Sedang',
+      severityHigh: 'Tinggi',
+    },
+  },
+  en: {
+    languageLabel: 'English',
+    languageShort: 'EN',
+    languageSelector: 'Language',
+    welcomeBack: 'Welcome back',
+    status: 'Status',
+    machines: 'Machines',
+    user: 'User',
+    active: 'Active',
+    inactive: 'Inactive',
+    totalLabel: 'total',
+    noLocation: 'No location',
+    noTestData: 'No test data',
+    healthScore: 'Health Score',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    never: 'Never',
+    markAsRead: 'Mark as Read',
+    actionOverdueLabel: 'Overdue',
+    actionDuePrefix: 'Due',
+    tbd: 'TBD',
+    dashboardAlerts: 'Dashboard alerts',
+    signOut: 'Sign Out',
+    alertManagementTitle: 'Alert Management',
+    alertManagementDesc: 'Alert management helps the team monitor important oil condition changes and act before issues become critical.',
+    alertEmpty: 'No active alerts. Monitoring status is currently stable.',
+    resetInbox: 'Reset Inbox',
+    alertSeverity: 'alert level',
+    alertMachine: 'Machine',
+    alertNextAction: 'Next action',
+    exportPdfTitle: 'Export Fleet Report (PDF)',
+    exportPdfDesc: 'Download the executive summary and machine priority queue in a premium layout.',
+    purchaseHistoryTitle: 'Purchase History',
+    purchaseHistoryDesc: 'View detailed purchase records and transaction history.',
+    insightTitle: 'Machine Priority & Operational Insights',
+    insightDesc: 'Early-stage intelligence for health scoring, priority ranking, and maintenance actions.',
+    refreshInsights: 'Refresh Insights',
+    criticalMachines: 'Critical Machines',
+    warningMachines: 'Warning Machines',
+    healthyMachines: 'Healthy Machines',
+    averageHealth: 'Average Health',
+    focusCritical: (count: number) => `Immediate attention required: ${count} machine${count > 1 ? 's are' : ' is'} in critical condition. Prioritize contamination checks and repeat sampling within 72 hours.`,
+    focusWarning: (count: number) => `The system is stable but caution is needed: ${count} machine${count > 1 ? 's need' : ' needs'} closer monitoring. Schedule verification sampling within the next 14 days.`,
+    focusHealthy: 'System condition is healthy overall. Continue routine monthly sampling and keep contamination prevention controls active.',
+    maintenanceTitle: 'Maintenance Action Tracker',
+    maintenanceDesc: 'Turn dashboard insights into assignable work items that engineers and maintenance teams can track.',
+    pending: 'Pending',
+    completed: 'Completed',
+    overdue: 'Overdue',
+    actionCompletion: 'Action completion',
+    pic: 'PIC',
+    dueDate: 'Due date',
+    notes: 'Notes',
+    picPlaceholder: 'Engineer / technician',
+    notesPlaceholder: 'Technician comments or observations',
+    samplingCompliance: 'Sampling Compliance',
+    onTime: 'on time',
+    overdueSampling: 'overdue',
+    maintenancePending: 'Action Pending',
+    maintenanceCompleted: 'Action Completed',
+    maintenanceOverdue: 'Overdue Actions',
+    maintenanceSummaryPending: 'Open maintenance tasks waiting for assignment or completion.',
+    maintenanceSummaryCompleted: 'Completed actions recorded by the maintenance team.',
+    maintenanceSummaryOverdue: 'Tasks that passed the due date and need immediate follow-up.',
+    machineHealthTitle: 'Machine Health Overview',
+    machineHealthDesc: 'Real-time monitoring of equipment condition.',
+    selectMachine: 'Select Machine',
+    noMachineSelectedTitle: 'No Machine Selected',
+    noMachineSelectedDesc: 'Please select a machine from the list above to view its data.',
+    lastTest: 'Last Test',
+    statusLabel: 'Status',
+    notAvailable: 'Not available',
+    daysAgo: 'days ago',
+    unknownStatus: 'Unknown',
+    noDataStatus: 'No Data',
+    initialSamplingAction: 'Schedule initial sampling now',
+    criticalLabel: 'Critical',
+    warningLabel: 'Warning',
+    normalLabel: 'Normal',
+    unknownLabel: 'Unknown',
+    viewDetails: 'View Details',
+    viewReport: 'View Report',
+    timeRangeTitle: 'Time Range',
+    customRange: 'Custom',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    performanceTitle: 'Performance Trends',
+    performanceDesc: 'Monitor how oil condition parameters change over time.',
+    noSampleData: 'No sample data available',
+    checkConsole: 'Check the browser console for debug details.',
+    noDataAvailable: 'No data available',
+    trendAlertsTitle: 'Trend-Based Smart Alerts',
+    trendAlertsDesc: 'Detect rising patterns, abnormal changes, and values approaching critical limits.',
+    noTrendAlerts: 'No trend anomalies were detected in the selected time range.',
+    activeTrendAlerts: (count: number) => `${count} active trend alert${count === 1 ? '' : 's'}`,
+    labReportsTitle: 'Lab Reports',
+    labReportsEmpty: 'No lab reports available for the selected time range',
+    reportCountSuffix: (count: number) => `${count} report${count === 1 ? '' : 's'} in the selected time range`,
+    criticalMachines: 'Critical Machines',
+    warningMachines: 'Warning Machines',
+    healthyMachines: 'Healthy Machines',
+    averageHealth: 'Average Health',
+    viscosityTrend: 'Viscosity Trend',
+    waterContent: 'Water Content',
+    tanTrend: 'Total Acid Number (TAN)',
+    noMachineActions: 'No machine actions available yet.',
+    maintenanceQueue: 'Maintenance Priority Queue',
+    samplingOverdue: (days: number) => `Sampling overdue by ${days} days`,
+    nextSamplingIn: (days: number) => `Next sampling in ${days} days`,
+    onSchedule: (days: number) => `On schedule, next in ${days} days`,
+    samplingInitialRequired: 'Sampling overdue - initial test required',
+    completeAnalysis: 'Complete Analysis',
+    evaluationBasedOnIndustryStandard: 'Evaluation based on industry-standard oil practices',
+    machineLabel: 'Machine',
+    productLabel: 'Product',
+    viscosityLabel: 'Viscosity',
+    waterContentLabel: 'Water Content',
+    tanValueLabel: 'TAN Value',
+    actionTemplates: {
+      critical: ['Retest oil', 'Check seal leakage', 'Inspect filter condition'],
+      warning: ['Retest oil', 'Inspect breather / contamination source', 'Verify sample cleanliness'],
+      normal: ['Schedule routine sampling', 'Inspect filter condition', 'Log follow-up notes'],
+    },
+    trend: {
+      viscosityTitle: 'Viscosity is moving away from the normal band',
+      viscosityAction: 'Check operating temperature, dilution risk, and oil stability.',
+      waterTitle: 'Water content shows a consistent increase',
+      waterAction: 'Inspect seals, breathers, and contamination sources. Retest after corrective action.',
+      tanTitle: 'TAN is rising faster than the normal rate',
+      tanAction: 'Review oxidation drivers and schedule verification sampling.',
+      increasingTrend: 'shows a consistent increase',
+      abnormalChange: 'changed abnormally',
+      approachingCritical: 'is approaching the critical limit',
+      recommendedAction: 'Recommended action',
+      severityLow: 'Low',
+      severityMedium: 'Medium',
+      severityHigh: 'High',
+    },
+  },
+} as const
+
 export default function DashboardClient({ user, profile, initialMachines }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
   const detailsRef = useRef<HTMLDivElement>(null)
+  const [language, setLanguage] = useState<Language>('id')
+  const copy = dashboardCopy[language]
   
   const [loading, setLoading] = useState(false)
   const [machines] = useState<Machine[]>(initialMachines)
@@ -89,12 +420,25 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   const [oilSamples, setOilSamples] = useState<OilSample[]>([])
   const [labReports, setLabReports] = useState<LabReport[]>([])
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set())
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '6m' | 'all'>('all')
+  const [timeRange, setTimeRange] = useState<TimeRange>('all')
+  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' })
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
   const [latestTestByMachineId, setLatestTestByMachineId] = useState<Record<string, OilSample>>({})
   const [fleetInsightsLoading, setFleetInsightsLoading] = useState(false)
   const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([])
+  const [maintenanceActions, setMaintenanceActions] = useState<Record<string, MaintenanceActionItem[]>>({})
+
+  useEffect(() => {
+    const savedLanguage = window.localStorage.getItem('dashboard-language') as Language | null
+    if (savedLanguage === 'id' || savedLanguage === 'en') {
+      setLanguage(savedLanguage)
+    }
+  }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem('dashboard-language', language)
+  }, [language])
 
   const toggleReport = (reportId: string) => {
     setExpandedReports(prev => {
@@ -594,6 +938,155 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
     return recommendations
   }
 
+  const buildDefaultMaintenanceActions = useCallback((item: {
+    machine: Machine
+    latestTest: OilSample | null
+    status: { level: 'critical' | 'warning' | 'normal' | 'unknown'; text: string }
+    daysSinceTest: number | null
+  }) => {
+    const owner = profile?.full_name || profile?.email || user.email || 'Technician'
+    const baseDate = new Date()
+    const isCritical = item.status.level === 'critical'
+    const isWarning = item.status.level === 'warning'
+    const dueOffset = isCritical ? 2 : isWarning ? 7 : 14
+
+    const actionTemplates = isCritical
+      ? copy.actionTemplates.critical
+      : isWarning
+      ? copy.actionTemplates.warning
+      : copy.actionTemplates.normal
+
+    return actionTemplates.map((label, index) => ({
+      id: `${item.machine.id}:${label}`,
+      label,
+      status: index === 0 && isCritical ? 'Ongoing' as const : 'Pending' as const,
+      pic: index === 0 ? owner : '',
+      dueDate: formatLocalDateInput(addDays(baseDate, dueOffset + index * 3)),
+      notes: index === 0 && isCritical ? (language === 'id' ? 'Prioritaskan mesin ini berdasarkan tingkat alert.' : 'Prioritize this machine first based on alert severity.') : '',
+    }))
+  }, [copy.actionTemplates.critical, copy.actionTemplates.normal, copy.actionTemplates.warning, language, profile?.email, profile?.full_name, user.email])
+
+  const getSamplingOverview = (item: {
+    latestTest: OilSample | null
+    status: { level: 'critical' | 'warning' | 'normal' | 'unknown'; text: string }
+  }): SamplingOverview => {
+    const lastSamplingDate = item.latestTest?.test_date || null
+    const intervalDays = item.status.level === 'critical' ? 30 : item.status.level === 'warning' ? 60 : 90
+
+    if (!lastSamplingDate) {
+      return {
+        lastSamplingDate: null,
+        intervalDays,
+        nextDueDate: null,
+        daysUntilDue: null,
+        state: 'overdue',
+        label: copy.samplingInitialRequired,
+      }
+    }
+
+    const lastDate = new Date(lastSamplingDate)
+    const nextDueDate = addDays(lastDate, intervalDays)
+    const daysUntilDue = Math.ceil((nextDueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+
+    if (daysUntilDue < 0) {
+      return {
+        lastSamplingDate,
+        intervalDays,
+        nextDueDate: nextDueDate.toISOString(),
+        daysUntilDue,
+        state: 'overdue',
+        label: copy.samplingOverdue(Math.abs(daysUntilDue)),
+      }
+    }
+
+    if (daysUntilDue <= 7) {
+      return {
+        lastSamplingDate,
+        intervalDays,
+        nextDueDate: nextDueDate.toISOString(),
+        daysUntilDue,
+        state: 'upcoming',
+        label: copy.nextSamplingIn(daysUntilDue),
+      }
+    }
+
+    return {
+      lastSamplingDate,
+      intervalDays,
+      nextDueDate: nextDueDate.toISOString(),
+      daysUntilDue,
+      state: 'on-schedule',
+      label: copy.onSchedule(daysUntilDue),
+    }
+  }
+
+  const buildTrendAlerts = (tests: LabReport[]): TrendAlertItem[] => {
+    if (tests.length < 3) return []
+
+    const recentTests = tests.slice(-4)
+    const parameterSeries = [
+      {
+        key: 'Water content' as const,
+        values: recentTests.map((test) => (test.water_content || 0) * 100),
+        title: copy.trend.waterTitle,
+        recommendedAction: copy.trend.waterAction,
+      },
+      {
+        key: 'TAN' as const,
+        values: recentTests.map((test) => test.tan_value || 0),
+        title: copy.trend.tanTitle,
+        recommendedAction: copy.trend.tanAction,
+      },
+      {
+        key: 'Viscosity' as const,
+        values: recentTests.map((test) => test.viscosity_40c || 0),
+        title: copy.trend.viscosityTitle,
+        recommendedAction: copy.trend.viscosityAction,
+      },
+    ]
+
+    const alerts: TrendAlertItem[] = []
+
+    parameterSeries.forEach((series) => {
+      const values = series.values
+      if (values.length < 3) return
+
+      const latest = values[values.length - 1]
+      const previous = values[values.length - 2]
+      const baseline = values[0]
+      const increasing = values[values.length - 3] < values[values.length - 2] && values[values.length - 2] < values[values.length - 1]
+      const percentChange = baseline !== 0 ? ((latest - baseline) / Math.abs(baseline)) * 100 : 0
+      const abnormalChange = Math.abs(percentChange) >= 10
+      const nearCritical = series.key === 'Water content'
+        ? latest >= 75
+        : series.key === 'TAN'
+        ? latest >= 0.7
+        : latest <= previous * 0.9 || latest >= previous * 1.1
+
+      if (increasing || abnormalChange || nearCritical) {
+        const severity: TrendSeverity = abnormalChange && nearCritical ? 'High' : increasing && abnormalChange ? 'Medium' : 'Low'
+        const message = increasing
+          ? `${series.key} ${copy.trend.increasingTrend} over the last ${values.length} tests.`
+          : abnormalChange
+          ? `${series.key} ${copy.trend.abnormalChange} by ${percentChange.toFixed(1)}% compared with the earliest sample in this window.`
+          : `${series.key} ${copy.trend.approachingCritical} for this machine.`
+
+        alerts.push({
+          id: `${series.key}-${tests[tests.length - 1].id}`,
+          parameter: series.key,
+          severity,
+          title: series.title,
+          message,
+          recommendedAction: series.recommendedAction,
+          chartValue: latest,
+          chartDate: tests[tests.length - 1].test_date,
+        })
+      }
+    })
+
+    return alerts.slice(0, 3)
+  }
+
   const loadFleetInsights = useCallback(async () => {
     const machineIds = machines.map((machine) => machine.id)
     if (machineIds.length === 0) {
@@ -683,6 +1176,20 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
   // Filter data based on time range
   const filterByTimeRange = <T extends { test_date: string }>(data: T[]) => {
     if (timeRange === 'all') return data
+
+    if (timeRange === 'custom') {
+      const startDate = customDateRange.start ? new Date(`${customDateRange.start}T00:00:00`) : null
+      const endDate = customDateRange.end ? new Date(`${customDateRange.end}T23:59:59.999`) : null
+
+      if (!startDate && !endDate) return data
+
+      return data.filter((item) => {
+        const itemDate = new Date(item.test_date)
+        if (startDate && itemDate < startDate) return false
+        if (endDate && itemDate > endDate) return false
+        return true
+      })
+    }
     
     const now = new Date()
     const cutoffDate = new Date()
@@ -716,10 +1223,10 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           machine,
           latestTest: null,
           healthScore: null,
-          status: { level: 'unknown' as const, text: 'No Data' },
+          status: { level: 'unknown' as const, text: copy.noDataStatus },
           daysSinceTest: null as number | null,
           priorityScore: 0,
-          nextAction: 'Schedule initial sampling now',
+          nextAction: copy.initialSamplingAction,
         }
       }
 
@@ -798,8 +1305,66 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
 
   const visibleAlerts = dashboardAlerts.filter((alertItem) => !dismissedAlertIds.includes(alertItem.id))
 
-  const handleExportFleetReport = () => {
-    exportFleetReportPdf(
+  useEffect(() => {
+    setMaintenanceActions((prev) => {
+      const next = { ...prev }
+
+      machineInsights.forEach((item) => {
+        if (!next[item.machine.id]) {
+          next[item.machine.id] = buildDefaultMaintenanceActions(item)
+        }
+      })
+
+      return next
+    })
+  }, [buildDefaultMaintenanceActions, machineInsights])
+
+  const machineControlCards = machineInsights.map((item) => {
+    const actions = maintenanceActions[item.machine.id] || buildDefaultMaintenanceActions(item)
+    const sampling = getSamplingOverview(item)
+    const completedActions = actions.filter((action) => action.status === 'Completed').length
+    const pendingActions = actions.filter((action) => action.status !== 'Completed').length
+    const overdueActions = actions.filter(
+      (action) => action.status !== 'Completed' && new Date(action.dueDate) < new Date()
+    ).length
+    const progress = actions.length > 0 ? Math.round((completedActions / actions.length) * 100) : 0
+
+    return {
+      ...item,
+      actions,
+      sampling,
+      completedActions,
+      pendingActions,
+      overdueActions,
+      progress,
+    }
+  })
+
+  const maintenancePendingTotal = machineControlCards.reduce((total, item) => total + item.pendingActions, 0)
+  const maintenanceCompletedTotal = machineControlCards.reduce((total, item) => total + item.completedActions, 0)
+  const maintenanceOverdueTotal = machineControlCards.reduce((total, item) => total + item.overdueActions, 0)
+  const samplingOnTimeTotal = machineControlCards.filter((item) => item.sampling.state !== 'overdue').length
+  const samplingOverdueTotal = machineControlCards.filter((item) => item.sampling.state === 'overdue').length
+  const samplingComplianceRate = machineControlCards.length > 0
+    ? Math.round((samplingOnTimeTotal / machineControlCards.length) * 100)
+    : 0
+  const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
+
+  const updateMaintenanceAction = (
+    machineId: string,
+    actionId: string,
+    patch: Partial<MaintenanceActionItem>
+  ) => {
+    setMaintenanceActions((prev) => ({
+      ...prev,
+      [machineId]: (prev[machineId] || []).map((action) => (
+        action.id === actionId ? { ...action, ...patch } : action
+      )),
+    }))
+  }
+
+  const handleExportFleetReport = async () => {
+    await exportFleetReportPdf(
       {
         companyName: profile?.customer?.company_name || 'Customer',
         customerEmail: profile?.email || user.email || '-',
@@ -810,7 +1375,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
         healthyCount,
         avgHealthScore,
       },
-      fleetReportRows
+      fleetReportRows,
+      language
     )
   }
 
@@ -912,7 +1478,40 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                 <p className="text-gray-500 text-xs">{profile?.customer?.company_name}</p>
                 <p className="text-gray-800 font-medium text-sm">{profile?.email || user.email}</p>
               </div>
-              <div className="relative" title="Dashboard alerts">
+              <div className="hidden sm:flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{copy.languageSelector}</span>
+                <div className="flex items-center rounded-lg bg-white border border-gray-200 p-0.5 text-xs font-semibold shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('id')}
+                    className={`px-3 py-1.5 rounded-md transition-colors ${language === 'id' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {copy.languageLabel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('en')}
+                    className={`px-3 py-1.5 rounded-md transition-colors ${language === 'en' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    English
+                  </button>
+                </div>
+              </div>
+
+              <div className="sm:hidden">
+                <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+                  {copy.languageSelector}
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as Language)}
+                    className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800"
+                  >
+                    <option value="id">{copy.languageLabel}</option>
+                    <option value="en">English</option>
+                  </select>
+                </label>
+              </div>
+              <div className="relative" title={copy.dashboardAlerts}>
                 <div className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center">
                   <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -927,7 +1526,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <button
                 onClick={handleSignOut}
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                title="Sign Out"
+                title={copy.signOut}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -947,7 +1546,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           <div className="relative z-10">
             {/* Welcome Header */}
             <div className="mb-6">
-              <p className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">Welcome back</p>
+              <p className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">{copy.welcomeBack}</p>
               <h1 className="text-4xl font-black text-gray-900">
                 {profile?.customer?.company_name?.split(' ').map((word: string, i: number) => (
                   <span key={`${word}-${i}`} className={i > 0 && i % 2 === 0 ? 'text-red-600' : i > 0 ? 'text-orange-600' : ''}>
@@ -985,7 +1584,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4">
                 {/* Status */}
                 <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Status</p>
+                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">{copy.status}</p>
                   <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold border-2 ${
                     profile?.customer?.status === 'active' 
                       ? 'bg-green-50 text-green-700 border-green-300' 
@@ -994,22 +1593,22 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     {profile?.customer?.status === 'active' && (
                       <span className="w-2.5 h-2.5 bg-green-500 rounded-full mr-2 animate-pulse"></span>
                     )}
-                    {profile?.customer?.status === 'active' ? 'Active' : 'Inactive'}
+                    {profile?.customer?.status === 'active' ? copy.active : copy.inactive}
                   </div>
                 </div>
 
                 {/* Total Machines */}
                 <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Machines</p>
+                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">{copy.machines}</p>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-gray-900">{machines.length}</span>
-                    <span className="text-sm text-gray-500 font-semibold">total</span>
+                    <span className="text-sm text-gray-500 font-semibold">{copy.totalLabel}</span>
                   </div>
                 </div>
 
                 {/* User Name */}
                 <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 col-span-2 md:col-span-1">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">User</p>
+                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">{copy.user}</p>
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1027,22 +1626,22 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
         <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Alert Management</h2>
-              <p className="text-sm text-gray-600 mt-1">Alerts appear inside dashboard only. No SMS or automatic email cost.</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{copy.alertManagementTitle}</h2>
+              <p className="text-sm text-gray-600 mt-1">{copy.alertManagementDesc}</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={resetAlertInbox}
                 className="px-3 py-2 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors"
               >
-                Reset Inbox
+                {copy.resetInbox}
               </button>
             </div>
           </div>
 
           {visibleAlerts.length === 0 ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 font-medium">
-              No open alerts. Monitoring status is healthy.
+              {copy.alertEmpty}
             </div>
           ) : (
             <div className="space-y-3">
@@ -1059,19 +1658,25 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`text-xs font-black uppercase tracking-wide ${alertItem.severity === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>
-                          {alertItem.severity}
+                          {alertItem.severity === 'critical'
+                            ? copy.criticalLabel
+                            : alertItem.severity === 'warning'
+                            ? copy.warningLabel
+                            : alertItem.severity === 'normal'
+                            ? copy.normalLabel
+                            : copy.unknownLabel}
                         </span>
-                        <span className="text-xs text-gray-500">Machine: {alertItem.machineName}</span>
+                        <span className="text-xs text-gray-500">{copy.alertMachine}: {alertItem.machineName}</span>
                       </div>
                       <p className="font-bold text-gray-900">{alertItem.title}</p>
                       <p className="text-sm text-gray-700 mt-1">{alertItem.message}</p>
-                      <p className="text-sm text-gray-800 mt-2"><span className="font-semibold">Next action:</span> {alertItem.recommendedAction}</p>
+                      <p className="text-sm text-gray-800 mt-2"><span className="font-semibold">{copy.alertNextAction}:</span> {alertItem.recommendedAction}</p>
                     </div>
                     <button
                       onClick={() => dismissAlert(alertItem.id)}
                       className="self-start px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100"
                     >
-                      Mark as Read
+                      {copy.markAsRead}
                     </button>
                   </div>
                 </div>
@@ -1092,8 +1697,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                 </svg>
               </div>
               <div className="text-left">
-                <h3 className="text-xl font-black">Export Fleet Report (PDF)</h3>
-                <p className="text-white/90 text-sm font-medium mt-1">Download executive summary + machine priority queue in premium layout</p>
+                <h3 className="text-xl font-black">{copy.exportPdfTitle}</h3>
+                <p className="text-white/90 text-sm font-medium mt-1">{copy.exportPdfDesc}</p>
               </div>
             </div>
             <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1112,8 +1717,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                 </svg>
               </div>
               <div className="text-left">
-                <h3 className="text-xl font-black">Purchase History</h3>
-                <p className="text-white/90 text-sm font-medium mt-1">View detailed purchase records and transaction history</p>
+                <h3 className="text-xl font-black">{copy.purchaseHistoryTitle}</h3>
+                <p className="text-white/90 text-sm font-medium mt-1">{copy.purchaseHistoryDesc}</p>
               </div>
             </div>
             <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1126,34 +1731,202 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
         <section className="mb-8 bg-white/80 backdrop-blur rounded-3xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-3xl font-black text-gray-900">
-                Insight <span className="text-red-600">Engine</span>
-              </h2>
-              <p className="text-gray-600 font-medium mt-1">Phase 1 intelligence: health scoring, priority ranking, and maintenance actions</p>
+              <h2 className="text-3xl font-black text-gray-900">{copy.insightTitle}</h2>
+              <p className="text-gray-600 font-medium mt-1">{copy.insightDesc}</p>
             </div>
             <button
               onClick={loadFleetInsights}
               className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
             >
-              Refresh Insights
+              {copy.refreshInsights}
             </button>
           </div>
 
+        <section className="mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.maintenancePending}</p>
+            <p className="text-3xl font-black text-gray-900">{maintenancePendingTotal}</p>
+            <p className="text-sm text-gray-600 mt-2">{copy.maintenanceSummaryPending}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.maintenanceCompleted}</p>
+            <p className="text-3xl font-black text-emerald-600">{maintenanceCompletedTotal}</p>
+            <p className="text-sm text-gray-600 mt-2">{copy.maintenanceSummaryCompleted}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.maintenanceOverdue}</p>
+            <p className="text-3xl font-black text-red-600">{maintenanceOverdueTotal}</p>
+            <p className="text-sm text-gray-600 mt-2">{copy.maintenanceSummaryOverdue}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{copy.samplingCompliance}</p>
+            <div className="flex items-end justify-between gap-3">
+              <p className="text-3xl font-black text-primary-600">{samplingComplianceRate}%</p>
+              <p className="text-sm text-gray-600 text-right">{samplingOnTimeTotal} {copy.onTime} / {samplingOverdueTotal} {copy.overdueSampling}</p>
+            </div>
+            <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-primary-500" style={{ width: `${samplingComplianceRate}%` }} />
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-3xl font-black text-gray-900">{copy.maintenanceTitle}</h2>
+              <p className="text-gray-600 font-medium mt-1">{copy.maintenanceDesc}</p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm font-semibold">
+              <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">{copy.pending}: {maintenancePendingTotal}</span>
+              <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">{copy.completed}: {maintenanceCompletedTotal}</span>
+              <span className="px-3 py-1.5 rounded-full bg-red-100 text-red-700">{copy.overdue}: {maintenanceOverdueTotal}</span>
+            </div>
+          </div>
+
+          {machineControlCards.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center text-gray-600">
+              {copy.noMachineActions}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {machineControlCards.map((item) => (
+                <div key={item.machine.id} className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm">
+                  <div className="flex flex-col gap-3 mb-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-black text-gray-900">{item.machine.machine_name}</p>
+                        <p className="text-sm text-gray-600">{item.machine.location || copy.noLocation} • {item.daysSinceTest === null ? copy.noTestData : `${item.daysSinceTest} days since test`}</p>
+                      </div>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
+                        item.sampling.state === 'overdue'
+                          ? 'bg-red-100 text-red-700 border-red-200'
+                          : item.sampling.state === 'upcoming'
+                          ? 'bg-amber-100 text-amber-700 border-amber-200'
+                          : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {item.sampling.label}
+                      </span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2 text-sm">
+                        <span className="font-semibold text-gray-700">{copy.actionCompletion}</span>
+                        <span className="font-black text-gray-900">{item.progress}%</span>
+                      </div>
+                      <div className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500" style={{ width: `${item.progress}%` }} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+                      <div className="rounded-xl bg-white border border-gray-200 px-3 py-2">
+                        <p className="text-gray-500 uppercase tracking-wide">{copy.pending}</p>
+                        <p className="mt-1 text-gray-900 text-base">{item.pendingActions}</p>
+                      </div>
+                      <div className="rounded-xl bg-white border border-gray-200 px-3 py-2">
+                        <p className="text-gray-500 uppercase tracking-wide">{copy.completed}</p>
+                        <p className="mt-1 text-emerald-600 text-base">{item.completedActions}</p>
+                      </div>
+                      <div className="rounded-xl bg-white border border-gray-200 px-3 py-2">
+                        <p className="text-gray-500 uppercase tracking-wide">{copy.overdue}</p>
+                        <p className="mt-1 text-red-600 text-base">{item.overdueActions}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {item.actions.map((action) => {
+                      const isCompleted = action.status === 'Completed'
+                      const isOverdue = !isCompleted && new Date(action.dueDate) < new Date()
+
+                      return (
+                        <div key={action.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                            <label className="flex items-start gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isCompleted}
+                                onChange={(e) => {
+                                  updateMaintenanceAction(item.machine.id, action.id, {
+                                    status: e.target.checked ? 'Completed' : 'Pending',
+                                  })
+                                }}
+                                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                              />
+                              <div>
+                                <p className="font-bold text-gray-900">{action.label}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {isOverdue ? copy.actionOverdueLabel : action.status} • {copy.actionDuePrefix} {action.dueDate || copy.tbd}
+                                </p>
+                              </div>
+                            </label>
+
+                            <select
+                              value={action.status}
+                              onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { status: e.target.value as ActionStatus })}
+                              className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800"
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Ongoing">Ongoing</option>
+                              <option value="Completed">Completed</option>
+                            </select>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <label className="block">
+                              <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">PIC</span>
+                              <input
+                                type="text"
+                                value={action.pic}
+                                onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { pic: e.target.value })}
+                                placeholder={copy.picPlaceholder}
+                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                              />
+                            </label>
+                            <label className="block">
+                              <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.dueDate}</span>
+                              <input
+                                type="date"
+                                value={action.dueDate}
+                                onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { dueDate: e.target.value })}
+                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                              />
+                            </label>
+                            <label className="block md:col-span-3">
+                              <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.notes}</span>
+                              <textarea
+                                value={action.notes}
+                                onChange={(e) => updateMaintenanceAction(item.machine.id, action.id, { notes: e.target.value })}
+                                placeholder={copy.notesPlaceholder}
+                                rows={2}
+                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <div className="bg-gradient-to-br from-red-50 to-red-100/70 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-red-700 mb-1">Critical Machines</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-red-700 mb-1">{copy.criticalMachines}</p>
               <p className="text-3xl font-black text-red-700">{criticalCount}</p>
             </div>
             <div className="bg-gradient-to-br from-amber-50 to-yellow-100/70 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-1">Warning Machines</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-amber-700 mb-1">{copy.warningMachines}</p>
               <p className="text-3xl font-black text-amber-700">{warningCount}</p>
             </div>
             <div className="bg-gradient-to-br from-emerald-50 to-green-100/70 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-1">Healthy Machines</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-1">{copy.healthyMachines}</p>
               <p className="text-3xl font-black text-emerald-700">{healthyCount}</p>
             </div>
             <div className="bg-gradient-to-br from-slate-50 to-gray-100 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-700 mb-1">Average Health</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-700 mb-1">{copy.averageHealth}</p>
               <p className="text-3xl font-black text-slate-800">{avgHealthScore !== null ? `${avgHealthScore}/100` : '-'}</p>
             </div>
           </div>
@@ -1169,9 +1942,9 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           </div>
 
           <div>
-            <h3 className="text-lg font-black text-gray-900 mb-3">Maintenance Priority Queue</h3>
+            <h3 className="text-lg font-black text-gray-900 mb-3">{copy.maintenanceQueue}</h3>
             {fleetInsightsLoading ? (
-              <p className="text-gray-500">Calculating machine priorities...</p>
+              <p className="text-gray-500">{language === 'id' ? 'Menghitung prioritas mesin...' : 'Calculating machine priorities...'}</p>
             ) : (
               <div className="space-y-3">
                 {machineInsights.slice(0, 5).map((item, idx) => (
@@ -1180,11 +1953,11 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       <span className="w-7 h-7 rounded-full bg-gray-900 text-white text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
                       <div>
                         <p className="font-bold text-gray-900">{item.machine.machine_name}</p>
-                        <p className="text-xs text-gray-500">{item.machine.location || 'No location'} • Last test {item.daysSinceTest === null ? 'N/A' : `${item.daysSinceTest} days ago`}</p>
+                        <p className="text-xs text-gray-500">{item.machine.location || copy.noLocation} • {copy.lastTestLabel} {item.daysSinceTest === null ? copy.notAvailable : `${item.daysSinceTest} ${copy.daysAgo}`}</p>
                       </div>
                     </div>
                     <div className="lg:text-right">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Recommended Action</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{copy.recommendedAction}</p>
                       <p className="text-sm font-medium text-gray-800">{item.nextAction}</p>
                     </div>
                   </div>
@@ -1198,10 +1971,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
         <div className="mb-8">
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="text-3xl font-black text-gray-900">
-                Machine <span className="text-orange-600">Health</span> Overview
-              </h2>
-              <p className="text-gray-600 font-medium mt-1">Real-time monitoring of your equipment condition</p>
+              <h2 className="text-3xl font-black text-gray-900">{copy.machineHealthTitle}</h2>
+              <p className="text-gray-600 font-medium mt-1">{copy.machineHealthDesc}</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -1248,6 +2019,10 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               const healthScore = latestTest ? calculateHealthScore(latestTest) : null
               const status = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product) : null
               const daysSinceTest = latestTest ? Math.floor((Date.now() - new Date(latestTest.test_date).getTime()) / (1000 * 60 * 60 * 24)) : null
+              const sampling = getSamplingOverview({
+                latestTest,
+                status: status || { level: 'unknown', text: copy.unknownStatus },
+              })
 
               return (
                 <div 
@@ -1259,7 +2034,9 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     }, 100)
                   }}
                   className={`group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden flex-shrink-0 w-80 snap-start ${
-                    selectedMachine?.id === machine.id 
+                    sampling.state === 'overdue'
+                      ? 'border-red-200 hover:border-red-300'
+                      : selectedMachine?.id === machine.id 
                       ? 'border-primary-500 ring-4 ring-primary-100' 
                       : 'border-gray-100 hover:border-primary-300'
                   }`}
@@ -1291,14 +2068,25 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 font-medium">{machine.location || 'No location'}</p>
+                      <p className="text-sm text-gray-600 font-medium">{machine.location || copy.noLocation}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                          sampling.state === 'overdue'
+                            ? 'bg-red-100 text-red-700 border-red-200'
+                            : sampling.state === 'upcoming'
+                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                            : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                        }`}>
+                          {sampling.label}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Health Score */}
                     {healthScore !== null ? (
                       <div className="mb-4">
                         <div className="flex items-baseline justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Health Score</span>
+                          <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">{copy.healthScore}</span>
                           <span className={`text-2xl font-black ${
                             healthScore >= 80 ? 'text-green-600' :
                             healthScore >= 60 ? 'text-yellow-600' :
@@ -1318,33 +2106,33 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       </div>
                     ) : (
                       <div className="mb-4 text-center py-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500 font-medium">No test data</p>
+                        <p className="text-sm text-gray-500 font-medium">{copy.noTestData}</p>
                       </div>
                     )}
 
                     {/* Quick Stats */}
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-600 font-semibold mb-0.5">Last Test</p>
+                        <p className="text-gray-600 font-semibold mb-0.5">{copy.lastTest}</p>
                         <p className="font-bold text-gray-900">
                           {daysSinceTest !== null ? (
-                            daysSinceTest === 0 ? 'Today' :
-                            daysSinceTest === 1 ? 'Yesterday' :
-                            `${daysSinceTest}d ago`
-                          ) : 'Never'}
+                            daysSinceTest === 0 ? copy.today :
+                            daysSinceTest === 1 ? copy.yesterday :
+                            `${daysSinceTest} ${copy.daysAgo}`
+                          ) : copy.never}
                         </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-600 font-semibold mb-0.5">Status</p>
+                        <p className="text-gray-600 font-semibold mb-0.5">{copy.statusLabel}</p>
                         <p className="font-bold text-gray-900">
-                          {status?.text || 'Unknown'}
+                          {status?.text || copy.unknownStatus}
                         </p>
                       </div>
                     </div>
 
                     {/* Hover Indicator */}
                     <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center text-primary-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                      View Details →
+                      {copy.viewDetails} →
                     </div>
                   </div>
                 </div>
@@ -1356,7 +2144,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           <div className="flex justify-center gap-2 mt-4">
             {machines.map((_, index) => (
               <button
-                key={index}
+                                  {copy.viewReport}
                 onClick={() => {
                   const container = document.getElementById('machine-carousel')
                   if (container) {
@@ -1381,7 +2169,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
           <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-primary-500">
             <div className="flex justify-between items-center mb-4">
               <label htmlFor="machine-select" className="block text-lg font-semibold text-gray-800">
-                Select Machine
+                {copy.selectMachine}
               </label>
               <span className="text-sm text-gray-600 bg-primary-50 px-3 py-1 rounded-full">
                 {machines.length} {machines.length === 1 ? 'machine' : 'machines'}
@@ -1399,7 +2187,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             >
               {machines.map(machine => (
                 <option key={machine.id} value={machine.id}>
-                  {machine.machine_name} - {machine.model} ({machine.location || 'No location'})
+                  {machine.machine_name} - {machine.model} ({machine.location || copy.noLocation})
                 </option>
               ))}
             </select>
@@ -1407,7 +2195,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
 
           {/* Time Range Filter */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-secondary-500">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Time Range</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">{copy.timeRangeTitle}</h2>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setTimeRange('7d')}
@@ -1417,7 +2205,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                7 Days
+                {language === 'id' ? '7 Hari' : '7 Days'}
               </button>
               <button
                 onClick={() => setTimeRange('30d')}
@@ -1427,7 +2215,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                30 Days
+                {language === 'id' ? '30 Hari' : '30 Days'}
               </button>
               <button
                 onClick={() => setTimeRange('90d')}
@@ -1437,7 +2225,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                90 Days
+                {language === 'id' ? '90 Hari' : '90 Days'}
               </button>
               <button
                 onClick={() => setTimeRange('6m')}
@@ -1447,7 +2235,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                6 Months
+                {language === 'id' ? '6 Bulan' : '6 Months'}
               </button>
               <button
                 onClick={() => setTimeRange('all')}
@@ -1457,9 +2245,42 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                All Time
+                {language === 'id' ? 'Semua Waktu' : 'All Time'}
+              </button>
+              <button
+                onClick={() => setTimeRange('custom')}
+                className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${
+                  timeRange === 'custom'
+                    ? 'bg-gradient-industrial text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {copy.customRange}
               </button>
             </div>
+
+            {timeRange === 'custom' && (
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.startDate}</span>
+                  <input
+                    type="date"
+                    value={customDateRange.start}
+                    onChange={(e) => setCustomDateRange((prev) => ({ ...prev, start: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.endDate}</span>
+                  <input
+                    type="date"
+                    value={customDateRange.end}
+                    onChange={(e) => setCustomDateRange((prev) => ({ ...prev, end: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  />
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1478,8 +2299,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">No Machine Selected</h3>
-            <p className="text-gray-600">Please select a machine from the dropdown above to view its data.</p>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">{copy.noMachineSelectedTitle}</h3>
+            <p className="text-gray-600">{copy.noMachineSelectedDesc}</p>
           </div>
         )}
 
@@ -1489,10 +2310,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
             {/* Charts Section */}
             <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
               <div className="mb-6">
-                <h2 className="text-3xl font-black text-gray-900">
-                  Performance <span className="text-red-600">Trends</span>
-                </h2>
-                <p className="text-gray-600 font-medium mt-1">Monitor oil condition parameters over time</p>
+                  <h2 className="text-3xl font-black text-gray-900">{copy.performanceTitle}</h2>
+                  <p className="text-gray-600 font-medium mt-1">{copy.performanceDesc}</p>
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1506,8 +2325,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                     <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    <p className="font-semibold">No sample data available</p>
-                    <p className="text-sm text-gray-400 mt-1">Check browser console for debug info</p>
+                    <p className="font-semibold">{copy.noSampleData}</p>
+                    <p className="text-sm text-gray-400 mt-1">{copy.checkConsole}</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 200 : window.innerWidth < 1024 ? 250 : 300}>
@@ -1525,6 +2344,19 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       <Legend />
                       <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#f97316" strokeWidth={3} dot={{ fill: '#f97316', r: 5 }} />
                       <Line type="monotone" dataKey="viscosity_100c" name="Viscosity @100°C" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 5 }} />
+                      {selectedMachineTrendAlerts
+                        .filter((alert) => alert.parameter === 'Viscosity')
+                        .map((alert) => (
+                          <ReferenceDot
+                            key={alert.id}
+                            x={new Date(alert.chartDate).toLocaleDateString()}
+                            y={alert.chartValue}
+                            r={7}
+                            fill="#ef4444"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          />
+                        ))}
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -1534,11 +2366,11 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <span className="w-3 h-3 bg-secondary-500 rounded-full mr-3"></span>
-                  Water Content
+                  {language === 'id' ? 'Kandungan Air' : 'Water Content'}
                 </h3>
                 {chartData.length === 0 ? (
                   <div className="flex items-center justify-center h-[300px] text-gray-400">
-                    <p>No data available</p>
+                    <p>{copy.noDataAvailable}</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
@@ -1556,6 +2388,19 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       />
                       <Legend />
                       <Line type="monotone" dataKey="water" stroke="#dc2626" strokeWidth={3} dot={{ fill: '#dc2626', r: 5 }} />
+                      {selectedMachineTrendAlerts
+                        .filter((alert) => alert.parameter === 'Water content')
+                        .map((alert) => (
+                          <ReferenceDot
+                            key={alert.id}
+                            x={new Date(alert.chartDate).toLocaleDateString()}
+                            y={alert.chartValue}
+                            r={7}
+                            fill="#f59e0b"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          />
+                        ))}
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -1565,11 +2410,11 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <span className="w-3 h-3 bg-industrial-500 rounded-full mr-3"></span>
-                  Total Acid Number (TAN)
+                  {language === 'id' ? 'Total Acid Number (TAN)' : 'Total Acid Number (TAN)'}
                 </h3>
                 {chartData.length === 0 ? (
                   <div className="flex items-center justify-center h-[300px] text-gray-400">
-                    <p>No data available</p>
+                    <p>{copy.noDataAvailable}</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={300}>
@@ -1587,6 +2432,19 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                       />
                       <Legend />
                       <Line type="monotone" dataKey="tan" stroke="#b91c1c" strokeWidth={3} dot={{ fill: '#b91c1c', r: 5 }} />
+                      {selectedMachineTrendAlerts
+                        .filter((alert) => alert.parameter === 'TAN')
+                        .map((alert) => (
+                          <ReferenceDot
+                            key={alert.id}
+                            x={new Date(alert.chartDate).toLocaleDateString()}
+                            y={alert.chartValue}
+                            r={7}
+                            fill="#8b5cf6"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          />
+                        ))}
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -1594,19 +2452,64 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
               </div>
             </div>
 
+            <section className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900">{copy.trendAlertsTitle}</h2>
+                  <p className="text-gray-600 font-medium mt-1">{copy.trendAlertsDesc}</p>
+                </div>
+                <div className="text-sm text-gray-600 font-semibold">
+                  {copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}
+                </div>
+              </div>
+
+              {selectedMachineTrendAlerts.length === 0 ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 font-medium">
+                  {copy.noTrendAlerts}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                  {selectedMachineTrendAlerts.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className={`rounded-2xl border p-5 ${
+                        alert.severity === 'High'
+                          ? 'border-red-200 bg-red-50/70'
+                          : alert.severity === 'Medium'
+                          ? 'border-amber-200 bg-amber-50/70'
+                          : 'border-sky-200 bg-sky-50/70'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wide ${
+                          alert.severity === 'High'
+                            ? 'bg-red-100 text-red-700'
+                            : alert.severity === 'Medium'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-sky-100 text-sky-700'
+                        }`}>
+                          {alert.severity === 'High' ? copy.trend.severityHigh : alert.severity === 'Medium' ? copy.trend.severityMedium : copy.trend.severityLow}
+                        </span>
+                        <span className="text-xs font-semibold text-gray-500">{alert.parameter}</span>
+                      </div>
+                      <h3 className="text-lg font-black text-gray-900">{alert.title}</h3>
+                      <p className="text-sm text-gray-700 mt-2">{alert.message}</p>
+                      <p className="text-sm text-gray-800 mt-3"><span className="font-semibold">{copy.trend.recommendedAction}:</span> {alert.recommendedAction}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
             {/* Lab Reports */}
             <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
               <div className="mb-6">
-                <h2 className="text-3xl font-black text-gray-900">
-                  Lab <span className="text-orange-600">Reports</span>
-                </h2>
-                <p className="text-gray-600 font-medium mt-1">
-                  {filteredReports.length} {filteredReports.length === 1 ? 'report' : 'reports'} in selected time range
-                </p>
+                <h2 className="text-3xl font-black text-gray-900">{copy.labReportsTitle}</h2>
+                <p className="text-gray-600 font-medium mt-1">{copy.reportCountSuffix(filteredReports.length)}</p>
               </div>
               {filteredReports.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No lab reports available for selected time range</p>
+                  <p>{copy.labReportsEmpty}</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -1657,18 +2560,24 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                                   status.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
                                   'bg-green-100 text-green-800'
                                 }`}>
-                                  {status.level.charAt(0).toUpperCase() + status.level.slice(1)}
+                                  {status.level === 'critical'
+                                    ? copy.criticalLabel
+                                    : status.level === 'warning'
+                                    ? copy.warningLabel
+                                    : status.level === 'normal'
+                                    ? copy.normalLabel
+                                    : copy.unknownLabel}
                                 </div>
                               </div>
                               <div className="flex items-center gap-6 text-sm">
                                 <span className="text-gray-600">
-                                  <span className="font-semibold text-blue-900">Viscosity:</span> {report.viscosity_40c?.toFixed(1) || 'N/A'} / {report.viscosity_100c?.toFixed(1) || 'N/A'} cSt
+                                  <span className="font-semibold text-blue-900">{copy.viscosityLabel}:</span> {report.viscosity_40c?.toFixed(1) || copy.notAvailable} / {report.viscosity_100c?.toFixed(1) || copy.notAvailable} cSt
                                 </span>
                                 <span className="text-gray-600">
-                                  <span className="font-semibold text-cyan-900">Water:</span> {report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%
+                                  <span className="font-semibold text-cyan-900">{copy.waterContentLabel}:</span> {report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%
                                 </span>
                                 <span className="text-gray-600">
-                                  <span className="font-semibold text-purple-900">TAN:</span> {report.tan_value?.toFixed(2) || 'N/A'} mg KOH/g
+                                  <span className="font-semibold text-purple-900">{copy.tanValueLabel}:</span> {report.tan_value?.toFixed(2) || copy.notAvailable} mg KOH/g
                                 </span>
                               </div>
                             </div>
@@ -1691,7 +2600,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                   </svg>
-                                  View Report
+                                  {copy.viewReport}
                                 </button>
                               )}
                               <svg 
@@ -1723,13 +2632,13 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                             <div className="flex justify-between items-start">
                               <div>
                                 <div className="flex items-center gap-3">
-                                  <h4 className="text-xl font-black text-white">Complete Analysis</h4>
+                                  <h4 className="text-xl font-black text-white">{copy.completeAnalysis}</h4>
                                   <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full">
                                     {status.text.toUpperCase()}
                                   </span>
                                 </div>
                                 <p className="text-white/80 text-xs mt-2 font-medium">
-                                  Evaluation based on industry-standard oil type practices
+                                  {copy.evaluationBasedOnIndustryStandard}
                                 </p>
                               </div>
                             </div>
@@ -1746,7 +2655,7 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                                   </svg>
                                 </div>
                                 <div>
-                                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Machine</p>
+                                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">{copy.machineLabel}</p>
                                   <p className="text-sm font-bold text-gray-900 mt-1">{selectedMachine?.machine_name}</p>
                                 </div>
                               </div>
@@ -1757,8 +2666,8 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                                   </svg>
                                 </div>
                                 <div>
-                                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Product</p>
-                                  <p className="text-sm font-bold text-gray-900 mt-1">{report.product?.product_name || 'N/A'}</p>
+                                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">{copy.productLabel}</p>
+                                  <p className="text-sm font-bold text-gray-900 mt-1">{report.product?.product_name || copy.notAvailable}</p>
                                   {report.product?.product_type && (
                                     <p className="text-xs text-gray-600 mt-0.5">{report.product.product_type}</p>
                                   )}
@@ -1770,33 +2679,33 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                               <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border-2 border-blue-200">
                                 <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">Viscosity 40°C</p>
+                                  <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">{copy.viscosityLabel} 40°C</p>
                                   <span className={`text-lg font-black ${
                                     viscosity40Trend.direction === 'up' ? 'text-red-600' :
                                     viscosity40Trend.direction === 'down' ? 'text-green-600' :
                                     'text-gray-600'
                                   }`}>{viscosity40Trend.icon}</span>
                                 </div>
-                                <p className="text-3xl font-black text-blue-900">{report.viscosity_40c?.toFixed(1) || 'N/A'}</p>
+                                <p className="text-3xl font-black text-blue-900">{report.viscosity_40c?.toFixed(1) || copy.notAvailable}</p>
                                 <p className="text-xs text-blue-700 mt-1 font-semibold">cSt</p>
                               </div>
 
                               <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-4 border-2 border-indigo-200">
                                 <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-indigo-800 uppercase tracking-wide">Viscosity 100°C</p>
+                                  <p className="text-xs font-bold text-indigo-800 uppercase tracking-wide">{copy.viscosityLabel} 100°C</p>
                                   <span className={`text-lg font-black ${
                                     viscosity100Trend.direction === 'up' ? 'text-red-600' :
                                     viscosity100Trend.direction === 'down' ? 'text-green-600' :
                                     'text-gray-600'
                                   }`}>{viscosity100Trend.icon}</span>
                                 </div>
-                                <p className="text-3xl font-black text-indigo-900">{report.viscosity_100c?.toFixed(1) || 'N/A'}</p>
+                                <p className="text-3xl font-black text-indigo-900">{report.viscosity_100c?.toFixed(1) || copy.notAvailable}</p>
                                 <p className="text-xs text-indigo-700 mt-1 font-semibold">cSt</p>
                               </div>
                               
                               <div className="bg-gradient-to-br from-cyan-50 to-cyan-100/50 rounded-xl p-4 border-2 border-cyan-200">
                                 <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-cyan-800 uppercase tracking-wide">Water Content</p>
+                                  <p className="text-xs font-bold text-cyan-800 uppercase tracking-wide">{copy.waterContentLabel}</p>
                                   <span className={`text-lg font-black ${
                                     waterTrend.direction === 'up' ? 'text-red-600' :
                                     waterTrend.direction === 'down' ? 'text-green-600' :
@@ -1814,14 +2723,14 @@ export default function DashboardClient({ user, profile, initialMachines }: Dash
                               
                               <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border-2 border-purple-200">
                                 <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-purple-800 uppercase tracking-wide">TAN Value</p>
+                                  <p className="text-xs font-bold text-purple-800 uppercase tracking-wide">{copy.tanValueLabel}</p>
                                   <span className={`text-lg font-black ${
                                     tanTrend.direction === 'up' ? 'text-red-600' :
                                     tanTrend.direction === 'down' ? 'text-green-600' :
                                     'text-gray-600'
                                   }`}>{tanTrend.icon}</span>
                                 </div>
-                                <p className="text-3xl font-black text-purple-900">{report.tan_value?.toFixed(2) || 'N/A'}</p>
+                                <p className="text-3xl font-black text-purple-900">{report.tan_value?.toFixed(2) || copy.notAvailable}</p>
                                 <p className="text-xs text-purple-700 mt-1 font-semibold">mg KOH/g</p>
                               </div>
                             </div>
