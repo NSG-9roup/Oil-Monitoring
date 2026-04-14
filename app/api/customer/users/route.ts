@@ -113,6 +113,13 @@ export async function POST(request: NextRequest) {
     const requiredPin = process.env.CUSTOMER_USER_MANAGEMENT_PIN
     const inputPin = parsed.data.admin_pin.trim()
 
+    // C6: Perkuat PIN Security (Rate limiting per attempt) - Max 5 attempts per minute
+    const pinRateKey = `customer-pin-attempt:${authResult.profile.customer_id}:${ip}`
+    const pinRate = await checkRateLimitDistributed(pinRateKey, 5, 60_000)
+    if (!pinRate.allowed) {
+      return jsonError('Too many failed PIN attempts. Please try again later.', 429)
+    }
+
     const { data: customerPinData, error: customerPinError } = await supabaseAdmin
       .from('oil_customers')
       .select('id, user_management_pin_hash')

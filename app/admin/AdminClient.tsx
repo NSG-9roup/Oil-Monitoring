@@ -9,6 +9,7 @@ import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
 import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, AdminPurchase } from '@/lib/types'
 import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
+import { logger } from '@/lib/logger'
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -154,7 +155,7 @@ export default function AdminClient({
       .from('oil_customers')
       .select('*')
       .order('company_name')
-    if (error) console.error('Failed to load customers:', error.message)
+    if (error) logger.error('Failed to load ', error.message)
     setCustomers(normalizeCustomers((data || []) as CustomerWithPinHash[]))
   }
 
@@ -164,7 +165,7 @@ export default function AdminClient({
       .from('oil_machines')
       .select('*, customer:oil_customers(company_name)')
       .order('machine_name')
-    if (error) console.error('Failed to load machines:', error.message)
+    if (error) logger.error('Failed to load ', error.message)
     setMachines(data || [])
   }
 
@@ -174,7 +175,7 @@ export default function AdminClient({
       .from('oil_profiles')
       .select('id, full_name, email, phone_number, role, customer_id, created_at, updated_at, customer:oil_customers(company_name)')
       .order('created_at', { ascending: false })
-    if (error) console.error('Failed to load users:', error.message)
+    if (error) logger.error('Failed to load ', error.message)
     const normalizedUsers: AdminUser[] = (data || []).map((row) => ({
       ...row,
       customer: Array.isArray(row.customer) ? (row.customer[0] ?? null) : row.customer,
@@ -188,7 +189,7 @@ export default function AdminClient({
       .from('oil_products')
       .select('*')
       .order('id')
-    if (error) console.error('Failed to load products:', error.message)
+    if (error) logger.error('Failed to load ', error.message)
     setProducts(data || [])
     
     // Extract unique product types for autocomplete
@@ -216,7 +217,7 @@ export default function AdminClient({
       `)
       .order('test_date', { ascending: false })
       .limit(50)
-    if (error) console.error('Failed to load tests:', error.message)
+    if (error) logger.error('Failed to load ', error.message)
     setRecentTests(data || [])
   }, [supabase])
 
@@ -227,7 +228,7 @@ export default function AdminClient({
       .select('*, customer:oil_customers(company_name), product:oil_products(product_name)')
       .order('purchase_date', { ascending: false })
       .limit(100)
-    if (error) console.error('Failed to load purchases:', error.message)
+    if (error) logger.error('Failed to load ', error.message)
     setPurchases(data || [])
   }, [supabase])
 
@@ -250,22 +251,40 @@ export default function AdminClient({
           .not('customer_id', 'is', null),
       ])
 
-      if (machinesResult.error || testsResult.error || profilesResult.error) {
-        console.error('Failed to load alert queue:', {
+      if (machinesResult.error || profilesResult.error) {
+        logger.error('Failed to load ', {
           machines: machinesResult.error?.message,
-          tests: testsResult.error?.message,
           profiles: profilesResult.error?.message,
         })
         setAlertQueue([])
         return
       }
 
-      const latestByMachine = new Map<string, { test_date: string; water_content: number | null; tan_value: number | null }>()
-      ;(testsResult.data || []).forEach((test) => {
-        if (!latestByMachine.has(test.machine_id)) {
-          latestByMachine.set(test.machine_id, test)
+      // C4: Optimasi query - Coba panggil RPC agregasi di server
+      let latestByMachine = new Map<string, { test_date: string; water_content: number | null; tan_value: number | null }>()
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_latest_machine_tests')
+      
+      if (!rpcError && rpcData) {
+        rpcData.forEach((row: any) => {
+          latestByMachine.set(row.machine_id, {
+            test_date: row.test_date,
+            water_content: row.water_content,
+            tan_value: row.tan_value
+          })
+        })
+      } else {
+        // Fallback jika view/RPC belum ada di DB
+        if (testsResult.error) {
+          logger.error('Failed to load tests fallback', testsResult.error.message)
+          setAlertQueue([])
+          return
         }
-      })
+        ;(testsResult.data || []).forEach((test) => {
+          if (!latestByMachine.has(test.machine_id)) {
+            latestByMachine.set(test.machine_id, test)
+          }
+        })
+      }
 
       const emailByCustomer = new Map<string, string>()
       ;(profilesResult.data || []).forEach((profileItem) => {
@@ -328,7 +347,7 @@ export default function AdminClient({
           .in('action_type', ['reviewed', 'email_sent'])
 
         if (actionError) {
-          console.error('Failed to load alert action state:', actionError.message)
+          logger.error('Failed to load ', actionError.message)
         } else {
           const reviewed = (actionRows || [])
             .filter((row) => row.action_type === 'reviewed')
@@ -542,7 +561,50 @@ export default function AdminClient({
   }
 
   const handleDeleteCustomer = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this customer?')) return
+    // C3: Cascade delete preview — hitung berapa data yang akan ikut terhapus
+    setLoading(true)
+    let machineCount = 0, testCount = 0, userCount = 0, purchaseCount = 0
+    try {
+      const [mResult, uResult, puResult] = await Promise.all([
+        supabase.from('oil_machines').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('oil_profiles').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('oil_purchase_history').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+      ])
+      machineCount = mResult.count ?? 0
+      userCount = uResult.count ?? 0
+      purchaseCount = puResult.count ?? 0
+
+      // Hitung tests dari mesin yang akan terhapus
+      if (machineCount > 0) {
+        const { data: machineIds } = await supabase.from('oil_machines').select('id').eq('customer_id', id)
+        if (machineIds && machineIds.length > 0) {
+          const ids = machineIds.map(m => m.id)
+          const tResult = await supabase.from('oil_lab_tests').select('id', { count: 'exact', head: true }).in('machine_id', ids)
+          testCount = tResult.count ?? 0
+        }
+      }
+    } catch {
+      // Jika gagal count, tetap tampilkan konfirmasi sederhana
+    } finally {
+      setLoading(false)
+    }
+
+    const confirmMessage = [
+      '⚠️ KONFIRMASI PENGHAPUSAN CUSTOMER',
+      '',
+      'Anda akan menghapus customer beserta SEMUA data berikut:',
+      `  • ${machineCount} mesin`,
+      `  • ${testCount} catatan lab test`,
+      `  • ${userCount} akun user`,
+      `  • ${purchaseCount} riwayat pembelian`,
+      '',
+      'AKSI INI TIDAK BISA DIBATALKAN!',
+      '',
+      'Ketik OK untuk konfirmasi penghapusan.',
+    ].join('\n')
+
+    if (!confirm(confirmMessage)) return
+
     setLoading(true)
     try {
       const { error } = await supabase
@@ -550,7 +612,7 @@ export default function AdminClient({
         .delete()
         .eq('id', id)
       if (error) throw error
-      alert('Customer deleted successfully!')
+      alert(`Customer dan ${machineCount} mesin, ${testCount} lab test, ${userCount} user, ${purchaseCount} pembelian berhasil dihapus.`)
       refreshData()
     } catch (error: unknown) {
       alert('Error: ' + getErrorMessage(error))

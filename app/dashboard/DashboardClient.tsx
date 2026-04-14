@@ -10,6 +10,10 @@ import OilDropLoader from '@/app/components/OilDropLoader'
 import { exportFleetReportPdf, exportTrustRoiSnapshotPdf, type FleetReportRow, type TrustRoiAuditRow } from '@/lib/pdf/exportFleetReport'
 import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
 import type { MaintenanceAction, MaintenanceActionLog, MaintenanceActionPriority, MaintenanceActionStatus, MaintenanceVerificationStatus } from '@/lib/types'
+import { useChartHeight } from '@/lib/hooks/useWindowSize'
+import { logger } from '@/lib/logger'
+import { GlossaryTooltip } from '@/app/components/GlossaryTooltip'
+import { OnboardingTour, ReplayOnboardingButton } from '@/app/components/OnboardingTour'
 
 interface Machine {
   id: string
@@ -488,6 +492,8 @@ export default function DashboardClient({
   const [maintenanceActionLogs] = useState<MaintenanceActionLog[]>(initialMaintenanceActionLogs)
   const [purchaseHistory] = useState<PurchaseHistoryRecord[]>(initialPurchaseHistory)
   const [actionSaving, setActionSaving] = useState(false)
+  // SSR-safe chart height (fixes window.innerWidth crash)
+  const chartHeight = useChartHeight(200, 250, 300)
   const [actionFilter, setActionFilter] = useState<'all' | MaintenanceActionStatus>('open')
   const [actionForm, setActionForm] = useState({
     machine_id: initialMachines[0]?.id || '',
@@ -550,7 +556,7 @@ export default function DashboardClient({
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (error: unknown) {
-      console.error('Error downloading PDF:', error)
+      logger.error('Error downloading PDF:', error)
       alert(`Failed to download PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -1276,7 +1282,7 @@ export default function DashboardClient({
         .order('test_date', { ascending: false })
 
       if (error) {
-        console.error('Failed to load fleet insights:', error.message)
+        logger.error('Failed to load fleet insights:', error.message)
         setLatestTestByMachineId({})
         return
       }
@@ -1303,7 +1309,7 @@ export default function DashboardClient({
       setLatestTestByMachineId(latestMap)
       setFleetHistoryByMachineId(historyMap)
     } catch (error) {
-      console.error('Fleet insight error:', error)
+      logger.error('Fleet insight error:', error)
       setLatestTestByMachineId({})
       setFleetHistoryByMachineId({})
     } finally {
@@ -1325,7 +1331,7 @@ export default function DashboardClient({
       setOilSamples(tests) // Lab tests ARE the samples
       setLabReports(tests) // Also use for lab reports
     } catch (error) {
-      console.error('Error loading machine data:', error)
+      logger.error('Error loading machine data:', error)
     } finally {
       setLoading(false)
     }
@@ -1784,7 +1790,7 @@ export default function DashboardClient({
         .eq('actor_id', profile?.id || user.id)
 
       if (error) {
-        console.error('Failed to load customer alert read states:', error.message)
+        logger.error('Failed to load customer alert read states:', error.message)
         return
       }
 
@@ -1865,6 +1871,17 @@ export default function DashboardClient({
                   </select>
                 </label>
               </div>
+              <ReplayOnboardingButton language={language} />
+              <button
+                onClick={() => router.push('/dashboard/compare')}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold hover:bg-orange-100 transition-colors"
+                title={language === 'id' ? 'Bandingkan mesin' : 'Compare machines'}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                {language === 'id' ? 'Bandingkan' : 'Compare'}
+              </button>
               <div className="relative" title={copy.dashboardAlerts}>
                 <div className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center">
                   <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1891,9 +1908,10 @@ export default function DashboardClient({
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <OnboardingTour language={language} />
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
         {/* Customer Detail Card - Neuros Style */}
-        <div className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 overflow-hidden relative">
+        <div style={{ order: 1 }} className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 overflow-hidden relative">
           {/* Decorative gradient overlay */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-500/5 to-secondary-500/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
           
@@ -1977,82 +1995,8 @@ export default function DashboardClient({
           </div>
         </div>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{copy.performanceTitle}</h2>
-              <p className="text-sm text-gray-600 mt-1">{copy.performanceDesc}</p>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{copy.selectMachine}</p>
-              <p className="text-base font-black text-gray-900">{selectedMachine?.machine_name || copy.noMachineSelectedTitle}</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-            <div className="xl:col-span-3 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5">
-              <h3 className="text-lg font-black text-gray-900 mb-4">{language === 'id' ? 'Trend Utama' : 'Primary Trend'}</h3>
-              {chartData.length === 0 ? (
-                <div className="flex items-center justify-center h-[240px] rounded-2xl border border-dashed border-gray-200 bg-white text-gray-400">
-                  <div className="text-center">
-                    <p className="font-semibold">{copy.noSampleData}</p>
-                    <p className="text-sm mt-1">{copy.noMachineSelectedDesc}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[260px] sm:h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '0',
-                          borderRadius: '12px',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#f97316" strokeWidth={3} dot={{ fill: '#f97316', r: 5 }} />
-                      {latestTrendPoint && (
-                        <ReferenceDot
-                          x={latestTrendPoint.date}
-                          y={latestTrendPoint.viscosity_40c}
-                          r={7}
-                          fill="#ef4444"
-                          stroke="#ffffff"
-                          strokeWidth={2}
-                        />
-                      )}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
-
-            <div className="xl:col-span-2 grid gap-4">
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Latest Sample' : 'Latest Sample'}</p>
-                <p className="mt-2 text-3xl font-black text-gray-900">{chartData.length}</p>
-                <p className="text-sm text-gray-600 mt-1">{language === 'id' ? 'Jumlah titik tren yang tampil di grafik' : 'Number of trend points shown on the chart'}</p>
-              </div>
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{copy.trendAlertsTitle}</p>
-                <p className="mt-2 text-3xl font-black text-gray-900">{selectedMachineTrendAlerts.length}</p>
-                <p className="text-sm text-gray-600 mt-1">{copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}</p>
-              </div>
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Last Trend Date' : 'Last Trend Date'}</p>
-                <p className="mt-2 text-lg font-black text-gray-900">{latestTrendPoint?.date || '-'}</p>
-                <p className="text-sm text-gray-600 mt-1">{language === 'id' ? 'Update terakhir dari data sampel yang dipilih' : 'Last update from the selected sample data'}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section style={{ order: 8 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
@@ -2133,7 +2077,7 @@ export default function DashboardClient({
           )}
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section style={{ order: 6 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{copy.alertManagementTitle}</h2>
@@ -2204,7 +2148,7 @@ export default function DashboardClient({
           )}
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section style={{ order: 7 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{language === 'id' ? 'Action Board Maintenance' : 'Maintenance Action Board'}</h2>
@@ -2415,7 +2359,7 @@ export default function DashboardClient({
           </div>
         </section>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
+        <div style={{ order: 2 }} className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
           <button
             onClick={handleExportFleetReport}
             className="w-full bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-900 hover:to-slate-800 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
@@ -2482,7 +2426,7 @@ export default function DashboardClient({
         </div>
 
         {/* Phase 1: Rule-Based Insight Engine */}
-        <section className="mb-8 bg-white/80 backdrop-blur rounded-3xl shadow-xl p-6 sm:p-8">
+        <section style={{ order: 11 }} className="mb-8 bg-white/80 backdrop-blur rounded-3xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.insightTitle}</h2>
@@ -2499,7 +2443,7 @@ export default function DashboardClient({
 
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section style={{ order: 10 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.teamManagementTitle}</h2>
@@ -2612,7 +2556,7 @@ export default function DashboardClient({
           </div>
         </section>
 
-        <section className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+        <section style={{ order: 9 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
@@ -2716,7 +2660,7 @@ export default function DashboardClient({
         </section>
 
         {/* Machine Health Overview - Neuros Style with Horizontal Carousel */}
-        <div className="mb-8">
+        <div style={{ order: 3 }} className="mb-8">
           <div className="mb-6 flex items-end justify-between">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.machineHealthTitle}</h2>
@@ -2922,7 +2866,7 @@ export default function DashboardClient({
         </div>
 
         {/* Machine Selector & Time Range Filter - Side by Side */}
-        <div ref={detailsRef} className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div ref={detailsRef} style={{ order: 4 }} className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Machine Selector */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-primary-500">
             <div className="flex justify-between items-center mb-4">
@@ -3042,6 +2986,8 @@ export default function DashboardClient({
           </div>
         </div>
 
+        {/* Charts & Data Section */}
+        <div style={{ order: 5 }}>
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-20">
@@ -3076,7 +3022,7 @@ export default function DashboardClient({
                 <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <span className="w-3 h-3 bg-primary-500 rounded-full mr-3"></span>
-                  Viscosity Trend
+                  <GlossaryTooltip termKey="viscosity40c" language={language} label="Viscosity Trend" />
                 </h3>
                 {chartData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[200px] sm:h-[250px] lg:h-[300px] text-gray-400">
@@ -3087,7 +3033,7 @@ export default function DashboardClient({
                     <p className="text-sm text-gray-400 mt-1">{copy.checkConsole}</p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 200 : window.innerWidth < 1024 ? 250 : 300}>
+                  <ResponsiveContainer width="100%" height={chartHeight}>
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -3124,7 +3070,7 @@ export default function DashboardClient({
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <span className="w-3 h-3 bg-secondary-500 rounded-full mr-3"></span>
-                  {language === 'id' ? 'Kandungan Air' : 'Water Content'}
+                  <GlossaryTooltip termKey="waterContent" language={language} label={language === 'id' ? 'Kandungan Air' : 'Water Content'} />
                 </h3>
                 {chartData.length === 0 ? (
                   <div className="flex items-center justify-center h-[300px] text-gray-400">
@@ -3168,7 +3114,7 @@ export default function DashboardClient({
               <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <span className="w-3 h-3 bg-industrial-500 rounded-full mr-3"></span>
-                  {language === 'id' ? 'Total Acid Number (TAN)' : 'Total Acid Number (TAN)'}
+                  <GlossaryTooltip termKey="tan" language={language} label="Total Acid Number (TAN)" />
                 </h3>
                 {chartData.length === 0 ? (
                   <div className="flex items-center justify-center h-[300px] text-gray-400">
@@ -3598,6 +3544,7 @@ export default function DashboardClient({
             </div>
           </div>
         )}
+        </div>{/* end order:5 charts section */}
       </main>
 
       {/* Footer */}
