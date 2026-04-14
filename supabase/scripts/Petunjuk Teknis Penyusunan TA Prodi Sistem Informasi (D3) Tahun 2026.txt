@@ -1,0 +1,3328 @@
+--- HALAMAN 1 ---
+Petunjuk Teknis
+Penyusunan Tugas Akhir
+Program Studi
+Sistem Informasi (D3)
+2026
+
+--- HALAMAN 2 ---
+KATA PENGANTAR
+Tiada kata yang lebih indah selain puji syukur yang penyusun panjatkan kehadirat
+Tuhan Yang Maha Esa yang telah melimpahkan rahmat dan karunia-Nya, sehingga pada
+akhirnya penyusun dapat menyelesaikan Petunjuk Teknis Penyusunan Tugas Akhir ini tepat
+pada waktunya.
+Petunjuk Teknis Penyusunan Tugas Akhir ini dibuat sebagai pelengkap pedoman
+penulisan Laporan Tugas Akhir Program Studi Sistem Informasi (Program Diploma Tiga)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika. Petunjuk Teknis
+Penyusunan Tugas Akhir ini menjelaskan secara lebih detail isi dari pedoman penyusunan
+laporan Tugas Akhir tersebut. Dengan demikian, diharapkan mahasiswa dapat lebih memahami
+bagaimana cara menyusun Tugas Akhir dengan baik.
+Dalam penyusunan Petunjuk Teknis Penyusunan Tugas Akhir ini, tidak sedikit
+hambatan yang penyusun hadapi. Namun penyusun menyadari bahwa kelancaran dalam
+penyusunan Petunjuk Teknis Penyusunan Tugas Akhir ini tidak lain berkat bantuan dan
+dorongan dari berbagai pihak, sehingga kendala-kendala yang penyusun hadapi dapat teratasi.
+Semoga Petunjuk Teknis Penyusunan Tugas Akhir ini dapat mengakomodasi semua
+aspek yang berkaitan dengan materi dan teknik penulisan dalam penyusunan Tugas Akhir,
+sehingga tidak terjadi lagi persepsi yang berbeda dalam penyusunan laporan Tugas Akhir.
+Akhir kata, Penyusun berharap agar Petunjuk Teknis Penyusunan Tugas Akhir Tugas
+Akhir ini dapat bermanfaat bagi peningkatan kualitas Tugas Akhir mahasiswa Universitas Bina
+Sarana Informatika, Aamiin.
+Jakarta, Februari 2026
+Tim Penyusun
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. ii
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 3 ---
+DAFTAR
+ISI
+Halaman
+Lembar Judul i
+Kata Pengantar ii
+Daftar Isi iii
+1. Outline Perancangan Sistem 1
+A. Kode dan Ketentuan Outline 1
+B. Bentuk Outline 1
+C. Penjelasan Outline 5
+2. Outline Perancangan Program 26
+A. Kode dan Ketentuan Outline 26
+B. Bentuk Outline 26
+C. Penjelasan Outline 28
+3. Outline Proyek Sistem Informasi 72
+A. Kode dan Ketentuan Outline 72
+B. Bentuk Outline 72
+C. Penjelasan Outline 73
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. iii
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 4 ---
+OUTLINE TUGAS AKHIR PROGRAM
+STUDI SISTEM INFORMASI
+Outline Tugas Akhir Program Studi Sistem Informasi Diploma Tiga terdiri dari:
+No Kode Outline Nama Outline
+1 123 Perancangan Sistem Informasi (Desktop/Web/Mobile)
+2 145 Perancangan Program (Web/Mobile/Game)
+3 124 Proyek Sistem Informasi (Web/Mobile/Game)
+4 185 Inovasi Sistem Informasi (Web/Mobile/Game)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 1
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 5 ---
+OUTLINE PERANCANGAN SISTEM
+INFORMASI
+Mahasiswa WAJIB Melakukan Riset/PKL
+Bentuk Outline Tugas Akhir Perancangan Sistem (Desktop/Web/mobile)
+Program Studi Sistem Informasi jenjang Diploma Tiga (D.III)
+Studi Kasus: Sistem Berjalan Masih Konvensional/Belum Terkomputerisasi
+A. Kode dan Ketentuan Outline
+Kode Outline : 123
+Nama Outline : Perancangan Sistem Informasi (Web/Mobile)
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL
+Metode Pengerjaan : Individu
+Luaran :
+- Publikasi Artikel Ilmiah : Disarankan
+- Hak Kekayaan Intelektual (HKI) : Tidak
+- Buku : Disarankan
+- Karya : Laporan Tugas Akhir
+- Berita Acara Serah Terima Karya : Tidak
+Ketentuan :
+1). Pada outline ini mahasiswa diwajibkan melakukan riset pada perusahaan/instansi
+pemerintah/institusi Pendidikan/lembaga swadaya masyarakat/organisasi kemasyarakatan yang
+legal dibuktikan dengan surat keterangan PKL/Riset asli dari perusahaan yang menggunakan kop
+surat dengan logo, tandatangan dan stempel asli.
+2). Pada outline ini mahasiwa dapat membahas sistem yang masih manual maupun sistem yang sudah
+terkomputerisasi.
+B. Bentuk Outline :
+Lembar Judul Tugas Akhir
+Lembar Pernyataan Keaslian Tugas akhir
+Lembar Pernyataan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Tugas Akhir
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Tugas Akhir
+Kata Pengantar
+Lembar Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Tujuan dan Manfaat
+1.3. Metode Penelitian
+1.4. Ruang Lingkup
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 2
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 6 ---
+BAB II LANDASAN TEORI
+2.1. Konsep Dasar Sistem
+2.2. Teori Pendukung
+BAB III ANALISIS SISTEM BERJALAN
+3.1. Tinjauan Perusahaan
+3.1.1. Sejarah Institusi/Perusahaan
+3.1.2. Struktur Organisasi dan Fungsi
+3.2. Prosedur Sistem Berjalan
+3.3. Activity Diagram
+3.4. Spesifikasi Dokumen Masukan
+3.5. Spesifikasi Dokumen Keluaran
+3.6. Permasalahan Pokok
+3.7. Pemecahan Masalah
+BAB IV PERANCANGAN SISTEM USULAN
+4.1. Tahapan Perancangan Sistem
+4.1.1. Analisis Kebutuhan
+4.1.2. Rancangan Usecase Diagram
+4.1.3. Rancangan Activity Diagram
+4.1.4. Rancangan Dokumen Pengembangan Sistem
+4.2. Perancangan Prototype
+4.2.1. Entity Relationship Diagram (ERD)
+4.2.2. Logical Record Structure (LRS)
+4.2.3. Spesifikasi File
+4.2.4. Class Model / Class Diagram
+4.2.5. Sequence Diagram
+4.2.6. Rancangan Antarmuka
+4.2.7. Spesifikasi Hardware dan Software
+4.3. Pengujian Rancangan Antarmuka
+4.4. Jadwal Implementasi
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN/ PKL (WAJIB)
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN*
+Keterangan :
+*Lampiran:
+A: Dokumen Masukan Sistem Berjalan
+B: Dokumen Keluaran Sistem Berjalan
+C: Dokumen Masukan Sistem Usulan
+D: Dokumen Keluaran Sistem Usulan
+CATATAN :
+Contoh yang di tuliskan dalam penjelasan Outline Perancangan Sistem hanyalah sebagai bantuan
+gambaran saja. Pembahasan Use Case, Diagram Aktifitas, ERD, LRS, Class Diagram, Sequence
+Diagram tetap disesuikan dengan buku referensi atau jurnal yang dipergunakan oleh mahasiswa sebagai
+referensi dalam pembuatan Tugas Akhir.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 3
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 7 ---
+Bentuk Outline Tugas Akhir Perancangan Sistem (Desktop/Web/mobile)
+Program Studi Sistem Informasi jenjang Diploma Tiga (D.III)
+Studi Kasus: Sistem Berjalan Sudah Terkomputerisasi
+A. Kode dan Ketentuan Outline
+Kode Outline : 123
+Nama Outline : Perancangan Sistem Informasi (Web/Mobile)
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL
+Metode Pengerjaan : Individu
+Luaran :
+- Publikasi Artikel Ilmiah : Disarankan
+- Hak Kekayaan Intelektual (HKI) : Tidak
+- Buku : Disarankan
+- Karya : Laporan Tugas Akhir
+- Berita Acara Serah Terima Karya : Tidak
+B. Bentuk Outline:
+Lembar Judul Tugas Akhir
+Lembar Pernyataan Keaslian Tugas akhir
+Lembar Pernyataan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Tugas Akhir
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Tugas Akhir
+Kata Pengantar
+Lembar Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Tujuan dan Manfaat
+1.3. Metode Penelitian
+1.4. Ruang Lingkup
+BAB II LANDASAN TEORI
+2.1. Konsep Dasar Sistem
+2.2. Teori Pendukung
+BAB III ANALISIS SISTEM BERJALAN
+3.1. Tinjauan Perusahaan
+3.1.1. Sejarah Institusi/Perusahaan
+3.1.2. Struktur Organisasi dan Fungsi
+3.2. Prosedur Sistem Berjalan
+3.3. Use Case Diagram
+3.4. Activity Diagram
+3.5. Spesifikasi Dokumen Masukan
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 4
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 8 ---
+3.6. Spesifikasi Dokumen Keluaran
+3.7. Antarmuka Program Sistem Berjalan
+3.8. Spesifikasi Hardware dan Software
+3.9. Permasalahan Pokok
+3.10. Pemecahan Masalah
+BAB IV PERANCANGAN SISTEM USULAN
+4.1. Tahapan Perancangan Sistem
+4.1.1. Analisis Kebutuhan
+4.1.2. Rancangan Usecase Diagram
+4.1.3. Rancangan Activity Diagram
+4.1.4. Rancangan Dokumen Pengembangan Sistem
+4.2. Perancangan Prototype
+4.2.1. Entity Relationship Diagram (ERD)
+4.2.2. Logical Record Structure (LRS)
+4.2.3. Spesifikasi File
+4.2.4. Class Model / Class Diagram
+4.2.5. Sequence Diagram
+4.2.6. Rancangan Antarmuka
+4.2.7. Spesifikasi Hardware dan Software
+4.3. Pengujian Rancangan Antarmuka
+4.4. Jadwal Implementasi
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET/ PKL (WAJIB)
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN*
+Keterangan :
+*Lampiran:
+A: Dokumen Masukan Sistem Berjalan
+B: Dokumen Keluaran Sistem Berjalan
+C: Dokumen Masukan Sistem Usulan
+D: Dokumen Keluaran Sistem Usulan
+CATATAN :
+Contoh yang di tuliskan dalam penjelasan Outline Perancangan Sistem hanyalah sebagai bantuan
+gambaran saja. Pembahasan Use Case, Diagram Aktifitas, ERD, LRS, Class Diagram, Sequence
+Diagram tetap disesuikan dengan buku referensi atau jurnal yang dipergunakan oleh mahasiswa sebagai
+referensi dalam pembuatan Tugas Akhir.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 5
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 9 ---
+C. Penjelasan Outline
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Latar belakang berisikan alasan pengambilan judul, masalah yang dialami dengan dilandasi
+dari artikel ilmiah (Jurnal) atau melalui data yang sah yaitu data primer dari perusahaan/instansi
+tempat obyek penelitian atau menggunakan data sekunder.
+Contoh Latar Belakang Masalah :
+Menurut UU No. 5 Tahun 1984 tentang Perindustrian, indutri adalah kegiatan ekonomi yang
+mengelola bahan mentah, bahan baku, barang setengah jadi, dan atau barang jadi menjadi barang
+dengan nilai lebih tinggi untuk pengunaanya. Hasil penelitan sebelumnya (En & Suryandi, 2013) “PT.
+X, telah menerapkan internal struktur control dengan hasil proses pengiriman bahan baku tepat waktu
+dan mengoptimalkan pasasokan bahan baku di PT. X ” . (Imroatus Sholikhah, Mahmud Sairan, 2017)
+“ mengunakan metode waterfall dengan hasil karyawan lebih terbantu untuk mengelola data barang,
+supplier dan customer dalam pendataan, mengelola pembukuan transaksi pembelian dan penjualan,
+serta memberikan laporan yang lebih rinci kepada pemilik”. (Aprilliah, Ningsih, Ariyanti, Haryati,
+2019) “mengunakan metode waterfall dengan hasil melakukan pengolahan data informasi pengeluaran
+dan pemasukan kas dengan efektif dan efisiensi, sehingga diharapkan akan menghasilkan suatu
+informasi yang lebih baik dengan sistem yang terkomputerisasi”.(Gunawan, 2013)“Visual Basic.Net
+bahwa penelitian ini dimana hasil analisa dan perancangan yang dilakaukan dapat membantu kegiatan-
+kegiatan dalam perusahaan tersebut agar lebih baik di dalam aspek untuk waktu mendatang .”
+Berdasarkan hasil penelitian sebelumnya, maka penulis melakukan riset pada PT. Masato Catur
+Coanting, prosedur-prosedur yang terdapat didalamnya masih belum terkomputerisasi sehingga dalam
+menjalankan transaksinya masih ditemui kesalahan-kesalahan seperti dalam pencatatan data barang,
+data supplier yang tidak terdokumentasi dengan baik, pencatatan transaksi pembelian dan penerimaan
+barang yang kurang efisien, pembayaran invoice yang sering terlewat karena tidak terdokumentasi
+dengan baik, serta pembuatan laporan-laporan setiap bulannya. Dengan diterapkannya sistem yang
+berjalan saat ini beresiko terjadinya tindakan manipulasi data karena pencatatan transaksi manual
+tingkat keamanannya masih rentang, sehingga hasil yang didapat kurang cepat dan akurat. Berdasarkan
+masalah yang disebutkan diatas dan hasil penelitian sebelumnya penulis mengusulkan permasalahan
+tersebut menjadi tema pembuatan Tugas Akhir ini. Penulis berharap agar prosedur-prosedur yang akan
+dijalankan yang selama ini yang belum terkomputerisasi, sudah terkomputerisasi agar mendapatkan
+hasil yang seoptimal mungkin sehingga tidak terjadi kesalahan-kesalahan dalam menjalankannya.
+Judul tidak perlu dicantumkan dalam latar belakang tetapi digantikan dengan rumusan
+masalah. Referensi jurnal dimasukkan dalam latar belakang sebagai pendukung masalah atau
+solusi yang di bahas oleh penulis.
+1.2. Tujuan dan Manfaat
+Penulis membuat dua alinea yang menguraikan tentang tujuan pembuatan TA dan manfaat
+penulisan TA. Tujuan pembuatan TA lebih mengarah pada apa yang ingin dicapai dari penulisan TA.
+Sedangkan manfaat Penulisan TA terbagi atas manfaat untuk penulis, manfaat untuk objek
+penelitian, dan manfaat untuk pembaca.
+CONTOH Tujuan dan Manfaat :
+Tujuan dari penulisan tugas akhir ini adalah :
+1. Untuk mengetahui bagaimana sistem absensi dan penggajian guru yang sedang berjalan saat ini.
+2. Merancang sistem informasi absensi dan penggajian guru pada sekolah tersebut agar
+menghasilkan informasi yang cepat, tepat dan akurat.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 6
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 10 ---
+3. Agar hasil penelitian dapat dimanfaatkan dan digunakan oleh instansi sebagai referensi dasar
+untuk mengambil solusi dari permasalahan yang ada.
+Sedangkan manfaat penulisan tugas akhir adalah sebagai berikut:
+1. Manfaat untuk penulis
+2. Sebagai salah satu syarat kelulusan Program Diploma Tiga (DIII) Program Studi Sistem
+Informasi di Universitas Bina Sarana Informatika.
+3. Manfaat untuk objek penelitian
+a. Sebagai bahan evaluasi terhadap sistem yang sedang berjalan.
+b. Menghasilkan suatu informasi yang cepat dan akurat dalam membantu dan memudahkan
+proses absensi dan administrasi penggajian.
+4. Manfaat untuk pembaca
+Memberikan pemahaman mengenai konsep perancangan sistem informasi absensi dan
+penggajian sehingga lebih optimal <dan lain-lain>
+1.3. Metode Penelitian
+Menjelaskan metode penelitian dan teknik pengumpulan data yang digunakan untuk penyusunan
+TA.
+Contoh Pengembangan Perangkat Lunak : (Metode yang digunakan boleh menggunakan metode
+lain, contoh :Agile, RAD, dll, dan wajib menunjukkan referensi ilmiah (jurnal, buku, dll)
+mengenai metode pengembangan perangkat lunak yang diambil)
+A. Metode Pengembangan Perangkat Lunak
+Metode yang digunakan pada pengembangan perangkat lunak ini menggunakan model waterfall
+yang terbagi menjadi tiga tahapan, yaitu:
+1. Analisis Kebutuhan
+menjabarkan apa yang dilakukan oleh penulis dalam menganalisa kebutuhan-kebutuhan yang
+digunakan.
+2. Perancangan Sistem dan Perangkat Lunak
+menjabarkan tools system yang digunakan penulis.
+3. Implementasi dan Pengujian Unit
+Menjabarkan implementasi.
+Catatan : contoh diatas menggunakan metode waterfall (sommerville, 2007:66). Silahkan metode
+pengembangan perangkat lunak disesuaikan dengan buku referensi yang digunakan.
+B. Teknik pengumpulan Data
+Teknik pengumpulan data yang digunakan oleh penulis dalam melakukan pengumpulan data untuk
+pembuatan TA adalah :
+1. Observasi
+Menjelaskan tentang kegiatan observasi yang dilakukan meliputi : tempat, bagian dan proses
+sistem berjalan.
+2. Wawancara
+Menjelaskan kegiatan wawancara dengan narasumber/pelaku sistem berjalan yang terkait dengan
+topik TA.
+3. Studi Pustaka
+Menjelaskan tentang studi pustaka yang digunakan untuk mendukung proses pembuatan TA.
+1.4. Ruang Lingkup
+Adalah batasan masalah yang akan dibahas dalam TA yang penulis buat. Batasan ini bertujuan
+untuk alur atau rel dari pada TA yang dibuat. Batasan dibuat dengan awal mula permasalahan sampai
+dengan penyelesaian yang dicapai (misal : proses pengolahan master data (data barang, data user, dan
+lain-lain), permohonan permintaan barang, transaksi barang keluar sampai dengan pembuatan laporan
+dengan menggunakan framework Jquery).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 7
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 11 ---
+BAB II
+LANDASAN TEORI
+2.1. Konsep Dasar Sistem
+Menjelaskan tentang teori yang berhubungan dengan judul TA yang dibuat (dari setiap kata yang
+diangkat sebagai judul). Penulisan definisi ini diikuti dengan mencantumkan nama penulis dan
+buku/jurnal dari mana definisi tersebut dikutip (sesuaikan dengan petunjuk penulisan kutipan).
+Contoh teori konsep dasar sistem :
+A. Model Pembelajaran Berbasis Web
+Menjelaskan tentang definisi model pembelajaran berbasis web, kelebihan model pembelajaran
+berbasis web dan fungsi model pembelajaran berbasis web.
+B. Sistem
+Menjelaskan definisi sistem dan sistem berorientasi obyek (oop).
+C. Website /Program*
+* Untuk rancangan website :
+- Menjelaskan tentang definisi internet, website dan aplikasi berbasis web (seperti: web
+browser, web server).
+* Untuk rancangan program :
+- Menjelaskan tentang Program(konsep dasar program, karakteristik pembuatan program),
+bahasa pemrograman yang digunakan(contoh VB.Net, Java, dll)
+D. Basis Data
+Menjelaskan tentang definisi basis data dan aplikasi basis data yang digunakan pada website yang
+dibangun.
+E. Model Pengembangan Perangkat Lunak
+Menjelaskan model pengembangan waterfall (air terjun).
+<<dan seterusnya>>
+2.2. Teori Pendukung
+Menjelaskan tentang teori tools yang akan digunakan dalam perancangan system yang dibahas. Isi
+nya silahkan disesuaikan dengan tools yang akan digunakan
+Contoh isi dari teori pendukung :
+A. Entity Relationship Diagram
+Menjelaskan tentang definsi ERD, komponen ERD, dan LRS.
+B. Unified Modelling Language
+Menjelaskan tentang definisi UML, activity diagram, use case diagram, class diagram, dan
+sequence diagram.
+<<dan seterusnya>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 8
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 12 ---
+BAB III
+ANALISIS SISTEM BERJALAN
+3.1. Tinjauan Perusahaan
+Tinjauan perusahaan dilakukan untuk mendapatkan gambaran tentang proses bisnis berdasarkan
+sejarah perusahaan, struktur organisasi dan fungsi yang ada di perusahaan.
+3.1.1. Sejarah Perusahaan
+Menjelaskan tentang profil dan sejarah perusahaan.
+3.1.2. Struktur Organisasi dan Fungsi
+Menggambarkan tentang struktur organisasi yang ada pada perusahaan dengan membuat bagan
+dari susunan organisasi serta menjelaskan fungsi dan tugas dari masing-masing fungsi (job
+description).
+3.2. Prosedur Sistem Berjalan
+Prosedur sistem berjalan menjelaskan kegiatan utama sistem dari masalah yang menjadi tema tugas
+akhir. Prosedur sistem berjalan dalam bentuk narasi.
+CONTOH Prosedur Sistem Berjalan
+1. Prosedur Barang Masuk
+Bagian gudang memeriksa stok barang, apabila stok barang kurang dari standard maka bagian
+gudang mengadakan surat permohonan pengadaan barang ke bagian pembelian. Selanjutnya bagian
+pembelian membuat PO ke supplier. Selanjutnya supplier mengirimkan barang sesuai dengan PO
+dan Barang diterima oleh bagian gudang. Kemudian bagian gudang melakukan pengecekan apakah
+barang yang dikirim sesuai dengan pesanan atau tidak, jika tidak sesuai atau ada yang rusak maka
+dilakukan retur. Bagian gudang menandatangani surat tanda terima.
+2. Prosedur Barang Keluar
+Bagian produksi merequest ke bagian gudang dengan mengajukan permohonan permintaan barang.
+Bagian gudang melakukan pengecekan apakah barang yang diminta tersedia atau tidak. Jika tersedia
+maka bagian gudang akan membuat surat keluar barang.
+3. Prosedur Pembuatan Laporan
+Bagian gudang membuat laporan stok barang setiap bulan dan diserahkan ke manajer.
+3.3. Use Case Diagram
+Pemodelan use case diagram dapat digambarkan dengan dua cara yaitu use case diagram dalam
+bentuk package dan use case diagram dalam bentuk sea level untuk overview (pilih yang paling
+mudah).
+Note: judul dan uraian sub bab 3.3 menyesuaikan dengan rincian
+dimasing-masing outline
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 9
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 13 ---
+CONTOH Use Case Diagram (sea level)
+Tabel III.1.
+Deskripsi Use Case Melihat Data Barang
+Use Case Name Melihat Data Barang
+Requirements Bagian Pembelian dapat melihat datang
+Goal Bagian Pembelian melihat data barang secara online
+melalui web
+Pre-Conditions Bagian Pembelian telah melakukan login
+Post-Conditions Daftar data barang yang kurang dari stok minimum
+Failed end Condition Bagian Pembelian tidak dapat melihat data barang
+Actors Bagian Gudang
+Main Flow/ Basic Path 1. User memilih kriteria pencarian
+2. User mengetikan nama atau kode barang
+3. Sistem menampilkan data barang yang dicari
+Alternate Flow/Invariant A A1. System menampilkan data barang yang stoknya
+<= stok minimum
+Invariant B B1. User memilih kriteria
+B2. User mengetikan nama/kode barang
+B3. System tidak menemukan data yang dicari
+B4. System menampilkan pesan "Data yang dicari tidak
+ditemukan"
+<<dan seterusnya>>
+CATATAN:
+Dalam pengambaran use case tidak harus sama persis dengan contoh di Petunjuk Teknis
+Penyusunan Tugas Akhir bisa beragam sesuai dengan buku referensi atau artikel ilmiah
+yang digunakan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 10
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 14 ---
+3.4. Activity Diagram
+CONTOH Diagram Aktifitas
+CATATAN:
+Penggambaran activity diagram tidak harus sama, sesuaikan dengan referensi yang
+digunakan berdasarkan buku atau artikel ilmiah (Jurnal).
+3.5. Spesifikasi Dokumen Masukan
+Menjelaskan secara rinci setiap dokumen input pada sistem yang digunakan pada tempat riset.
+Bukan tampilan program. Parameter-parameter dokumen tersebut antara lain:
+A. Dokumen Masukan
+Contoh parameter dokumen :
+1. Nama Dokumen : Data Barang
+Fungsi : Untuk mengetahui barang yang tersedia di gudang
+Sumber : Supplier
+Tujuan : Bagian Gudang
+Media : Kertas
+Jumlah : 1 lembar
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 11
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 15 ---
+Frekuensi : Setiap terjadi barang yang masuk ke gudang
+Bentuk : Lihat Lampiran A.1
+2. <<dan seterusnya>>
+3.6. Spesifikasi Dokumen Keluaran
+Menjelaskan secara rinci setiap dokumen output pada sistem yang digunakan pada tempat riset.
+Parameter-parameter dokumen tersebut antara lain:
+B. Dokumen Keluaran
+Contoh parameter dokumen :
+1. Nama Dokumen : Retur Barang
+Fungsi : Untuk mengetahui daftar barang yang diretur
+Sumber : Bagian Gudang
+Tujuan : Supplier
+Media : Kertas
+Jumlah : 1 lembar
+Frekuensi : Setiap terjadi pengembalian atas barang yang rusak
+Bentuk : Lihat Lampiran B.1
+2. <<dan seterusnya>>
+3.7. Permasalahan Pokok
+Menjelaskan tentang permasalahan yang ada dan diangkat menjadi judul penulisan Tugas Akhir.
+3.8. Pemecahan Masalah
+Menjelaskan tentang bagaimana mengatasi masalah yang ada dan memberikan penjabaran solusi
+alternatif untuk sistem yang ada.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 12
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 16 ---
+BAB IV
+PERANCANGAN SISTEM USULAN
+4.1. Tahapan Perancangan Sistem
+4.1.1. Analisis Kebutuhan
+Mengidentifikasi kebutuhan fungsional program yang terkait dengan proses bisnis yang
+diusulkan.
+CONTOH Analisis Kebutuhan :
+1. Kebutuhan Pengguna
+Dalam aplikasi inventory terdapat dua pengguna yang dapat saling berinteraksi dalam lingkungan
+system, yaitu: Bagian gudang, dan manajer. Kedua pengguna tersebut memiliki karakteristik
+interaksi dengan system yang berbeda-beda dan memiliki kebutuhan informasi yang berbeda-beda,
+seperti berikut :
+A1 Skenario Kebutuhan Bagian Gudang
+a) Mengelola data barang
+b) Mengecek stok barang
+c) Membuat Surat Permohonan Barang
+d) <<dan seterusnya>>
+A2 Skenario Kebutuhan Manajer
+a) Administrator dapat melihat laporan stok barang
+b) <<dan seterusnya>>
+2. Kebutuhan Sistem
+1) Pengguna harus melakukan login terlebih dahulu untuk dapat mengakses aplikasi ini dengan
+memasukkan username dan password agar privasi masing-masing pengguna tetap terjaga
+keamanannya.
+2) Pengguna harus melakukan logout setelah selesai menggunakan aplikasi.
+3) Sistem melakukan kalkulasi stok barang.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 13
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 17 ---
+4.1.2. Rancangan Use case Diagram
+CONTOH Use Case Diagram
+CATATAN:
+Penggambaran use case tidak harus sama, sesuaikan dengan referensi yang digunakan
+berdasarkan buku atau artikel ilmiah (Jurnal).
+Tabel III.1.
+Deskripsi Use Case Melihat Data Barang
+Use Case Name Melihat Data Barang
+Requirements Bagian Pembelian dapat melihat datang
+Goal Bagian Pembelian melihat data barang secara online
+melalui web
+Pre-Conditions Bagian Pembelian telah melakukan login
+Post-Conditions Daftar data barang yang kurang dari stok minimum
+Failed end Condition Bagian Pembelian tidak dapat melihat data barang
+Actors Bagian Gudang
+Main Flow/ Basic Path 1. User memilih kriteria pencarian
+2. User mengetikan nama atau kode barang
+3. Sistem menampilkan data barang yang dicari
+Alternate Flow/Invariant A A1. System menampilkan data barang yang stoknya <=
+stok minimum
+Invariant B B1. User memilih kriteria
+B2. User mengetikan nama/kode barang
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 14
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 18 ---
+B3. System tidak menemukan data yang dicari
+B4. System menampilkan pesan "Data yang dicari
+tidak ditemukan"
+<<dan seterusnya>>
+4.1.3. Rancangan Activity Diagram
+CONTOH Diagram Aktifitas
+CATATAN
+Penggambaran activity diagram tidak harus sama, sesuaikan dengan referensi yang
+digunakan berdasarkan buku atau artikel ilmiah (Jurnal).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 15
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 19 ---
+4.1.4. Rancangan Dokumen Sistem Usulan
+Menjelaskan secara rinci setiap rancangan dokumen pada program yang dihasilkan dan uraian.
+Bukan tampilan program. parameter-parameter dokumen tersebut.
+(Contoh Rancangan Dokumen Berbasis Desktop/Web/Mobile)
+A. Dokumen Masukan
+Contoh parameter dokumen :
+1. Nama Dokumen : Data Barang
+Fungsi : Untuk mengetahui barang yang tersedia di gudang
+Sumber : Supplier
+Tujuan : Bagian Gudang
+Media : Kertas
+Jumlah : 1 lembar
+Frekuensi : Setiap terjadi barang yang masuk ke gudang
+Bentuk : Lihat Lampiran C.1
+2. <<dan seterusnya>>
+B. Dokumen Keluaran
+Contoh parameter dokumen :
+1. Nama Dokumen : Retur Barang
+Fungsi : Untuk mengetahui daftar barang yang diretur
+Sumber : Bagian Gudang
+Tujuan : Supplier
+Media : Kertas
+Jumlah : 1 lembar
+Frekuensi : Setiap terjadi pengembalian atas barang yang rusak
+Bentuk : Lihat Lampiran D.1
+2. <<dan seterusnya>>
+4.2. Perancangan Perangkat Lunak
+Perancangan lunak ini difokuskan pada enam atribut, yaitu ERD, LRS, Spesifikasi File, Class
+Diagram, Sequence Diagram, dan Spesifikasi Hardware serta Software.
+4.2.1. Entity Relationship Diagram (ERD)
+Perancangan basis data menghasilkan pemetaan tabel-tabel yang digambarkan dengan Entity
+Relationship Diagram (ERD).
+CONTOH Entity Relationship Diagram
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 16
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 20 ---
+CATATAN:
+Penggambaran ERD tidak harus sama, sesuaikan dengan referensi yang digunakan
+berdasarkan buku atau artikel ilmiah (Jurnal).
+4.2.2. Logical Structure Record (LRS)
+CONTOH Logical Structure Record
+Barang Masuk
+1
+kodeUser
+kodeBarang
+Detail Barang Masuk
+noMasuk 1 M 1
+tglMasuk kodeBarang
+1
+qty 1
+User
+Barang
+kodeUser
+kodeBarang
+namaUser
+namaBarang
+password
+Barang Keluar qty
+Detail Barang Keluar
+1 kodeUser 1 M 1
+1 kodeBarang kodeBarang 1
+noKeluar qty
+tglKeluar
+CATATAN:
+Penggambaran activity diagram tidak harus sama, sesuaikan dengan referensi yang
+digunakan berdasarkan buku atau artikel ilmiah (Jurnal).
+4.2.3. Spesifikasi File
+Menjelaskan tentang file atau tabel yang terbentuk dari transformasi ERD (dan atau file-file penunjang
+untuk web). File-file ini tersimpan pada <<namaDatabase>> dengan parameter-parameter sbb :
+CONTOH Spesifikasi File :
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 17
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 21 ---
+1. Spesifikasi File Barang
+Nama File : Barang
+Akronim : Barang
+Fungsi : untuk menyimpan data barang
+Tipe File : File Master
+Organisasi File : Indexed Sequential
+Akses File : Random
+Media : Harddisk
+Panjang record : 33 Byte
+Kunci Field : kodeBarang
+Software : Mysql
+Tabel IV.1.
+Spesifikasi File Barang
+No Elemen data Nama Field Tipe Size Ket
+1. Kode Barang kodeBarang Char 5 Primary Key
+2. Nama Barang namaBarang Varchar 20
+3. Stock Stok Int 8
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 18
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 22 ---
+4.2.4. Class Model/ Class Diagram
+Menggambarkan hubungan antara entity class yang dibuat
+CONTOH Class Model
+CATATAN:
+Penggambaran class diagram tidak harus sama, sesuaikan dengan referensi yang digunakan
+berdasarkan buku atau artikel ilmiah (Jurnal).
+4.2.5. Sequence Diagram
+Sequence diagram yang dibuat hanya kegiatan utama dari use case
+CONTOH Sequence Diagram
+Memasukkan Transaksi Penjualan
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 19
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 23 ---
+CATATAN:
+Penggambaran sequence diagram tidak harus sama, sesuaikan dengan referensi yang
+digunakan berdasarkan buku atau artikel ilmiah (Jurnal).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 20
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 24 ---
+4.2.6. Rancangan Prototype
+Bagian ini berisi mengenai penggambaran interface yang dibuat oleh mahasiswa sesuai dengan
+sistem usulan. Rancangan prototype berisi interface yang dapat diuji. Untuk pembuatan rancangan
+interface dapat menggunakan aplikasi seperti MIT, Justimind, Figma ataupun aplikasi lain yang dapat
+digunakan untuk perancangan prototype
+Contoh Interface prototype yang dibuat menggunakan Justimind:
+A. Rancangan Tampilan Form Login
+B. Rancangan Tampilan Menu Utama
+C. Rancangan Tampilan Form Pemeliharaan Barang
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 21
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 25 ---
+D. Rancangan Tampilan Form Transaksi
+<<dan seterusnya>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 22
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 26 ---
+4.2.7. Spesifikasi Hardware dan Software
+CONTOH
+1. Spesifikasi Hardware
+A. Server
+1) CPU
+(a) Processor Pentium® Core 2 Duo
+(b) RAM DDR2 4 GB
+(c) Hard Disk 500 GB
+2) Mouse
+3) Keyboard
+4) Monitor dengan resolusi layar minimum 1024x768
+5) Koneksi internet dengan kecepatan 2 Mbps.
+B. Client
+1) CPU
+(a) Processor Pentium® 4
+(b) RAM DDR2 1GB
+(c) Hard Disk 20 GB
+2) Mouse
+3) Keyboard
+4) Monitor dengan resolusi layar minimum 1024x768
+5) Koneksi internet dengan kecepatan 56 kbps.
+2. Spesifikasi Software
+A. Server
+1) Sistem operasi yang umum digunakan seperti: Microsoft Windows atau Linux (Ubuntu, Fedora,
+dll).
+2) Aplikasi bundle web server seperti: Xampp, WampServer, php2triad yang terdiri dari beberapa
+komponen, diantaranya:
+(a) Aplikasi Apache Server v2
+(b) Aplikasi PHP Server v5
+(c) Aplikasi MySQL Server v5
+(d) Aplikasi phpMyAdmin v3
+3) Aplikasi Web Lihatr seperti Mozilla Firefox, Opera, Safari, Internet Explorer, Google Chrome.
+B. Client
+1) Sistem operasi yang umum digunakan seperti: Microsoft Windows atau Linux (Ubuntu, Fedora,
+dan lain-lain).
+2) Aplikasi web browser seperti Mozilla Firefox, Opera, Safari, Internet Explorer, Google
+Chrome.
+4.3. Pengujian Rancangan Antarmuka
+Menjelaskan hasil pengujian rancangan antarmuka dari prototipe yang diusulkan. Antarmuka yang
+diuji dari sisi back-end atau front end atau keduanya. Tergantung dari hasil analisa kebutuhan yang
+dituliskan pada point 4.1.1 dan 4.1.2
+Contoh isi dari Pengujian Antarmuka :
+Pengujian rancangan antarmuka dilakukan oleh calon pengguna prototipe. Pengujian antarmuka
+terdiri dari dua macam yaitu pengujian front-end dan pengujian back-end.
+1. Pengujian Front-end
+Pengujian antarmuka pada front-end dilakukan oleh calon user front-end. Dalam pengujian ini
+dilakukan oleh user.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 23
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 27 ---
+Tabel IV.2. Hasil pengujian antarmuka front-end
+Input Akses
+Akses Daftar Login Akses
+Partisipan Buku Katalog
+Menu Member Member Transaksi
+Tamu Produk
+1 √ √ √ √ √ √
+2 √ √ √ √ √ √
+3 √ √ √ √ √ √
+4 √ √ √ √ √ √
+5 √ √ √ √ √ √
+Sukses 5 5 5 5 5 5
+Nilai
+100% 100% 100% 100% 100% 100%
+Kesuksesan
+2. Pengujian Back-end
+Pengujian antarmuka pada back-end dilakukan oleh calon user back-end. Dalam pengujian ini
+dilakukan oleh calon administrator web.
+Tabel IV.2. Hasil pengujian antarmuka front-end
+Input Akses
+Akses Daftar Login Akses
+Partisipan Buku Katalog
+Menu Member Member Transaksi
+Tamu Produk
+1 √ √ √ √ √ √
+2 √ √ √ √ √ √
+Sukses 2 2 2 2 2 2
+Nilai
+100% 100% 100% 100% 100% 100%
+Kesuksesan
+CATATAN: ISI TABEL PENGUJIAN DISESUAIKAN DENGAN SISTEM YANG
+DIUSULKAN
+4.4. Jadwal Implementasi
+Tabel IV.2.
+Jadwal Implementasi
+WAKTU
+No KEGIATAN BULAN I BULAN II BULAN III
+1 2 3 4 1 2 3 4 1 2 3 4
+1 Kegiatan 1
+2 Kegiatan 2
+3 Kegiatan 3
+4 Kegiatan 4
+5 …..
+6 …..
+7 …..
+8 …..
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 24
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 28 ---
+9 Kegiatan - n
+Note: Kegiatan dapat disesuaikan dengan kebutuhan penelitian
+BAB V
+PENUTUP
+4.1. Kesimpulan
+Berisi tentang uraian perubahan system yang telah dilakukan untuk menjawab masalah yang di
+tuliskan di latar belakang masalah (BAB I).
+4.2. Saran
+Menguraikan saran yang mendukung keberhasilan dari implementasi program yang diusulkan
+serta pengembangan ke arah yang akan datang.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 25
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 29 ---
+Contoh Lampiran Rancangan Dokumen:
+Purchase Order
+<<dan seterusnya..>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 26
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 30 ---
+OUTLINE PERANCANGAN PROGRAM
+Mahasiswa TIDAK Melakukan Riset/ PKL tetapi WAJIB Melakukan OBSERVASI
+Ada 2 jenis pilihan outline Perancangan Program, yaitu:
+1. Perancangan Program-Bisnis
+2. Perancangan Program Games/ IoT/ Augmented Reality
+Bentuk Outline Tugas Akhir Perancangan Program - Bisnis
+Program Studi Sistem Informasi jenjang Diploma Tiga (D.III)
+Universitas Bina Sarana Informatika
+A. Kode dan Ketentuan Outline
+Kode Outline : 145
+Nama Outline : Perancangan Program(Web/Mobile)
+Bukti Riset : Surat Keabsahan Data
+Metode Pengerjaan : Individu
+Luaran :
+- Publikasi Artikel Ilmiah : Disarankan
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Disarankan
+- Karya : Laporan Tugas Akhir (Wajib)
+- Berita Acara Serah Terima Karya : Disarankan
+B. Bentuk Outline :
+Lembar Judul Tugas Akhir
+Lembar Pernyataan Keaslian Tugas akhir
+Lembar Pernyataan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Tugas Akhir
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Tugas Akhir
+Kata Pengantar
+Lembar Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Tujuan dan Manfaat
+1.3. Metode Penelitian
+1.4. Ruang Lingkup
+BAB II LANDASAN TEORI
+2.1. Konsep Dasar Program
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 27
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 31 ---
+2.2. Tools Program
+BAB III PEMBAHASAN
+3.1. Hasil Observasi Atau Literasi Proses Bisnis Sejenis
+3.2. Analisis Kebutuhan
+3.3. Rancangan Dokumen
+3.4. Entity Relationship Diagram (ERD)
+3.5. Logical Record Structure (LRS)
+3.6. Spesifikasi File
+3.7. Pengkodean
+3.8. Spesifikasi Program
+3.9. Spesifikasi Sistem Komputer
+3.10. Implementasi
+3.11. Pengujian Unit
+BAB IV PENUTUP
+4.1. Kesimpulan
+4.2. Saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+BUKTI HASIL PENGECEKAN PLAGIARISME
+Lampiran A Dokumen Masukan Program
+Lampiran B Dokumen Keluaran Program
+Lampiran C Dokumen Bukti Hasil Observasi
+CATATAN :
+1. Contoh yang di tuliskan dalam penjelasan Outline Perancangan Program Bisnis hanyalah sebagai
+bantuan gambaran saja. Pembahasan ERD, LRS dan lain-lain tetap disesuaikan dengan buku
+referensi atau jurnal yang dipergunakan oleh mahasiswa sebagai referensi dalam pembuatan Tugas
+Akhir.
+2. Mahasiswa diharuskan melakukan observasi bukan riset/PKL sehingga tidak memerlukan surat
+keterangan riset/ PKL. Observasi dilakukan dengan tujuan untuk membandingkan bisnis proses
+yang berlangsung pada satu objek dengan objek lainnya untuk menghasilkan inovasi/
+pembaharuan pada sistem yang dibuat. Mahasiswa DIWAJIBKAN untuk melampirkan
+dokumen bukti Hasil Observasi.
+3. Judul Tugas Akhir yang dibuat tidak perlu mencantumkan nama tempat observasi.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 28
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 32 ---
+C. Penjelasan Outline
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Berisikan alasan pemilihan judul TA, dengan cara menguraikan dan menjelaskan permasalahan yang
+diangkat oleh penulis.
+Contoh Latar Belakang Masalah :
+Menurut UU No. 5 Tahun 1984 tentang Perindustrian, indutri adalah kegiatan ekonomi yang mengelola
+bahan mentah, bahan baku, barang setengah jadi, dan atau barang jadi menjadi barang dengan nilai lebih
+tinggi untuk pengunaanya. Hasil penelitan sebelumnya (En & Suryandi, 2013) “PT. X, telah
+menerapkan internal struktur control dengan hasil proses pengiriman bahan baku tepat waktu dan
+mengoptimalkan pasasokan bahan baku di PT. X ” . (Imroatus Sholikhah, Mahmud Sairan, 2017) “
+mengunakan metode waterfall dengan hasil karyawan lebih terbantu untuk mengelola data barang,
+supplier dan customer dalam pendataan, mengelola pembukuan transaksi pembelian dan penjualan,
+serta memberikan laporan yang lebih rinci kepada pemilik”. (Aprilliah, Ningsih, Ariyanti, Haryati,
+2019) “mengunakan metode waterfall dengan hasil melakukan pengolahan data informasi pengeluaran
+dan pemasukan kas dengan efektif dan efisiensi, sehingga diharapkan akan menghasilkan suatu
+informasi yang lebih baik dengan sistem yang terkomputerisasi”.(Gunawan, 2013)“Visual Basic.Net
+bahwa penelitian ini dimana hasil analisa dan perancangan yang dilakaukan dapat membantu kegiatan-
+kegiatan dalam perusahaan tersebut agar lebih baik di dalam aspek untuk waktu mendatang .”
+Berdasarkan hasil penelitian sebelumnya, maka penulis melakukan riset pada PT. Masato Catur
+Coanting, prosedur-prosedur yang terdapat didalamnya masih belum terkomputerisasi sehingga dalam
+menjalankan transaksinya masih ditemui kesalahan-kesalahan seperti dalam pencatatan data barang,
+data supplier yang tidak terdokumentasi dengan baik, pencatatan transaksi pembelian dan penerimaan
+barang yang kurang efisien, pembayaran invoice yang sering terlewat karena tidak terdokumentasi
+dengan baik, serta pembuatan laporan-laporan setiap bulannya. Dengan diterapkannya sistem yang
+berjalan saat ini beresiko terjadinya tindakan manipulasi data karena pencatatan transaksi manual
+tingkat keamanannya masih rentang, sehingga hasil yang didapat kurang cepat dan akurat. Berdasarkan
+masalah yang disebutkan diatas dan hasil penelitian sebelumnya penulis mengusulkan permasalahan
+tersebut menjadi tema pembuatan Tugas Akhir ini. Penulis berharap agar prosedur-prosedur yang akan
+dijalankan yang selama ini yang belum terkomputerisasi, sudah terkomputerisasi agar mendapatkan
+hasil yang seoptimal mungkin sehingga tidak terjadi kesalahan-kesalahan dalam menjalankannya.
+Judul tidak perlu dicantumkan dalam latar belakang tetapi digantikan dengan rumusan
+masalah. Referensi jurnal dimasukkan dalam latar belakang sebagai pendukung masalah atau
+solusi yang di bahas oleh penulis.
+1.2. Tujuan dan Manfaat
+Penulis membuat dua alinea yang menguraikan tentang tujuan pembuatan TA dan manfaat
+penulisan TA. Tujuan penulisan TA lebih mengarah pada apa yang ingin dicapai dari penulisan TA.
+Sedangkan manfaat Penulisan TA terbagi atas manfaat untuk penulis, manfaat untuk objek
+penelitian, dan manfaat untuk pembaca.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 29
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 33 ---
+CONTOH Tujuan dan Manfaat :
+Tujuan dari penulisan tugas akhir ini adalah :
+1. Untuk mengetahui bagaimana sistem absensi dan penggajian guru yang sedang berjalan saat
+ini.
+2. Merancang sistem informasi absensi dan penggajian guru pada sekolah tersebut agar
+menghasilkan informasi yang cepat, tepat dan akurat.
+3. Agar hasil penelitian dapat dimanfaatkan dan digunakan oleh instansi sebagai referensi dasar
+untuk mengambil solusi dari permasalahan yang ada..
+Sedangkan manfaat penulisan tugas akhir adalah sebagai berikut:
+1. Manfaat untuk penulis
+Sebagai salah satu syarat kelulusan Program Diploma Tiga (DIII) Program Studi Sistem
+Informasi di Universitas Bina Sarana Informatika.
+2. Manfaat untuk objek penelitian
+a. Sebagai bahan evaluasi terhadap sistem yang sedang berjalan.
+b. Menghasilkan suatu informasi yang cepat dan akurat dalam membantu dan memudahkan
+proses absensi dan administrasi penggajian.
+3. Manfaat untuk pembaca
+Memberikan pemahaman mengenai konsep perancangan sistem informasi absensi dan
+penggajian sehingga lebih optimal <dan lain-lain>
+1.3. Metode Penelitian
+Menjelaskan metode penelitian dan teknik pengumpulan data yang digunakan untuk penyusunan
+TA.
+Contoh Pengembangan Perangkat Lunak : (Metode yang digunakan boleh menggunakan metode
+lain, contoh :Agile, RAD, dll, dan wajib menunjukkan referensi ilmiah (jurnal, buku, dll)
+mengenai metode pengembangan perangkat lunak yang diambil)
+A. Metode Pengembangan Perangkat Lunak
+Metode yang digunakan pada pengembangan perangkat lunak ini menggunakan model water
+fall (sommerville, 2007:66) yang terbagi menjadi tiga tahapan, yaitu:
+1. Analisis Kebutuhan
+Tahapan ini sangat menekan pada masalah pengumpulan kebutuhan pengguna pada tingkatan sistem
+dengan menentukan konsep sistem beserta antarmuka yang menghubungkannya dengan lingkungan
+sekitar. Hasilnya berupa spesifikasi sistem.
+2. Perancangan Sistem dan Perangkat Lunak
+Proses perancangan sistem ini difokuskan pada empat atribut, yaitu struktur data, representasi
+antarmuka, arsitektur perangkat lunak, dan interaksi antar objek di dalam kelas.
+3. Implementasi
+Pada tahap ini, perancangan perangkat lunak direalisasikan sebagai serangkaian program atau unit
+program.
+B. Teknik pengumpulan Data
+Teknik pengumpulan data yang digunakan oleh penulis dalam melakukan pengumpulan data
+untuk pembuatan TA adalah :
+1. Observasi
+Menjelaskan tentang kegiatan observasi yang dilakukan meliputi : tempat atau bagian yang
+diobservasi.
+2. Wawancara
+Menjelaskan kegiatan wawancara terhadap responden yang terkait dengan topik TA.
+3. Studi Pustaka
+Menjelaskan tentang studi pustaka yang dilakukan untuk mendukung proses komputerisasi sistem.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 30
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 34 ---
+1.4. Ruang Lingkup
+Adalah batasan masalah yang akan dibahas dalam TA yang penulis buat. Batasan ini bertujuan untuk
+alur atau rel dari TA yang dibuat. Batasan dibuat dengan awal mula permasalahan sampai dengan
+penyelesaian yang dicapai (misal : proses pengolahan master data (data barang, data supplier, dan lain-
+lain), sampai dengan pembuatan laporan dengan menggunakan bahasa pemrograman yang dipahami).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 31
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 35 ---
+BAB II
+LANDASAN TEORI
+(Contoh landasan teori berbasis Desktop)
+2.1. Konsep Dasar Program
+Menjelaskan tentang teori yang berhubungan dengan judul TA yang dibuat (dari setiap kata yang
+diangkat sebagai judul). Penulisan definisi ini diikuti dengan mencantumkan nama penulis dan buku
+dari mana definisi tersebut dikutip (sesuaikan dengan petunjuk penulisan kutipan).
+Contoh teori konsep dasar program :
+A. Program
+Menjelaskan tentang Program
+B. Bahasa Pemrograman
+Menjelaskan tentang bahasa pemrograman yang digunakan misal : VB, Delphi, Foxpro dan lain-
+lain.
+C. Basis Data
+Menjelaskan tentang definisi basis data dan aplikasi basis data yang digunakan pada program
+yang dibangun.
+D. Model Pengembangan Perangkat Lunak
+Menjelaskan model pengembangan water fall (air terjun).
+2.2. Tools Program
+Menjelaskan tools program yang digunakan dan cantumkan refernsinya:
+A. Enterprise Relationship Diagram (ERD)
+Menjelaskan tentang ERD, komponen ERD dan LRS
+B. Pengkodean
+Digunakan untuk mengklasifikasikan data, yang dimasukkan kedalam komputer
+ataupun untuk mengambil bermacam-macam informasi. Kode dapat terbentuk dari kumpulan
+angka, huruf atau simbol lainnya.
+Ada beberapa macam tipe kode antara lain Kode Mnemonik (Mnemonic Code), Kode
+Urut (Sequential Code), Kode Blok Urut (Block Code), Kode Chiper, Kode Subset Digit-
+Signifikan, Urutasn Kode Sederhana.
+C. HIPO (Hierarky Input Proses Output)
+1. Pengertian
+2. Tingkatan diagram HIPO
+D. Diagram Alir Program (Flowchart)
+1. Pengertian
+Flowchart atau bagan alir merupakan suatu alat yang digunakan dalam membuat suatu
+algoritma. Diagram alur (flowchart) dapat menunjukan secara jelas, arus pengendalian suatu
+algoritma, yakni bagaimana melaksanakan suatu rangkaian kegiatan secara logis dan
+sistematis.
+2. Bentuk Flowchart
+a. Program Flowchart
+b. Sistem Flowchart
+3. Tehnik pembuatan
+a. General Way
+b. Iteration Way
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 32
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 36 ---
+E. Implementasi dan Pengujian Unit
+Menjelaskan tentang implementasi dan pengujian menggunakan black box testing.
+(Contoh landasan teori berbasis Web/Mobile)
+2.1. Konsep Dasar Web
+Menjelaskan tentang teori yang berhubungan dengan judul TA yang dibuat (dari setiap kata
+yang diangkat sebagai judul). Penulisan definisi ini diikuti dengan mencantumkan nama penulis dan
+buku dari mana definisi tersebut dikutip (sesuaikan dengan teknis penulisan).
+Contoh teori konsep dasar program :
+A. Website
+Menjelaskan tentang definisi internet, website dan aplikasi berbasis web (seperti: web browser,
+web server dan lain sebagainya).
+B. Bahasa Pemrograman
+Menjelaskan tentang bahasa pemrograman yang digunakan misal : Java, PHP, HTML, JQuery
+dan lain-lain.
+C. Basis Data
+Menjelaskan tentang definisi basis data dan aplikasi basis data yang digunakan pada website
+yang dibangun.
+D. Model Pengembangan Perangkat Lunak
+Menjelaskan model pengembangan water fall (air terjun).
+2.2. Teori Pendukung
+A. Struktur Navigasi
+Menjelaskan tentang struktur navigasi.
+B. Enterprise Relationship Diagram
+Menjelaskan tentang definsi ERD, komponen ERD, derajat relationship, LRS dan lain-lain.
+C. Implementasi dan Pengujian Web
+Menjelaskan tentang implementasi dan pengujian menggunakan black box testing.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 33
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 37 ---
+BAB III
+PEMBAHASAN
+3.1. Hasil Observasi Atau Literasi Proses Bisnis Sejenis
+Uraikan proses bisnis hasil observasi atau literasi.
+Contoh:
+1. Prosedur Barang Masuk
+Bagian gudang memeriksa stok barang, apabila stok barang kurang dari standard maka bagian
+gudang mengadakan surat permohonan pengadaan barang ke bagian pembelian. Selanjutnya bagian
+pembelian membuat PO ke supplier. Selanjutnya supplier mengirimkan barang sesuai dengan PO
+dan Barang diterima oleh bagian gudang. Kemudian bagian gudang melakukan pengecekan apakah
+barang yang dikirim sesuai dengan pesanan atau tidak, jika tidak sesuai atau ada yang rusak maka
+dilakukan retur. Bagian gudang menandatangani surat tanda terima.
+2. Prosedur Barang Keluar
+Bagian produksi merequest ke bagian gudang dengan mengajukan permohonan permintaan barang.
+Bagian gudang melakukan pengecekan apakah barang yang diminta tersedia atau tidak. Jika tersedia
+maka bagian gudang akan membuat surat keluar barang.
+3. Prosedur Pembuatan Laporan
+Bagian gudang membuat laporan stok barang setiap bulan dan diserahkan ke manajer.
+3.2. Analisis kebutuhan
+Menguraikan gambaran tentang bagaimana prosedur dari sistem yang menjadi topik penulisan ada yang
+disesuaikan dengan ruang lingkup dari TA yang dibuat. Sebaiknya prosedur ini dibuat dalam uraian
+per– sub-prosedur atau per-bagian disertai dengan bagian-bagian dan dokumen yang dibutuhkan pada
+sistem tersebut (analisis kebutuhan) dan digambarkan dalam Usecase Diagram dan Activity Diagram.
+A. Prosedur Sistem Usulan
+Mengidentifikasi kebutuhan fungsional program yang terkait dengan proses bisnis yang
+diusulkan …..
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 34
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 38 ---
+B. Usecase Diagram
+CONTOH Use Case Diagram
+CATATAN:
+Penggambaran use case tidak harus sama, sesuaikan dengan referensi yang digunakan
+berdasarkan buku atau artikel ilmiah (Jurnal).
+Tabel III.1.
+Deskripsi Use Case Melihat Data Barang
+Use Case Name Melihat Data Barang
+Requirements Bagian Pembelian dapat melihat datang
+Goal Bagian Pembelian melihat data barang secara online
+melalui web
+Pre-Conditions Bagian Pembelian telah melakukan login
+Post-Conditions Daftar data barang yang kurang dari stok minimum
+Failed end Condition Bagian Pembelian tidak dapat melihat data barang
+Actors Bagian Gudang
+Main Flow/ Basic Path 1. User memilih kriteria pencarian
+2. User mengetikan nama atau kode barang
+3. Sistem menampilkan data barang yang dicari
+Alternate Flow/Invariant A A1. System menampilkan data barang yang stoknya <=
+stok minimum
+Invariant B B1. User memilih kriteria
+B2. User mengetikan nama/kode barang
+B3. System tidak menemukan data yang dicari
+B4. System menampilkan pesan "Data yang dicari
+tidak ditemukan"
+<<dan seterusnya>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 35
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 39 ---
+C. Activity Diagram
+CONTOH Diagram Aktifitas
+CATATAN
+Penggambaran activity diagram tidak harus sama, sesuaikan dengan referensi yang
+digunakan berdasarkan buku atau artikel ilmiah (Jurnal).
+3.3. Rancangan Dokumen
+A. Rancangan Dokumen Masukan (Input)
+Menguraikan secara rinci setiap rancangan dokuman masukan yang digunakan dalam sistem dengan
+uraian parameter-parameter dokumen tersebut dengan parameter-parameter dokumennya sebagai
+berikut :
+1. Nama Dokumen : <<sebutkan nama dokumen>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 36
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 40 ---
+Fungsi : ………..
+Sumber : ………..
+Tujuan : ………..
+Media : ………..
+Jumlah : ………..
+Frekuensi : ………..
+Bentuk : Lihat Lampiran A
+B. Rancangan Dokumen Keluaran (Output)
+Menguraikan secara rinci setiap rancangan dokuman keluaran yang digunakan dalam sistem dengan
+uraian parameter-parameter dokumen tersebut dengan parameter-parameter dokumennya sebagai
+berikut :
+1. Nama Dokumen : ………..
+Fungsi : ………..
+Sumber : ………..
+Tujuan : ………..
+Media : ………..
+Jumlah : ………..
+Frekuensi : ………..
+Bentuk : Lihat Lampiran B
+(Desktop/Web/Mobile)
+3.4. Entity Relationship Diagram
+Perancangan basis data menghasilkan pemetaan tabel-tabel yang digambarkan dengan Entity
+Relationship Diagram (ERD).
+A. Entity Relationship Diagram
+Contoh ERD
+Gambar III.1
+Entity Relationship Diagram Persediaan Barang
+CATATAN:
+Pengambaran ERD diatas hanyalah contoh dalam pembuatan Tugas Akhir harap disesuaikan
+dengan buku referensi atau karya ilmiah yang digunakan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 37
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 41 ---
+F. LRS (Logical Record Structure)
+Contoh LRS
+Barang Masuk
+1
+kodeUser
+kodeBarang
+Detail Barang Masuk
+noMasuk 1 M 1
+tglMasuk kodeBarang
+1
+qty 1
+User
+Barang
+kodeUser
+kodeBarang
+namaUser
+namaBarang
+password
+Barang Keluar qty
+Detail Barang Keluar
+1
+1
+kodeUser M 1
+1
+1 kodeBarang kodeBarang
+noKeluar qty
+tglKeluar
+Gambar III.2
+Logical Record Structure Persedian Barang
+CATATAN:
+Pengambaran LRS diatas hanyalah contoh dalam pembuatan Tugas Akhir harap disesuaikan
+dengan buku referensi atau karya ilmiah yang digunakan.
+3.5 Spesifikasi File
+1. Spesifikasi File Barang
+Nama File : Barang Masuk
+Akronim : Barang
+Fungsi : Menyimpan data barang
+Tipe File : File Master
+Organisasi File : Index Sequential
+Akses File : Random
+Media : Hard Disk
+Panjang Record : 44 Byte
+Kunci Field : Kodebarang
+Software : Xampp
+Tabel III.3
+Spesifikasi File Daftar Harga
+No Elemen Data Akronim Tipe Panjang Keterangan
+1. Kode Barang kodebarang Char 6 Primary Key
+2. Nama Barang namabarang Varchar 30
+3. Quantitiy Qty Int 8
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 38
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 42 ---
+3.6. Pengkodean
+1. Id Pengguna
+Setiap pengguna harus memiliki id masing-masing sehingga dapat membatasi hak akses dari
+masing-masing pengguna, diantaranya terdiri dari:
+Contoh :
+Ket :
+ADM = Untuk identitas Administrasi
+01 = No urut adminstrasi adalah Satu
+3.7. Spesifikasi Program
+(Contoh Spesifikasi Program Berbasis Desktop)
+A. HIPO (Hierarchy Input Proses Output)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 39
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+D
+1 .0
+F ile
+0 .0
+1
+a ta P1
+.1
+e.0 la m a r
+P
+2 .0
+ro c e
+0 .0
+s s
+T e s
+2 .1
+t M a
+2 .0
+s u k
+M e n
+0
+u
+.0
+U ta m
+R
+a
+3 .0
+e p o
+0 .0
+rt
+P
+3 .1
+L a p o ra n e n e rim a a n
+K a ry a w a n
+3 .0
+4
+E
+.0
+x it
+Gambar III.3.
+Diagram Hierarki Input Proses Output
+CATATAN:
+Pengambaran Diagram HIPO diatas hanyalah contoh dalam pembuatan Tugas Akhir harap disesuaikan
+dengan buku referensi atau karya ilmiah yang digunakan.
+
+--- HALAMAN 43 ---
+B. Flowchart
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 40
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+T
+S ta rt
+M a s u k k a n ID
+& O p e ra to r
+P a s s w o rd
+P ilih a n :
+L o g In 1 .
+E x it 2 .
+L o g In
+T
+E x it
+Y
+E n d
+Y
+P e rik s a D a ta
+P P a s s w o e s a n : “
+a ta u ID O p e ra to
+s a la h .”
+T
+D a ta b e n a r ?
+rdr
+Y
+M e n u U ta m a
+Gambar III.4 Flowchart Form Log In
+<<dan seterusnya>>
+CATATAN:
+Pengambaran Flowchart diatas hanyalah contoh dalam pembuatan Tugas Akhir harap
+disesuaikan dengan buku referensi atau karya ilmiah yang digunakan.
+3.8. (Contoh Spesifikasi Program Berbasis Web /Mobile)
+Struktur Navigasi
+A. Struktur Navigasi Halaman Index (halaman utama)
+Pada halaman index menggunakan struktur navigasi non linier karena pada rangkaian beranda,
+artikel, produk, produk Permintaan, cara belanja, testimoni, login member dan daftar member dapat
+diakses secara acak atau tidak terurut.
+
+--- HALAMAN 44 ---
+Gambar III.5.
+Struktur Navigasi Index (Menu Utama)
+<<dan seterusnya>>
+CATATAN:
+Pengambaran Struktur Navigasi diatas hanyalah contoh dalam pembuatan Tugas Akhir harap
+disesuaikan dengan buku referensi atau karya ilmiah yang digunakan.
+B. Struktur Navigasi Halaman Member
+C. Struktur Navigasi Halaman Pengunjung
+3.9. Spesifikasi Sistem Komputer
+CONTOH
+1. Spesifikasi Hardware
+A. Server
+1) CPU
+(a) Processor Pentium® Core 2 Duo
+(b) RAM DDR2 4 GB
+(c) Hard Disk 500 GB
+2) Mouse
+3) Keyboard
+4) Monitor dengan resolusi layar minimum 1024x768
+5) Koneksi internet dengan kecepatan 2 Mbps.
+B. Client
+1) CPU
+(a) Processor Pentium® 4
+(b) RAM DDR2 1GB
+(c) Hard Disk 20 GB
+2) Mouse
+3) Keyboard
+4) Monitor dengan resolusi layar minimum 1024x768
+5) Koneksi internet dengan kecepatan 56 kbps.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 41
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 45 ---
+2. Spesifikasi Software
+A. Server
+1) Sistem operasi yang umum digunakan seperti: Microsoft Windows atau Linux (Ubuntu,
+Fedora, dll).
+2) Aplikasi bundle web server seperti: Xampp, WampServer, php2triad yang terdiri dari
+beberapa komponen, diantaranya:
+a) Aplikasi Apache Server v2
+b) Aplikasi PHP Server v5
+c) Aplikasi MySQL Server v5
+d) Aplikasi phpMyAdmin v3
+3) Aplikasi Web Lihatr seperti Mozilla Firefox, Opera, Safari, Internet Explorer, Google
+Chrome.
+B. Client
+1) Sistem operasi yang umum digunakan seperti: Microsoft Windows atau Linux (Ubuntu,
+Fedora, dan lain-lain).
+2) Aplikasi web browser seperti Mozilla Firefox, Opera, Safari, Internet Explorer, Google
+Chrome.
+3.10. Implementasi
+A. Implementasi Rancangan Form / Antar Muka
+Implementasi rancangan antar muka pada aplikasi elearning berdasarkan hasil rancangan antar
+muka.
+Contoh Implementasi Antar Muka :
+1. Halaman Login Admin
+Administrator harus melakukan login terlebih dahulu untuk dapat menggunakan modul-modul yang
+tersedia Jika login berhasil, maka menu-menu yang sesuai dengan kategori user tersebut akan
+ditampilkan.
+2. <<dan seterusnya>>
+3.11. Pengujian Unit
+Pengujian terhadap program yang dibuat menggunakan blackbox testing yang fokus terhadap proses
+masukan dan keluaran program.
+Contoh Pengujian Unit :
+A. Pengujian Terhadap Form Login
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 42
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 46 ---
+Tabel III.4
+Hasil Pengujian Black Box Testing Halaman Login
+No. Skenario Test case Hasil yang Hasil Kesimpulan
+pengujian diharapkan pengujian
+1. User Id dan User Id : (kosong) Sistem akan menolak
+password tidak Password: (kosong) akses user dan
+Sesuai
+diisi kemudian menampilkan “User Valid
+harapan
+klik tombol login Id dan password
+tidak dikenal”
+2. Mengetikkan user User ID: 1001 Sistem akan menolak
+ID dan password Password : (kosong) akses user dan
+Sesuai
+tidak diisi atau menampilkan “User Valid
+harapan
+kosong kemudian Id dan password
+klik tombol login tidak dikenal”
+3. User ID tidak User Id: (kosong) Sistem akan menolak
+diisi (kosong) dan Password: 1998-03- akses user dan
+Sesuai
+password diisi 31 menampilkan “User Valid
+harapan
+kemudian klik Id dan password
+tombol login tidak dikenal”
+4. Mengetikkan User ID: 1001 Sistem akan menolak Sesuai Valid
+salah satu kondisi (benar) akses user dan harapan
+salah pada user Password: 1998-03- menampilkan “User
+ID atau 31 (salah) Id dan password
+password tidak dikenal”.
+kemudian klik
+tombol login
+5. Mengetikkan User ID: 1001 Sistem menerima Sesuai Valid
+user ID dan (benar) akses login dan harapan
+password dengan Password: 1998-03- kemudian langsung
+data yang benar 31 (benar) menampilkan menu
+kemudian klik utama.
+tombol login
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 43
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 47 ---
+BAB IV
+PENUTUP
+4.1. Kesimpulan
+Berisi tentang uraian perubahan system yang telah dilakukan untuk menjawab masalah yang di
+tuliskan di latar belakang masalah (Bab 1).
+4.2. Saran
+Menguraikan saran yang mendukung keberhasilan dari implementasi program yang diusulkan
+serta pengembangan ke arah yang akan datang.
+Contoh Lampiran Rancangan Dokumen: (Lampiran A dan B)
+Lampiran A
+Dokumen Masukan Program
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 44
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 48 ---
+Lampiran B
+Dokumen Keluaran Program
+LAPORAN TAMU
+TANGGAL 16 FEBRUARI 2021 s/d 16 Februari 2021
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 45
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 49 ---
+Mahasiswa Melakukan Riset/PKL
+Bentuk Outline Tugas Akhir Perancangan Program - Bisnis
+Program Studi Sistem Informasi jenjang Diploma Tiga (D.III)
+Universitas Bina Sarana Informatika
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL
+Metode Pengerjaan : Individu
+Luaran :
+- Publikasi Artikel Ilmiah : Disarankan
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Disarankan
+- Karya : Laporan Tugas Akhir (Wajib)
+- Berita Acara Serah Terima Karya : Disarankan
+Bentuk Outline :
+Lembar Judul Tugas Akhir
+Lembar Pernyataan Keaslian Tugas akhir
+Lembar Pernyataan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Tugas Akhir
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Tugas Akhir
+Kata Pengantar
+Lembar Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Tujuan dan Manfaat
+1.3. Metode Penelitian
+1.4. Ruang Lingkup
+BAB II LANDASAN TEORI
+2.1. Konsep Dasar Program
+2.2. Tools Program
+BAB III PEMBAHASAN
+3.1. Tinjauan Perusahaan
+3.1.1. Sejarah Perusahaan
+3.1.2. Struktur Organisasi
+3.2. Analisis Kebutuhan
+3.3. Rancangan Dokumen
+3.4. Entity Relationship Diagram (ERD)
+3.5. Logical Record Structure (LRS)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 46
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 50 ---
+3.6. Spesifikasi File
+3.7. Pengkodean
+3.8. Spesifikasi Program
+3.9. Spesifikasi Sistem Komputer
+3.10. Implementasi
+3.11. Pengujian Unit
+BAB IV PENUTUP
+4.1. Kesimpulan
+4.2. Saran
+Daftar Pustaka
+Daftar Riwayat Hidup
+Lampiran A Dokumen Masukan Program
+Lampiran B Dokumen Keluaran Program
+Lampiran C Dokumen Pendukung Implementasi Aplikasi (jika aplikasi diimplementasikan pada tempat
+riset)
+CATATAN :
+1. Contoh yang di tuliskan dalam penjelasan Outline Perancangan Program Bisnis hanyalah sebagai
+bantuan gambaran saja. Pembahasan ERD, LRS dan lain-lain tetap disesuaikan dengan buku
+referensi atau jurnal yang dipergunakan oleh mahasiswa sebagai referensi dalam pembuatan Tugas
+Akhir.
+2. Mahasiswa melakukan riset/PKL sehingga memerlukan surat keterangan riset/PKL.
+3. Judul Tugas Akhir yang dibuat mencantumkan nama tempat riset/PKL.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 47
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 51 ---
+C. Penjelasan Outline
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Berisikan alasan pemilihan judul TA, dengan cara menguraikan dan menjelaskan permasalahan yang
+diangkat oleh penulis.
+Contoh Latar Belakang Masalah :
+Menurut UU No. 5 Tahun 1984 tentang Perindustrian, indutri adalah kegiatan ekonomi yang mengelola
+bahan mentah, bahan baku, barang setengah jadi, dan atau barang jadi menjadi barang dengan nilai lebih
+tinggi untuk pengunaanya. Hasil penelitan sebelumnya (En & Suryandi, 2013) “PT. X, telah
+menerapkan internal struktur control dengan hasil proses pengiriman bahan baku tepat waktu dan
+mengoptimalkan pasasokan bahan baku di PT. X ” . (Imroatus Sholikhah, Mahmud Sairan, 2017) “
+mengunakan metode waterfall dengan hasil karyawan lebih terbantu untuk mengelola data barang,
+supplier dan customer dalam pendataan, mengelola pembukuan transaksi pembelian dan penjualan,
+serta memberikan laporan yang lebih rinci kepada pemilik”. (Aprilliah, Ningsih, Ariyanti, Haryati,
+2019) “mengunakan metode waterfall dengan hasil melakukan pengolahan data informasi pengeluaran
+dan pemasukan kas dengan efektif dan efisiensi, sehingga diharapkan akan menghasilkan suatu
+informasi yang lebih baik dengan sistem yang terkomputerisasi”.(Gunawan, 2013)“Visual Basic.Net
+bahwa penelitian ini dimana hasil analisa dan perancangan yang dilakaukan dapat membantu kegiatan-
+kegiatan dalam perusahaan tersebut agar lebih baik di dalam aspek untuk waktu mendatang .”
+Berdasarkan hasil penelitian sebelumnya, maka penulis melakukan riset pada PT. Masato Catur
+Coanting, prosedur-prosedur yang terdapat didalamnya masih belum terkomputerisasi sehingga dalam
+menjalankan transaksinya masih ditemui kesalahan-kesalahan seperti dalam pencatatan data barang,
+data supplier yang tidak terdokumentasi dengan baik, pencatatan transaksi pembelian dan penerimaan
+barang yang kurang efisien, pembayaran invoice yang sering terlewat karena tidak terdokumentasi
+dengan baik, serta pembuatan laporan-laporan setiap bulannya. Dengan diterapkannya sistem yang
+berjalan saat ini beresiko terjadinya tindakan manipulasi data karena pencatatan transaksi manual
+tingkat keamanannya masih rentang, sehingga hasil yang didapat kurang cepat dan akurat. Berdasarkan
+masalah yang disebutkan diatas dan hasil penelitian sebelumnya penulis mengusulkan permasalahan
+tersebut menjadi tema pembuatan Tugas Akhir ini. Penulis berharap agar prosedur-prosedur yang akan
+dijalankan yang selama ini yang belum terkomputerisasi, sudah terkomputerisasi agar mendapatkan
+hasil yang seoptimal mungkin sehingga tidak terjadi kesalahan-kesalahan dalam menjalankannya.
+Judul tidak perlu dicantumkan dalam latar belakang tetapi digantikan dengan rumusan
+masalah. Referensi jurnal dimasukkan dalam latar belakang sebagai pendukung masalah atau
+solusi yang di bahas oleh penulis.
+1.2. Tujuan dan Manfaat
+Penulis membuat dua alinea yang menguraikan tentang tujuan pembuatan TA dan manfaat penulisan
+TA. Tujuan penulisan TA lebih mengarah pada apa yang ingin dicapai dari penulisan TA. Sedangkan
+manfaat Penulisan TA terbagi atas manfaat untuk penulis, manfaat untuk objek penelitian, dan
+manfaat untuk pembaca.
+CONTOH Tujuan dan Manfaat :
+Tujuan dari penulisan tugas akhir ini adalah :
+1. Untuk mengetahui bagaimana sistem absensi dan penggajian guru yang sedang berjalan saat
+ini.
+2. Merancang sistem informasi absensi dan penggajian guru pada sekolah tersebut agar
+menghasilkan informasi yang cepat, tepat dan akurat.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 48
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 52 ---
+3. Agar hasil penelitian dapat dimanfaatkan dan digunakan oleh instansi sebagai referensi dasar
+untuk mengambil solusi dari permasalahan yang ada..
+Sedangkan manfaat penulisan tugas akhir adalah sebagai berikut:
+1. Manfaat untuk penulis
+Sebagai salah satu syarat kelulusan Program Diploma Tiga (DIII) Program Studi Sistem
+Informasi di Universitas Bina Sarana Informatika.
+2. Manfaat untuk objek penelitian
+a. Sebagai bahan evaluasi terhadap sistem yang sedang berjalan.
+b. Menghasilkan suatu informasi yang cepat dan akurat dalam membantu dan memudahkan
+proses absensi dan administrasi penggajian.
+3. Manfaat untuk pembaca
+Memberikan pemahaman mengenai konsep perancangan sistem informasi absensi dan
+penggajian sehingga lebih optimal <dan lain-lain>
+1.3. Metode Penelitian
+Menjelaskan metode penelitian dan teknik pengumpulan data yang digunakan untuk penyusunan
+TA.
+Contoh Pengembangan Perangkat Lunak : (Metode yang digunakan boleh menggunakan metode
+lain, contoh :Agile, RAD, dll, dan wajib menunjukkan referensi ilmiah (jurnal, buku, dll)
+mengenai metode pengembangan perangkat lunak yang diambil)
+C. Metode Pengembangan Perangkat Lunak
+Metode yang digunakan pada pengembangan perangkat lunak ini menggunakan model water
+fall (sommerville, 2007:66) yang terbagi menjadi tiga tahapan, yaitu:
+1. Analisis Kebutuhan
+Tahapan ini sangat menekan pada masalah pengumpulan kebutuhan pengguna pada tingkatan sistem
+dengan menentukan konsep sistem beserta antarmuka yang menghubungkannya dengan lingkungan
+sekitar. Hasilnya berupa spesifikasi sistem.
+2. Perancangan Sistem dan Perangkat Lunak
+Proses perancangan sistem ini difokuskan pada empat atribut, yaitu struktur data, representasi
+antarmuka, arsitektur perangkat lunak, dan interaksi antar objek di dalam kelas.
+3. Implementasi
+Pada tahap ini, perancangan perangkat lunak direalisasikan sebagai serangkaian program atau unit
+program.
+D. Teknik pengumpulan Data
+Teknik pengumpulan data yang digunakan oleh penulis dalam melakukan pengumpulan data
+untuk pembuatan TA adalah :
+1. Observasi
+Menjelaskan tentang kegiatan observasi yang dilakukan meliputi : tempat atau bagian yang
+diobservasi.
+2. Wawancara
+Menjelaskan kegiatan wawancara terhadap responden yang terkait dengan topik TA.
+3. Studi Pustaka
+Menjelaskan tentang studi pustaka yang dilakukan untuk mendukung proses komputerisasi sistem.
+1.4. Ruang Lingkup
+Adalah batasan masalah yang akan dibahas dalam TA yang penulis buat. Batasan ini bertujuan untuk
+alur atau rel dari TA yang dibuat. Batasan dibuat dengan awal mula permasalahan sampai dengan
+penyelesaian yang dicapai (misal : proses pengolahan master data (data barang, data supplier, dan lain-
+lain), sampai dengan pembuatan laporan dengan menggunakan bahasa pemrograman yang dipahami).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 49
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 53 ---
+BAB II
+LANDASAN TEORI
+(Contoh landasan teori berbasis Desktop)
+2.1. Konsep Dasar Program
+Menjelaskan tentang teori yang berhubungan dengan judul TA yang dibuat (dari setiap kata yang
+diangkat sebagai judul). Penulisan definisi ini diikuti dengan mencantumkan nama penulis dan buku
+dari mana definisi tersebut dikutip (sesuaikan dengan petunjuk penulisan kutipan).
+Contoh teori konsep dasar program :
+D. Program
+Menjelaskan tentang Program
+E. Bahasa Pemrograman
+Menjelaskan tentang bahasa pemrograman yang digunakan misal : VB, Delphi, Foxpro dan lain-
+lain.
+F. Basis Data
+Menjelaskan tentang definisi basis data dan aplikasi basis data yang digunakan pada program
+yang dibangun.
+G. Model Pengembangan Perangkat Lunak
+Menjelaskan model pengembangan water fall (air terjun).
+2.2. Tools Program
+Menjelaskan tools program yang digunakan dan cantumkan refernsinya:
+A. Enterprise Relationship Diagram (ERD)
+Menjelaskan tentang ERD, komponen ERD dan LRS
+B. Pengkodean
+Digunakan untuk mengklasifikasikan data, yang dimasukkan kedalam komputer
+ataupun untuk mengambil bermacam-macam informasi. Kode dapat terbentuk dari kumpulan
+angka, huruf atau simbol lainnya.
+Ada beberapa macam tipe kode antara lain Kode Mnemonik (Mnemonic Code), Kode
+Urut (Sequential Code), Kode Blok Urut (Block Code), Kode Chiper, Kode Subset Digit-
+Signifikan, Urutasn Kode Sederhana.
+C. HIPO (Hierarky Input Proses Output)
+1. Pengertian
+2. Tingkatan diagram HIPO
+D. Diagram Alir Program (Flowchart)
+1. Pengertian
+Flowchart atau bagan alir merupakan suatu alat yang digunakan dalam membuat suatu
+algoritma. Diagram alur (flowchart) dapat menunjukan secara jelas, arus pengendalian suatu
+algoritma, yakni bagaimana melaksanakan suatu rangkaian kegiatan secara logis dan
+sistematis.
+2. Bentuk Flowchart
+c. Program Flowchart
+d. Sistem Flowchart
+3. Tehnik pembuatan
+a. General Way
+b. Iteration Way
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 50
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 54 ---
+E. Implementasi dan Pengujian Unit
+Menjelaskan tentang implementasi dan pengujian menggunakan black box testing.
+(Contoh landasan teori berbasis Web/Mobile)
+2.1. Konsep Dasar Web
+Menjelaskan tentang teori yang berhubungan dengan judul TA yang dibuat (dari setiap kata
+yang diangkat sebagai judul). Penulisan definisi ini diikuti dengan mencantumkan nama penulis dan
+buku dari mana definisi tersebut dikutip (sesuaikan dengan teknis penulisan).
+Contoh teori konsep dasar program :
+A. Website
+Menjelaskan tentang definisi internet, website dan aplikasi berbasis web (seperti: web browser,
+web server dan lain sebagainya).
+B. Bahasa Pemrograman
+Menjelaskan tentang bahasa pemrograman yang digunakan misal : Java, PHP, HTML, JQuery
+dan lain-lain.
+C. Basis Data
+Menjelaskan tentang definisi basis data dan aplikasi basis data yang digunakan pada website
+yang dibangun.
+D. Model Pengembangan Perangkat Lunak
+Menjelaskan model pengembangan water fall (air terjun).
+2.3. Teori Pendukung
+A. Struktur Navigasi
+Menjelaskan tentang struktur navigasi.
+B. Enterprise Relationship Diagram
+Menjelaskan tentang definsi ERD, komponen ERD, derajat relationship, LRS dan lain-lain.
+C. Implementasi dan Pengujian Web
+Menjelaskan tentang implementasi dan pengujian menggunakan black box testing.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 51
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 55 ---
+BAB III
+PEMBAHASAN
+3.1. Tinjauan Perusahaan
+3.1.1. Sejarah Perusahaan
+3.1.2. Struktur Organisasi dan Fungsi
+3.2. Analisis kebutuhan
+Menguraikan gambaran tentang bagaimana prosedur dari sistem yang menjadi topik penulisan ada
+yang disesuaikan dengan ruang lingkup dari TA yang dibuat. Sebaiknya prosedur ini dibuat dalam
+uraian per– sub-prosedur atau per-bagian disertai dengan bagian-bagian dan dokumen yang
+dibutuhkan pada sistem tersebut (analisis kebutuhan).
+A. Prosedur Sistem Usulan
+Mengidentifikasi kebutuhan fungsional program yang terkait dengan proses bisnis yang diusulkan
+…..
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 52
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 56 ---
+B. Usecase Diagram
+CONTOH Use Case Diagram
+CATATAN:
+Penggambaran use case tidak harus sama, sesuaikan dengan referensi yang digunakan
+berdasarkan buku atau artikel ilmiah (Jurnal).
+Tabel III.1.
+Deskripsi Use Case Melihat Data Barang
+Use Case Name Melihat Data Barang
+Requirements Bagian Pembelian dapat melihat datang
+Goal Bagian Pembelian melihat data barang secara online
+melalui web
+Pre-Conditions Bagian Pembelian telah melakukan login
+Post-Conditions Daftar data barang yang kurang dari stok minimum
+Failed end Condition Bagian Pembelian tidak dapat melihat data barang
+Actors Bagian Gudang
+Main Flow/ Basic Path 4. User memilih kriteria pencarian
+5. User mengetikan nama atau kode barang
+6. Sistem menampilkan data barang yang dicari
+Alternate Flow/Invariant A A1. System menampilkan data barang yang stoknya <=
+stok minimum
+Invariant B B1. User memilih kriteria
+B2. User mengetikan nama/kode barang
+B3. System tidak menemukan data yang dicari
+B4. System menampilkan pesan "Data yang dicari
+tidak ditemukan"
+<<dan seterusnya>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 53
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 57 ---
+C. Activity Diagram
+CONTOH Diagram Aktifitas
+CATATAN
+Penggambaran activity diagram tidak harus sama, sesuaikan dengan referensi yang
+digunakan berdasarkan buku atau artikel ilmiah (Jurnal).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 54
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 58 ---
+3.3. Rancangan Dokumen
+A. Rancangan Dokumen
+A. Rancangan Dokumen Masukan (Input)
+Menguraikan secara rinci setiap rancangan dokuman masukan yang digunakan dalam sistem dengan
+uraian parameter-parameter dokumen tersebut dengan parameter-parameter dokumennya sebagai
+berikut :
+1. Nama Dokumen : <<sebutkan nama dokumen>>
+Fungsi : ………..
+Sumber : ………..
+Tujuan : ………..
+Media : ………..
+Jumlah : ………..
+Frekuensi : ………..
+Bentuk : Lihat Lampiran A
+B. Rancangan Dokumen Keluaran (Output)
+Menguraikan secara rinci setiap rancangan dokuman keluaran yang digunakan dalam sistem dengan
+uraian parameter-parameter dokumen tersebut dengan parameter-parameter dokumennya sebagai
+berikut :
+1. Nama Dokumen : ………..
+Fungsi : ………..
+Sumber : ………..
+Tujuan : ………..
+Media : ………..
+Jumlah : ………..
+Frekuensi : ………..
+Bentuk : Lihat Lampiran B
+3.4. Entity Relationship Diagram (Desktop/Web/Mobile)
+Perancangan basis data menghasilkan pemetaan tabel-tabel yang digambarkan dengan Entity
+Relationship Diagram (ERD).
+A. Entity Relationship Diagram
+Contoh ERD
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 55
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 59 ---
+Gambar III. 1
+Entity Relationship Diagram Persediaan Barang
+CATATAN:
+Pengambaran ERD diatas hanyalah contoh dalam pembuatan Tugas Akhir harap disesuaikan
+dengan buku referensi atau karya ilmiah yang digunakan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 56
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 60 ---
+B. LRS (Logical Record Structure)
+Contoh LRS
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 57
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+knp oaa
+1
+U s e r
+d e U s e r
+m a U s e r
+s s w o rd
+1
+1
+1
+B a ra n g M a
+k o d e U s e r
+k o d e B a ra n
+n o M a s u k
+tg lM a s u k
+B a ra n g K e
+k o d e U s e r
+k o d e B a ra n
+n o K e lu a r
+tg lK e lu a r
+s
+g
+lu
+g
+u
+a
+k
+r
+1
+1
+M
+M
+D e ta
+k o d e
+q ty
+D e ta
+k o d e
+q ty
+il B
+B a
+il B
+B a
+a
+ra
+a
+ra
+ra n
+n g
+ra n
+n g
+g
+g
+M
+K
+a
+e
+s
+lu
+u
+a
+k
+r
+1
+1
+knq
+1
+B a ra n g
+o d e B a ra n g
+a m a B a ra n g
+ty
+1
+Gambar III.2
+Logical Record Structure Persedian Barang
+CATATAN:
+Pengambaran LRS diatas hanyalah contoh dalam pembuatan Tugas Akhir harap disesuaikan
+dengan buku referensi atau karya ilmiah yang digunakan.
+3.5 Spesifikasi File
+1. Spesifikasi File Barang
+Nama File : Barang Masuk
+Akronim : Barang
+Fungsi : Menyimpan data barang
+Tipe File : File Master
+Organisasi File : Index Sequential
+Akses File : Random
+Media : Hard Disk
+Panjang Record : 44 Byte
+Kunci Field : Kodebarang
+Software : Xampp
+Tabel III.1
+Spesifikasi File Daftar Harga
+No Elemen Data Akronim Tipe Panjang Keterangan
+1. Kode Barang kodebarang Char 6 Primary Key
+2. Nama Barang namabarang Varchar 30
+3. Quantitiy Qty Int 8
+
+--- HALAMAN 61 ---
+3.6. Pengkodean
+1. Id Pengguna
+Setiap pengguna harus memiliki id masing-masing sehingga dapat membatasi hak akses dari masing-
+masing pengguna, diantaranya terdiri dari:
+Contoh :
+Ket :
+ADM = Untuk identitas Administrasi
+01 = No urut adminstrasi adalah Satu
+3.7. Spesifikasi Program
+(Contoh Spesifikasi Program Berbasis Desktop)
+A. HIPO (Hierarchy Input Proses Output)
+0.0
+Menu Utama
+1.0 2.0 3.0 4.0
+File Process Report Exit
+0.0 0.0 0.0
+1.1
+2.1 3.1
+Data Pelamar Test Masuk Pe L n a e p r o im ra a n a n
+1.0 Karyawan
+2.0
+3.0
+Gambar III.3. Diagram Hierarki Input Proses Output
+CATATAN:
+Pengambaran Diagram HIPO diatas hanyalah contoh dalam pembuatan Tugas Akhir harap
+disesuaikan dengan buku referensi atau karya ilmiah yang digunakan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 58
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 62 ---
+B. Flowchart
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 59
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+T
+S ta rt
+M a s u k k a n ID
+& O p e ra to r
+P a s s w o rd
+P ilih a n :
+L o g In 1 .
+E x it 2 .
+L o g In
+T
+E x it
+Y
+E n d
+Y
+P e rik s a D a ta
+P P a s s w o e s a n : “
+a ta u ID O p e ra to
+s a la h .”
+T
+D a ta b e n a r ?
+rdr
+Y
+M e n u U ta m a
+Gambar III.4 Flowchart Form Log In
+<<dan seterusnya>>
+CATATAN:
+Pengambaran Flowchart diatas hanyalah contoh dalam pembuatan Tugas Akhir harap
+disesuaikan dengan buku referensi atau karya ilmiah yang digunakan.
+3.8. (Contoh Spesifikasi Program Berbasis Web /Mobile)
+Struktur Navigasi
+A. Struktur Navigasi Halaman Index (halaman utama)
+Pada halaman index menggunakan struktur navigasi non linier karena pada rangkaian beranda, artikel,
+produk, produk Permintaan, cara belanja, testimoni, login member dan daftar member dapat diakses
+secara acak atau tidak terurut.
+
+--- HALAMAN 63 ---
+Gambar III.5.
+Struktur Navigasi Index (Menu Utama)
+<<dan seterusnya>>
+CATATAN:
+Pengambaran Struktur Navigasi diatas hanyalah contoh dalam pembuatan Tugas Akhir harap
+disesuaikan dengan buku referensi atau karya ilmiah yang digunakan.
+B. Struktur Navigasi Halaman Member
+C. Struktur Navigasi Halaman Pengunjung
+3.9. Spesifikasi Sistem Komputer
+CONTOH
+1. Spesifikasi Hardware
+A. Server
+1) CPU
+(a) Processor Pentium® Core 2 Duo
+(b) RAM DDR2 4 GB
+(c) Hard Disk 500 GB
+2) Mouse
+3) Keyboard
+4) Monitor dengan resolusi layar minimum 1024x768
+5) Koneksi internet dengan kecepatan 2 Mbps.
+B. Client
+1) CPU
+(a) Processor Pentium® 4
+(b) RAM DDR2 1GB
+(c) Hard Disk 20 GB
+2) Mouse
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 60
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 64 ---
+3) Keyboard
+4) Monitor dengan resolusi layar minimum 1024x768
+5) Koneksi internet dengan kecepatan 56 kbps.
+2. Spesifikasi Software
+A. Server
+1) Sistem operasi yang umum digunakan seperti: Microsoft Windows atau Linux (Ubuntu,
+Fedora, dll).
+2) Aplikasi bundle web server seperti: Xampp, WampServer, php2triad yang terdiri dari
+beberapa komponen, diantaranya:
+a) Aplikasi Apache Server v2
+b) Aplikasi PHP Server v5
+c) Aplikasi MySQL Server v5
+d) Aplikasi phpMyAdmin v3
+3) Aplikasi Web Lihatr seperti Mozilla Firefox, Opera, Safari, Internet Explorer, Google
+Chrome.
+B. Client
+1) Sistem operasi yang umum digunakan seperti: Microsoft Windows atau Linux (Ubuntu,
+Fedora, dan lain-lain).
+2) Aplikasi web browser seperti Mozilla Firefox, Opera, Safari, Internet Explorer, Google
+Chrome.
+3.10. Implementasi
+A. Implementasi Rancangan Form / Antar Muka
+Implementasi rancangan antar muka pada aplikasi elearning berdasarkan hasil rancangan antar muka.
+Contoh Implementasi Antar Muka :
+1. Halaman Login Admin
+Administrator harus melakukan login terlebih dahulu untuk dapat menggunakan modul-modul yang
+tersedia Jika login berhasil, maka menu-menu yang sesuai dengan kategori user tersebut akan
+ditampilkan.
+2. <<dan seterusnya>>
+3.12. Pengujian Unit
+Pengujian terhadap program yang dibuat menggunakan blackbox testing yang fokus terhadap proses
+masukan dan keluaran program.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 61
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 65 ---
+Contoh Pengujian Unit :
+A. Pengujian Terhadap Form Login
+Tabel III.2
+Hasil Pengujian Black Box Testing Halaman Login
+No. Skenario Test case Hasil yang Hasil Kesimpulan
+pengujian diharapkan pengujian
+1. User Id dan User Id : (kosong) Sistem akan menolak
+password tidak Password: (kosong) akses user dan
+Sesuai
+diisi kemudian menampilkan “User Valid
+harapan
+klik tombol login Id dan password
+tidak dikenal”
+2. Mengetikkan user User ID: 1001 Sistem akan menolak
+ID dan password Password : (kosong) akses user dan
+Sesuai
+tidak diisi atau menampilkan “User Valid
+harapan
+kosong kemudian Id dan password
+klik tombol login tidak dikenal”
+3. User ID tidak User Id: (kosong) Sistem akan menolak
+diisi (kosong) dan Password: 1998-03- akses user dan
+Sesuai
+password diisi 31 menampilkan “User Valid
+harapan
+kemudian klik Id dan password
+tombol login tidak dikenal”
+4. Mengetikkan User ID: 1001 Sistem akan menolak Sesuai Valid
+salah satu kondisi (benar) akses user dan harapan
+salah pada user Password: 1998-03- menampilkan “User
+ID atau 31 (salah) Id dan password
+password tidak dikenal”.
+kemudian klik
+tombol login
+5. Mengetikkan User ID: 1001 Sistem menerima Sesuai Valid
+user ID dan (benar) akses login dan harapan
+password dengan Password: 1998-03- kemudian langsung
+data yang benar 31 (benar) menampilkan menu
+kemudian klik utama.
+tombol login
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 62
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 66 ---
+BAB IV
+PENUTUP
+4.1. Kesimpulan
+Berisi tentang uraian perubahan system yang telah dilakukan untuk menjawab masalah yang di tuliskan
+di latar belakang masalah (Bab 1).
+4.2. xSaran
+Menguraikan saran yang mendukung keberhasilan dari implementasi program yang diusulkan serta
+pengembangan ke arah yang akan datang.
+Contoh Lampiran Rancangan Dokumen: (Lampiran A dan B)
+Lampiran A
+Dokumen Masukan Program
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 63
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 67 ---
+Lampiran B
+Dokumen Keluaran Program
+LAPORAN TAMU
+TANGGAL 16 FEBRUARI 2021 s/d 16 Februari 2021
+Lampiran C
+Dokumen Pendukung Implementasi Aplikasi (jika aplikasi diimplementasikan pada tempat riset)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 64
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 68 ---
+Bentuk Outline Tugas Akhir Perancangan Program – Games/IoT/Augmented Reality
+Program Studi Sistem Informasi jenjang Diploma Tiga (D.III)
+Universitas Bina Sarana Informatika
+Bukti Riset : Surat Keterangan/ Sertifikat PKL atau Surat Keabsahan Data
+Metode Pengerjaan : Individu
+Luaran :
+- Publikasi Artikel Ilmiah : Disarankan
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Disarankan
+- Karya : Laporan Tugas Akhir (Wajib)
+- Berita Acara Serah Terima Karya : Disarankan
+Bentuk Outline :
+Lembar Judul Tugas Akhir
+Lembar Pernyataan Keaslian Tugas akhir
+Lembar Pernyataan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Tugas Akhir
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Tugas Akhir
+Kata Pengantar
+Lembar Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang
+1.2. Tujuan dan Manfaat
+1.3. Metode Penelitian
+1.4. Ruang Lingkup
+BAB II LANDASAN TEORI
+2.1. Konsep Dasar Game/IoT/Augmented Reality
+2.2. Metode Pengembangan Game/IoT/Augmented Reality
+2.3. Tools Pengembangan Game/IoT/Augmented Reality
+2.4. Pengujian Pengembangan Game/IoT/Augmented Reality
+BAB III PEMBAHASAN
+Sub bab yang dibahas disesuaikan dengan pembahasan pada sub bab 2.2 Metode Pengembangan
+Games/IoT/Augmented Reality
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 65
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 69 ---
+BAB IV PENUTUP
+4.1. Kesimpulan
+4.2. Saran
+Daftar Pustaka
+Daftar Riwayat Hidup
+Lampiran
+CATATAN :
+1. Mahasiswa diharuskan melakukan observasi bukan riset/PKL sehingga tidak memerlukan surat
+keterangan riset/PKL. Observasi dilakukan dengan tujuan untuk membandingkan bisnis proses
+dari Pengembangan Game/IoT/Augmented Reality sejenis yang sudah ada dan sudah berjalan
+ataupun kebutuhan dari mitra yang telah di observasi. Mahasiswa diwajibkan untuk melampirkan
+dokumen bukti wawancara dalam bentuk kuisioner.
+2. Menambahkan atribut-atribut atau identitas Universitas BSI dalam Game/IoT/Augmented Reality,
+sehingga identitas Universitas BSI tidak hanya terdapat pada profil pembuat
+Game/IoT/Augmented Reality saja.
+3. Judul Tugas Akhir yang dibuat tidak perlu mencantumkan nama tempat observasi.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 66
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 70 ---
+Penjelasan Outline
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Dalam latar belakang masalah jabarkan mengenai pentingnya alasan pembuatan Aplikasi
+Game/IoT/Augmented Reality sehingga diperoleh fakta-fakta bahwa aplikasi yang dibaut memang
+dibutuhkan. Alasan pembuatan aplikasi dapat disajikan dalam bentuk data statistik dari website resmi
+yang dapat dipertanggungjawabkan atau data yang diperoleh dari Artikel ilmiah.
+Judul tidak perlu dicantumkan dalam latar belakang tetapi digantikan dengan rumusan
+masalah. Referensi jurnal dimasukkan dalam latar belakang sebagai pendukung masalah atau
+solusi yang di bahas oleh penulis.
+1.2. Tujuan Dan Manfaat Penelitian
+Penulis membuat dua alinea yang menguraikan tentang tujuan pembuatan TA dan manfaat
+penulisan TA. Tujuan penulisan TA lebih mengarah pada apa yang ingin dicapai dari penulisan TA.
+Sedangkan manfaat Penulisan TA terbagi atas manfaat untuk penulis, manfaat untuk objek
+penelitian, dan manfaat untuk pembaca.
+CONTOH Tujuan dan Manfaat :
+Tujuan dari penulisan tugas akhir ini adalah :
+1. Untuk mengetahui bagaimana sistem absensi dan penggajian guru yang sedang berjalan saat
+ini.
+2. Merancang sistem informasi absensi dan penggajian guru pada sekolah tersebut agar
+menghasilkan informasi yang cepat, tepat dan akurat.
+3. Agar hasil penelitian dapat dimanfaatkan dan digunakan oleh instansi sebagai referensi dasar
+untuk mengambil solusi dari permasalahan yang ada..
+Sedangkan manfaat penulisan tugas akhir adalah sebagai berikut:
+1. Manfaat untuk penulis
+Sebagai salah satu syarat kelulusan Program Diploma Tiga (DIII) Program Studi Sistem
+Informasi di Universitas Bina Sarana Informatika.
+2. Manfaat untuk objek penelitian
+c. Sebagai bahan evaluasi terhadap sistem yang sedang berjalan.
+d. Menghasilkan suatu informasi yang cepat dan akurat dalam membantu dan memudahkan
+proses absensi dan administrasi penggajian.
+3. Manfaat untuk pembaca
+Memberikan pemahaman mengenai konsep perancangan sistem informasi absensi dan
+penggajian sehingga lebih optimal <dan lain-lain>
+1.3. Metode Penelitian
+Menjelaskan metode penelitian dan teknik pengumpulan data yang digunakan untuk penyusunan TA.
+Contoh Pengembangan Perangkat Lunak : (Metode yang digunakan boleh menggunakan metode
+lain, contoh :GDLC, PPDIOO, Agile, dll. Mahasiswa wajib menunjukkan referensi ilmiah
+(jurnal, buku, dll) mengenai metode pengembangan Game/IoT/Augmented Reality yang diambil)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 67
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 71 ---
+A. Metode Pengembangan Game
+Metode yang digunakan pada pengembangan perangkat lunak ini menggunakan model GDLC (Game
+Development Life Cycle) yang terbagi menjadi enam tahapan, yaitu:
+1. Initiation
+Tahapan ini adalah titik inisiasi proyek game development. Awal dari game development adalah
+memulai dari sebuah ide pembuatan game
+2. Pre-Production
+Pre- production adalah awal dari production cycle yang berurusan dengan game design. Apa itu
+game design dibahas pada bab yang bersangkutan. Pre-production adalah tahap yang vital
+sebelum proses production dimulai, karena pada tahap ini dilakukan perancangan game, dan
+rencana produksi game. Tahap ini terdiri atas game design yakni penyempurnaan konsep game
++ dokumentasinya ( Game Design Document ) dan prototyping yakni pembuatan prototype dari
+game ( bila game ada )
+3. Production
+Pada tahap ini, dilakukan pembuatan design dan prototype . production merupakan
+penyempurnaan tahapan pre-production. Artinya, tahap ini memiliki fokus pada menerjemahkan
+rancangan game design, concept art, dan aspek – aspek lainnya menjadi unsur penyusun game.
+Tahap ini berkutat dengan asset creation, programming dan integration antara asset dan source
+code.
+4. Testing
+Sesuai dengan namanya, testing merupakan pengujian terhadap prototype build. Pengujian ini
+dilakukan oleh internal developer team untuk melakukan usability test dan functionality test
+5. Beta
+Saat game selesai dibuat, belum berarti game tersebut akan diterima oleh massa. Eksternal
+testing, dikenal dengan istilah beta testing dilakukan untuk menguji keberterimaan game dan
+untuk mendeteksi berbagai error dan keluhan yang dilemparkan oleh third party tester. Beta
+berada diluar production cycle, tetapi hasil dari testing ini berpotensi menyebabkan tim
+mengulangi production cycle lagi
+6. Release
+Game yang sudah selesai dibuat dan lulus beta testing menandakan game tersebut siap untuk
+dirilis ke publik. Release adalah tahap dimana final build dari game resmi dirilis
+B. Teknik pengumpulan Data
+Teknik pengumpulan data yang digunakan oleh penulis dalam melakukan pengumpulan data untuk
+pembuatan TA adalah :
+1. Observasi
+Menjelaskan tentang kegiatan observasi yang dilakukan meliputi : tempat atau bagian yang
+diobservasi.
+2. Wawancara
+Menjelaskan kegiatan wawancara terhadap responden yang terkait dengan topik TA.
+3. Studi Pustaka
+Menjelaskan tentang studi pustaka yang dilakukan untuk mendukung proses komputerisasi
+sistem.
+1.4. Ruang Lingkup
+Adalah batasan masalah yang akan dibahas dalam TA yang penulis buat sehingga penulisan Tugas
+Akhir akan lebih fokus dan terarah. Contohnya (Ruang Lingkup dalam tugas akhir ini adalah pembuatan
+aplikasi dan lain-lain)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 68
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 72 ---
+BAB II
+LANDASAN TEORI
+2.1. Konsep Dasar Game/IoT/Augmented Reality
+Sajikan pengertian berdasarkan buku dan artikel ilmiah mengenai konsep dasar aplikasi yang
+diciptakan. Menjelaskan tentang teori yang berhubungan dengan judul TA yang dibuat (dari setiap kata
+yang diangkat sebagai judul). Penulisan definisi ini diikuti dengan mencantumkan nama penulis dan
+buku dari mana definisi tersebut dikutip (sesuaikan dengan petunjuk penulisan kutipan).
+2.2. Metode Pengembangan Game/IoT/Augmented Reality
+Jabarkan mengenai penjelasan metode pengembangan yang digunakan dalam pembuatan
+program aplikasi game/IoT/Augmented Reality berdasarkan buku referensi dan artikel ilmiah yang
+sesuai dengan judul yang diambil.
+Salah satu metode pengembangan game yang dapat digunakan adalah Game Development Life
+Cylce (GDLC). Untuk IoT salah satu metode nya dapat menggunakan Prepare, Plan,Design,
+Implement, Operate dan Optimize (PPDIOO). Sedangkan untuk AR salah satu metode yang
+dapat digunakan adalah Agile.
+2.3.Tool Program Game/IoT/Augmented Reality
+Menjelaskan mengenai tools yang digunakan untuk membuat aplikasi game/IoT/Augmented
+Reality dengan menggunakan buku referensi dan artikel ilmiah sebagai ajuan penjelasan tools
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 69
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 73 ---
+BAB III
+PEMBAHASAN
+Pembahasan disesuaikan dengan sub bab yang ada pada bab 2.2 metode pengembangan
+game/IoT/Augmented Reality. Sehingga penulisan pada bab III bisa bervariasi tidak selalu sama antar
+mahasiswa.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 70
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 74 ---
+BAB IV
+KESIMPULAN
+4.1. Kesimpulan
+Berisi tentang uraian perubahan sistem yang telah dilakukan untuk menjawab masalah yang di tuliskan
+di latar belakang masalah (Bab 1).
+4.2. Saran
+Menguraikan saran yang mendukung keberhasilan dari implementasi program yang diusulkan serta
+pengembangan ke arah yang akan datang.
+Lampiran
+Lampirkan mengenai tampilan aplikasi game/IoT/Augmented Reality yang dibuat dan coding yang
+dibuat.
+Contoh penambahan atribut-atribut atau identitas UBSI dalam game (ColorLine Game)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 71
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 75 ---
+Contoh Kuisioner
+Nama Responden :XXXXXXX
+Alamat Responden: XXXXXXXX
+Jabatan Responden: XXXXXXXX
+Keterangan:
+Pilihlah skala yang mendekati dengan jawaban angka 1 untuk sangat setuju dan angka
+5 untuk sangat tidak setuju
+CATATAN:
+Kuisioner diatas hanya merupakan contoh. Mahasiswa dapat membaut kuisioner yang berbeda
+dengan berdasarkan kajian literature berdasarkan buku dan karya ilmiah yang dapat
+dijadikan referensi pembuatan kuisoner
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 72
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 76 ---
+OUTLINE PROYEK SISTEM INFORMASI
+Kode Outline : 124
+Nama Outline : Proyek Sistem Informasi (Web/Mobile/Game)
+Metode Pengerjaan : Kelompok Maksimal 3 Orang atau Individu
+Ketentuan Outline :
+1) Pada outline ini mahasiswa diwajibkan melakukan riset/PKL pada perusahaan/instansi
+pemerintah/institusi Pendidikan/lembaga swadaya masyarakat/organisasi kemasyarakatan
+yang legal dibuktikan dengan surat keterangan PKL/Riset asli dari perusahaan yang
+menggunakan kop surat dengan logo, tandatangan dan stempel asli.
+2) Pada outline ini mahasiwa dapat membahas sistem yang masih manual maupun sistem
+yang sudah terkomputerisasi.
+Buku Tutorial, Aplikasi Siap Diimplementasikan dan Buku Manual Pengguna
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL
+Luaran :
+- Publikasi Artikel Ilmiah : Disarankan
+- Hak Kekayaan Intelektual (HKI) : Wajib
+- Buku : Wajib
+- Karya : Buku Tutorial (Wajib)
+- Berita Acara Serah Terima Karya : Wajib
+Keterangan: Proses ajuan HKI melalui Sentra HKI Universitas Bina Sarana Informatia pada
+laman: https://lppm.bsi.ac.id/ (berkoordinasi lebih lanjut dengan pembimbing TA)
+Penjelasan Berita Acara Serah Terima Karya dan Ketentuan Buku Tutorial:
+A. Dokumentasi Serah Terima Aplikasi:
+Dokumen serah terima aplikasi yang harus dilengkapi mahasiswa:
+1. Sertifikat apresiasi dari Mitra (desain oleh prodi, diusulkan ke mitra).
+2. Berita Acara Serah Terima (BAST) aplikasi.
+3. Lima Foto penyerahan sertifikat dan aplikasi.
+Foto presentasi, proses penandatangan BAST, serah terima BAST, penyerahan sertifikat
+4. Press release penyerahan serah terima aplikasi.
+5. Surat tugas mahasiswa penyerahan Aplikasi.
+B. Pengajuan Serah Terima Aplikasi:
+Prosedur pengajuan serah terima aplikasi:
+1. Ajukan 3 minggu serah terima sebelum sidang
+2. Mahasiswa kirim dokumen serah terima ke email Kaprodi (pastikan file word)
+3. Kaprodi mengirimkan dokumen yang sudah ditandatangani ke mahasiswa
+4. Email kaprodi dan contoh-contoh dokumen serah terima dapat diakses pada link:
+https://bit.ly/SerahTerimaAplikasi2025
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 73
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 77 ---
+Catatan:
+1. Kelompok yang telah memiliki dokumen serah terima aplikasi pada saat melakukan PKL dapat
+dipergunakan untuk tugas.
+2. Jika aplikasi terdapat pengembangan fitur-fitur selama tugas akhir, kelompok dapat mengajukan
+serah terima baru
+3. Kelompok yang telah memiliki dokumen serah terima aplikasi selama PKL, prodi akan melengkapi
+dokumen pada point A1, A5
+C. Ketentuan Pembuatan Buku Tutorial:
+1. Memiliki Cover Depan dan Belakang (desain bebas), Kata Pengantar, Daftar Isi, Isi Buku,
+Daftar Pustaka, Tentang Penulis.
+2. Cover Depan berisi: Judul, nama penulis dan Pembimbing, Logo Universitas Bina Sarana
+Informatika, Tahun.
+3. Cover Belakang berisi: Logo Universitas Bina Sarana Informatika (posisi diatas) dan
+ringkasan isi buku.
+4. Font Style: Times New Roman (Font Size : 12).
+5. Ukuran A4
+6. Margin kiri 4, Kanan dan atas, bawah 2,5
+CONTOH :
+Di bawah ini adalah contoh cover outline Proyek Sistem Informasi
+Cover Depan Cover Belakang
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 74
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 78 ---
+BUKU TUTORIAL :
+Lembar Judul Tugas Akhir
+Lembar Pernyataan Keaslian Tugas akhir
+Lembar Pernyataan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Tugas Akhir
+Lembar Konsultasi Tugas Akhir
+Kata Pengantar
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang
+(memuat alasan pembuatan aplikasi disertai referensi terkait)
+1.2. Tools pengembangan Aplikasi
+(Contoh : teori aplikasi, bahasa pemrograman, sejarah dll yang digunakan, disertai
+referensi terkait)
+1.3. Deskripsi Aplikasi
+(berisi deskripsi singkat dari aplikasi yang dibangun beserta target pengguna)
+BAB II PERANCANGAN APLIKASI
+2.1. Rancangan Sistem
+(Use case & Class Diagram dari Aplikasi yang dibangun, disertai referensi Terkait)
+2.2. Rancangan Database
+(ERD & Spesifikasi File dari database yang dibangun, disertai referensi Terkait)
+2.3. Rancangan Form Master
+(Semua Form Master beserta penjelasan dan kode program)
+2.4. Rancangan Form Transaksi
+(Semua Form Transaksi beserta penjelasan dan kode program)
+2.5. Rancangan Laporan
+(Semua Laporan/Grafik berserta penjelasan dan kode program)
+2.6. Pengujian Unit
+(Memuat pengujian unit dengan PhpUnit / Xdebug / Blackbox Testing dan/atau pengujian
+unit lainnya)
+BAB III ENUTUP
+3.1. Kesimpulan
+3.2. Saran
+DAFTAR PUSTAKA
+BIOGRAFI PENULIS
+COVER BELAKANG
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 75
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 79 ---
+Penjelasan Hasil Karya Buku Tutorial, Buku Manual Pengguna & Aplikasi siap
+diimplementasikan
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Berisikan alasan pemilihan judul TA, dengan cara menguraikan dan menjelaskan permasalahan
+yang diangkat oleh penulis.
+Contoh Latar Belakang Masalah :
+Menurut UU No. 5 Tahun 1984 tentang Perindustrian, industri adalah kegiatan ekonomi yang
+mengelola bahan mentah, bahan baku, barang setengah jadi, dan atau barang jadi menjadi barang
+dengan nilai lebih tinggi untuk penggunaanya. Hasil penelitian sebelumnya (En & Suryandi, 2013) “PT.
+X, telah menerapkan internal struktur control dengan hasil proses pengiriman bahan baku tepat waktu
+dan mengoptimalkan pasokan bahan baku di PT. X ” . (Imroatus Sholikhah, Mahmud Sairan, 2017) “
+menggunakan metode waterfall dengan hasil karyawan lebih terbantu untuk mengelola data barang,
+supplier dan customer dalam pendataan, mengelola pembukuan transaksi pembelian dan penjualan,
+serta memberikan laporan yang lebih rinci kepada pemilik”. (Aprilliah, Ningsih, Ariyanti, Haryati,
+2019) “menggunakan metode waterfall dengan hasil melakukan pengolahan data informasi
+pengeluaran dan pemasukan kas dengan efektif dan efisiensi, sehingga diharapkan akan menghasilkan
+suatu informasi yang lebih baik dengan sistem yang terkomputerisasi”.(Gunawan, 2013)“Visual
+Basic.Net bahwa penelitian ini dimana hasil analisa dan perancangan yang dilakukan dapat membantu
+kegiatan-kegiatan dalam perusahaan tersebut agar lebih baik di dalam aspek untuk waktu mendatang .”
+Berdasarkan hasil penelitian sebelumnya, maka penulis melakukan riset pada PT. Masato Catur
+Coating, prosedur-prosedur yang terdapat didalamnya masih belum terkomputerisasi sehingga dalam
+menjalankan transaksinya masih ditemui kesalahan-kesalahan seperti dalam pencatatan data barang,
+data supplier yang tidak terdokumentasi dengan baik, pencatatan transaksi pembelian dan penerimaan
+barang yang kurang efisien, pembayaran invoice yang sering terlewat karena tidak terdokumentasi
+dengan baik, serta pembuatan laporan-laporan setiap bulannya. Dengan diterapkannya sistem yang
+berjalan saat ini beresiko terjadinya tindakan manipulasi data karena pencatatan transaksi manual
+tingkat keamanannya masih rentang, sehingga hasil yang didapat kurang cepat dan akurat. Berdasarkan
+masalah yang disebutkan diatas dan hasil penelitian sebelumnya penulis mengusulkan permasalahan
+tersebut menjadi tema pembuatan Tugas Akhir ini. Penulis berharap agar prosedur-prosedur yang akan
+dijalankan yang selama ini yang belum terkomputerisasi, sudah terkomputerisasi agar mendapatkan
+hasil yang seoptimal mungkin sehingga tidak terjadi kesalahan-kesalahan dalam menjalankannya.
+Judul tidak perlu dicantumkan dalam latar belakang tetapi digantikan dengan rumusan
+masalah. Referensi jurnal dimasukkan dalam latar belakang sebagai pendukung masalah atau
+solusi yang dibahas oleh penulis.
+1.2. Tools Pengembangan Aplikasi
+Contoh : teori aplikasi, Bahasa pemrograman, sejarah dll yang digunakan, disertai
+referensi terkait.
+1.3. Deskripsi Aplikasi
+Berisi deskripsi singkat dari aplikasi yang dibangun beserta target pengguna.
+Contoh:
+SIMPEDU merupakan Sistem informasi yang mengakomodir semua Pekerjaan dan Kegiatan
+yang ada di BPS Kabupaten Tegal dari awal hingga akhir pekerjaan sehingga menghasilkan
+Laporan Capaian Kinerja Pegawai serta Sasaran Kerja Pegawai.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 76
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 80 ---
+BAB II
+PERANCANGAN APLIKASI
+1.1. Rancangan Sistem
+“Unified Modeling Language (UML) adalah sebuah teknik pengembangan sistem yang
+menggunakan bahasa grafis sebagai alat pendokumentasian dan melakukan spesifikasi pada
+system (Mulyani, 2016)”
+A. Use Case Diagram
+Contoh Use Case Diagram
+Use Case Diagram adalah diagram fungsional dalam arti bahwa mereka menggambarkan
+fungsi dasar dari suatu sistem, yaitu apa yang dapat dilakukan pengguna dan bagaimana
+sistem harus menanggapi tindakan pengguna” (Denis, dkk 2009)
+Sumber : Hasil Penelitian (2021)
+Gambar IV.1. Use Case Diagram……..
+CATATAN:
+Dalam penggambaran use case tidak harus sama persis dengan contoh di Petunjuk Teknis
+Penyusunan Tugas Akhir bisa beragam sesuai dengan buku referensi yang digunakan.
+Tabel III.1.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 77
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 81 ---
+Deskripsi Use Case Melihat Data Barang
+Use Case Name Melihat Data Barang
+Requirements Bagian Pembelian dapat melihat datang
+Goal Bagian Pembelian melihat data barang secara online
+melalui web
+Pre-Conditions Bagian Pembelian telah melakukan login
+Post-Conditions Daftar data barang yang kurang dari stok minimum
+Failed end Condition Bagian Pembelian tidak dapat melihat data barang
+Actors Bagian Gudang
+Main Flow/ Basic Path 1. User memilih kriteria pencarian
+2. User mengetikkan nama atau kode barang
+3. Sistem menampilkan data barang yang dicari
+Alternate Flow/Invariant A A1. System menampilkan data barang yang stoknya <=
+stok minimum
+Invariant B B1. User memilih kriteria
+B2. User mengetikkan nama/kode barang
+B3. System tidak menemukan data yang dicari
+B4. System menampilkan pesan "Data yang dicari
+tidak ditemukan"
+<<dan seterusnya>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 78
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 82 ---
+B. Rancangan Class Diagram
+Menggambarkan hubungan antara entity class yang dibuat
+Contoh Class Model
+Sumber : Hasil Penelitian (2021)
+Gambar IV.2. Class Diagram………
+CATATAN:
+Dalam penggambaran class diagram tidak harus sama persis dengan contoh di Petunjuk Teknis
+Penyusunan Tugas Akhir bisa beragam sesuai dengan buku referensi yang digunakan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 79
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 83 ---
+1.2. Rancangan Database
+Berisi tentang langkah-langkah pembuatan database dan table yang dibutuhkan (untuk table cukup
+diberikan contoh langkah-langkah pembuatan satu tabel saja).
+Contoh :
+Perancangan basis data ini difokuskan pada enam atribut, yaitu ERD & Spesifikasi File
+A. Entity Relationship Diagram (ERD)
+Perancangan basis data menghasilkan pemetaan tabel-tabel yang digambarkan dengan Entity
+Relationship Diagram (ERD).
+Contoh Entity Relationship Diagram
+Menurut (Fathansyah, 2015) mengemukakan bahwa:
+Model Entity-Relationship yang berisi komponen-komponen himpunan entitas dan himpunan relasi
+yang masing-masing dilengkapi dengan atribut-atribut yang merepresentasikan seluruh fakta dari
+‘dunia nyata’ yang kita tinjau, dapat digambarkan dengan lebih sistematis dengan menggunakan
+DIagram Entity-Relationship (Diagram E-R).
+Sumber : Hasil Penelitian (2021)
+Gambar IV.3. Entity Relationship Diagram ……..
+CATATAN:
+Dalam penggambaran ERD tidak harus sama persis dengan contoh di Petunjuk Teknis Penyusunan
+Tugas Akhir bisa beragam sesuai dengan buku referensi yang digunakan.
+B. Spesifikasi File
+Menjelaskan tentang file atau tabel yang terbentuk dari transformasi ERD (dan atau file-file
+penunjang untuk web). File-file ini tersimpan pada <<nama Database>> dengan parameter-parameter
+sebagai berikut :
+CONTOH Spesifikasi File:
+1. Spesifikasi File Barang
+Nama File : Barang
+Akronim : Barang
+Fungsi : untuk menyimpan data barang
+Tipe File : File Master
+Organisasi File : Indexed Sequential
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 80
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 84 ---
+Akses File : Random
+Media : Hard Disk
+Panjang record :
+Kunci Field : kodeBarang
+Software : Mysql
+Table IV.1.
+Spesifikasi File Barang
+Elemen data Nama Field Tipe Size Ket
+No
+1. Kode Barang kodeBarang Char 5 Primary Key
+2. Nama Barang namaBarang Varchar 20
+3. Stock Stok Int 8
+Sumber : Hasil Penelitian (2021)
+Contoh database perpustakaan
+C. Database Perpustakaan
+Ketikan pada kotak “Ciptakan database baru”, lalu klik tombol “Ciptakan”. Buat database dengan nama
+“db_perpusweb2
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 81
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 85 ---
+Setelah membuat database baru, akan terlihat daftar tabel yang masih kosong (sisi sebelah kiri)
+A. Tabel Admin
+Ketika telah masuk ke dalam database db_perpusweb2, maka kita ketikkan nama tabel beserta
+jumlah field yang ada pada tabel.
+Tabel-tabel pada latihan ini, dapat melihat struktur tabel pada db_perpusweb (bab studi kasus
+sebelum UTS).
+Tabel “admin” :
+Field Name Type Size Keterangan
+Primary Key,
+Id_admin Int 5 AUTO_INCREMENT
+Username Varchar 25
+Password Varchar 35
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 82
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 86 ---
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 83
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 87 ---
+Jika sudah mengisi nama tabel dan jumlah field klik tombol “Go”.
+Bila Primary Key, bersifat AUTO_INCREMENT, maka ceklis pada pilihan AUTO_INCREMENT.
+Lalu Klik tombol Simpan. Tampilan ketika berhasil membuat tabel:
+Lanjutkan pengerjaan database db_perpusweb2”, Lalu Buat Kembali beberapa tabel berikut ini
+menggunakan phpMyAdmin (lihat contoh pengerjaan pada pembuatan table admin):
+Tabel “katalog_buku
+Si
+Field Name Type ze Keterangan
+Primary Key,
+Id_katalog Int 5 AUTO_INCREMENT
+Nama_katalog Varchar 45
+<<… dan seterusnya..>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 84
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 88 ---
+1.3. Rancangan Form Master
+Berisi tentang langkah-langkah pembuatan Form Master yang dibutuhkan (cukup di berikan
+contoh langkah-langkah pembuatan satu form saja).
+Contoh :
+A. Membuat Form Master Barang
+Desain Form Master Barang Running Form Master Barang
+1. Klik kanan pada package aplikasi_toko – New – JFrame Form
+2. Isi Class Name : Aplikasi_Master_Barang – Finish
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 85
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 89 ---
+Logika Jalannya Program:
+1. Pertama run semua textfield nonaktif, data barang tampil di grid. INPUT DAN TUTUP aktif
+2. Tekan INPUT semua textfield Aktif. Tombol INPUT berubah menjadi SIMPAN, tombol
+TUTUP menjadi BATAL
+3. Ketikan kode barang. Jika sudah ada tampil nama ,stok,harga. Kd barang nonaktif. SIMPAN
+berubah jadi UPDATE. Lakukan perubahan data barang untuk menyimpan tekan UPDATE,
+tekan BATAL untuk membatalkan perubahan data
+4. Ketikan kode barang. Jika tidak ada, Kursor pindah ke nama barang. Isikan data barang baru,
+tekan SIMPAN untuk menyimpan
+5. Untuk menghapus data barang, silahkan pilih pada tabel data mana yang akan dihapus,
+setelah itu tekan tombol Backspace untuk menghapusnya
+6. Tekan TUTUP
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 86
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 90 ---
+3. Script method-method dibawah ini pada tampilan listing:
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 87
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 91 ---
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 88
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 92 ---
+5. Klik kanan pada tkd_brg, pilih Event – key – KeyPressed, ketikan Script Berikut:
+6. Klik kanan pada tnm_brg, dan thrg_jual, pilih Event – key – KeyPressed, ketikan Script Berikut:
+(memindahkan posisi kursor ke objek tertentu saat di enter)
+7. Klik kanan pada tbl_brg, pilih Event – Mouse – MouseClicked, ketikan Script Berikut: (memanggil
+method SetTabel yang berfungsi untuk menampilkan nilai-nilai pada tabel ke dalam form)
+8. Klik kanan pada tbl_brg, pilih Event – Key – KeyPressed, ketikan Script Berikut: (memanggil
+method HapusData untuk menghapus data pada tabel terpilih pada saat ditekan tombol Backspace)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 89
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 93 ---
+9. Klik
+kanan
+pada tcari, pilih Event – Key – KeyTyped, ketikan Script Berikut:
+A. Buat
+Form Master User.
+Desain Form User: Running Form User:
+B. Buat Form Master <<…dan seterusnya..>>
+1.4. Rancangan Form Transaksi
+Berisi tentang langkah-langkah pembuatan Form Master yang dibutuhkan (cukup di berikan contoh
+langkah-langkah pembuatan satu form saja).
+Contoh :
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 90
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 94 ---
+Implementasi program form transaksi
+Langkah-
+langkah dalam
+membuat form
+Transaksi adalah
+sebagai berikut:
+1. Masih dalam package aplikasi_toko, buat form baru dengan jDialog Form. Beri nama form
+dengan nama : Aplikasi_Data_Barang
+2. Desain tampilan form seperti dibawah ini:
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 91
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 95 ---
+Logika Jalannya Program:
+1. Saat form dijalankan, tanggal dan kode user muncul otomatis
+2. Tekan tombol TAMBAH, no.transaksi muncul otomatis
+3. Kode barang bisa langsung di input, lalu tekan enter. Jika ditemukan maka nama barang, dan harga
+tampil.
+4. Atau bisa dengan klik tombol browse (…), pilih kode barang yang akan dibeli, maka nama barang
+dan harga tampil
+5. Jumlah beli di input, lalu tekan enter, maka akan muncul pesan:”Mau Tambah Barang?”. Jika pilih
+Yes, ulangi perintah no.3 atau 4. Jika pilih No, total bayar akan muncul.
+6. Input uang bayar, untuk melakukan pembayaran. Uang kembali akan muncul setelah di enter.
+7. Tombol simpan untuk melakukan penyimpanan transaksi, dan struk akan muncul (pembuatan struk
+akan dibahas di pertemuan berikutnya saat pembuatan laporan).
+Berikut Langkah-langkah dalam membuat script program form transaksi:
+1. Ketikkan script koneksi dan method-method yang diperlukan
+<<… dan seterusnya…>>
+1.5. Rancangan Laporan
+Berisi tentang langkah-langkah pembuatan Form Laporan yang dibutuhkan (cukup di berikan contoh
+langkah-langkah pembuatan satu form saja).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 92
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 96 ---
+Contoh :
+A. Membuat Laporan Penjualan Per Periode
+Langkah-langkah untuk membuat laporan penjualan per periode adalah sebagai
+berikut:
+1. Ikuti langkah-langkah ke 4 sampai dengan langkah ke 6 dalam pembuatan laporan data
+barang pada pembahasan sebelumnya.
+Template : Blank A4
+Nama report : Laporan_Periode
+Tempat penyimpanan disamakan dengan penyimpanan laporan barang
+2. Karena kita akan membuat laporan transaksi, Tuliskan query berikut, || Next >
+3. Pilih field yang akan ditampilkan di laporan (Pilih semua)
+4. Pada jendela Group By klik Next saja. Setelah itu Finish
+5. Memasukkan field ke dalam design report
+6. Desain tampilan report seperti di bawah ini
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 93
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 97 ---
+7. Langkah berikutnya adalah kita membuat parameter. Berbeda dengan sebelumnya pada pembuatan
+Struk, kita hanya menggunakan 1 parameter yaitu notrans. Kali ini kita membutuhkan 2 buah
+parameter, karena ada 2 buah tanggal. Yaitu tanggal awal dan tanggal akhir. Untuk tanggal awal
+beri nama parameter dengan tgl1, dan untuk tanggal akhir beri nama parameter dengan tgl2. Untuk
+Value Expression beri nilai kedua parameter dengan Text. Cara membuat parameter sudah dibahas
+saat pembuatan Struk (langkah 10), jika lupa silakan kembali lagi ke pertemuan sebelumnya
+8. Edit query yang ada pada report query seperti dibawah ini, setelah itu OK
+9. Masukkan parameter tgl1 dan tgl2 kedalam laporan (Click – Drag)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 94
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 98 ---
+10. Klik Preview, maka akan muncul jendela Parameter Prompt, masukkan tanggal awal (tgl1)
+dan tanggal akhir (tgl2) yang akan kita lihat laporannya. Contoh saya masukkan tgl1 2018-
+01-01 dan tgl2 2018-01-30 || OK
+11. Hasil laporan penjualan per periode
+12. Untuk script pemanggilan laporan per periode ada di Aplikasi_Laporan_Penjualan
+pada pembahasan selanjutnya.
+<<…dan seterusnya…>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 95
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 99 ---
+1.6. Pengujian Unit
+Pengujian terhadap program yang dibuat yang memiliki validasi di setiap formnya (contoh form
+login, form pendaftaran member, from transaksi) menggunakan blackbox testing yang fokus terhadap
+proses masukan dan keluaran program.
+Contoh pengujian unit :
+Menurut Simarmata (2010), “Black Box Testing adalah pengujian dilakukan dalam bentuk tertulis
+untuk memeriksa apakah aplikasi berjalan seperti yang diharapkan”.
+A. Pengujian Terhadap Form Login
+Tabel IV.28
+Hasil Pengujian Black Box Testing Halaman Login
+No. Skenario Test case Hasil yang Hasil Kesimpula
+pengujian diharapkan pengujian n
+1. User Id dan User Id: (kosong) Sistem akan
+password tidak Password: menolak
+diisi kemudian (kosong) akses user
+klik tombol dan
+Sesuai
+login menampilkan Valid
+harapan
+“User Id dan
+password
+tidak
+dikenal”
+2. Mengetikkan User ID: 1001 Sistem akan
+user ID dan Password menolak
+password tidak (kosong) akses user
+diisi atau dan
+Sesuai
+kosong menampilkan Valid
+harapan
+kemudian klik “User Id dan
+tombol login password
+tidak
+dikenal”
+3. User ID tidak User Id: (kosong) Sistem akan
+diisi (kosong) Password: 1998- menolak
+dan password 03-31 akses user
+diisi kemudian dan
+Sesuai
+klik tombol menampilkan Valid
+harapan
+login “User Id dan
+password
+tidak
+dikenal”
+4. Mengetikkan User ID: 1001 Sistem akan Sesuai Valid
+salah satu (benar) menolak harapan
+kondisi salah Password: 1998- akses user
+pada user ID 3-31 (salah) dan
+atau password menampilkan
+kemudian klik “User Id dan
+tombol login password
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 96
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 100 ---
+tidak
+dikenal”.
+5. Mengetikkan User ID: 1001 Sistem Sesuai Valid
+user ID dan (benar) menerima harapan
+password Password: 1998- akses login
+dengan data 03-31 (benar) dan
+yang benar kemudian
+kemudian klik langsung
+tombol login menampilkan
+menu utama.
+<<dan seterusnya>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 97
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 101 ---
+Contoh Lampiran:
+A. Buku Manual Pengguna
+1. Deskripsi Aplikasi
+Contoh deskripsi Aplikasi :
+SIMPEDU merupakan Sistem informasi yang mengakomodir semua Pekerjaan dan
+Kegiatan yang ada di BPS Kabupaten Tegal dari awal hingga akhir pekerjaan sehingga
+menghasilkan Laporan Capaian Kinerja Pegawai serta Sasaran Kerja Pegawai.
+2. Tampilan/ View Aplikasi
+a. Halaman Dashboard
+Halaman Dashboard merupakan halaman setelah pegawai melakukan login. Halaman
+Dashboard merupakan penghubung dari semua menu, terdapat 2 menu utama yaitu
+Pekerjaan dan Kegiatan.
+Gambar 1. Halaman Dashboard
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 98
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 102 ---
+b. Halaman Pekerjaan
+Pada halaman pekerjaan terdapat menu alokasi pekerjaan, pelaporan pekerjaan, penilaian
+pekerjaan dan cetak CKP dan SKP. Pada halaman ini pegawai dapat melakukan alokasi
+pekerjaan, operator dapat melakukan pelaporan pekerjaan dan kepala seksi dapat melakukan
+penilaian pekerjaan serta dapat melakukan cetak CKP dan SKP.
+Gambar 2. Halaman Pekerjaan
+<<dan seterusnya>>
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 99
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 103 ---
+BAB III
+PENUTUP
+3.1. Kesimpulan
+Berisi tentang uraian perubahan sistem yang telah dilakukan.
+3.2. Saran
+Menguraikan saran yang mendukung keberhasilan dari implementasi program yang diusulkan
+serta pengembangan ke arah yang akan datang.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 100
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 104 ---
+OUTLINE INOVASI SISTEM INFORMASI
+(WEB/MOBILE/GAME)
+Kode Outline : 185
+Nama Outline : Inovasi Sistem Informasi (Web/Mobile/Game)
+Metode Pengerjaan : Kelompok Maksimal 3 Orang atau Individu
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL/Keabsahan Data
+Luaran :
+- Publikasi Artikel Ilmiah : Tidak
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Tidak
+- Karya : Laporan Tugas Akhir
+- Berita Acara Serah Terima Karya : Disarankan
+Ketentuan :
+1. Pada outline ini mahasiswa diwajibkan memiliki bukti karya dari capstone project mata
+kuliah Proyek Sistem Informasi pada semester sebelumnya dan sudah dilakukan penilaian
+2. Karya capstone project: Aplikasi dan Laporan Proyek Sistem Informasi
+C. Bentuk Outline:
+Lembar Judul Tugas Akhir
+Lembar Pernyataan Keaslian Tugas Akhir
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Tugas Akhir
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Tugas Akhir
+Lembar Persembahan
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang
+1.2. Permasalahan
+1.3. Tujuan dan Manfaat Aplikasi
+1.4. Deskripsi Produk
+1.5. Keuntungan Yang Diharapkan
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 101
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 105 ---
+1.6. Perencanaan Aktivitas Secara Umum
+BAB II LANDASAN TEORI
+2.1. Konsep Dasar Sistem
+2.2. Teori Pendukung
+BAB III PENGEMBANGAN PERANGKAT LUNAK
+3.1. Metode Pengembangan Perangkat Lunak
+3.2. Tahap Pengembangan Perangkat Lunak
+BAB IV PENUTUP
+4.1. Kesimpulan
+4.2. Saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET/PKL/Keabsahan Data
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 102
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 106 ---
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Latar belakang masalah memuat alasan pemilihan topik penelitian yang didasarkan pada
+kondisi dan kebutuhan nyata pada objek penelitian. Uraian latar belakang disusun dengan
+mengacu pada kajian artikel ilmiah (jurnal) yang relevan serta didukung oleh data yang sah,
+baik berupa data primer yang diperoleh dari perusahaan atau instansi tempat penelitian maupun
+data sekunder dari sumber terpercaya. Referensi jurnal digunakan untuk memperkuat landasan
+teoritis serta mendukung pembahasan permasalahan dan solusi yang diusulkan.
+1.2. Permasalahan
+Permasalahan merupakan rumusan inti dari persoalan yang akan dibahas dalam penelitian.
+Rumusan permasalahan disusun berdasarkan hasil analisis terhadap kondisi yang terjadi pada
+objek penelitian dan disajikan secara sistematis dalam bentuk pertanyaan penelitian. Judul
+penelitian tidak dicantumkan secara langsung dalam bagian ini, melainkan direpresentasikan
+melalui rumusan permasalahan yang menjadi fokus utama dalam penulisan Tugas Akhir.
+1.3. Tujuan dan Manfaat Aplikasi
+Penulisan Tugas Akhir bertujuan untuk menjelaskan capaian yang ingin diwujudkan
+melalui proses analisis, perancangan, dan implementasi sistem informasi sesuai dengan
+permasalahan yang dikaji. Tujuan ini menekankan pada penerapan pengetahuan dan
+keterampilan mahasiswa secara terintegrasi sebagai bentuk pembelajaran aplikatif, sekaligus
+sebagai pemenuhan persyaratan akademik pada Program Diploma Tiga (DIII).
+Selain sebagai pencapaian akademik, penulisan Tugas Akhir juga diharapkan memberikan
+manfaat bagi berbagai pihak. Manfaat tersebut meliputi peningkatan kompetensi dan
+pengalaman bagi penulis, kontribusi bagi objek penelitian dalam bentuk evaluasi dan
+pengembangan sistem yang lebih efektif, serta tambahan wawasan dan referensi bagi pembaca
+terkait konsep dan penerapan sistem informasi.
+1.4. Deskripsi Produk
+Deskripsi Produk menjelaskan gambaran umum hasil akhir dari Tugas Akhir berupa sistem
+atau aplikasi yang dikembangkan. Pada bagian ini diuraikan tujuan pembuatan produk, fungsi
+utama, serta manfaat penggunaannya bagi objek penelitian. Selain itu, Deskripsi Produk
+memberikan informasi singkat mengenai fitur utama dan ruang lingkup penggunaan sistem
+sebagai pengantar pembahasan pada bab selanjutnya.
+1.5. Keuntungan Yang Diharapkan
+Keuntungan yang diharapkan menjelaskan manfaat yang diperoleh dari penerapan sistem
+atau produk yang dikembangkan, seperti peningkatan efisiensi dan akurasi pengolahan data,
+kemudahan pengelolaan informasi, serta peningkatan kualitas layanan dan kinerja pada objek
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 103
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 107 ---
+penelitian.
+1.6. Perencanaan Aktivitas Secara Umum
+Perencanaan aktivitas secara umum merupakan gambaran tahapan kegiatan yang akan
+dilakukan dalam penyusunan Tugas Akhir. Perencanaan ini mencakup proses pengumpulan
+data, analisis kebutuhan, perancangan sistem, implementasi, hingga pengujian dan penyusunan
+laporan. Dengan adanya perencanaan aktivitas yang jelas, pelaksanaan Tugas Akhir diharapkan
+dapat berjalan secara terstruktur, terarah, dan sesuai dengan waktu yang telah ditetapkan.
+BAB II
+LANDASAN TEORI
+2.3. Konsep Dasar Sistem
+Pada bagian Konsep Dasar Sistem, penulis menguraikan teori-teori dasar yang menjadi
+landasan dalam penyusunan Tugas Akhir. Pembahasan diawali dengan pengertian sistem
+menurut para ahli yang diambil dari buku teks atau jurnal ilmiah yang relevan. Definisi tersebut
+digunakan untuk memberikan pemahaman konseptual mengenai sistem secara umum dan
+keterkaitannya dengan objek penelitian.
+Selanjutnya, penulis menjelaskan karakteristik atau komponen sistem, seperti tujuan
+sistem, input, proses, output, batas sistem, lingkungan sistem, dan pengendalian sistem. Uraian
+ini bertujuan untuk menunjukkan bagaimana sebuah sistem bekerja secara terstruktur. Selain
+itu, dijelaskan pula klasifikasi sistem, misalnya sistem terbuka dan tertutup atau sistem manual
+dan terkomputerisasi, sesuai dengan konteks penelitian.
+Pada bagian akhir, konsep dasar sistem dikaitkan dengan permasalahan yang dibahas
+dalam Tugas Akhir, sehingga teori yang disampaikan tidak bersifat umum semata, tetapi
+relevan sebagai dasar analisis dan perancangan sistem yang akan dikembangkan. Seluruh
+pembahasan harus didukung dengan referensi yang jelas dan sesuai kaidah penulisan ilmiah.
+2.4. Teori Pendukung
+Teori Pendukung berisi konsep dan teori yang relevan dengan topik Tugas Akhir sebagai
+dasar analisis, perancangan, dan pengembangan sistem. Pembahasan meliputi teori sistem
+informasi, perancangan sistem, basis data, serta teknologi yang digunakan, yang bersumber
+dari buku dan jurnal ilmiah. Teori yang disajikan berfungsi sebagai landasan ilmiah dalam
+mendukung solusi yang diusulkan.
+BAB III
+PENGEMBANGAN PERANGKAT LUNAK
+Bab ini menjelaskan metode dan tahapan yang digunakan dalam proses pengembangan
+perangkat lunak yang menjadi objek penelitian. Uraian pada bab ini bertujuan untuk
+memberikan gambaran sistematis mengenai pendekatan, alur kerja, serta aktivitas
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 104
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 108 ---
+pengembangan yang dilakukan hingga menghasilkan perangkat lunak sesuai dengan kebutuhan
+pengguna.
+3.1 Metode Pengembangan Perangkat Lunak
+Pada subbab ini, penulis menjelaskan metode atau model pengembangan perangkat
+lunak yang digunakan dalam penelitian.
+Isi yang perlu dijelaskan meliputi:
+1. Nama metode pengembangan. Jelaskan metode yang dipilih, misalnya:
+o Waterfall
+o Prototype
+o Agile
+o Scrum
+o Rapid Application Development (RAD)
+o Spiral
+2. Alasan pemilihan metode. Uraikan alasan pemilihan metode tersebut dengan
+menyesuaikan:
+o Karakteristik sistem yang dikembangkan
+o Kebutuhan pengguna
+o Keterbatasan waktu dan sumber daya
+o Kompleksitas sistem
+3. Deskripsi singkat metode. Jelaskan konsep dasar metode pengembangan yang
+digunakan secara ringkas namun jelas, mencakup prinsip kerja dan alur umum
+pengembangannya.
+4. Kesesuaian metode dengan penelitian. Jelaskan bagaimana metode tersebut
+mendukung tujuan penelitian dan mampu menghasilkan solusi terhadap permasalahan
+yang diangkat.
+5. (Opsional) Ilustrasi metode. Sertakan diagram alur atau gambar model
+pengembangan perangkat lunak untuk memperjelas tahapan metode yang digunakan.
+Contoh: Metode Waterfall
+3.1 Metode Pengembangan Perangkat Lunak
+Metode pengembangan perangkat lunak yang digunakan dalam penelitian ini adalah
+metode Waterfall. Metode Waterfall merupakan model pengembangan perangkat lunak
+yang dilakukan secara bertahap dan berurutan, di mana setiap tahap harus diselesaikan
+terlebih dahulu sebelum melanjutkan ke tahap berikutnya.
+Pemilihan metode Waterfall didasarkan pada karakteristik sistem yang
+dikembangkan, yaitu kebutuhan sistem yang relatif jelas dan tidak mengalami banyak
+perubahan selama proses pengembangan. Selain itu, metode ini mudah dipahami,
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 105
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 109 ---
+terdokumentasi dengan baik, serta sesuai untuk pengembangan perangkat lunak berskala
+kecil hingga menengah seperti sistem yang dikembangkan dalam penelitian ini.
+Metode Waterfall terdiri dari beberapa tahapan utama, yaitu analisis kebutuhan,
+perancangan sistem, implementasi, pengujian, dan pemeliharaan. Setiap tahapan
+menghasilkan output yang menjadi input bagi tahapan selanjutnya.
+3.2 Tahap Pengembangan Perangkat Lunak
+A. Analisis Kebutuhan
+Tahap analisis kebutuhan merupakan tahap awal dalam pengembangan perangkat
+lunak. Pada tahap ini dilakukan identifikasi permasalahan dan kebutuhan pengguna
+terhadap sistem yang akan dikembangkan. Proses analisis dilakukan melalui teknik
+pengumpulan data seperti wawancara, observasi, dan studi dokumentasi.
+Hasil dari tahap ini berupa spesifikasi kebutuhan sistem yang terdiri dari kebutuhan
+fungsional dan kebutuhan non-fungsional. Kebutuhan tersebut menjadi dasar dalam
+perancangan sistem agar perangkat lunak yang dibangun sesuai dengan kebutuhan
+pengguna.
+B. Perancangan Sistem
+Tahap perancangan sistem dilakukan berdasarkan hasil analisis kebutuhan. Pada tahap
+ini dibuat rancangan sistem secara menyeluruh, baik dari sisi proses maupun struktur data.
+Perancangan sistem meliputi pembuatan diagram use case, diagram aktivitas, perancangan
+basis data menggunakan Entity Relationship Diagram (ERD), serta perancangan
+antarmuka pengguna.
+Perancangan ini bertujuan untuk memberikan gambaran yang jelas mengenai alur kerja
+sistem sebelum diimplementasikan ke dalam kode program.
+C. Implementasi
+Tahap implementasi merupakan proses penerjemahan desain sistem ke dalam bentuk
+perangkat lunak. Pada tahap ini dilakukan pengkodean program menggunakan bahasa
+pemrograman dan tools yang telah ditentukan. Setiap modul dikembangkan sesuai dengan
+rancangan yang telah dibuat sebelumnya.
+Hasil dari tahap ini adalah perangkat lunak yang telah dapat dijalankan sesuai dengan
+fungsi yang dirancang.
+D. Pengujian Sistem
+Setelah proses implementasi selesai, dilakukan tahap pengujian sistem. Pengujian
+bertujuan untuk memastikan bahwa sistem berjalan sesuai dengan kebutuhan yang telah
+ditentukan serta bebas dari kesalahan (error). Metode pengujian yang digunakan adalah
+Black Box Testing, yaitu pengujian yang berfokus pada fungsi sistem tanpa melihat
+struktur kode program.
+Hasil pengujian menunjukkan apakah sistem telah memenuhi kebutuhan pengguna atau
+masih memerlukan perbaikan.
+E. Pemeliharaan
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 106
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 110 ---
+Tahap pemeliharaan dilakukan setelah sistem selesai dikembangkan dan
+diimplementasikan. Tahap ini meliputi perbaikan kesalahan yang tidak terdeteksi pada
+tahap pengujian serta penyesuaian sistem apabila terjadi perubahan kebutuhan di masa
+mendatang.
+BAB IV
+PENUTUP
+Bab ini berisi kesimpulan dari hasil penelitian dan pengembangan perangkat lunak yang
+telah dilakukan serta saran yang diberikan sebagai bahan pertimbangan untuk
+pengembangan sistem di masa mendatang.
+4.1 Kesimpulan
+Penjelasan Isi
+Pada subbab Kesimpulan, penulis menyajikan ringkasan hasil penelitian yang menjawab
+tujuan dan rumusan masalah, bukan mengulang pembahasan pada bab sebelumnya.
+Kesimpulan ditulis secara singkat, padat, dan jelas dalam bentuk paragraf atau poin-poin.
+Isi yang perlu disampaikan meliputi:
+1. Capaian tujuan penelitian
+2. Keberhasilan sistem yang dikembangkan
+3. Kesesuaian sistem dengan kebutuhan pengguna
+4. Hasil pengujian sistem secara umum
+5. Manfaat sistem bagi pengguna atau instansi terkait
+Contoh Narasi Kesimpulan
+Berdasarkan hasil analisis, perancangan, implementasi, dan pengujian sistem yang telah
+dilakukan, dapat disimpulkan bahwa perangkat lunak yang dikembangkan telah berhasil
+memenuhi kebutuhan pengguna sesuai dengan tujuan penelitian. Sistem yang dibangun
+mampu mengelola data dan proses secara terkomputerisasi sehingga dapat meningkatkan
+efektivitas dan efisiensi kerja dibandingkan dengan sistem sebelumnya.
+Hasil pengujian sistem menunjukkan bahwa seluruh fungsi utama dapat berjalan dengan
+baik dan sesuai dengan spesifikasi kebutuhan yang telah ditentukan. Dengan demikian,
+sistem yang dikembangkan layak untuk diimplementasikan dan digunakan sebagai solusi
+terhadap permasalahan yang dihadapi oleh pengguna.
+4.2 Saran
+Penjelasan Isi
+Subbab Saran berisi rekomendasi atau masukan yang bersifat konstruktif dan realistis.
+Saran ditujukan untuk:
+1. Pengembangan sistem di masa mendatang
+2. Pengguna sistem
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 107
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 111 ---
+3. Peneliti selanjutnya
+Saran tidak boleh bertentangan dengan kesimpulan dan tidak menyalahkan
+keterbatasan penelitian.
+Isi yang perlu disampaikan meliputi:
+1. Pengembangan fitur tambahan
+2. Peningkatan keamanan atau performa sistem
+3. Penggunaan teknologi yang lebih baru
+4. Saran untuk penelitian lanjutan
+Contoh Narasi Saran
+Berdasarkan hasil penelitian yang telah dilakukan, terdapat beberapa saran yang dapat
+diberikan untuk pengembangan lebih lanjut. Sistem yang dikembangkan masih dapat
+ditingkatkan dengan menambahkan fitur-fitur pendukung lainnya sesuai dengan
+kebutuhan pengguna. Selain itu, aspek keamanan sistem perlu ditingkatkan guna
+melindungi data dari akses yang tidak sah.
+Penelitian selanjutnya diharapkan dapat mengembangkan sistem ini dengan menggunakan
+teknologi yang lebih mutakhir serta melakukan pengujian yang lebih mendalam agar
+sistem dapat berfungsi secara optimal dan memiliki cakupan penggunaan yang lebih luas.
+Catatan:
+1. Kesimpulan harus menjawab tujuan penelitian
+2. Saran bersifat forward-looking, bukan kritik
+3. Gunakan bahasa netral dan formal
+4. Hindari istilah “penulis berharap” → gunakan “diharapkan
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 108
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 112 ---
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 109
+Program Studi Sistem Informasi (D3)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika

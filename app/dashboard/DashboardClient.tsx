@@ -1805,7 +1805,6 @@ export default function DashboardClient({
     water: sample.water_content ? sample.water_content * 100 : 0,
     tan: sample.tan_value || 0
   }))
-  const latestTrendPoint = chartData[chartData.length - 1] || null
 
   return (
     <div className="clean-ui customer-panel min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
@@ -1881,6 +1880,16 @@ export default function DashboardClient({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 {language === 'id' ? 'Bandingkan' : 'Compare'}
+              </button>
+              <button
+                onClick={() => router.push('/dashboard/profile')}
+                className="bg-white border text-gray-700 p-2 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:shadow-md border-gray-200 flex items-center justify-center gap-2"
+                title={language === 'id' ? 'Profil Saya' : 'My Profile'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="hidden sm:inline font-medium text-sm">{language === 'id' ? 'Profil' : 'Profile'}</span>
               </button>
               <div className="relative" title={copy.dashboardAlerts}>
                 <div className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center">

@@ -261,7 +261,7 @@ export default function AdminClient({
       }
 
       // C4: Optimasi query - Coba panggil RPC agregasi di server
-      let latestByMachine = new Map<string, { test_date: string; water_content: number | null; tan_value: number | null }>()
+      const latestByMachine = new Map<string, { test_date: string; water_content: number | null; tan_value: number | null }>()
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_latest_machine_tests')
       
       if (!rpcError && rpcData) {
@@ -1544,6 +1544,15 @@ export default function AdminClient({
               </div>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => router.push('/dashboard/profile')}
+                className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-all shadow-sm flex items-center w-full sm:w-auto justify-center"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Profile
+              </button>
               <button
                 onClick={handleSignOut}
                 className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center w-full sm:w-auto justify-center"

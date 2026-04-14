@@ -1,0 +1,825 @@
+--- HALAMAN 1 ---
+Petunjuk Teknis
+Penyusunan Tugas Akhir
+Program Studi
+Informatika (S1)
+2026
+1
+
+--- HALAMAN 2 ---
+KATA PENGANTAR
+Segala puji hanya milik Allah SWT. Shalawat dan salam selalu tercurahkan kepada Rosulullah
+SAW. Berkat limpahan dan rahmat-Nya penyusun mampu menyelesaikan Petunjuk Teknis Penyusunan
+Tugas Akhir ini .
+Dalam penyusunan Petunjuk Teknis Penyusunan Tugas Akhir ini, tidak sedikit hambatan yang
+penyusun hadapi. Namun penyusun menyadari bahwa kelancaran dalam penyusunan Petunjuk Teknis
+Penyusunan Tugas Akhir ini tidak lain berkat bantuan, dorongan, dan bimbingan orang-orang terdekat,
+sehingga kendala-kendala yang penyusun hadapi teratasi.
+Petunjuk Teknis Penyusunan Tugas Akhir ini di buat sebagai pendukung pedoman penulisan
+Skripsi yang menjelaskan secara lebih detail isi dari pedoman penulisan Skripsi tersebut
+Semoga Petunjuk Teknis Penyusunan Tugas Akhir ini dapat mengakomodasi semua aspek yang
+berkaitan dengan materi maupun teknis sehingga tidak terjadi lagi persepsi yang berbeda dalam
+penyusunan laporan Skripsi.
+Akhir kata, Penyusun berharap agar Petunjuk Teknis Penyusunan Tugas Akhir ini dapat
+bermanfaat bagi peningkatan kualitas mahasiswa Universitas Bina Sarana Informatika pada umumnya,
+Aamiin.
+Jakarta, Februari 2026
+Tim Penyusun
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. ii
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 3 ---
+DAFTAR ISI
+Halaman
+Lembar Judul i
+Kata Pengantar ii
+Daftar Isi iii
+1. Pengembangan Perangkat Lunak 1
+A. Kode dan Ketentuan Outline 1
+B. Bentuk Outline 1
+C. Penjelasan Outline 3
+2. Kecerdasan Buatan dan Pembelajaran Mesin 10
+A. Kode dan Ketentuan Outline 10
+B. Bentuk Outline 10
+C. Penjelasan Outline 12
+3. Pengembangan Multimedia, Game dan Mobile) 18
+A. Kode dan Ketentuan Outline 18
+B. Bentuk Outline 18
+C. Penjelasan Outline 20
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. iii
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 4 ---
+Outline Skripsi Program Studi Informatika Program Sarjana (S1)
+No Kode Outline Nama Outline
+1 173 Pengembangan Perangkat Lunak
+2 174 Kecerdasan Buatan dan Pembelajaran Mesin
+3 175 Pengembangan Multimedia, Game dan Mobile
+Petunjuk Teknis Penyusunan Tugas Akhir Skripsi Program Studi Informatika Program
+Sarjana (S1)
+A. Kode dan Ketentuan Outline
+Kode Outline : 173
+Nama Outline : Pengembangan Perangkat Lunak
+Metode Pengerjaan : Individu
+Bukti Riset : Surat Keterangan Riset
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib
+- Hak Kekayaan Intelektual (HKI) : Wajib
+- Buku : Wajib membuat buku manual penggunaan
+- Karya : Laporan Skripsi dan Aplikasi
+- Berita Acara Serah Terima Karya : Disarankan
+Ketentuan Outline :
+1. Mahasiswa wajib melakukan riset di perusahaan/instansi/organisasi yang telah berbadan
+hukum.
+2. Hasil penelitian berupa perangkat lunak/aplikasi dengan platform yang dapat dipilih
+yaitu mobile/web/desktop.
+B. Bentuk Outline
+Lembar Judul Skripsi
+Lembar Persembahan
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan Dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Kata Pengantar
+Abstrak
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang
+1.2. Rumusan Masalah
+1.3. Tujuan dan Manfaat
+1.4. Metodologi Penelitian
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 1
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 5 ---
+1.5. Batasan Masalah
+BAB II LANDASAN TEORI
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+BAB III ANALISIS KEBUTUHAN DAN PERANCANGAN
+3.1. Tinjauan Objek Penelitian
+3.2. Analisis Kebutuhan Perangkat Lunak
+3.3. Arsitektur Sistem
+3.4. Perancangan Basis Data
+3.5. Perancangan Antarmuka
+3.6. Spesifikasi Perangkat Pendukung
+BAB IV IMPLEMENTASI DAN PENGUJIAN
+4.1. Implementasi Fungsi-fungsi Utama
+4.2. Hasil Pengujian
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+LEMBAR KONSULTASI
+SURAT KETERANGAN RISET
+LAMPIRAN
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 2
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 6 ---
+C. Penjelasan outline :
+BAB I
+PENDAHLULAN
+1.1 Latar Belakang
+Menjelaskan latar belakang munculnya ide sehingga penelitian ini dilakukan. Penulis harus
+menjelaskan mengapa permasalahan yang diteliti dianggap penting dan menarik sehingga
+membutuhkan aplikasi dalam penyelesaian permasalahan. Dalam bagian ini dapat juga
+dimasukkan beberapa uraian singkat penelitian terdahulu yang dapat memperkuat alasan mengapa
+penelitian ini dilakukan.
+1.2 Rumusan Masalah
+Memuat pertanyaan penelitian (research questions) yang dituliskan dalam kalimat tanya untuk
+mengarahkan penelitian, mendorong penulis untuk menjawabnya dan menarik minat pembaca.
+Pertanyaan penelitian umumnya memiliki ciri-ciri sebagai berikut:
+1. Jelas: disampaikan dengan struktur bahasa Indonesia yang baku, benar, dan mudah dipahami.
+2. Relevan: sesuai dengan apa yang ingin diteliti dan menggunakan istilah-istilah yang sesuai
+dengan masalah serta konteks keilmuan terkait.
+3. Fokus: terarah pada masalah yang ingin diselesaikan atau fenomena yang akan dijelaskan.
+4. Menarik: diusahakan dapat mendorong keinginan penulis untuk menjawab pertanyaan ini dan
+merangsang pembaca untuk mengikuti lebih jauh penelitian ini
+5. Dapat terjawab: dapat dijawab atau diukur hasilnya melaui proses penelitian sesuai dengan
+batasan waktu dan sumber daya yang ada.
+Contoh:
+Topik: Pengembangan sistem perangkat lunak untuk administrasi pendidikan di Pondok Pesantren
+Nurul Hikmah Sukabumi.
+Rangkuman masalah yang sudah tergambarkan dan tertuang dalam latar belakang: Pondok
+Pesantren Nurul Hikmah Sukabumi membutuhkan sebuah sistem perangkat lunak yang dapat
+membantu pelaksanaan proses-proses bisnis di dalamnya, khususnya dalam administrasi
+pendidikan. Beberapa masalah ditemukan dalam proses-proses bisnis tersebut. Masalah ini
+diharapkan dapat diatasi dengan memanfaatkan sejumlah fitur yang disediakan oleh sistem
+perangkat lunak ini.
+Pertanyaan penelitian:
+1. Bagaimana hasil analisis dan spesifikasi kebutuhan sistem perangkat lunak untuk administrasi
+pendidikan di Pondok Pesantren Nurul Hikmah Sukabumi yang sesuai dengan kebutuhan
+organisasi?
+2. Bagaimana rancangan sistem perangkat lunak yang sesuai dengan spesifikasi kebutuhan
+sistem?
+3. Bagaimana hasil implementasi sistem perangkat lunak yang sesuai dengan rancangan sistem?
+4. Bagaimana hasil pengujian sistem perangkat lunak untuk administrasi pendidikan di pondok
+pesantren tersebut?
+1.3 Tujuan dan Manfaat
+Berisi tujuan dan manfaat yang ingin dicapai dari skripsi ini. Tujuan harus dapat memberikan arah
+pada capaian penelitian. Tujuan dapat terdiri dari beberapa butir pernyataan yang sederhana dan
+jelas sesuai dengan masalah penelitian dan hasil yang ingin dicapai.
+Contoh tujuan:
+1. Menganalisis dan menyusun spesifikasi persyaratan sistem perangkat lunak untuk administrasi
+pendidikan di Pondok Pesantren Nurul Huda Sukabumi.
+2. Merancang sistem perangkat lunak sesuai persyaratan untuk sistem perangkat lunak tersebut.
+3. Mengimplementasikan rancangan sistem perangkat lunak tersebut.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 3
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 7 ---
+4. Menguji sistem perangkat lunak tersebut secara fungsional sesuai kebutuhan/masalah yang
+difokuskan.
+Manfaat penelitian dapat diuraikan sebagai dampak atau konsekuensi positif penelitian terhadap
+ruang lingkup masalah dan/atau terhadap para pemangku kepentingan (stakeholders) yang terlibat
+di dalamnya. Manfaat penelitian tidak perlu meliputi pernyataan “untuk memenuhi persyaratan
+mencapai gelar sarjana” karena ini merupakan persyaratan akademik dan administratif institusi,
+tidak berhubungan dengan substansi penelitiannya.
+Contoh manfaat:
+1. Bagi Objek Penelitian (Pondok Pesantren Nurul Hikmah Sukabumi):
+a. Pengembangan sistem perangkat lunak dapat membantu meningkatkan efisiensi dalam
+manajemen administrasi pendidikan, termasuk pengelolaan data siswa, guru, dan staf.
+b. Otomatisasi proses administrasi dapat mengurangi beban kerja tenaga pendidik dan
+administratif, sehingga mereka dapat fokus pada kegiatan pendidikan yang lebih substansial.
+c. Sistem perangkat lunak dapat meminimalkan kesalahan manusia dalam pengelolaan data,
+seperti data siswa, kehadiran, dan prestasi, sehingga meningkatkan akurasi informasi.
+d. Sistem ini memungkinkan pemantauan real-time terhadap berbagai aspek pendidikan,
+memungkinkan pihak pengelola untuk mengambil keputusan berdasarkan data yang akurat
+dan terkini.
+e. Modul evaluasi dapat membantu identifikasi area yang memerlukan perhatian lebih lanjut
+untuk meningkatkan kualitas pendidikan.
+2. Bagi Penulis:
+a. Penelitian ini dapat memberikan kontribusi signifikan terhadap literatur ilmiah dan
+pengetahuan di bidang pengembangan sistem perangkat lunak untuk administrasi
+pendidikan.
+b. Proses pengembangan sistem perangkat lunak akan meningkatkan keahlian penulis dalam
+bidang rekayasa perangkat lunak, manajemen proyek, dan pemahaman mendalam tentang
+kebutuhan administrasi pendidikan.
+3. Bagi Pembaca:
+a. Pembaca akan mendapatkan pemahaman yang lebih baik tentang bagaimana sistem dapat
+meningkatkan efisiensi dan efektivitas operasional pondok pesantren.
+b. Sistem yang baik dapat membantu meningkatkan kualitas pendidikan dengan memberikan
+informasi yang akurat, mendukung pengambilan keputusan yang lebih baik, dan
+menyediakan solusi untuk meningkatkan proses pembelajaran.
+c. Sistem dapat memberikan kemudahan akses informasi bagi seluruh stakeholder, seperti
+orang tua siswa untuk memantau perkembangan pendidikan anak-anak mereka.
+1.4 Metodologi Penelitian
+Hal-hal yang perlu dijelaskan dalam metodologi penelitian adalah:
+a. Metode/teknik pengumpulan data. Misalnya, wawancara, observasi, kuesioner, studi pustaka.
+b. Metode/teknik lainnya. Misalnya, perlu dijelaskan model pengembangan aplikasi yang
+digunakan seperti model Waterfall, Spiral, Incremental, Prototype, Rapid Application
+Development (RAD) dan lain-lain.
+1.5 Batasan Masalah
+Menjelaskan ruang lingkup masalah penelitian dengan menyatakan hal-hal yang menjadi batasan
+dan asumsi-asumsi yang digunakan untuk menyelesaikan masalah yang sudah dirumuskan.
+Contoh:
+Topik: Pengembangan sistem perangkat lunak untuk administrasi pendidikan di Pondok Pesantren
+Nurul Hikmah Sukabumi.
+Batasan masalah: Penelitian ini dibatasi pada Pondok Pesantren Nurul Hikmah di Sukabumi,
+sehingga temuan dan solusi yang diusulkan mungkin tidak dapat secara langsung diterapkan di
+pondok pesantren lain. Penelitian ini akan membatasi jumlah stakeholder yang terlibat dalam tahap
+pengembangan dan implementasi sistem, dengan fokus utama pada pengelola pondok pesantren,
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 4
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 8 ---
+guru, dan staf administratif. Penelitian ini memfokuskan pada pengembangan sistem untuk aspek-
+aspek administrasi tertentu, seperti manajemen data siswa, kehadiran, dan evaluasi akademik,
+dengan tidak mencakup seluruh fungsi administratif yang mungkin ada di pondok pesantren.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 5
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 9 ---
+BAB II
+LANDASAN TEORI
+Bab landasan teori berisi uraian dan pembahasan tentang teori, konsep, model, algoritma, metode,
+sistem, atau analisis dari pustaka ilmiah, yang berkaitan dengan tema, masalah, atau pertanyaan
+penelitian. Dalam bab landasan teori wajib disampaikan juga tentang penelitian sebelumnya yang terkait
+dengan penelitian yang sedang dilakukan. Isi landasan teori bukan sekedar salinan dari sumber pustaka,
+tetapi merupakan ringkasan, reorganisasi, atau kombinasi dari keduanya terhadap informasi dari sumber
+pustaka. Ringkasan adalah uraian singkat dari hal-hal yang relevan dari sumber pustaka, sedangkan
+reorganisasi adalah penyusunan ulang berbagai informasi yang relevan tersebut sehingga secara
+keseluruhan membentuk kerangka teoritik dari penelitian.
+Landasan teori wajib menggunakan sumber-sumber pustaka ilmiah seperti jurnal, prosiding konferensi
+atau seminar, tesis, disertasi, skripsi, atau buku teks, dan dihindari sumber-sumber yang tidak jelas
+penulisnya.
+2.1 Tinjauan Pustaka
+Berisikan penjelasan tentang teori, konsep, metode, pengujian model/algoritma dan peralatan
+pendukung yang digunakan dalam pelaksanaan penelitian. Sumber pustaka ilmiah yang digunakan
+adalah yang semutakhir mungkin.
+2.2 Penelitian Terkait
+Berisikan ulasan penelitian-penelitian serupa sebagai pembanding topik atau metode yang
+berkaitan dengan penelitian yang diambil. Penelitian terkait dapat diambil dari jurnal–jurnal ilmiah
+atau prosiding yang sudah terindeks secara nasional maupun internasional.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 6
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 10 ---
+BAB III
+ANALISIS KEBUTUHAN DAN PERANCANGAN
+3.1. Tinjauan Objek Penelitian
+Berisi sejarah mengenai institusi/perusahaan/instansi/organisasi tempat mahasiswa melakukan
+riset, struktur organisasi dan tugas pokok masing-masing bagian serta penjelasan mengenai objek
+yang diteliti. Pada halaman lampiran dibuktikan dengan surat keterangan telah melakukan riset
+yang mempunyai kop surat, ditandatangani dan distempel oleh pejabat yang berwenang.
+3.2. Analisis Kebutuhan Perangkat Lunak
+Menjelaskan analisis masalah yang lebih mendetail daripada yang ada di bab pendahuluan,
+mengidentifikasi pemangku kepentingan (stakeholders) dan aktor (actors) sistem serta membuat
+use cases, use case diagrams, use case specifications dan activity diagram.
+3.3. Arsitektur Sistem
+Berisi deskripsi struktur dan setiap komponen utama yang digambarkan dalam class diagram,
+sequence diagram, component diagram dan deployment diagram.
+3.4. Perancangan Basis Data
+Berisi representasi data dalam model data dan basis data menggunakan Entity Relationship
+Diagram (ERD), Logical Record Structure (LRS) dan spesifikasi tabel.
+3.5. Perancangan Antarmuka
+Berisi rancangan antarmuka pengguna untuk menentukan skema warna, pemilihan jenis huruf,
+ukuran, dan format untuk memastikan keterbacaan, gaya tata letak, dan desain visual keseluruhan
+yang menciptakan identitas visual dan konsistensi dalam antarmuka.
+3.6. Spesifikasi Perangkat Pendukung
+Berisi daftar terstruktur spesifikasi perangkat pendukung untuk menjalankan aplikasi. Pada sub
+bab ini juga menjelaskan tentang publikasi perangkat lunak aplikasi, jika perangkat lunak yang
+dikembangkan berbasis mobile harus dipublikasikan melalui Google Play Store dan jika berbasis
+website maka harus dipublikasi memanfaatkan layanan hosting.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 7
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 11 ---
+BAB IV
+IMPLEMENTASI DAN PENGUJIAN
+4.1. Implementasi Fungsi-fungsi Utama
+Menjelaskan urutan langkah-langkah fungsi-fungsi utama perangkat lunak yang digambarkan
+dalam diagram alur kerja flowchart.
+4.2. Hasil Pengujian
+Berisi ringkasan hasil pengujian perangkat lunak yang dibuat mengggunakan metode pengujian
+blackbox dan User Acceptance Test (UAT) serta menjelasakan apakah “hasil” sudah menjawab
+masalah penelitian yang dirumuskan pada Bab 1.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 8
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 12 ---
+BAB V
+PENUTUP
+5.1. Kesimpulan
+Berisi ringkasan dari capaian atau hasil penelitian dan pengujian yang telah dilakukan.
+Kesimpulan mencerminkan jawaban dari rumusan masalah (pertanyaan penelitian).
+5.2. Saran
+Berisi berisi pernyataan-pernyataan yang ringkas dan jelas tentang hal-hal yang dapat
+dilakukan untuk mengembangkan penelitian lebih lanjut. Saran dapat diarahkan pada aspek
+metode, instrumen, populasi/sampel, dan sebagainya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 9
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 13 ---
+A. Kode dan Ketentuan Outline
+Kode Outline : 174
+Nama Outline : Kecerdasan Buatan dan Pembelajaran Mesin
+Metode Pengerjaan : Individu
+Bukti Riset : Surat Keterangan Riset atau Surat Keabsahan Data
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Disarankan
+- Karya : Laporan Skripsi
+- Berita Acara Serah Terima Karya : Tidak
+Ketentuan Outline :
+1. Surat Keterangan Riset tidak wajib, bisa diganti dengan Surat Keabsahan Data jika tidak
+riset.
+2. Hasil penelitian berupa hasil analisis
+B. Bentuk Outline
+Lembar Judul Skripsi
+Lembar Persembahan
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan Dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Rumusan Masalah
+1.3. Tujuan dan Manfaat
+1.4. Hipotesis
+1.5. Batasan Masalah
+BAB II LANDASAN TEORI
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+BAB III METODOLOGI PENELITIAN
+3.1. Proses dan Langkah Penelitian
+3.2. Metode Pengolahan dan Analisis Data
+BAB IV HASIL DAN PEMBAHASAN
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 10
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 14 ---
+4.1. Hasil Penelitian
+4.2. Hasil Pengujian
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+LEMBAR KONSULTASI
+SURAT KETERANGAN RISET/ SURAT KEABSAHAN DATA
+LAMPIRAN
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 11
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 15 ---
+C. Penjelasan outline
+BAB I
+PENDAHLULAN
+1.1 Latar Belakang
+Menjelaskan latar belakang munculnya ide sehingga penelitian ini dilakukan. Penulis harus
+menjelaskan mengapa permasalahan yang diteliti dianggap penting dan menarik sehingga
+membutuhkan aplikasi dalam penyelesaian permasalahan. Dalam bagian ini dapat juga
+dimasukkan beberapa uraian singkat penelitian terdahulu yang dapat memperkuat alasan mengapa
+penelitian ini dilakukan.
+1.2 Rumusan Masalah
+Memuat pertanyaan penelitian (research questions) yang dituliskan dalam kalimat tanya untuk
+mengarahkan penelitian, mendorong penulis untuk menjawabnya dan menarik minat pembaca.
+Pertanyaan penelitian umumnya memiliki ciri-ciri sebagai berikut:
+1. Jelas: disampaikan dengan struktur bahasa Indonesia yang baku, benar, dan mudah dipahami.
+2. Relevan: sesuai dengan apa yang ingin diteliti dan menggunakan istilah-istilah yang sesuai
+dengan masalah serta konteks keilmuan terkait.
+3. Fokus: terarah pada masalah yang ingin diselesaikan atau fenomena yang akan dijelaskan.
+4. Menarik: diusahakan dapat mendorong keinginan penulis untuk menjawab pertanyaan ini dan
+merangsang pembaca untuk mengikuti lebih jauh penelitian ini
+5. Dapat terjawab: dapat dijawab atau diukur hasilnya melaui proses penelitian sesuai dengan
+batasan waktu dan sumber daya yang ada.
+Contoh:
+Topik: Pengujian algoritma klasifikasi citra menggunakan Convolutional Neural Network (CNN)
+untuk klasifikasi penyakit kanker payudara (Studi kasus : dataset Breast Cancer Wisconsin).
+Rangkuman masalah yang sudah tergambarkan dan tertuang dalam latar belakang: CNN
+merupakan salah satu algoritma yang paling baik dalam melakukan klasifikasi citra. Sejauh ini
+belum diketahui seberapa akurat algoritma CNN dalam melakukan klasifikasi pada citra sel kanker
+payudara dengan menggunakan dataset Breast Cancer Wisconsin.
+Pertanyaan penelitian:
+1. Apakah algoritma klasifikasi citra CNN mampu memberikan hasil klasifikasi yang lebih akurat
+untuk dataset Breast Cancer Wisconsin dalam konteks klasifikasi penyakit kanker payudara?
+2. Bagaimana pengaruh berbagai parameter algoritma CNN, seperti jumlah layer atau filter,
+terhadap akurasi klasifikasi pada dataset Breast Cancer Wisconsin?
+3. Bagaimana faktor-faktor lain, seperti ukuran sampel atau karakteristik data, dapat memengaruhi
+performa algoritma CNN dalam klasifikasi penyakit kanker payudara menggunakan dataset
+Breast Cancer Wisconsin?
+4. Bagaimana hasil pengujian algoritma CNN pada dataset Breast Cancer Wisconsin dapat
+memberikan kontribusi terhadap peningkatan diagnosis dan deteksi dini penyakit kanker
+payudara?
+1.3 Tujuan dan Manfaat
+Berisi tujuan dan manfaat yang ingin dicapai dari skripsi ini. Tujuan harus dapat memberikan arah
+pada capaian penelitian. Tujuan dapat terdiri dari beberapa butir pernyataan yang sederhana dan
+jelas sesuai dengan masalah penelitian dan hasil yang ingin dicapai.
+Contoh tujuan:
+1. Menganalisis sejauh mana algoritma klasifikasi citra Convolutional Neural Network (CNN)
+mampu mengklasifikasikan citra payudara dengan akurat.
+2. Melakukan pengujian terhadap validitas dan hasil klasifikasi (sesuai kebutuhan/masalah yang
+difokuskan).
+Manfaat penelitian dapat diuraikan sebagai dampak atau konsekuensi positif penelitian terhadap
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 12
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 16 ---
+ruang lingkup masalah dan/atau terhadap para pemangku kepentingan (stakeholders) yang terlibat
+di dalamnya. Manfaat penelitian tidak perlu meliputi pernyataan “untuk memenuhi persyaratan
+mencapai gelar sarjana” karena ini merupakan persyaratan akademik dan administratif institusi,
+tidak berhubungan dengan substansi penelitiannya.
+Contoh manfaat:
+1. Bagi Objek Penelitian:
+a. Memberikan sumbangan pada perkembangan teknologi kesehatan dengan mendorong
+penggunaan teknologi citra dan kecerdasan buatan dalam konteks medis.
+b. Membantu memahami lebih baik bagaimana algoritma klasifikasi citra CNN dapat
+diterapkan secara efektif dalam klasifikasi penyakit kanker payudara.
+2. Bagi Penulis:
+a. Meningkatkan pemahaman dan keahlian dalam bidang pengolahan citra dan kecerdasan
+buatan, khususnya dalam konteks pengujian algoritma klasifikasi citra menggunakan CNN.
+b. Penulis mendapatkan pemahaman yang lebih mendalam tentang kompleksitas dan tantangan
+dalam menerapkan algoritma klasifikasi citra CNN pada data medis khususnya dataset
+Breast Cancer Wisconsin.
+3. Bagi Pembaca:
+a. Memberikan wawasan tentang sejauh mana algoritma CNN dapat diintegrasikan dalam
+praktik klinis untuk mendukung diagnosis dan deteksi dini penyakit kanker payudara.
+b. Sebagai sumber referensi untuk penelitian lanjutan atau pengembangan algoritma klasifikasi
+yang lebih canggih.
+1.4 Hipotesis
+Hipotesis merupakan dugaan atau jawaban sementara dari pertanyaan atau masalah penelitian yang
+masih harus dibuktikan kebenarannya dalam penelitian ini.
+Contoh:
+H : Tidak ada perbedaan signifikan dalam akurasi klasifikasi antara algoritma CNN yang diuji
+0
+pada dataset Breast Cancer Wisconsin untuk klasifikasi penyakit kanker payudara.
+H : Terdapat perbedaan signifikan dalam akurasi klasifikasi antara algoritma CNN yang diuji
+1
+pada dataset Breast Cancer Wisconsin untuk klasifikasi penyakit kanker payudara.
+1.5 Batasan Masalah
+Menjelaskan ruang lingkup masalah penelitian dengan menyatakan hal-hal yang menjadi batasan
+dan asumsi-asumsi yang digunakan untuk menyelesaikan masalah yang sudah dirumuskan.
+Contoh:
+Topik: Pengujian algoritma klasifikasi citra menggunakan Convolutional Neural Network (CNN)
+untuk klasifikasi penyakit kanker payudara (Studi kasus : dataset Breast Cancer Wisconsin).
+Batasan masalah: Penelitian ini dibatasi pada proses klasifikasi citra dengan CNN menggunakan
+dataset Breast Cancer Wisconsin, sehingga temuan dan solusi yang diusulkan mungkin tidak dapat
+diterapkan pada dataset yang lain. Penelitian ini memfokuskan pada analisis algoritma dengan
+dataset Breast Cancer Wisconsin.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 13
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 17 ---
+BAB II
+LANDASAN TEORI
+Bab landasan teori berisi uraian dan pembahasan tentang teori, konsep, model, algoritma, metode,
+sistem, atau analisis dari pustaka ilmiah, yang berkaitan dengan tema, masalah, atau pertanyaan
+penelitian. Dalam bab landasan teori wajib disampaikan juga tentang penelitian sebelumnya yang terkait
+dengan penelitian yang sedang dilakukan. Isi landasan teori bukan sekedar salinan dari sumber pustaka,
+tetapi merupakan ringkasan, reorganisasi, atau kombinasi dari keduanya terhadap informasi dari sumber
+pustaka. Ringkasan adalah uraian singkat dari hal-hal yang relevan dari sumber pustaka, sedangkan
+reorganisasi adalah penyusunan ulang berbagai informasi yang relevan tersebut sehingga secara
+keseluruhan membentuk kerangka teoritik dari penelitian.
+Landasan teori wajib menggunakan sumber-sumber pustaka ilmiah seperti jurnal, prosiding konferensi
+atau seminar, tesis, disertasi, skripsi, atau buku teks, dan dihindari sumber-sumber yang tidak jelas
+penulisnya.
+2.1 Tinjauan Pustaka
+Berisikan penjelasan tentang teori, konsep, metode, pengujian model/algoritma dan peralatan
+pendukung yang digunakan dalam pelaksanaan penelitian. Sumber pustaka ilmiah yang digunakan
+adalah yang semutakhir mungkin.
+2.2 Penelitian Terkait
+Berisikan ulasan penelitian-penelitian serupa sebagai pembanding topik atau metode yang
+berkaitan dengan penelitian yang diambil. Penelitian terkait dapat diambil dari jurnal–jurnal ilmiah
+atau prosiding yang sudah terindeks secara nasional maupun internasional.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 14
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 18 ---
+BAB III
+METODOLOGI PENELITIAN
+3.1. Proses dan Langkah Penelitian
+Berisi proses-proses, penelitian yang akan dilakukan mencakup kerangka penelitian, sumber data,
+teknik pengambilan data atau pengambilan sampel serta menjelaskan bagaimana data
+dikumpulkan, apakah melalui survei, wawancara, observasi, atau metode lainnya.
+3.2. Metode Pengolahan dan Analisis Data
+Menjelaskan secara rinci bagaimana data dikumpulkan, diolah, dan dianalisis dalam rangka
+menjawab pertanyaan penelitian atau menguji hipotesis beserta proses perhitungannya serta
+mendeskripsikan jenis data yang dikumpulkan, apakah itu data kualitatif, kuantitatif, atau
+kombinasi keduanya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 15
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 19 ---
+BAB IV
+HASIL DAN PEMBAHASAN
+4.1. Hasil Penelitian
+Berisi hasil pelaksanaan metode/teknik penelitian dan menyajikan data yang mendukung hasil
+tersebut. Penyajian data dan penjelasannya dilakukan secara terurut dan logis menggunakan teks
+dan ilustrasi lainnya (misalnya, tabel dan gambar). Tentukan mana hasil yang relevan dan dapat
+digunakan untuk menjawab pertanyaan atau masalah penelitian. Hasil inilah yang perlu
+dimasukkan terlepas dari apakah hasil ini positif (misalnya, mendukung kebenaran hipotesis) atau
+negatif (misalnya, menolak hipotesis). Selanjutnya, perlu diperhatikan bagaimana menyajikannya
+dengan cara terbaik, apakah dengan teks, tabel atau gambar.
+4.2. Hasil Pengujian
+Berisi ringkasan hasil pengujian model serta menjelaskan apakah “hasil” sudah menjawab
+masalah penelitian yang dirumuskan pada Bab 1
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 16
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 20 ---
+BAB V
+PENUTUP
+5.1. Kesimpulan
+Berisi ringkasan dari capaian atau hasil penelitian dan pengujian yang telah dilakukan.
+Kesimpulan mencerminkan jawaban dari rumusan masalah (pertanyaan penelitian).
+5.2. Saran
+Berisi berisi pernyataan-pernyataan yang ringkas dan jelas tentang hal-hal yang dapat dilakukan
+untuk mengembangkan penelitian lebih lanjut. Saran dapat diarahkan pada aspek metode,
+instrumen, populasi/sampel, dan sebagainya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 17
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 21 ---
+A. Kode dan Ketentuan Outline
+Kode Outline : 175
+Nama Outline : Pengembangan Multimedia, Game dan Mobile
+Metode Pengerjaan : Individu
+Bukti Riset : Surat Keterangan Riset atau Surat Keabsahan Data
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib
+- Hak Kekayaan Intelektual (HKI) : Wajib
+- Buku : Wajib membuat buku manual penggunaan
+- Karya : Laporan Skripsi dan Aplikasi
+- Berita Acara Serah Terima Karya : Disarankan
+Ketentuan Outline :
+1. Mahasiswa tidak wajib melakukan riset di perusahaan/instansi/organisasi.
+2. Hasil penelitian berupa perangkat lunak dengan platform yang dapat dipilih yaitu
+mobile/web/desktop.
+B. Bentuk Outline
+Lembar Judul Skripsi
+Lembar Persembahan
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan Dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang
+1.2. Rumusan Masalah
+1.3. Tujuan dan Manfaat
+1.4. Metodologi Penelitian
+1.5. Ruang Lingkup
+BAB II LANDASAN TEORI
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+BAB III PERANCANGAN DAN PENGEMBANGAN
+3.1. Analisis Kebutuhan Perangkat Lunak
+3.2. Konsep
+3.3. Desain
+3.4. Spesifikasi Perangkat Pendukung
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 18
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 22 ---
+BAB IV IMPLEMENTASI DAN PENGUJIAN
+4.1. Implementasi Fungsi-fungsi Utama
+4.2. Hasil Pengujian
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+LEMBAR KONSULTASI
+SURAT KETERANGAN RISET/ SURAT KEABSAHAN DATA
+LAMPIRAN
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 19
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 23 ---
+C. Penjelasan outline
+BAB I
+PENDAHLULAN
+1.1 Latar Belakang
+Menjelaskan latar belakang munculnya ide sehingga penelitian ini dilakukan. Penulis harus
+menjelaskan mengapa permasalahan yang diteliti dianggap penting dan menarik sehingga
+membutuhkan aplikasi dalam penyelesaian permasalahan. Dalam bagian ini dapat juga
+dimasukkan beberapa uraian singkat penelitian terdahulu yang dapat memperkuat alasan mengapa
+penelitian ini dilakukan.
+1.2 Rumusan Masalah
+Memuat pertanyaan penelitian (research questions) yang dituliskan dalam kalimat tanya untuk
+mengarahkan penelitian, mendorong penulis untuk menjawabnya dan menarik minat pembaca.
+Pertanyaan penelitian umumnya memiliki ciri-ciri sebagai berikut:
+1. Jelas: disampaikan dengan struktur bahasa Indonesia yang baku, benar, dan mudah dipahami.
+2. Relevan: sesuai dengan apa yang ingin diteliti dan menggunakan istilah-istilah yang sesuai
+dengan masalah serta konteks keilmuan terkait.
+3. Fokus: terarah pada masalah yang ingin diselesaikan atau fenomena yang akan dijelaskan.
+4. Menarik: diusahakan dapat mendorong keinginan penulis untuk menjawab pertanyaan ini dan
+merangsang pembaca untuk mengikuti lebih jauh penelitian ini
+5. Dapat terjawab: dapat dijawab atau diukur hasilnya melaui proses penelitian sesuai dengan
+batasan waktu dan sumber daya yang ada.
+Contoh:
+Topik: Pengembangan game pembelajaran matematika adaptif untuk anak dengan kesulitan belajar
+matematika.
+Rangkuman masalah yang sudah tergambarkan dan tertuang dalam latar belakang: Penelitian ini
+mengidentifikasi dan mengatasi kesulitan belajar matematika pada anak-anak melalui
+pengembangan game pembelajaran matematika adaptif. Masalah utama yang ditangani adalah
+kurangnya daya tarik dan keterlibatan anak-anak dengan kesulitan belajar matematika dalam
+proses pembelajaran. Penelitian ini diharapkan dapat memberikan kontribusi signifikan dalam
+meningkatkan keterampilan matematika dan minat belajar anak-anak yang mengalami kesulitan
+dalam mata pelajaran tersebut..
+Pertanyaan penelitian:
+1. Apakah desain adaptif dalam game pembelajaran matematika dapat meningkatkan minat dan
+keterlibatan anak-anak dengan kesulitan belajar matematika?
+2. Bagaimana merancang dan mengimplementasikan mekanisme adaptif dalam game
+pembelajaran matematika untuk memenuhi kebutuhan individu anak dengan kesulitan belajar?
+3. Bagaimana persepsi guru dan orang tua terhadap efektivitas game pembelajaran matematika
+adaptif dalam membantu anak-anak mengatasi kesulitan belajar matematika?
+1.3 Tujuan dan Manfaat
+Berisi tujuan dan manfaat yang ingin dicapai dari skripsi ini. Tujuan harus dapat memberikan arah
+pada capaian penelitian. Tujuan dapat terdiri dari beberapa butir pernyataan yang sederhana dan
+jelas sesuai dengan masalah penelitian dan hasil yang ingin dicapai.
+Contoh tujuan:
+1. Merancang dan mengembangkan game pembelajaran matematika yang adaptif dan efektif
+untuk membantu anak-anak dengan kesulitan belajar matematika. Game ini harus mampu
+menyesuaikan diri dengan tingkat pemahaman dan kebutuhan individual setiap anak.
+2. Menilai sejauh mana penggunaan game pembelajaran adaptif dapat meningkatkan pemahaman
+konsep matematika dan pencapaian akademik anak-anak yang mengalami kesulitan belajar
+matematika.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 20
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 24 ---
+Manfaat penelitian dapat diuraikan sebagai dampak atau konsekuensi positif penelitian terhadap
+ruang lingkup masalah dan/atau terhadap para pemangku kepentingan (stakeholders) yang terlibat
+di dalamnya. Manfaat penelitian tidak perlu meliputi pernyataan “untuk memenuhi persyaratan
+mencapai gelar sarjana” karena ini merupakan persyaratan akademik dan administratif institusi,
+tidak berhubungan dengan substansi penelitiannya.
+Contoh manfaat:
+1. Bagi Objek Penelitian:
+a. Desain game yang menarik dan adaptif dapat menciptakan pengalaman pembelajaran yang
+lebih menyenangkan, menjadikan matematika lebih aksesibel dan mengurangi ketakutan
+terhadap mata pelajaran tersebut.
+b. Pengembangan game berbasis teknologi memungkinkan anak-anak untuk mengakses materi
+pembelajaran kapan saja dan di mana saja, memberikan fleksibilitas dan kemudahan
+aksesibilitas.
+2. Bagi Penulis:
+a. Penulis dapat berkontribusi pada literatur ilmiah dengan menghasilkan pengetahuan baru
+terkait pengembangan game pembelajaran matematika adaptif, khususnya untuk anak-anak
+dengan kesulitan belajar matematika.
+b. Penelitian ini dapat memberikan wawasan tentang penggunaan teknologi, khususnya game
+pembelajaran adaptif, dalam meningkatkan pembelajaran matematika anak-anak dengan
+kesulitan belajar.
+3. Bagi Pembaca:
+a. Memberikan informasi tentang solusi alternatif dan kreatif dalam mengatasi kesulitan
+belajar matematika pada anak-anak melalui pendekatan game yang disesuaikan.
+b. Memperoleh pemahaman tentang perkembangan teknologi dalam mendukung pembelajaran
+adaptif dan bagaimana teknologi dapat diaplikasikan untuk membantu anak-anak dengan
+kesulitan belajar.
+c. Menjadi referensi bagi penelitian selanjutnya dalam pengembangan game pembelajaran dan
+solusi inovatif lainnya untuk anak-anak dengan kesulitan belajar matematika.
+1.4 Metodologi Penelitian
+Hal-hal yang perlu dijelaskan dalam metodologi penelitian adalah:
+a. Metode/teknik pengumpulan data. Misalnya, wawancara, observasi, kuesioner, studi pustaka.
+b. Metode/teknik lainnya. Misalnya, perlu dijelaskan model pengembangan aplikasi yang
+digunakan seperti model Waterfall, Spiral, Incremental, Prototype, Rapid Application
+Development (RAD) dan lain-lain. Untuk perangkat lunak mobile dapat menggunakan
+metode pengembangan perangkat lunak spesifik perangkat bergerak seperti MASAM, Mobile
+D, atau metode spesifik lainnya. Untuk game dapat menggunakan metode pengembangan
+perangkat lunak spesifik Game seperti MDA framework atau metode spesifik lainnya.
+1.5 Batasan Masalah
+Menjelaskan ruang lingkup masalah penelitian dengan menyatakan hal-hal yang menjadi batasan
+dan asumsi-asumsi yang digunakan untuk menyelesaikan masalah yang sudah dirumuskan.
+Contoh:
+Topik: Pengembangan game pembelajaran matematika adaptif untuk anak dengan kesulitan belajar
+matematika.
+Batasan masalah: Batasan masalah pada penelitian ini mencakup fokus pada anak-anak dengan
+kesulitan belajar matematika di tingkat pendidikan dasar. Penelitian ini terbatas pada
+pengembangan game pembelajaran matematika yang adaptif, dengan batasan pada materi
+pembelajaran matematika yang sesuai dengan kurikulum sekolah dasar. Selain itu, penelitian ini
+tidak melibatkan pengembangan kurikulum matematika secara menyeluruh dan tidak mendalami
+faktor sosial atau lingkungan yang mungkin mempengaruhi kesulitan belajar matematika pada
+anak-anak.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 21
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 25 ---
+BAB II
+LANDASAN TEORI
+Bab landasan teori berisi uraian dan pembahasan tentang teori, konsep, model, algoritma, metode,
+sistem, atau analisis dari pustaka ilmiah, yang berkaitan dengan tema, masalah, atau pertanyaan
+penelitian. Dalam bab landasan teori wajib disampaikan juga tentang penelitian sebelumnya yang terkait
+dengan penelitian yang sedang dilakukan. Isi landasan teori bukan sekedar salinan dari sumber pustaka,
+tetapi merupakan ringkasan, reorganisasi, atau kombinasi dari keduanya terhadap informasi dari sumber
+pustaka. Ringkasan adalah uraian singkat dari hal-hal yang relevan dari sumber pustaka, sedangkan
+reorganisasi adalah penyusunan ulang berbagai informasi yang relevan tersebut sehingga secara
+keseluruhan membentuk kerangka teoritik dari penelitian.
+Landasan teori wajib menggunakan sumber-sumber pustaka ilmiah seperti jurnal, prosiding konferensi
+atau seminar, tesis, disertasi, skripsi, atau buku teks, dan dihindari sumber-sumber yang tidak jelas
+penulisnya.
+2.1 Tinjauan Pustaka
+Berisikan penjelasan tentang teori, konsep, metode, pengujian model/algoritma dan peralatan
+pendukung yang digunakan dalam pelaksanaan penelitian. Sumber pustaka ilmiah yang digunakan
+adalah yang semutakhir mungkin.
+2.2 Penelitian Terkait
+Berisikan ulasan penelitian-penelitian serupa sebagai pembanding topik atau metode yang
+berkaitan dengan penelitian yang diambil. Penelitian terkait dapat diambil dari jurnal–jurnal ilmiah
+atau prosiding yang sudah terindeks secara nasional maupun internasional.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 22
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 26 ---
+BAB III
+PERANCANGAN DAN PENGEMBANGAN
+3.1. Analisis Kebutuhan Perangkat Lunak
+Menjelaskan analisis masalah yang lebih mendetail daripada yang ada di bab pendahuluan,
+mengidentifikasi pemangku kepentingan (stakeholders) dan aktor (actors) sistem serta membuat
+use cases, use case diagrams dan use case specifications.
+3.2. Konsep
+Berisi deskripsi konsep pengembangan perangkat lunak dan teknologi yang digunakan, misalnya
+jika mengembangkan game deskripsikan genre, platform dan perangkat yang sesuai dengan tujuan
+pengembangan, baik itu mobile, PC, konsol game, atau platform multimedia khusus. Selain itu
+jelaskan teknologi yang sesuai dengan kebutuhan proyek, misalnya, engine game (seperti Unity
+atau Unreal), framework pengembangan mobile (seperti React Native atau Flutter), atau perangkat
+keras dan perangkat lunak multimedia yang diperlukan.
+3.3. Desain
+Berisi rancangan antarmuka pengguna untuk menentukan skema warna, pemilihan jenis huruf,
+ukuran, dan format untuk memastikan keterbacaan, gaya tata letak, aset dan desain visual
+keseluruhan yang menciptakan identitas visual dan konsistensi dalam antarmuka. UI/UX harus
+dirancang dengan mempertimbangkan kebutuhan pengguna dan menjaga konsistensi. Pada sub bab
+ini, khusus untuk pengembangan game wajib dilengkapi dengan storyboard.
+3.4. Spesifikasi Perangkat Pendukung
+Berisi daftar terstruktur spesifikasi perangkat pendukung untuk menjalankan aplikasi. Pada sub
+bab ini juga menjelaskan tentang publikasi perangkat lunak aplikasi, jika perangkat lunak yang
+dikembangkan berupa game berbasis mobile harus dipublikasikan melalui Google Play Store dan
+jika berbasis website maka harus dipublikasi memanfaatkan layanan hosting.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 23
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 27 ---
+BAB IV
+IMPLEMENTASI DAN PENGUJIAN
+4.3. Implementasi Fungsi-fungsi Utama
+Menjelaskan urutan langkah-langkah fungsi-fungsi utama perangkat lunak yang digambarkan
+dalam diagram alur kerja flowchart.
+4.4. Hasil Pengujian
+Berisi ringkasan hasil pengujian perangkat lunak yang dibuat mengggunakan metode pengujian
+blackbox dan User Acceptance Test (UAT) serta menjelasakan apakah “hasil” sudah menjawab
+masalah penelitian yang dirumuskan pada Bab 1.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 24
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 28 ---
+BAB V
+PENUTUP
+5.1. Kesimpulan
+Berisi ringkasan dari capaian atau hasil penelitian dan pengujian yang telah dilakukan.
+Kesimpulan mencerminkan jawaban dari rumusan masalah (pertanyaan penelitian).
+5.2. Saran
+Berisi berisi pernyataan-pernyataan yang ringkas dan jelas tentang hal-hal yang dapat
+dilakukan untuk mengembangkan penelitian lebih lanjut. Saran dapat diarahkan pada aspek
+metode, instrumen, populasi/sampel, dan sebagainya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 25
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 29 ---
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 26
+Program Studi Informatika (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika

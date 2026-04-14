@@ -13,7 +13,7 @@ interface CsvImportPreviewProps {
 }
 
 export default function CsvImportPreview({ data, onConfirm, onCancel, isLoading, columns }: CsvImportPreviewProps) {
-  const [validData, setValidData] = useState<CsvPreviewRow[]>(data)
+  const [validData] = useState<CsvPreviewRow[]>(data)
 
   const handleConfirm = () => {
     onConfirm(validData)

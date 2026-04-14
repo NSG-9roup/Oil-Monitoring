@@ -1,0 +1,2177 @@
+--- HALAMAN 1 ---
+Petunjuk Teknis
+Penyusunan Tugas Akhir
+Program Studi
+Rekayasa Perangkat Lunak (S1)
+2026
+P etunjuk Teknis Penyusunan Tugas Akhir Hal. i
+Program Studi Rekayasa Perangkat Lunak (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 2 ---
+KATA PENGANTAR
+Segala puji bagi Allah SWT zat yang memiliki dan pencipta alam semesta beserta
+isinya, Shalawat dan salam selalu dipanjatkan kepada kekasih Allah SWT tidak lain hanya
+untuk Rosulullah SAW. Berkat limpahan dan rahmat-Nya Penyusunan Petunjuk Teknis
+Penyusunan Tugas Akhir ini dapat diselesaikan karena berkat idzin dan ridho-Nya .
+Dalam penyusunan Petunjuk Teknis Penyusunan Tugas Akhir ini menjadi lebih
+lancar dan terselesaikan karena niat yang baik dari seluruh personil dengan penuh keihlasan
+dalam menjalankan tugas dengan sebaik-baiknya. Namun perlu disadari bahwa kelancaran
+dalam penyusunan Petunjuk Teknis Penyusunan Tugas Akhir banyak menghadapi kendala
+kesulitan, tetapi dengan kerjasama yang baik hal tersebut dapat diselesaikan dengan baik.
+Petunjuk Teknis Penyusunan Tugas Akhir ini di buat sebagai pendukung pedoman
+penulisan Skripsi yang menjelaskan secara detail isi dari Pedoman Penulisan Skripsi.
+Semoga dengan tersusunya Petunjuk Teknis Penyusunan Tugas Akhir ini dapat
+mengakomodir semua aspek yang berkaitan dengan materi maupun teknis, sehingga
+terbentuk keseragaman dan kesamaan persepsi dalam penyusunan laporan Skripsi.
+Akhir kata, Penyusun berharap agar Petunjuk Teknis Penyusunan Tugas Akhir ini
+dapat memberikan manfaat terhadap peningkatan kualitas mahasiswa dilingkungan
+Kampus Universitas Bina Sarana Informatika secara menyeluruh, Aamiin Ya Robbal
+Aa’lamiin.
+Jakarta, Februari 2026
+Tim Penyusun
+P etunjuk Teknis Penyusunan Tugas Akhir Hal. ii
+Program Studi Rekayasa Perangkat Lunak (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 3 ---
+DAFTAR ISI
+Halaman
+Lembar Judul i
+Kata Pengantar ii
+Daftar Isi iii
+1. Outline Rekayasa Perangkat Lunak 1
+A. Kode dan Ketentuan Outline 1
+B. Bentuk Outline 1
+C. Penjelasan Outline 5
+2. Outline Pemrograman Mobile 32
+A. Kode dan Ketentuan Outline 32
+B. Bentuk Outline 32
+C. Penjelasan Outline 34
+3. Outline Cloud Computing 59
+A. Kode dan Ketentuan Outline 59
+B. Bentuk Outline 59
+C. Penjelasan Outline 61
+4. Outline Karya Ilmiah 67
+A. Kode dan Ketentuan Outline 67
+B. Bentuk Outline 67
+C. Penjelasan Outline 69
+P etunjuk Teknis Penyusunan Tugas Akhir Hal. iii
+Program Studi Rekayasa Perangkat Lunak (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 4 ---
+Outline Skripsi Program Studi Rekayasa Perangkat Lunak Program Sarjana
+No Kode Outline Nama Outline
+1 159 Rekayasa Perangkat Lunak
+2 130 Pemrograman Mobile
+3 160 Cloud Computing
+4 161 Karya Ilmiah
+1. Outline Rekayasa Perangkat Lunak
+________________________________________________________________________
+A. Kode dan Ketentuan Outline
+Kode Outline : 159
+Nama Outline : Rekayasa Perangkat Lunak
+Metode Pengerjaan : Individu
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Tidak
+- Karya : Laporan Sripsi, Aplikasi (Web, Mobile)
+- Berita Acara Serah Terima Karya : Wajib
+Ketentuan Outline :
+1) Pemodelan Pengembangan Aplikasi:
+a. Boleh menggunakan permodelan pengembangan aplikasi yang sesuai dengan yang
+ada dalam model SDLC.
+b. Boleh menggunakan bahasa pemrograman apa saja yang dikuasai oleh mahasiswa
+c. Pemodelan aplikasi menggunakan OOP maka pemodelan yang dipakai UML.
+d. Pemodelan aplikasi menggunakan pemrograman terstruktur pemodelan yang dipakai
+boleh menggunakan DFD.
+e. Game mobile disesuaikan dengan pemodelan yang digunakan minimal
+menggunakan UML.
+f. Jika aplikasi menggunakan database maka menggunakan ERD untuk
+menggambarkan pemodelan relation.
+g. Dalam pengujian aplikasi mahasiswa boleh menggunakan metode testing yang
+sesuai dengan aplikasi yang diuji.
+2) Mahasiswa wajib melakukan riset
+3) Surat Keterangan Riset bersifat wajib.
+4) Sumber Referensi (Jurnal) 10 buah wajib ditunjukan saat sidang.
+_______________________________________________________________________
+B. Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan Dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 1
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 5 ---
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Identifikasi Masalah
+1.3. Perumusan Masalah
+1.4. Batasan Masalah
+1.5. Maksud dan Tujuan Peneltian
+1.6. Manfaat Penelitian
+BAB II LANDASAN TEORI
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+BAB III METODE PENELITIAN
+3.1. Teknik Pengumpulan Data
+3.2. Metode Perancangan Perangkat Lunak
+BAB IV PERANCANGAN
+4.1. Analisis Kebutuhan
+4.2. Rancangan Perangkat Lunak
+4.3. Implementasi
+4.3.1. Prototype
+4.3.2. User Interface
+4.4. Pengujian
+4.4.1. Deskripsi Pengujian
+4.4.2. Skenario Pengujian
+4.4.3. Hasil Pengujian
+4.5. Support
+4.5.1. Spesifikasi File
+4.5.2. Spesifikasi Hardware
+4.5.3. Hosting
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran-saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET*
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Code Program
+Lampiran 2. Rincian Hosting (tempat, biaya, dan waktu hosting)
+Lampiran 3. Surat Serah Terima Aplikasi
+Lampiran 4. Bukti Submit Artikel Ilmiah
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 2
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 6 ---
+Catatan:
+1. Mahasiswa wajib melakukan riset dan surat riset wajib dibawa pada saat ujian
+sidang.
+2. Sumber Referensi (Jurnal) 10 buah wajib dibawa pada saat sidang.
+3. Latar Belakang Masalah
+Berisi fakta permasalahan yang ada di perusahaan, di perkuat dengan minimal 1 kutipan
+jurnal penelitianyang terdahulu. Jurnal yang digunakan harus memiliki Nama Jurnal dan
+ISSN atau Vol Number.
+4. Perancangan
+Perancangan dapat dilakukan membuat rancang bangun interface dan harus dibantu
+dengan alat pengujian rancangan.
+5. Tinjauan Pustaka
+Berisi tentang semua teori-teori yang berhubungan dengan skripsi yang akan dibahas
+dapat diambil dari buku-buku dan sejumlah jurnal.
+6. Penelitian Terkait
+Berisi tentang penelitian yang terkait dengan permasalah yang diangkat yang diambil dari
+sejumlah jurnal yang membahas tentang permasalahan yang memiliki bahasan yang
+identik dengan judul bahasan.
+7. Analisis Kebutuhan
+Pada bab 4, menjelaskan tentang kebutuhan fungsional (software dapat melakukan apa
+saja), akan
+diterapkan di mana dan interface (antar muka) apa saja yang akan ada di dalam sistem
+yang akan dibuat, disertai dengan penggambaran use case diagram dan activity diagram
+yang terkait dengan proses bisnis yang diceritakan
+8. Rancangan Perangkat Lunak
+Menceritakan kegiatan utama dari masalah yang di angkat dalam 1 paragraph. Gunakan
+aplikasi UML seperti Activity Diagram.
+a. Database
+Menggambarkan tabel-tabel yang ada di program beserta dengan relasi dan tipe
+datanya. Dalam
+penggambarannya boleh menggunakan Data Model atau Entity Relationship
+Diagram (lihat
+Petunjuk Teknis Penyusunan Tugas Akhir)
+⮚ Jika menggunakan Data Model maka harus menggambarkan Logical Data
+Model dan Physical
+Data Model (lihat contoh di Petunjuk Teknis Penyusunan Tugas Akhir)
+⮚ Jika menggunakan Entity Relationship Diagram (ERD) maka harus
+menggambarkan ERD, LRS dan juga spesifikasi filenya
+b. Software Architecture
+⮚ Jika program yang dibuat adalah pemrograman berorientasi objek (oop), pada
+pada tahapan ini
+menggambarkan class diagram, sequence diagram, component diagram,
+dan deployment diagram (terkait dengan program yang di buat dan yang
+hanya berhubungan dengan proses bisnis sistem saja)
+⮚ Jika program yang dibuat adalah pemprogram terstruktur, pada tahapan
+ini menggambarkan deployment diagram, dan component
+diagram(terkait dengan program yang dibuat dan yang hanya
+berhubungan dengan proses bisnis sistem saja)
+c. User Interface
+Menampilkan desain antar muka form-form yang akan dibuat
+d. Code Generation
+⮚ Jika program yang dibuat adalah pemrograman berorientasi objek
+(oop), pada tahapan ini
+menampilkan hasil listing program hasil generate dari
+class-class yang di buat
+⮚ Jika program yang dibuat adalah pemprogram terstruktur, pada tahapan
+ini menampilkan listing program pada form yang terkait dengan proses
+bisnis utamanya
+9. Implementasi
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 3
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 7 ---
+Bagian ini berisi hasil implementasi rancangan wireframe dan hasil user
+interface aplikasi.
+10. Testing
+Menggunakan unit testing atau menggunakan aplikasi bantu atau yang lainnya
+untuk digunakan dalam pengujiannya.
+11. Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada dan berisi
+tentang kelebihan dan kekurangan sistem yang dibuat.
+12. Saran-saran
+Berisi tentang solusi tentang kelemahan sistem yang dibuat dan juga dalam
+pembahasan saran melihat
+dari aspek manajerial, aspek sistem dan aspek penelitian (pembahasan)
+selanjutnya.
+13. Rancangan web tidak boleh menggunakan cms/blog kecuali dengan
+menggunakan framework
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 4
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 8 ---
+C. Penjelasan Outline
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang
+Berisi fakta permasalahan yang ada di perusahaan, di perkuat dengan kutipan
+jurnal penelitian yang terdahulu.
+Berikut ini hanya contoh penulisan latar belakang masalah, silahkan sesuaikan dengan
+kasus yang akan dibahas :
+CV Kasih Sayang merupakan toko yang bergerak dalam bidang pejualan retail
+produk-produk kecantikan. Kendala yang dihadapi oleh CV Kasih Sayang dalam
+memasarkan produknya adalah bagaimana cara memperluas area pemasaran agar
+dapat menjual produk mereka baik didalam maupun luar daerah. Saat ini CV. Kasih
+Sayang hanya memanfaatkan media kertas yaitu dengan cara mencetak famplet,
+brosur ataupun katalog yang nantinya akan disebarkan oleh karyawan CV. Kasih
+Sayang ke daerah sekitar dimana CV Kasih Sayang berada (Aryanto, 2022).
+Menurut (Aryanto, 2022) Toko Indah Jaya Furniture mempunyai permasalahan
+bagaimana caranya untuk memperluas dan mendapatkan pelanggan baik didalam
+maupun diluar daerah. Untuk memecahkan permasalahan diatas, toko Indah Jaya
+Furniture ingin membangun sistem penjualan online (e-commerce) untuk
+mempromosikan produk yang dibuat oleh toko Indah Jaya Furniture. Saat ini
+internet telah menjadi salah satu infrastruktur komunikasi yang termurah dan
+jangkauan komunikasi yang luas dan tanpa batas, maka internet sering digunakan
+sebagai media alternatif untuk menjalankan suatu usaha maupun bisnis.
+1.2. Identifikasi Permasalahan
+Mengidentifikasikan masalah yang terjadi diperusahaan yang di riset. Identifikasi
+masalah harus lebih dari satu permasalahan yang ditemukan. Penelitian dilakukan
+jika menemukan permasalahan yang akan diselesaikan dengan metode pemecahan
+masalah, bisa berbentuk algorithma, model, metode yang mengandung penyelesaian
+secara ilmiah.
+Berikut ini hanya contoh penulisan identifikasi masalah, silahkan sesuaikan dengan
+kasus yang akan dibahas :
+1. Sistem penjualan produk kecantikan yang saat ini berjalan dirasa kurang efektif
+karena hanya memanfaatkan media kertas yaitu dengan mencetak brosur,
+famplet ataupun katalog dirasakan kurang efektif.
+2. Laporan stok barang yang masih manual kurang
+mendukung prosedur penjualan.
+3. Lambatnya perkembangan perusahaan karena kurangnya promosi perusahaan
+kepada masyarakat sehingga tidak semua kalangan masyarakat mengenal
+perusahaan ini.
+1.3. Perumusan Masalah
+Rumusan masalah menggunakan kalimat tanya 5W+1H didepan kalimat yang
+digunakan sebagai rumusan, dan jumlah rumusan masalah harus sama dengan
+identifikasi masalah yang ditemukan. Rumusan masalah sebagai bentuk gambaran
+solusi sederhana dari penyelesaian. Seperti kalimat bagaimana memberikan
+gambaran bahwa yang dibutuhkan adalah metode penyelesaian terhadap
+permasalahan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 5
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 9 ---
+Contoh: Bagaimana pengembangan system aplikasi yang akan dibangun untuk
+pendeteksian suhu panas agar pintu dapat secara otomatis membuka dan menutup.
+1.4. Batasan Massalah
+Berisi tentang lingkup permasalahan yang diangkat sejauh mana scope yang akan
+dilakukan, sesuaikan dengan pembahasan riil dari judul skripsi. Batasan masalah
+mengikat kepada poin-poin utama terhadap pembahasan yang akan ditunjukan dalam
+skripsi dan sifatnya selalu focus dan mengrucut.
+1.5. Maksud dan Tujuan Penelitian
+Berisi tentang maksud dan tujuan dari penelitian yang dilakukan dalam pembuatan
+skripsi. Maksud dan tujuan harus dipisahkan, maksud bersifat jamak artinya boleh
+lebih dari satu poin. Misalnya yang berkaitan dengan maksud dari penulisan skripsi
+atau maksud dari penerapan metode yang akan diangkat, atau maksud lainnya.
+Sedangkan tujuan hanya sebagai syarat kelulusan skripsi di instansi tertentu.
+1.6. Manfaat Penelitian
+Berisi tentang manfaat dari hasil penelitian yang berguna bagi individu ataupun
+rangancangan yang akan dibuat misalnya manfaat bagi penulis, manfaat bagi tempat
+riset, manfaat bagi perkembangan untuk sumbangsih dunia pengetahuan, dan lainnya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 6
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 10 ---
+BAB II
+LANDASAN TEORI
+2.1. Tinjauan Pustaka
+Berisi tentang semua teori-teori yang berhubungan dengan skripsi yang akan dibahas,
+bisa dalam bentuk teori murni maupun teori terapan. Teori murni adalah teori yang
+belum dapat digunakan dalam pembahasan permasalahan kareana berisi teori dasar,
+sedangkan teori terapan adalah teori yang dapat diimplementasikan penggunaannya
+untuk penyelesaian pada bagian tertentu. Tinjaun pustaka dapat diambil dari beberapa
+sumber seperti buku-buku, sejumlah jurnal, skripsi, thesis atau sumber lainnya yang
+dapat dijadikan sebagai citasi kandungan skripsi.
+Berikut ini hanya contoh penulisan Tinjauan Pustaka, silahkan sesuaikan dengan
+kasus yang akan dibahas :
+A. Konsep Dasar Sistem Informasi
+Menurut Ebert dan Griffin dalam (Kadir, 2003) disebutkan bahwa manajemen Informasi
+adalah sebagai operasi-operasi internal yang mengatur sumber daya informasi dalam
+perusahaan untuk mengatur kinerja dan bisnis.
+B. E-Commerce
+(dapat dicitasi dari sumber tertentu).
+C. Unified Modelling Language (UML)
+(dapat dicitasi dari sumber tertentu).
+D. Entity Relationship Diagram (ERD)
+(dapat dicitasi dari sumber tertentu).
+Dst....... disesuaikan dengan kebutuhan skripsi yang akan dibahas
+2.2. Penelitian Terkait
+Berisi tentang kutipan minimal dari lima jurnal yang terkait dan mendukung dari
+ermasalahan yang diangkat. Penelitian terkait diambil dari jurnal dengan terbitan
+terbaru dengan waktu penerbitan lima tahun terakhir dari waktu pembuatan skripsi.
+Berikut ini hanya contoh penulisan Penelitian Terkait, silahkan sesuaikan dengan
+kasus yang akan dibahas :
+Kurikulum Bahasa Inggris sebagai muatan lokal yang ada bila dicermati
+masih banyak kelemahannya. Metode pengajaran Bahasa Inggris yang di ajarkan
+tidak sesuai untuk perkembangan anak usia 6–12 tahun yang seharusnya
+diperkenalkan melalui kegiatan yang sesuai dengan kegiatan di dunia anak.
+Misalnya, belajar kosakata dan kalimat sederhana tentang apa yang ada di
+sekitarnya atau belajar sambil menggambar, menyanyi, bermain, dan bercerita.
+Tetapi yang terjadi di adalah anak di minta untuk menerjemahkan kalimat- kalimat
+yang sulit, mencatat tata bahasa dengan istilah yang tidak dimengerti oleh siswa,
+dan mengerjakan pekerjaan rumah yang sering tidak jelas perintahnya sehingga ada
+jawaban yang rancu (Kasihani, 2002).
+Metode Pembelajaran Bahasa Inggris di Sekolah Dasar yang ada sekarang ini
+secara umum hanya menggunakan metode ceramah dan kurang menggunakan alat
+pendukung lain selain buku. Metode seperti ini di nilai kurang efektif dalam
+mengembangkan potensi yang di miliki oleh anak. Karena itu di perlukan inovasi
+dalam pembelajaran agar proses belajar mengajar akan lebih menarik (I Nyoman,
+2008).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 7
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 11 ---
+BAB III
+ANALISIS DAN PERANCANGAN APLIKASI
+3.1. Teknik Pengumpulan Data
+Memberikan gambaran bagaiamana teknik pengumpulan data yang akan dan telah
+dilakukan dalam peroses pembuatan skripsi. Beberapa teknik pengumpulan data yang dapat
+dilakukan seperti observasi, wawancara, studi pustaka, studi banding, kuesioner, dan lain
+sejenisnya.
+3.1. Metode Perancangan Perangkat Lunak
+Memberikan gambaran tentang-langkah ataupun tahapan-tahapan kegiatan
+penelitian yang dilakukan, tahapan penelitian dibuat secara berurutan secara sequence.
+Metode perancangan perangkat lunak dapat dibantu dengan gambar dalam bentuk
+flowchart yang memberikan gambaran secara jelas terhadap segala aktivitas yang akan
+dilakukan yang menunjang akan pemahaman penelitian.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 8
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 12 ---
+BAB IV
+PERANCANGAN
+Di dalam Petunjuk Teknis Penyusunan Tugas Akhir ini yang akan dicontohkan adalah
+tentang sistem penjualan online, dan bentuk contoh berikut tidak mengikat, silahkan
+sesuaikan dengan kasus yang dibahas.
+4.1. Analisis Kebutuhan
+Analisis kebutuhan adalah kebutuhan pada sistem yang merupakan layanan dalam
+aplikasi yang harus disediakan, serta gambaran proses dari reaksi sistem terhadap
+masukan sistem dan yang akan dikerjakan oleh system yang digambarkan dalam
+konsep OOP atau pemrograman terstruktur.
+A. Tahapan Analisis
+Sistem e-commerce adalah sistem penjualan secara online berbasis web, dimana
+penjual dan pembeli tidak bertatap muka secara langsung. Calon pembeli
+melakukan pembelian melalui media browser. Berikut ini spesifikasi kebutuhan
+(system requirement) dari sistem e-commerce;
+Halaman Front-page User:
+A1. User bisa memilih barang yang akan dibeli dan ditambahkan ke keranjang
+belanja. A2. User bisa melakukan filter barang berdasarkan kategori.
+A3. User melakukan check out
+A4. User bisa melakukan registrasi
+A5. Sistem memfasilitasi pemilihan kurir pengiriman dan metode pembayaran
+barang. A6. User dapat login dengan account yang telah dibuat apabila
+belanja dilain hari.
+A7. Sistem mengirimkan rincian pembelian via email. A8. User bisa melakukan
+konfirmasi pembayaran.
+Halaman Administrasi:
+B1. Admin dapat mengelola data barang.
+B2. Admin dapat mengelola data transaksi penjualan.
+B3. Admin dapat mengelola laporan penjualan.
+B4. Admin dapat mengelola data account.
+B. Use Case Diagram
+Untuk penggambaran use case diagram, dalam Petunjuk Teknis Penyusunan
+Tugas Akhir ini akan digambarkan dengan 2 cara. Silahkan dipilih mana cara
+yang dianggap lebih mudah. Yang digambarkan hanya yang terkait dengan
+proses bisnis utamanya saja.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 9
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 13 ---
+Penggambaran Use case Diagram Model Pertama :
+Penggambaran dengan melihat secara keseluruhan fungsi-fungsi yang ada pada sistem.
+1. Use Case Diagram Belanja Online Halaman User.
+Gambar IV.1.
+Use Case Diagram Belanja Online Halaman User
+Deskripsi Use Case Diagram Penjualan Online Halaman User:
+Tabel IV. 1
+Deskripsi Use Case Diagram Penjualan Online Halaman User
+Use Case Name Checkout
+Requirements A3, A4, A5
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 10
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 14 ---
+Goal User dapat melakukan pembelian secara online via
+web.
+Pre-conditions User telah memilih barang
+Post-conditions System mengirim rincian faktur penjualan via email
+Failed end condition User membatalkan checkout. Kemungkinan user
+ingin menambah barang, atau membatalkan
+pembelian.
+Primary Actors User
+Main Flow / Basic Path 1. User memilih icon checkout.
+2. System menampilkan rincian belanja.
+3. User menyetujui dan melanjutkan.
+4. System mengecek apakah user sudah terdaftar atau
+belum. Jika belum makan system akan
+menampilkan halaman registrasi. Jika sudah
+system akan menampilkan halaman alamat
+pengiriman.
+5. User memasukan alamat pengiriman, dan
+melanjutkan.
+6. System menampilkan pilihan jasa kurir
+pengiriman dan biayanya.
+7. User memilih jasa kurir pengiriman dan
+melanjutkan.
+8. System menampilkan pilihan metode
+pembayaran.
+9. User memilih metode pembayaran dan
+melanjutkan.
+10. System memproses penjualan dan mengirimkan
+rincian penjualan ke email user.
+Invariant A: A9. User memilih metode pembayaran dengan
+menggunakan kartu kredit.
+A10. System menampilkan pilihan jenis kartu kredit.
+A11. User memilih jenis kartu kredit dan memasukan
+nomor kartu kredit.
+A12. System memverifikasi kartu kredit.
+A13. Jika valid system mendebet kartu kredit.
+A14. Jika tidak valid system kembali ke halaman
+pemilihan metode pembayaran.
+Catatan :
+Penggambaran use case dan penjelasan deskripsi usecase cukup pada tahap Sea Level nya
+aja
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 11
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 15 ---
+2. Use Case Diagram Penjualan Online Halaman Admin.
+Gambar IV.2.
+Gambar Use Case DiagramPenjualan Online
+Tabel IV.2
+Deskripsi Use Case Mengelola Data Barang
+Use Case Name Mengelola Data Barang
+Requirements Ad min melakukan login
+B 1Us
+Goal Admin dapat mengelola keterkaitan terhadap barang
+(Transaksi. Laporan, dan Account)
+A A d m i n d a p a t m e n a m b a h , m e n g e d i t d a n m e n g h a p u s
+Pre-conditions d K a e t t ae r s b e a d r i aa a n n g .barang
+A d m i n t e l a h l o g i n
+Post-conditions Proses transaksi pembelian atas barang siap terpenuhi.
+D a t a b a r a n g t e r s i m p a n , t e r u p d a t e , a t a u t e r h a p u s
+Failed end condition Kerusakan barang akan dilakukan rejeksion atau pembatal an.
+G a g a l m e n y i m p a n , m e n g u p d a t e a t a u m e n g h a p u s
+Primary Actors Admin
+AA d m i n i s t r a t o r
+Main Flow / Basic Path 1. Sebelum terjadi transaksi admin terlebih dahulu melakukan
+login.
+2. Transaksi penjualan akan berjalan setelah terjadi proses
+penjualan.
+3. Penyiapan laporan dilakukan setelah selesai seluruh transaksi
+yang berkaitan dengan barang.
+4. Pengolahan berupa penambahan dan penggantian accaount
+dapat dilakukan pada awal waktu, sebelum transaksi
+dilaksanakan.
+1 . A d m i n m e l i h a t d a f t a r b a r a n g .
+2 . A d m i n m e m i l i h t o m b o l “ A d d ” .
+3 . S y s t e m m e n a m p i l k a n f o r m d a t a b a r a n g .
+4 . A d m i n m e n g i n p u t d a t a b a r a n g b a r u .
+5 . A d m i n m e m i l i h t o m b o l “ S a v e ” .
+6 . S y s t e m m e n y i m p a n d a t a b a r a n g .
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 12
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 16 ---
+7 . S y s t e m m e n u t u p f o r m d a t a b a r a n g .
+Alternate Flow / Invariant A A2. Admin mengetikan nama barang atau kode barang.
+A3. Admin memilih tombol “Search”.
+A4. System menampilkan data barang yang dicari.
+A5. Admin memilih tombol “Edit”.
+A5. System menampilkan form data barang.
+A6. Admin mengedit data barang. Kembali ke nomor
+5.
+Invariant B B2. Admin memilih barang.
+B3. Admin memilih tombol Hapus.
+B4. System menampilkan dialog konfirmasi penghapusan.
+B5. Admin memilih tombol “Yes”.
+B6. System menghapus data barang.
+Catatan :
+Pada gambar IV.2, Sea Level use case yang digambarkan ada 4 use case, yaitu mengelola
+data barang,
+mengelola data transaksi penjualan, mengelola laporan penjualan, dan mengelola data
+account. Maka, untuk penggambaran deskripsi use case harus di lanjutkan untuk Sea
+Level use case yang lain.
+b. Deskripsi Use Case Mengelola Data Transaksi Penjualan (Buatkan dengan
+rancangan desain dan tampilan yang berbeda-beda)
+c. Deskripsi Use Case Mengelola Laporan Penjualan (Buatkan dengan rancangan dan
+desain yang berbeda-beda berdasarkan pengembangan masing-masing)
+d. Deskripsi Use Case Mengelola Data Account (Buatkan dengan rancangan dan desain
+yang unik dengan konsep yang lebih baik).
+Penggambaran Use case Diagram Model Kedua :
+Penggambaran use case dengan menggambarkan per-fungsi dari sistem dengan
+membuat package diagram nya terlebih dahulu. Penggambaran use case diagram dan
+deskripsi use case nya, tergantung dengan package diagram yang dibuat. Yang
+dicontohkan pada outline skripsi ini adalah hanya dari sisi halaman admin, jika ada
+halaman user, silahkan dibuat dan digambarkan package diagram dan use case
+diagramnya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 13
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 17 ---
+1. Package Diagram Halaman Admin.
+Gambar IV.3.
+Package Diagram Use Case Halaman Admin
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 14
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 18 ---
+2. Use Case Diagram Mengelola Data Barang.
+Gambar IV.4.
+Detail Use Case Diagram Mengelola Data Barang
+Deskripsi Use case Mengelola Data Barang
+Tabel IV.3
+Deskripsi use case Diagram Mengelola Data arang
+Use Case Name Mengelola Data Barang
+Requirements B1
+Goal Admin dapat menambah, mengedit dan menghapus
+data barang.
+Pre-conditions Admin telah login
+Post-conditions Data barang tersimpan, terupdate, atau terhapus
+Failed end condition Gagal menyimpan, mengupdate atau menghapus
+Primary Actors Administrator
+Main Flow / Basic Path 1. Admin melihat daftar barang.
+2. Admin menambah data barang
+3. Admin menyimpan data barang.
+Alternate Flow / Invariant 1 2a. Admin mengedit data barang.
+Invariant 2 2b. Admin menghapus data barang.
+Catatan :
+*Untuk selanjutnya silahkan dilanjutkan membuat use case diagram dan deskripsi use
+case sesuai dengan package diagram yang dibuat
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 15
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 19 ---
+1. Use Case Diagram dan Deskripsi Use CaseMengelola Data Transaksi Penjualan
+2. Use Case Diagram dan Deskripsi Use CaseMengelola Laporan Penjualan
+3. Use Case Diagramdan Deskripsi Use CaseMengelola Data Account
+C. Activity Diagram
+Dalam pembuatan activity diagram, perhatikan hal-hal berikut ini:
+a. Penggambaran activity diagram boleh digambarkan dengan partisi berdasarkan
+actor, atau tanpa partisi actor.
+b. Jika tanpa menggunakan partisi actor, untuk penggambaran activity diagramnya
+dilihat dari salah satu actor yang paling dominan yang terkait dengan proses bisnis
+utamanya
+Berikut contoh dari kedua model penggambaran activity diagram. Silahkan dipilih
+salah satunya yang dianggap mudah dalam penggambarannya
+Contoh Gambar Activity Diagram Tanpa Partisi Actor
+Gambar IV.5.
+Activity Diagram Belanja Online Halaman FrontPage
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 16
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 20 ---
+2. Activity DiagramAdmin Mengelola Data Barang
+Gambar IV.6.
+Activity Diagram Admin Mengelola Data Barang
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 17
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 21 ---
+Contoh Gambar Activity Diagram Dengan Partisi Actor
+1. Activity Diagram Belanja Online Halaman Front Page
+Gambar IV.7.
+Activity Diagram Belanja Online Halaman Front Page dengan Partisi Actor
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 18
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 22 ---
+2. Activity Diagram Belanja Online Halaman Admin
+Gambar IV.8.
+Activity Diagram Admin dengan Partisi Actor
+4.2.1. Database
+Menggambarkan hubungan antar tabel yang dibuat beserta relasi antar
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 19
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 23 ---
+tabel. Dalam penggambarannya boleh menggunakan Data Model atau Entity
+Relationship Diagram. Jika menggambarkan dengan ER-Diagram, maka harus
+membuat spesifikasi file nya.
+Silahkan pilih salah satu cara yang dianggap mudah dalam penggambarannya.
+A. Contoh penggambaran database dengan menggunakan Data Modelling
+Jika menggunakan Data Model maka harus menggambarkan Logical Data
+Model dan Physical Data Model. Berikut ini hanya contoh penggambaran Data
+Model dengan Menggunakan Logical data Model dan Physical Data Model.
+1. Logical Data Model.
+Gambar IV.9.
+Logical Data Model (UML Notation) Penjualan Online
+2. Physical Data Model
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 20
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 24 ---
+Gambar IV.9.
+Physical Data Model (Information Engineering Notation) Penjualan Online
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 21
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 25 ---
+B. Contoh Penggambaran Database Dengan Menggunakan Entity Relationship-
+Diagram
+1. Entity Relationship Diagram
+Gambar IV.10.
+Entity Relationship Diagram Penjualan Online
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 22
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 26 ---
+2. Logical Record Structure
+Gambar IV.11.
+Logical Record Structure Penjualan Online
+3. Spesifikasi File
+a. Spesifikasi File Tabel Pelanggan
+Nama Database : DbPenjualanOnline
+Nama File : Tabel Pelanggan
+Akronim : tbpelanggan.myd
+Tipe File : File Master
+Akses File : Random
+Panjang Record : 77 Byte
+Kunci Field : IdPembeli
+Tabel IV.4.
+Spesifikasi File Tabel Pelanggan
+2.3. Software Architecture
+Untuk penggambaran software architecture, perhatikan hal berikut ini:
+b. Jika program yang dibuat adalah pemrograman berorientasi objek (oop), pada
+tahapan ini menggambarkan class diagram, sequence diagram, component
+diagram, dan deployment diagram (terkait dengan program yang di buat
+dan yang hanya berhubungan dengan proses bisnis saja).
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 23
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 27 ---
+c. Jika program yang dibuat adalah pemprogram terstruktur, pada tahapan
+ini menggambarkan deployment diagram, dan component diagram (terkait
+dengan program yang di buat dan yang hanya berhubungan dengan proses
+bisnis saja).
+Berikut contoh dari masing-masing diagram yang akan dibuat :
+A. Class Diagram
+Berikut ini adalah contoh gambar class diagram dari sistem penjualan online
+Berikut ini adalah objek-objek yang teridentifikasi dari sistem belanja online:
+1. Barang
+2. Kategori
+3. Pelanggan
+4. Pesanan
+5. Keranjang Belanja
+Gambar IV.12
+Class Diagram Sistem Penjualan Online
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 24
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 28 ---
+B. Sequence Diagram
+Untuk Penggambaran Sequence diagram, yang digambarkan berdasarkan dari fish
+level pada use case diagram.
+1. Sequence Diagram Halaman User
+a. Sequence Diagram Pilih Barang
+Gambar IV.13.
+Sequence Diagram Pilih Barang
+b. Sequence Diagram Tambah ke Keranjang Belanja
+Gambar IV.14
+Sequence Diagram Tambah Ke Keranjang Belanja
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 25
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 29 ---
+c. Sequence Diagram Checkout
+Gambar IV.15.
+Sequence Diagram Checkout
+*Selanjutnya silahkan disesuaikan dengan program yang dibuat
+2. Sequence Diagram Halaman Admin
+a. Sequence Diagram Admin Mengelola Data Barang
+b. Sequence Diagram Admin engelola Data Account.
+c. Sequence Diagram Admin Mengelola Transaksi Penjualan
+d. Sequence Diagram Admin Mengelola Laporan Penjualan.
+*Selanjutnya silahkan disesuaikan dengan program yang dibuat
+B. Component Diagram
+Component diagram menggambarkan struktur dan hubungan antar komponen
+piranti lunak, termasuk ketergantungan diantaranya. Component Diagram juga
+dapat berupa interface yang berupa kumpulan layanan yang disediakan oleh
+komponen untuk komponen lainnya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 26
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 30 ---
+Gambar IV.16.
+Component Diagram Sistem Penjualan Online
+Contoh 2 :
+Gambar IV.17.
+Component Diagram Sistem Penjualan Online
+C. Deployment Diagram
+Menggambarkan tata letak sistem secara fisik, yang menampakkan bagian-bagian
+software yang berjalan pada hardware yang digunakan untuk
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 27
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 31 ---
+mengimplementasikan sebuah sistem dan keterhubungan antara komponen
+hardware-hardware tersebut.
+Contoh 1 :
+Gambar IV.18.
+Sistem Penjualan
+Contoh 2:
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 28
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 32 ---
+Gambar IV.19.
+Deployment Diagram Sistem Penjualan Online
+4.1. Rancang Bangun Interface
+Pada tahapan ini akan menjelaskan tentang desain database, desain software
+architecture dan desain interface dari sistem yang sedang dibuat.
+4.2.3. User Interface
+Menggambarkan tampilan program dari sisem usulan.
+Contoh :
+Gambar IV.14.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 29
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 33 ---
+Tampilan Login Customer
+4.3. Implementasi
+Implementasi adalah wujud nyata dari aplikasi yang berhasil dibuat, memang
+seharusnya sudah dapat diterapkan di tempat objek riset, minimal sudah sesuai
+dengan keinginan yang dibutuhkan oleh user melalui hasil wawancara dan hasil
+observasi, tentunya aga sulit hal ini dapat diterapkan pada tempat object riset
+mengingat waktu penelitian dan pembuatan skripsi yang sangat singkat. Dengan
+demikian hasil yang didapat sudah sesuai dengan kebutuhan yang diminta dalam
+outline dan sudah sesuai dengan kebutuhan hasil penelitian.
+4.4. Pengujian
+Untuk pengujian yang dilakukan dapat menggunakan pengujian unit atau
+pengujian black box, artinya jika menggunakan pengujian unit yang diuji adalah
+code program hal ini dapat dilakukan dengan aplikasi katalon studio atau dengan
+menggunakan pengujian behavioral berupa black box yang mengetahui kevalidan
+data dengan menggunakan aplikasi yang telah dibuat.
+4.4.1. Deskripsi pengujian
+Deskripsi pengujian merupakan rangkaian cerita dalam gambaran proses
+yang sangat sederhana yang dapat memberikan masukan kasar tentang apa
+yang dilakukan untuk pengujian.
+4.4.2. Skenario Pengujian
+Prosedur pengunjian merupakan rangkaian kegiatan berupa tahapan yang
+harus dilakukan untuk melakukan proses pengujian mulai dari persiapan,
+proses yang dilakukan dan hasil pengujiannya, hal ini dapat menggunakan
+bantuan berupa table.
+4.4.3. Hasil Pengujian
+Hasil pengujian berupa keputusan yang dijabarkan dengan kata-kata yang
+menjadi bahan yang dapat ditarik sebagai kesimpulan sementara dan dapat
+diambil untuk kesimpulan di bab lima. Hasil pengujian menjadi tolak ukur
+keberhasilan penelitian, apakan mampu memberikan tingkat akurasi output.
+4.5. Suport
+Pada bagian support menjelaskan dukungan terhadap penelitian yang memiliki
+tingkat keunikan dengan penelitian lainnya, baik berupa software, hardware, dan
+web hosting. Tunjukan apa yang menjadi perbedaan terhadap project yang telah
+dibuat dan berbeda dengan lainnya, sehingga kelebihannya dapat diperlihatkan.
+4.5.1. Spesifikasi Software
+Spesifikasi software yang menjelaskan secara rinci tentang perangkat lunak
+yang digunakan dan akan diterapkan dari pembuatan sebuah project ini,
+tentunya yang menjadi support penelitian.
+4.5.2. Spesikasi Hardware
+Spesifikasi hardware yang menjelaskan secara rinci tentang perangkat keras
+yang digunakan dan akan diterapkan dari pembuatan sebuah project ini.
+Tentunya yang menjadi support penelitian.
+4.5.3. Hosting
+Dalam kaitannya dengan support, hosting juga memiliki nilai keunikan
+sebagai kelebihan dari project penelitian, misalnya dari aspek jumlah image
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 30
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 34 ---
+yang dapat dibaca, link aplikasi terhadap coding program yang dapat
+diakses, dan sebagainya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 31
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 35 ---
+BAB V
+PENUTUP
+5.1. Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada dan berisi tentang
+kelebihan dankekurangan sistem yang di buat.
+5.2. Saran-saran
+Berisi tentang solusi tentang kelemahan sistem yang dibuat dan juga dalam
+pembahasan saran melihat dari aspek manajerial, aspek sistem dan aspek penelitian
+(pembahasan) selanjutnya.
+DAFTAR PUSTAKA
+1. Untuk daftar pustaka berisi minimal 10 paper yang disitasi dari jurnal yang sudah
+memiliki OJS, jurnal nasional/internasional tidak terakreditasi/terakreditasi, jurnal
+internasional yang tersimpan dalam database internasional, dan jurnal internasional
+bereputasi, prodisiding seminar nasional/internasional, prosiding seminar internasional
+bereputasi. Akan lebih baiknya diambil dari paper dosen di lingkungan Universitas Bina
+Sarana Informatika.
+2. Referensi buku minimal 5 tahun terakhir, diutamakan karangan dosen Universitas Bina
+Sarana Informatika yang dapat dilihat dalam laman: repository.bsi.ac.id
+3. Apabila penelitian yang dilakukan tidak didapatkan pada point 1 dan 2 mahasiswa dapat
+menggunakan referensi sumber lain.
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET
+HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Code program
+Lampiran 2. Rincian hosting (dimana, biaya, dan lama waktu hosting)
+Lampiran 3. Surat Serah Terima Aplikasi
+Lampiran 4. Bukti Submit Artikel Ilmiah
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 32
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 36 ---
+2. Outline Pemrograman Mobile
+________________________________________________________________________
+A. Kode dan Ketentuan Outline
+Kode Outline : 130
+Nama Outline : Pemrograman Mobile
+Metode Pengerjaan : Individu
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Tidak
+- Karya : Laporan Skripsi, Aplikasi (Mobile)
+- Berita Acara Serah Terima Karya : Wajib
+Ketentuan Outline :
+1. Pemodelan Pengembangan Aplikasi:
+a. Dapat menggunakan permodelan pengembangan aplikasi yang sesuai dengan yang
+ada dalam model SDLC.
+b. Dapat menggunakan bahasa pemrograman apa saja yang dikuasai oleh mahasiswa
+c. Pemodelan aplikasi menggunakan OOP maka pemodelan yang dipakai UML.
+d. Game mobile disesuaikan dengan pemodelan yang digunakan dapat menggunakan
+UML.
+e. Dalam pengujian aplikasi mahasiswa dapat menggunakan metode yang relevan.
+2. Surat Keterangan Riset bersifat wajib.
+_______________________________________________________________________
+B. Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan Dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Identifikasi Masalah
+1.3. Perumusan Masalah
+1.4. Batasan Masalah
+1.5. Maksud dan Tujuan Peneltian
+1.6. Manfaat Penelitian
+BAB II LANDASAN TEORI
+2.3. Tinjauan Pustaka
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 33
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 37 ---
+2.4. Penelitian Terkait
+BAB III METODE PENELITIAN
+3.1. Teknik Pengumpulan Data
+3.2. Prosedur Penelitian
+BAB IV DESAIN PERANCANGAN
+4.1. Analisis Kebutuhan Fungsional
+4.2. Analisis Kebutuhan Non Fungsional
+4.3. Analisis Kebutuhan Pengguna
+4.4. Peralatan Utama
+4.5. Peralatan Pendukung
+4.6. Sistem Berjalan Aplikasi
+4.8. Perancangan Program Aplikasi
+4.9. Implementasi Program Aplikasi
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran-saran
+DAFTAR PUSTAKA
+LEMBAR KONSULTASI BIMBINGAN
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Code Program
+Lampiran 2. Surat Serah Terima Aplikasi
+Lampiran 3. Bukti Submit Artikel Ilmiah
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 34
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 38 ---
+C. Penjelasan Outline Pemrograman Mobile
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Berisi fakta permasalahan yang ada di perusahaan, di perkuat dengan kutipan jurnal
+penelitian yang terdahulu.
+Berikut ini hanya contoh penulisan latar belakang masalah, silahkan sesuaikan
+dengan kasus yang akan dibahas :
+CV Kasih Sayang merupakan toko yang bergerak dalam bidang pejualan retail
+produk-produk kecantikan. Kendala yang dihadapi oleh CV Kasih Sayang dalam
+memasarkan produknya adalah bagaimana cara memperluas area pemasaran agar
+dapat menjual produk mereka baik didalam maupun luar daerah. Saat ini CV. Kasih
+Sayang hanya memanfaatkan media kertas yaitu dengan cara mencetak famplet,
+brosur ataupun katalog yang nantinya akan disebarkan oleh karyawan CV. Kasih
+Sayang ke daerah sekitar dimana CV Kasih Sayang berada.
+Menurut Aryanto dkk (2012) Toko Indah Jaya Furniture mempunyai permasalahan
+bagaimana caranya untuk memperluas dan mendapatkan pelanggan baik didalam
+maupun diluar daerah. Untuk memecahkan permasalahan diatas, toko Indah Jaya
+Furniture ingin membangun sistem penjualan online (e-commerce) untuk
+mempromosikan produk yang dibuat oleh toko Indah Jaya Furniture. Saat ini internet
+telah menjadi salah satu infrastruktur komunikasi yang termurah dan jangkauan
+komunikasi yang luas dan tanpa batas, maka internet sering digunakan sebagai media
+alternatif untuk menjalankan suatu usaha maupun bisnis.
+1.2. Identifikasi Masalah
+Mengidentifikasikan masalah yang terjadi diperusahaan yang di riset. Identifikasi
+masalah harus lebih dari satu permasalahan yang ditemukan. Penelitian dilakukan jika
+menemukan permasalahan yang akan diselesaikan dengan metode pemecahan
+masalah, bisa berbentuk algorithma, model, metode yang mengandung penyelesaian
+secara ilmiah.
+Berikut ini hanya contoh penulisan identifikasi masalah, silahkan sesuaikan
+dengan kasus yang akan dibahas :
+1. Sistem penjualan produk kecantikan yang saat ini berjalan dirasa kurang efektif
+karena hanya memanfaatkan media kertas yaitu dengan mencetak brosur, famplet
+ataupun katalog dirasakan kurang efektif.
+2. Laporan stok barang yang masih manual kurang mendukung prosedur penjualan.
+3. Lambatnya perkembangan perusahaan karena kurangnya promosi perusahaan
+kepada masyarakat sehingga tidak semua kalangan masyarakat mengenal
+perusahaan ini.
+1.3. Rumusan Masalah
+Rumusan masalah menggunakan kalimat tanya 5W+1H didepan kalimat yang
+digunakan sebagai rumusan, dan jumlah rumusan masalah harus sama dengan
+identifikasi masalah yang ditemukan. Rumusan masalah sebagai bentuk gambaran
+solusi sederhana dari penyelesaian. Seperti kalimat bagaimana memberikan gambaran
+bahwa yang dibutuhkan adalah metode penyelesaian terhadap permasalahan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 35
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 39 ---
+Contoh: Bagaimana pengembangan system aplikasi yang akan dibangun untuk
+pendeteksian suhu panas agar pintu dapat secara otomatis membuka dan menutup.
+1.4. Batasan Masalah
+Berisi tentang lingkup permasalahan yang diangkat sejauh mana scope yang akan
+dilakukan, sesuaikan dengan pembahasan riil dari judul skripsi. Batasan masalah
+mengikat kepada poin-poin utama terhadap pembahasan yang akan ditunjukan dalam
+skripsi dan sifatnya selalu focus dan mengrucut.
+1.5. Maksud dan Tujuan Penelitian
+Berisi tentang maksud dan tujuan dari penelitian yang dilakukan dalam pembuatan
+skripsi. Maksud dan tujuan harus dipisahkan, maksud bersifat jamak artinya boleh
+lebih dari satu poin. Misalnya yang berkaitan dengan maksud dari penulisan skripsi
+atau maksud dari penerapan metode yang akan diangkat, atau maksud lainnya.
+Sedangkan tujuan hanya sebagai syarat kelulusan skripsi di instansi tertentu.
+1.6. Manfaat Penelitian
+Berisi tentang manfaat dari hasil penelitian yang berguna bagi individu ataupun
+rangancangan yang akan dibuat misalnya manfaat bagi penulis, manfaat bagi tempat
+riset, manfaat bagi perkembangan untuk sumbangsih dunia pengetahuan, dan lainnya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 36
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 40 ---
+BAB II
+LANDASAN TEORI
+2.1. Tinjauan Pustaka
+Berisi tentang pendeskripsian teori yang melandasi dan sebagai arahan dalam
+pemecahan masalah atau mewujudkan hasil penelitian, dalam hal ini landasan teori
+dapat berupa uraian yang bersifat teoritis, dalam bentuk model ataupun bentuk-bentuk
+representatif yang mengacu pada sumber primer ataupun sumber sekunder, yang
+bersumber dari buku-buku, jurnal, atau sumber lainnya yang berfungsi sebagai
+pengembangan ilmu pengetahuan.
+Berikut ini hanya contoh penulisan Tinjauan Pustaka, silahkan sesuaikan dengan
+kasus yang akan dibahas :
+A. Konsep Dasar Pemrograman mobile.
+(dapat disitasi dari sumber tertentu).
+B. Android
+(dapat disitasi dari sumber tertentu).
+C. Arsitektur Android
+(dapat disitasi dari sumber tertentu).
+D. Android Studio
+(disesuaikan dengan bahasa editor yang digunakan …. (disitasi dari sumber
+tertentu).
+E. Android development Tools (ADT)
+(dapat dicitasi dari sumber tertentu).
+F. Aplikasi Fundamental
+(dapat dicitasi dari sumber tertentu).
+G. Google Map Aplication (API)
+(dapat dicitasi dari sumber tertentu).
+H. Pengertian PHP
+(dapat dicitasi dari sumber tertentu).
+I. Pengertian HTML
+(dapat dicitasi dari sumber tertentu).
+J. XAMPP
+(dapat dicitasi dari sumber tertentu).
+K. Google Map Aplication (API)
+(dapat dicitasi dari sumber tertentu).
+L. JSON (Java Script Object Notation)
+(dapat dicitasi dari sumber tertentu).
+(dan teori lainnya yang pasti akan digunakan dalam penyusunan skripsi, tahanpan
+penyusuan tidak harus mengikuti contoh diatas, tetapi perhatikan mana yang lebih
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 37
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 41 ---
+urgensi itu yang diutamakan).
+2.2. Penelitian Terkait
+Berisi tentang kutipan minimal dari lima jurnal yang terkait dan mendukung dari
+permasalahan yang
+diangkat. Penelitian terkait diambil dari jurnal dengan terbitan terbaru dengan waktu
+penerbitan lima tahun terakhir dari waktu pembuatan skripsi.
+Berikut ini hanya contoh penulisan Penelitian Terkait, silahkan sesuaikan dengan
+kasus yang akan dibahas :
+Kurikulum Bahasa Inggris sebagai muatan lokal yang ada bila dicermati masih banyak
+kelemahannya. Metode pengajaran Bahasa Inggris yang di ajarkan tidak sesuai untuk
+perkembangan anak usia 6–12 tahun yang seharusnya diperkenalkan melalui kegiatan
+yang sesuai dengan kegiatan di dunia anak. Misalnya, belajar kosakata dan kalimat
+sederhana tentang apa yang ada di sekitarnya atau belajar sambil menggambar,
+menyanyi, bermain, dan bercerita. Tetapi yang terjadi di adalah anak di minta untuk
+menerjemahkan kalimat- kalimat yang sulit, mencatat tata bahasa dengan istilah yang
+tidak dimengerti oleh siswa, dan mengerjakan pekerjaan rumah yang sering tidak jelas
+perintahnya sehingga ada jawaban yang rancu (Kasihani, 2020).
+Metode Pembelajaran Bahasa Inggris di Sekolah Dasar yang ada sekarang ini secara
+umum hanya menggunakan metode ceramah dan kurang menggunakan alat
+pendukung lain selain buku. Metode seperti ini di nilai kurang efektif dalam
+mengembangkan potensi yang di miliki oleh anak. Karena itu di perlukan inovasi
+dalam pembelajaran agar proses belajar mengajar akan lebih menarik (I Nyoman,
+2019)
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 38
+P rogram Studi Rekayasa Perangkat Lunak (S1)
+F akultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 42 ---
+BAB III
+METODE PENELITIAN
+3.1. Teknik Pengumpulan Data
+Memberikan gambaran bagaimana teknik pengumpulan data yang akan dan telah dilakukan dalam
+peroses pembuatan skripsi. Data yang diperoleh boleh data primer yaitu data yang didapat secara
+langsung dari hasil penelitian ataupun data sekunder yaitu data yang didapat tidak secara langsung
+dari periset melainkan dari sumber data lainnya seperti organisasi tertentu misalnya dari BPS, LIPI
+atau lainnya.
+3.2. Prosedur Penelitian
+Memberikan gambaran tentang-langkah ataupun tahapan-tahapan kegiatan penelitian yang
+dilakukan, tahapan penelitian dibuat secara berurutan secara sequence. Prosedur penelitian dapat
+dibantu dengan gambar atau image dalam bentuk flowchart yang memberikan gambaran secara
+jelas terhadap segala aktivitas yang akan dilakukan yang menunjang akan pemahaman penelitian.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 39
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 43 ---
+BAB IV
+PERANCANGAN
+Di dalam Petunjuk Teknis Penyusunan Tugas Akhir ini yang akan dicontohkan adalah tentang
+sistem penjualan online, dan bentuk contoh berikut tidak mengikat, silahkan sesuaikan dengan kasus
+yang dibahas.
+4.1. Analisis Kebutuhan
+Analisis kebutuhan adalah kebutuhan pada sistem yang merupakan layanan dalam aplikasi
+yang harus disediakan, serta gambaran proses dari reaksi sistem terhadap masukan sistem dan
+yang akan dikerjakan oleh system yang digambarkan dalam konsep OOP atau pemrograman
+terstruktur .
+A. Tahapan Analisis
+Sistem e-commerce adalah sistem penjualan secara online berbasis web, dimana penjual dan
+pembeli tidak bertatap muka secara langsung. Calon pembeli melakukan pembelian melalui
+media browser. Berikut ini spesifikasi kebutuhan (system requirement) dari sistem e-
+commerce;
+Halaman Front-page User:
+A1. User bisa memilih barang yang akan dibeli dan ditambahkan ke keranjang belanja. A2.
+User bisa melakukan filter barang berdasarkan kategori.
+A3. User melakukan check out
+A4. User bisa melakukan registrasi
+A5. Sistem memfasilitasi pemilihan kurir pengiriman dan metode pembayaran barang. A6.
+User dapat login dengan account yang telah dibuat apabila belanja dilain hari.
+A7. Sistem mengirimkan rincian pembelian via email. A8. User bisa melakukan onfirmasi
+pembayaran.
+Halaman Administrasi:
+B1. Admin dapat mengelola data barang.
+B2. Admin dapat mengelola data transaksi penjualan. B3. Admin dapat mengelola laporan
+penjualan.
+B3. Admin dapat mengelola data account.
+B. Use Case Diagram
+Untuk penggambaran use case diagram, dalam Petunjuk Teknis Penyusunan Tugas Akhir ini
+akan digambarkan dengan 2 cara. Silahkan dipilih mana cara yang dianggap lebih mudah.
+Yang digambarkan hanya yang terkait dengan proses bisnis utamanya saja.
+Penggambaran Use case Diagram Model Pertama :
+Penggambaran dengan melihat secara keseluruhan fungsi-fungsi yang ada pada sistem.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 40
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 44 ---
+1. Use Case Diagram Belanja Online Halaman User.
+Gambar IV.1.
+Use Case Diagram Belanja Online Halaman User
+Deskripsi Use Case Diagram Penjualan Online Halaman User:
+Tabel IV.1
+Deskripsi Use Case Diagram Penjualan Online Halaman User
+Use Case Name Checkout
+Requirements A3, A4, A5
+Goal User dapat melakukan pembelian secara online via
+web.
+Pre-conditions User telah memilih barang
+Post-conditions System mengirim rincian faktur penjualan via email
+Failed end condition User membatalkan checkout. Kemungkinan user
+ingin menambah barang, atau membatalkan
+pembelian.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 41
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 45 ---
+Primary Actors User
+Main Flow / Basic Path 1. User memilih icon checkout.
+2. System menampilkan rincian belanja.
+3. User menyetujui dan melanjutkan.
+4. System mengecek apakah user sudah terdaftar atau
+belum. Jika belum makan system akan
+menampilkan halaman registrasi. Jika sudah
+system akan menampilkan halaman alamat
+pengiriman.
+5. User memasukan alamat pengiriman, dan
+melanjutkan.
+6. System menampilkan pilihan jasa kurir
+pengiriman dan biayanya.
+7. User memilih jasa kurir pengiriman dan
+melanjutkan.
+8. System menampilkan pilihan metode
+pembayaran.
+9. User memilih metode pembayaran dan
+melanjutkan.
+10. System memproses penjualan dan mengirimkan
+rincian penjualan ke email user.
+Invariant A: A9. User memilih metode pembayaran dengan
+menggunakan kartu kredit.
+A10. System menampilkan pilihan jenis kartu kredit.
+A11. User memilih jenis kartu kredit dan memasukan
+nomor kartu kredit.
+A12. System memverifikasi kartu kredit.
+A13. Jika valid system mendebet kartu kredit.
+A14. Jika tidak valid system kembali ke halaman
+pemilihan metode pembayaran.
+Catatan :
+Penggambaran use case dan penjelasan deskripsi usecase cukup pada tahap Sea Level nya aja
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 42
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 46 ---
+2. Use Case Diagram Penjualan Online Halaman Admin.
+Gambar IV.2.
+Gambar Use Case DiagramPenjualan Online
+Tabel IV.2
+Deskripsi Use Case Mengelola Data Barang
+Use Case Name Mengelola Data Barang
+Requirements Ad min melakukan login
+B 1Us
+Goal Admin dapat mengelola keterkaitan terhadap barang
+(Transaksi. Laporan, dan Account)
+AA d m i n d a p a t m e n a m b a h , m e n g e d i t d a n m e n g h a p u s
+Pre-conditions d K a e t t ae r s b e a d r i aa a n n g .barang
+A d m i n t e l a h l o g i n
+Post-conditions Proses transaksi pembelian atas barang siap terpenuhi.
+D a t a b a r a n g t e r s i m p a n , t e r u p d a t e , a t a u t e r h a p u s
+Failed end condition Kerusakan barang akan dilakukan rejeksion atau pembatal an.
+G a g a l m e n y i m p a n , m e n g u p d a t e a t a u m e n g h a p u s
+Primary Actors Admin
+AA d m i n i s t r a t o r
+Main Flow / Basic Path 1. Sebelum terjadi transaksi admin terlebih dahulu melakukan
+login.
+2. Transaksi penjualan akan berjalan setelah terjadi proses
+penjualan.
+3. Penyiapan laporan dilakukan setelah selesai seluruh transaksi
+yang berkaitan dengan barang.
+4. Pengolahan berupa penambahan dan penggantian accaount
+dapat dilakukan pada awal waktu, sebelum transaksi
+dilaksanakan.
+1 . A d m i n m e l i h a t d a f t a r b a r a n g .
+2 . A d m i n m e m i l i h t o m b o l “ A d d ” .
+3 . S y s t e m m e n a m p i l k a n f o r m d a t a b a r a n g .
+4 . A d m i n m e n g i n p u t d a t a b a r a n g b a r u .
+5 . A d m i n m e m i l i h t o m b o l “ S a v e ” .
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 43
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 47 ---
+6 . S y s t e m m e n y i m p a n d a t a b a r a n g .
+7 . S y s t e m m e n u t u p f o r m d a t a b a r a n g .
+Alternate Flow / Invariant A A2. Admin mengetikan nama barang atau kode barang.
+A3. Admin memilih tombol “Search”.
+A4. System menampilkan data barang yang dicari.
+A5. Admin memilih tombol “Edit”.
+A5. System menampilkan form data barang.
+A6. Admin mengedit data barang. Kembali ke nomor
+5.
+Invariant B B2. Admin memilih barang.
+B3. Admin memilih tombol Hapus.
+B4. System menampilkan dialog konfirmasi penghapusan.
+B5. Admin memilih tombol “Yes”.
+B6. System menghapus data barang.
+Catatan :
+Pada gambar IV.2, Sea Level use case yang digambarkan ada 4 use case, yaitu mengelola data barang,
+mengelola data transaksi penjualan, mengelola laporan penjualan, dan mengelola data account.
+Maka, untuk penggambaran deskripsi use case harus di lanjutkan untuk Sea Level use case yang
+lain.
+b. Deskripsi Use Case Mengelola Data Transaksi Penjualan (Buatkan dengan rancangan desain dan
+tampilan yang berbeda-beda)
+c. Deskripsi Use Case Mengelola Laporan Penjualan (Buatkan dengan rancangan dan desain yang
+berbeda-beda berdasarkan pengembangan masing-masing)
+d. Deskripsi Use Case Mengelola Data Account (Buatkan dengan rancangan dan desain yang unik
+dengan konsep yang lebih baik).
+Penggambaran Use case Diagram Model Kedua :
+Penggambaran use case dengan menggambarkan per-fungsi dari sistem dengan membuat
+package diagram nya terlebih dahulu. Penggambaran use case diagram dan deskripsi use case nya,
+tergantung dengan package diagram yang dibuat. Yang dicontohkan pada outline skripsi ini adalah
+hanya dari sisi halaman admin, jika ada halaman user, silahkan dibuat dan digambarkan package
+diagram dan use case diagramnya.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 44
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 48 ---
+1. Package Diagram Halaman Admin.
+Gambar IV.3.
+Package Diagram Use Case Halaman Admin
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 45
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 49 ---
+3. Use Case Diagram Mengelola Data Barang.
+Gambar IV.4.
+Detail Use Case Diagram Mengelola Data Barang
+Deskripsi Use case Mengelola Data Barang
+Tabel IV.3
+Deskripsi use case Diagram Mengelola Data arang
+Use Case Name Mengelola Data Barang
+Requirements B1
+Goal Admin dapat menambah, mengedit dan menghapus
+data barang.
+Pre-conditions Admin telah login
+Post-conditions Data barang tersimpan, terupdate, atau terhapus
+Failed end condition Gagal menyimpan, mengupdate atau menghapus
+Primary Actors Administrator
+Main Flow / Basic Path 1. Admin melihat daftar barang.
+2. Admin menambah data barang
+3. Admin menyimpan data barang.
+Alternate Flow / Invariant 1 2a. Admin mengedit data barang.
+Invariant 2 2b. Admin menghapus data barang.
+Catatan :
+*Untuk selanjutnya silahkan dilanjutkan membuat use case diagram dan deskripsi use case sesuai
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 46
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 50 ---
+dengan package diagram yang dibuat
+1. Use Case Diagram dan Deskripsi Use CaseMengelola Data Transaksi Penjualan
+2. Use Case Diagram dan Deskripsi Use CaseMengelola Laporan Penjualan
+3. Use Case Diagramdan Deskripsi Use CaseMengelola Data Account
+C. Activity Diagram
+Dalam pembuatan activity diagram, perhatikan hal-hal berikut ini:
+a. Penggambaran activity diagram boleh digambarkan dengan partisi berdasarkan actor, atau
+tanpa partisi actor.
+b. Jika tanpa menggunakan partisi actor, untuk penggambaran activity diagramnya dilihat dari
+salah satu actor yang paling dominan yang terkait dengan proses bisnis utamanya
+Berikut contoh dari kedua model penggambaran activity diagram. Silahkan dipilih salah satunya
+yang dianggap mudah dalam penggambarannya
+Contoh Gambar Activity Diagram Tanpa Partisi Actor
+Gambar IV.5.
+Activity Diagram Belanja Online Halaman FrontPage
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 47
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 51 ---
+2. Activity DiagramAdmin Mengelola Data Barang
+Gambar IV.6.
+Activity Diagram Admin Mengelola Data Barang
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 48
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 52 ---
+Contoh Gambar Activity Diagram Dengan Partisi Actor
+1. Activity Diagram Belanja Online Halaman Front Page
+Gambar
+IV.7.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 49
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 53 ---
+Activity Diagram Belanja Online Halaman Front Page dengan Partisi
+Actor
+2. Activity Diagram Belanja Online Halaman Admin
+Gambar IV.8.
+Activity Diagram Belanja Online Halaman Admin dengan Partisi Actor
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 50
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 54 ---
+2. Logical Record Structure
+Gambar IV.11.
+Logical Record Structure Penjualan Online
+3. Spesifikasi File
+a. Spesifikasi File Tabel Pelanggan
+Nama Database : DbPenjualanOnline
+Nama File : Tabel Pelanggan
+Akronim : tbpelanggan.myd
+Tipe File : File Master
+Akses File : Random Panjang
+Record : 77 Byte
+Kunci Field : IdPembeli
+Tabel IV.4.
+Spesifikasi File Tabel Pelanggan
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 51
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 55 ---
+2.3. Software Architecture
+Untuk penggambaran software architecture, perhatikan hal berikut ini :
+b. Jika program yang dibuat adalah pemrograman berorientasi objek (oop), pada tahapan ini
+menggambarkan class diagram, sequence diagram, component diagram, dan deployment diagram
+(terkait dengan program yang di buat dan yang hanya berhubungan dengan proses bisnis saja)
+c. Jika program yang dibuat adalah pemprogram terstruktur, pada tahapan ini menggambarkan
+deployment diagram, dan component diagram (terkait dengan program yang di buat dan yang hanya
+berhubungan dengan proses bisnis saja)
+Berikut contoh dari masing-masing diagram yang akan dibuat :
+A. Class Diagram
+Berikut ini adalah contoh gambar class diagram dari sistem penjualan online
+Berikut ini adalah objek-objek yang teridentifikasi dari sistem belanja online:
+1. Barang
+2. Kategori
+3. Pelanggan
+4. Pesanan
+5. Keranjang Belanja
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 52
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 56 ---
+Gambar IV.12
+Class Diagram Sistem Penjualan Online
+B. Sequence Diagram
+Untuk Penggambaran Sequence diagram, yang digambarkan berdasarkan dari fish level pada use case
+diagram.
+1. Sequence Diagram Halaman User
+a. Sequence Diagram Pilih Barang
+Gambar IV.13.
+Squence Diagram Pilih Barang
+b. Sequence Diagram Tambah Ke Keranjang Belanja
+Gambar IV.14.
+Squence Diagram Tambah Ke Keranjang Belanja
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 53
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 57 ---
+c. Sequence Diagram Checkout
+Gambar IV.15.
+Squence Diagram Checkout
+*Selanjutnya silahkan disesuaikan dengan program yang dibuat
+2. Sequence Diagram Halaman Admin
+a. Sequence Diagram Admin Mengelola Data Barang
+b. Sequence Diagram Admin Mengelola Data Account
+c. Sequence Diagram Admin Mengelola Transaksi Penjualan
+d. Sequence Diagram Admin Mengelola Laporan Penjualan
+*Selanjutnya silahkan disesuaikan dengan program yang dibuat
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 54
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 58 ---
+B. Component Diagram
+Component diagram menggambarkan struktur dan hubungan antar komponen piranti lunak, termasuk
+ketergantungan diantaranya. Component Diagram juga dapat berupa interface yang berupa kumpulan
+layanan yang disediakan oleh komponen untuk komponen lainnya.
+Gambar IV.16.
+Component Diagram Sistem Penjualan Online
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 55
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 59 ---
+C. Deployment Diagram
+Menggambarkan tata letak sistem secara fisik, yang menampakkan bagian-bagian software yang
+berjalan
+pada hardware yang digunakan untuk mengimplementasikan sebuah sistem dan keterhubungan
+antara komponen hardware-hardware tersebut.
+Gambar IV.17.
+Deployment Diagram Sistem Penjualan Online
+D, User Interface
+Menggambarkan tampilan program dari sisem usulan.
+Contoh :
+Gambar IV.18.
+Splashscreen Aplikasi Mobile
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 56
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 60 ---
+4.2. Analisis Kebutuhan Non Fungsional
+Analisa kebutuhan non fungsional dapat digunakan sebagai suatu bentuk kebutuhan berupa
+perangkat yang dibutuhkan sistem dan dapat terbagi dalam hal untuk pengembangan atau
+penggunaannya.
+4.2.1. Perangkat Keras
+Menjelaskan tentang perangkat keras yang digunakan sebagai pendukung skripsi, contoh
+Laptop, SmartPhone, dan sebagainya.
+4.2.2. Perangakat Lunak
+Menjelaskan tentang perangkat lunak yang digunakan sebagai pendukung skripsi, contoh
+Android Studio, MySQLite, Google Colabs dan sebagainya.
+4.3. Analisis Kebutuhan Pengguna (User).
+Analisa kebutuhan Kebutuhan sumber daya manusia atau pengguna adalah orang yang akan
+terlibat dalam pembuatan dan implementasi aplikasi kamus istilah it berbasis Android ini.
+Diantaranya adalah :
+4.3.1. Sistem Analis: Orang yang bertugas untuk menganalisis sistem dengan mempelajari
+masalah-masalah yang timbul dan menentukan kebutuhan-kebutuhan dan berapa
+personilnya.
+4.3.2. Programmer: Orang yang bertanggung jawab atas penelitian, perencanaan,
+pengkoordinasian, dan perekomendasian pemilihan perangkat lunak dan berapa
+personilnya.
+4.3.3. Pengguna: Pihak yang menggunakan sistem atau aplikasi ini adalah mahasiswa dan dosen
+yang memiliki perangkat smartphone berbasis android.
+4.4. Peralatan Utama.
+Peralatan utama adalah peralatan yang menjadi kebutuhan standar yang harus digunakan untuk
+membuat aplikasi yang dibangun dalam pembuatan skripsi, seperti perangkat keras standar yang
+dibutuhkan seperti apa spesifikasinya, perangkat lunak apa saja yang akan digunakan dan jelaskan
+masing-masing yang digunakan ini, fungsinya akan digunakan buat apa dan jangan lupa semua
+harus menyebutkan semua yang dibutuhkan sebabai peralatan utama. Sebagai contoh: Komputer
+PC (bias saja digunakan dalam pembuatan coding), Smartphone, dan sebagainya.
+4.5. Peralatan Pendukung.
+Peralatan pendukung adalah peralatan yang memang harus ada tetapi berperan sebagai
+pendukung, artinya bukan peralatan untuk pembuatan aplikasi, malainkan peralatan yang harus
+disiapkan pada saat pengetesan aplikasi dan lengkapi dengan spesifikasinya minimalnya. Sebagai
+contoh: SmartPhone dengan berbagai platform atau hanya satu platform saja berupa IOS atau
+Android.
+4.6. Skenario Program.
+Pada scenario program menjelaskan tentang fitur-fitur yang dapat digunakan dalam menggunakan
+aplikasi berbasis mobile ini, seperti adanya fitur mempermudah dalam system pembayaran
+perkuliahan, ada fitur pendukung percepatan terhadap pembuatan laporan sederhana, adanya fitur
+dalam menghitung biaya dan ongkos total dari pemesanan, dan sebagainya. Skenario progam
+dijelaskan secara global tentang fitur-fitur tersebut yang tersedia dalam aplikas pemrograman
+mobile.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 57
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 61 ---
+4.7. Kegiatan Penelitian
+Kegiatan penelitian dibuatkan dengan menggunakan bagan sederhana. Kegiatan apa saja yang
+harus dilakukan dalam pembuatan secara bertahap yang didukung dengan symbol-simbol seperti
+flowchart.
+Contoh:
+Gambar 4.1 Contoh Kegiatan Penelitian
+4.8. Perancangan Program Aplikasi
+Perancangan program aplikasi berisi tentang tampilan yang akan dibuat mulai dari tampilan awal
+hingga tampilan output akhir selesainya aplikasi program mobile.
+Contoh:
+Gambar 4.2. Contoh Rancangan Menu Login
+4.9. Implementasi Program Aplikasi.
+Perancangan program aplikasi berisi tentang tampilan yang akan dibuat mulai dari tampilan awal
+hingga tampilan output akhir selesainya aplikasi program mobile.
+Gambar 4.3. Contoh Implementasi Menu Login
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 58
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 62 ---
+4.10. Store.
+Store yang dimaksud adalah aplikasi mobile yang telah dibuat damasukan kedalam playstore,
+agar dapat digunakan melalui fasilitas download secara riil, sehingga dapat diuji dalam proses
+sidang skripsi sebagai bentuk nyata dari karya project mahasiswa.
+BAB V
+PENUTUP
+5.1. Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada dan berisi tentang kelebihan
+dan kekurangan sistem yang di buat.
+5.2. Saran-saran
+Berisi tentang solusi tentang kelemahan sistem yang dibuat dan juga dalam pembahasan saran
+melihat dari aspek manajerial, aspek sistem dan aspek penelitian (pembahasan) selanjutnya.
+DAFTAR PUSTAKA
+Minimal 5 buku, 10 jurnal, dapat ditambahkan dengan e-book, dll
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Code Program
+Lampiran 2. Surat Serah Terima Aplikasi
+Lampiran 3. Bukti Submit Artikel Ilmiah
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 59
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 63 ---
+3. Outline Cloud Computing
+_______________________________________________________________________________
+A. Kode dan Ketentuan Outline
+Kode Outline : 160
+Nama Outline : Cloud Computing
+Metode Pengerjaan : Individu
+Bukti Riset : Surat Keterangan PKL/Riset atau Sertifikat PKL
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Tidak
+- Karya : Laporan Skripsi, Aplikasi Berbasis Cloud
+- Berita Acara Serah Terima Karya : Wajib
+Ketentuan Outline :
+1) Surat Keterangan Riset bersifat wajib.
+_______________________________________________________________________________
+B. Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan Dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Identifikasi Masalah
+1.3. Perumusan Masalah
+1.4. Batasan Masalah
+1.5. Maksud dan Tujuan Peneltian
+1.6. Manfaat Penelitian
+BAB II LANDASAN TEORI
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 60
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 64 ---
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+BAB III METODE PENELITIAN
+3.1. Teknik Pengumpulan Data
+3.1. Tahapan Penelitian
+BAB IV DESAIN PERANCANGAN
+4.1. Teknologi Cloud Computing
+4.2. Arsitektur Cloud Computing
+4.3. Mekanisme Cloud Computing
+4.4. Software Lifecycle*
+4.5. Simulasi Cloud
+4.6. Analisis Cloud
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran-saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET*
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Source Code
+Lampiran 2. Software livecycle: jika membangun infrastruktur *.
+Lampiran 3. Bukti Submit Artikel Ilmiah
+Catatan:
+1. Mahasiswa wajib melakukan riset dan surat riset wajib dibawa pada saat ujian sidang.
+2. Sumber Referensi (Jurnal) 10 buah wajib ditunjukan pada saat sidang.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 61
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 65 ---
+C. Penjelasan Outline
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang Masalah
+Berisi fakta permasalahan yang ada di perusahaan, di perkuat dengan kutipan jurnal penelitian
+yang terdahulu.
+Berikut ini hanya contoh penulisan latar belakang masalah, silahkan sesuaikan dengan kasus yang
+akan dibahas :
+CV Kasih Sayang merupakan toko yang bergerak dalam bidang pejualan retail produk-produk
+kecantikan. Kendala yang dihadapi oleh CV Kasih Sayang dalam memasarkan produknya adalah
+bagaimana cara memperluas area pemasaran agar dapat menjual produk mereka baik didalam maupun
+luar daerah. Saat ini CV. Kasih Sayang hanya memanfaatkan media kertas yaitu dengan cara mencetak
+famplet, brosur ataupun katalog yang nantinya akan disebarkan oleh karyawan CV. Kasih Sayang ke
+daerah sekitar dimana CV Kasih Sayang berada (Aryanto, 2012).
+Menurut (Aryanto, 2012) Toko Indah Jaya Furniture mempunyai permasalahan bagaimana caranya
+untuk memperluas dan mendapatkan pelanggan baik didalam maupun diluar daerah. Untuk
+memecahkan permasalahan diatas, toko Indah Jaya Furniture ingin membangun sistem penjualan online
+(e-commerce) untuk mempromoskan produk yang dibuat oleh toko Indah Jaya Furniture. Saat ini
+internet telah menjadi salah satu infrastruktur komunikasi yang termurah dan jangkauan komunikasi
+yang luas dan tanpa batas, maka internet sering digunakan sebagai media alternatif untuk menjalankan
+suatu usaha maupun bisnis.
+1.2. Identifikasi Permasalahan
+Mengidentifikasikan masalah yang terjadi diperusahaan yang di riset
+Berikut ini hanya contoh penulisan identifikasi masalah, silahkan sesuaikan dengan kasus
+yang akan dibahas :
+1. Sistem penjualan produk kecantikan yang saat ini berjalan dirasa kurang efektif karena hanya
+memanfaatkan media kertas yaitu dengan mencetak brosur, famplet ataupun katalog dirasakan
+kurang efektif.
+2. Laporan stok barang yang masih manual kurang mendukung prosedur penjualan.
+3. Lambatnya perkembangan perusahaan karena kurangnya promosi perusahaan kepada
+masyarakat sehingga, tidak semua kalangan masyarakat mengenal perusahaan ini.
+1.4. Batasan Masalah
+Berisi tentang lingkup permasalahan yang diangkat sejauh mana scope yang akan dilakukan,
+sesuaikan dengan pembahasan riil dari judul skripsi. Berisi tentang lingkup permasalahan yang
+diangkat sejauh mana scope yang akan dilakukan, sesuaikan dengan pembahasan riil dari judul
+skripsi. Batasan masalah dalam pemrograman dapat digambarkan dalam pembuatan menu-menu
+yang akan diterapkan dalam pemrograman mobile. Menu-menu yang memberikan batasan apa saja
+yang akan dibuat dalam pemrograman ini sudah menjadi ruang lingkup dari batasan masalah.
+1.5. Maksud dan Tujuan Penelitian
+Berisi tentang maksud dan tujuan dari penelitian yang dilakukan dalam pembuatan skripsi. Maksud
+dan tujuan dibahas secara terpisah. Maksud dapat ditulis lebih dari satu point yang mengarah
+kepada penulisan skripsi, sumbangsih terhadap ilmu pengetahuan, maupun hal yang berkaitan
+dengan kepentingan instansi atau organisasi tertentu
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 62
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 66 ---
+1.6. Manfaat Penelitian
+Berisi tentang manfaat dari hasil penelitian yang berguna bagi individu ataupun rangancangan yang
+akan dibuat dan manfaat bagi tempat riset (atau dua dari tiga yang ada), sebagai bentuk konstribusi
+dalam pengembangan ilmu pengetahuan dalam bidang pemrograman berbasis cloud.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 63
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 67 ---
+BAB II
+LANDASAN TEORI
+2.1. Tinjauan Pustaka
+Berisi tentang pendeskripsian teori yang melandasi dan sebagai arahan dalam pemecahan masalah
+atau mewujudkan hasil penelitian, dalam hal in landasan teori dapat berupa uraian yang bersifat
+teoritis, model ataupun bentuk-bentuk represntatif yang mengacu pada sumber primer ataupun
+sumber sekunder.
+Berikut ini hanya contoh penulisan Tinjauan Pustaka, silahkan sesuaikan dengan kasus
+yang akan dibahas :
+A. Pengenalan Teknologi Cloud Computi …………. ( dapat dicitasi dari sumber tertentu).
+B. Arsitektur Cloud Computing …….......................... ( dapat dicitasi dari sumber tertentu).
+C. Mekanisme Cloud Compu...................................... ( dapat dicitasi dari sumber tertentu).
+D. Inovasi Software Live Cycle ................................ ( dapat dicitasi dari sumber tertentu).
+E. Cloud Simulation .................................................. ( dapat dicitasi dari sumber tertentu).
+F. Web Hosting …….................................................. ( dapat dicitasi dari sumber tertentu).
+G. Aplikasi Web Native ............................................ ( dapat dicitasi dari sumber tertentu).
+H. Virtual Mechine …............................................... ( dapat dicitasi dari sumber tertentu).
+I. Aplication Programming Interface ...................... ( dapat dicitasi dari sumber tertentu).
+J. IaaS (Infrastructure As a Service) ....................... ( dapat dicitasi dari sumber tertentu).
+K. PaaS (Platform As a Service) ….......................... ( dapat dicitasi dari sumber tertentu).
+L. SaaS (Software As a Service) ............................. ( dapat dicitasi dari sumber tertentu).
+(dan teori lainnya yang pasti akan digunakan dalam penyusunan skripsi, tahanpan penyusuan tidak
+harus mengikuti contoh diatas, tetapi perhatikan mana yang lebih urgensi itu yang diutamakan).
+2.2. Penelitian Terkait
+Berisi tentang kutipan minimal dari 10 jurnal yang terkait dan mendukung dari permasalahan yang
+diangkat dan akan digunakan kedepannya sebagai jurnal hasil skripsi.
+Berikut ini hanya contoh penulisan Penelitian Terkait, silahkan sesuaikan dengan kasus yang
+akan dibahas :
+Kurikulum Bahasa Inggris sebagai muatan lokal yang ada bila dicermati masih banyak
+kelemahannya. Metode pengajaran Bahasa Inggris yang di ajarkan tidak sesuai untuk
+perkembangan anak usia 6–12 tahun yang seharusnya diperkenalkan melalui kegiatan yang sesuai
+dengan kegiatan di dunia anak. Misalnya, belajar kosakata dan kalimat sederhana tentang apa yang
+ada di sekitarnya atau belajar sambil menggambar, menyanyi, bermain, dan bercerita. Tetapi yang
+terjadi di adalah anak di minta untuk menerjemahkan kalimat- kalimat yang sulit, mencatat tata
+bahasa dengan istilah yang tidak dimengerti oleh siswa, dan mengerjakan pekerjaan rumah yang
+sering tidak jelas perintahnya sehingga ada jawaban yang rancu (Kasihani, 2002).
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 64
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 68 ---
+BAB III
+METODE PENELITIAN
+3.1. Teknik Pengumpulan Data
+Memberikan gambaran bagaimana teknik pengumpulan data yang akan dan telah dilakukan dalam
+peroses pembuatan skripsi. Data yang diperoleh boleh data primer yaitu data yang didapat secara
+langsung dari hasil penelitian ataupun data sekunder yaitu data yang didapat tidak secara langsung
+dari periset melainkan dari sumber data lainnya seperti organisasi tertentu misalnya dari BPS, LIPI
+atau lainnya.
+3.2. Prosedur Penelitian
+Memberikan gambaran tentang-langkah ataupun tahapan-tahapan kegiatan penelitian yang
+dilakukan, tahapan penelitian dibuat secara berurutan secara sequence. Prosedur penelitian dapat
+digambarkan dalam bentuk symbol-simbol diagram yang tersusun secara berurutan.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 65
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 69 ---
+BAB IV
+DESAIN PERANCANGAN
+Di dalam Petunjuk Teknis Penyusunan Tugas Akhir ini yang akan dicontohkan adalah tentang
+sistem penjualan online, dan bentuk contoh berikut tidak mengikat, silahkan sesuaikan dengan kasus
+yang dibahas.
+4.1. Teknologi Cloud Computing
+Pada bagian ini menjelaskan tentang perkembangan teknologi cloud computing dan gambarkan
+dalam perinsip sederhana bagaimana teknologi dapat dirancang sebagai service client dan
+sebagainya.
+4.2. Arsitektur Cloud Computing
+Berikan gambaran yang unik terhadap teknologi cloud computing terhadap terciptanya rancangan
+cloud yang akan dibuat. Penerapan software as s service, client seperti apa yang akan
+dikembangkan. Membuat gambaran struktur dasar cloud computing yang akan dibuat seperti cloud
+client, cloud service, cloud application, cloud platform, cloud storage, dan cloud infrastructurenya.
+4.3. Mekanisme Cloud Computing
+Menjelaskan tentang Infrastrutur, platform, dan Software dari cloud yang akan diterapkan dan
+penggunaan tertinggi dari ketiga tersebut. Selain itu menjelaskan fitur fitur yang akan dirancang
+serta kemiripan fitur seperti proses intalisasi, update serta software yang digunakan dengan
+mekanisme yang telah ada.
+4.4. Software Livecycle
+Dibagian ini menjelaskan tentang software livecycle yang biasanya telah disediakan oleh penyedia
+layanan cloud computing diantaranya instalasi, patching, upgrade, apakah dilakukan dalam satu
+mesin atau mungkin akan dikembangkan dalam scalabilitas yang lebih besar lagi, dan lain
+sebagainya.
+4.5. Simulasi Cloud
+Simulasi cloud terdapat dibagian level infrastruktur, bagaimana hal ini dapat dilakukan secara
+simulasi pengiriman data center meuju ke host, seperti halnya: satu data center dengan satu Host
+yang menjalankan satu Cloud; satu data center dengan satu Host menjalankan dua Cloud; Satu data
+center dengan dua Host menjalankan dua Cloud, atau dua data center degan masing-masing satu
+Host. Dan mengembangkan simulasi scalable. Banyak software simulasi yang dapat digunakan
+dalam cloud computing seperti GridSim, SimGrid, GangSim yang scalbilitasnya memang kecil,
+tetapi jikan ingin yang lebih baik dapat menggunakan CloudSim atau yang lainnya, silahkan
+gunakan yang lain.
+4.6. Analisis Cloud
+Analisis cloud yang dilakukan adalah menganalisa performa program awal dari Cloud Simulation
+terhadap performa yang telah dimodifikasi apakah memberikan hasil yang lebih baik atau
+sebaliknya. Seperti halnya execution time nya bagaimana apakah memiliki kecepatan yang lebih
+baik dalam mengeksekusi perintah yang dimasukan kepada alat computer. Kemudian
+memperhatikan juga dalam analisis cloud ini perbedaan storage dari kedua simulasi yang
+dilakukan. Kemudian mengukur perbedaan RAM pada kedua simulasi cloud, serta memperhatikan
+penggunaan resource dari simulasi cloude.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 66
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 70 ---
+BAB V
+PENUTUP
+5.1. Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada dan berisi tentang kelebihan
+dan kekurangan sistem yang di buat.
+5.2. Saran-saran
+Berisi tentang solusi tentang kelemahan sistem yang dibuat dan juga dalam pembahasan saran
+melihat dari aspek manajerial, aspek sistem dan aspek penelitian (pembahasan) selanjutnya.
+DAFTAR PUSTAKA
+Minimal 5 buku, 10 jurnal, dapat ditambahkan dengan e-book, dll
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Source Code
+Lampiran 2. Software livecycle: jika membangun infrastruktur *.
+Lampiran 3. Bukti Submit Artikel Ilmiah
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 67
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 71 ---
+4. Outline Karya Ilmiah
+_______________________________________________________________________________
+A. Kode dan Ketentuan Outline
+Kode Outline : 161
+Nama Outline : Karya Ilmiah
+Metode Pengerjaan : Indivitu
+Bukti Riset : Surat Keterangan PKL/Riset, Sertifikat PKL, atau Surat Keabsahan Data
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib
+- Hak Kekayaan Intelektual (HKI) : Tidak
+- Buku : Tidak
+- Karya : Laporan Skripsi, Program (Jika Ada)
+- Berita Acara Serah Terima Karya : Tidak
+Ketentuan Outline :
+_______________________________________________________________________________
+B. Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan Dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Identifikasi Masalah
+1.3. Perumusan Masalah
+1.4. Batasan Masalah
+1.5. Tujuan Penelitian
+1.6. Luaran Penelitian
+BAB II LANDASAN TEORI
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+2.3. Tinjaun Organisasi/Objek Penelitian/Mitra Penelitian
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 68
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 72 ---
+BAB III METODE PELAKSANAAN
+3.1. Metode Penelitian
+3.2. Tahapan Penelitian
+3.3. Analisis Data
+3.4. Uraian Tugas
+4.4.1. Pengumpulan Data
+4.4.2. Analisis Data
+4.4.3. Data Hasil
+BAB IV HASIL YANG DICAPAI
+4.1. Hasil dan Pembahasan
+4.2. Potensi Hasil
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran-saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET/KEABSAHAN DATA
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Bukti Instrumen penelitian (kuesioner/data set)
+Lampiran 2. Bukti Submit/Publish Artikel Ilmiah
+Catatan :
+1. Mahasiswa wajib melakukan riset atau observasi.
+2. Dataset yang digunakan private atau publik. Jika dataset private wajib melampirkan surat riset.
+3. Sumber referensi (artikel ilmiah) wajib 10 artikel ilmiah dengan tema yang berkaitan dengan
+penelitian.
+4. Luaran Penelitian berupa artikel ilmiah yang telah dipublikasi baik di jurnal nasional akreditasi,
+jurnal internasional tersimpan pada database internasional, dan jurnal internasional bereputasi.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 69
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 73 ---
+C. Penjelasan Outline
+BAB I
+PENDAHULUAN
+1.1. Latar Belakang
+Berisi uraian tentang latar belakang atau justifikasi ilmiah dan permasalahan yang akan diteliti.
+Alasan penelitian tersebut perlu diungkapkan melalui pemaparan fenomena nyata yang ditemui
+peneliti jika ada, penelitian yang pernah dilakukan sebelumnya terkait fenomena tersebut, serta
+kesenjangan yang terjadi antara kondisi saat ini dengan kondisi yang seharusnya, menurut kajian
+peneliti. Di perkuat dengan kutipan artikel ilmiah. Berikut ini hanya contoh penulisan latar
+belakang masalah, silahkan sesuaikan dengan kasus yang akan dibahas :
+Suatu perusahaan tidak terlepas dari peranan Sumber Daya Manusia (SDM) yang bekerja
+didalamnya. Karyawan merupakan salah satu faktor utama dalam kelancaran, kemajuan serta
+keberhasilan suatu perusahaan. Untuk itu perusahaan harus mampu memotivasi karyawan agar
+dapat bekerja secara optimal dan selalu memberikan yang terbaik untuk perusahaan. Selain gaji,
+salah satu hal yang dapat memotivasi karyawan adalah dengan memberikan penghargaan (reward)
+terhadap prestasinya. Penilaian dengan melihat beberapa kriteria seperi kedisiplinan, kerjasama
+dan prestasi kerja. Selama ini penilaian kinerja karyawan di PT. Resya Jaya masih dilakukan secara
+subjektif sehingga hasilnya tidak matang dan akurat (tuliskan sumber kutipan).
+Berdasarkan permasalahan diatas, penulis merancang sistem pendukung keutusan pemilihan
+karyawan berprestasi dengan menggunakan metode MOORA adalah sebuah mekanisme
+pengambilan keputusan dengan mengasumsikan bahwa terdapat sepuluh kriteria yang ideal yang
+harus dimiliki oleh pelamar, bukannya tingkat minimal yang harus dipenuhi atau dilewati.
+1.2. Identifikasi Masalah
+Mengidentifikasikan permasalahan yang akan diangkat. Berikut ini hanya contoh penulisan
+identifikasi masalah, silahkan sesuaikan dengan kasus yang akan dibahas: Berdasarkan latar
+belakang diatas, penulis mengidentifikasikan beberapa masalah sebagai berikut:
+a. Perusahaan kesulitan dalam menentukan karyawan berprestasi
+b. Pemilihan karyawan berprestasi masih dilakukan secara subjektif
+c. Pengambilan keputusan kurang tepat dan akurat
+1.3. Rumusan Masalah
+Mengidentifikasikan perumusan masalah yang telah diidentifikasi. Berikut ini hanya contoh
+penulisan rumusan masalah, silahkan sesuaikan dengan kasus yang akan dibahas:
+Berdasarkan indentifikasi masalah diatas, penulis merumuskan masalah sebagai berikut:
+a. Bagaimana penerapan metode Analytic Hierarchy Process dalam menentukan karyawan
+berprestasi secara otomatis.
+b. Apakah penerapan metode Analytic Hierarchy Process dalam menentukan karyawan
+berprestasi secara objektif.
+c. Mengapa penerapan metode Analytic Hierarchy Process menghasilkan pengambilan keputusan
+secara akurat.
+1.4. Tujuan Penelitian
+Berisi tentang tujuan penelitian secara keseluruhan yang akan dicapai. Berikut ini hanya contoh
+penulisan tujuan penelitian, silahkan sesuaikan dengan kasus yang akan dibahas:
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 70
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 74 ---
+Tujuan penelitian dalam skripsi ini adalah :
+Agar pemilihan karyawan berprestasi di PT. Resya Jaya lebih akurat.
+a. Penilaian karyawan berprestasi di PT. Resya Jaya tidak dilakukan secara subjektif.
+b. Proses pengambilan keputusan yang cepat dan tepat.
+1.5. Luaran Penelitian.
+Pada bab ini disajikan jenis luaran wajib (artikel ilmiah publikasi jurnal nasional tidak terakreditasi,
+jurnal nasional terakreditasi, atau jurnal internasional tersimpan dalam database internasional, dan
+jurnal internasional bereputasi).
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 71
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 75 ---
+BAB II
+TINJAUAN PUSTAKA
+2.1. Landasan Teori
+Bab ini menguraikan hasil temuan peneliti lain yang diperoleh dari pustaka acuan serta menjadi
+landasan disusunnya laporan skripsi. Berisi tentang semua teori-teori yang berhubungan dengan
+skripsi yang akan dibahas. Disesuaikan dengan kebutuhan skripsi yang dibahas.
+2.2. Penelitian Terkait.
+Berisi tentang kutipan minimal dari 3 artikel ilmiah (jurnal) yang terkait dan mendukung dari
+permasalahan yang diangkat. Berikut ini hanya contoh penulisan Penelitian Terkait, silahkan
+sesuaikan dengan kasus yang akan dibahas:
+Kesuksesan enterprise governance pada Pesantren Al-Hidayah Boarding School didapatkan
+melalui peningkatan dalam efektivitas dan efisiensi dalam proses organisasi yang berhubungan.
+Standar yang direkomendasikan untuk mendukung tata kelola teknologi informasi di Pesantren Al-
+Hidayah Boarding School adalah dengan Control Objective for Information and related
+Technology (COBIT), khususnya pada domain DS (delivery and support) dan ME (monitoring and
+evaluation) karena memberikan pedoman secara meluas untuk tujuan mendapatkan manajemen
+yang baik dan kontrol dari teknologi informasi pada suatu enterprise.
+2.3. Tinjauan Organisasi/Objek Penelitian/Mitra Penelitian.
+Pada sub bab ini menjelesakan mengenai organisasi/perusahaan sumber data penelitian yang
+digunakankan atau objek dari penelitian atau Mitra penelitian bergerak dibidang tertentu.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 72
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 76 ---
+BAB III
+METODE PELAKSANAAN
+3.1. Metode Penelitian.
+Bab ini berisi metode penelitian yang akan diterapkan berdasarkan sumber referensi.
+A. Instrumen Penelitian.
+Berdasarkan permasalahan yang telah diuraikan pada bab sebelumnya, maka bahan dan peralatan
+yang diperlukan untuk penelitian. Instrumentasi penelitian dapat berupa kuesioner yang digunakan
+untuk mendapatkan data primer, atau dapat menggunakan instrumentasi penelitian lainnya.
+B. Pengumpulan Data
+1. Jenis Data, terdiri dari:
+a. Data primer (private), merupakan data yang dikumpulkan langsung dari sumber data
+yang dilakukan oleh peneliti secaran langsung.
+b. Data sekunder (public), merupakan data yang diperoleh dari peneili tau pihak lain
+misalnya dari PBS atau LIPI.
+2. Teknik Pengumpulan Data.
+a. Wawancara, yaitu bertanya langsung kepada subjek yang memang mengetahui tentang
+data dan memiliki tanggung jawab penuh terhadap pelaksanaan atas penyebaran data.
+b. Observasi, yaitu pengamatan langsung ke tempat objek riset untuk mendapatkan data
+secara langsung.
+c. Studi Pustaka, yaitu teknik pengumpulan data dengan sumber referensi berupa buku-
+buku, sejumlah jurnal, atau sejenisnya yang dapat menambah wahana pengetahuan
+pembaca.
+C. Pengolahan Data.
+Tahap ini menjelaskan mengenai bagaiman pengolahan data untuk mendapatkan data yang telah
+ditransformasi, hingga sesuai dengan kebutuhan pada metode yang diusulkan.
+D. Model yang diusulkan.
+Pada tahap ini data yang diteliti dan dianalisa kemudian dikelompokkan kedalam data latih
+(training) dan data pengujian (testing) sesuai dengan metode yang diperlukan.
+E. Pengujian dan Ekperimen Model.
+Pada tahap ini melakukan pengujian metode yang diusulkan.
+F. Evaluasi Hasil.
+Pada tahap ini dilakukan evaluasi terhadap metode yang diusulkan.
+3.2. Tahapan Penelitian.
+Bab ini menjelaskan tahapan-tahap proses dalam melaksanakan penelitian dimulai dari tahap
+perencanaan, tahap pelaksanaan dan tahap laporan penelitian. Tahapan penelitian dapat dibuat
+dalam sebuah gambar atau flowchart yang menjelaskan kegiatan dari tahapan penelitian.
+3.3. Analisis Data.
+Menjelaskan metode atau algorima yang digunakan pada penelitian. Serta Analisis data pada
+penelitian yang di lakukan.
+3.4. Uraian Tugas.
+Uraian tugas berisi gambaran tentang apa yang harus dilakukan oleh jobdes dibawah ini dengan
+menyertakan kutipan sebagai landasan teori dari jobdes tersebut. Lalu uraikan jobdes tersebut
+dengan memaparkan pekerjaan yang dilakukan dengan jelas serta disusun secara berurutan dari
+awal sampai akhir dalam proses penyelesaiannya.
+3.4.1. Data Collection / Pengumpulan Data.
+Menyebutkan nama anggota kelompok skripsi dan menguraikan tugasnya didalam
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 73
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 77 ---
+pembuatan skripsi ini dimulai dari mengkoleksi, mencari data dan membersihkan data
+sehingga menjadikan data set siap untuk diolah.
+3.4.2. Analis Data.
+Menyebutkan nama anggota kelompok skripsi dan menguraikan tugasnya didalam
+pembuatan skripsi ini seperti pengolahan data, dan menetapkan penggunaan metode yang
+sesuai dengan kebutuhan penelitian.
+3.4.3. Data Hasil.
+Menyebutkan nama anggota kelompok skripsi dan menguraikan tugasnya didalam
+pembuatan skripsi ini seperti merapihkan dan menyusun laporan penelitianya, bertugas
+membuat narasi laporan penelitian sehingga enak dibaca dan mudah dimengerti oleh
+pembaca atau peneliti lainnya.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 74
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 78 ---
+BAB IV
+HASIL YANG DICAPAI DAN POTENSI KHUSUS
+4.1. Hasil dan Pembahasan.
+Bagian ini menjelaskan tentang data dataset yang digunakan, perhitungan metode yang digunakan,
+instrument penelitian yang digunakan, hasil dari penellitian. Data dapat dijelaskan dalam bentuk
+tabel dan atau gambar. Interpretasi dan ketajaman analisis dari penulis terhadap hasil yang
+diperoleh, termasuk pembahasan tentang pertanyaan yang timbul dari hasil observasi serta dugaan
+ilmiah yang dapat bermanfaat untuk kelanjutan bagi penelitian mendatang. Hasil dan pembahasan
+juga memuat pemecahan masalah yang berhasil dilakukan, perbedaan dan persamaan dari hasil
+pengamatan terhadap informasi yang ditemukan dalam berbagai pustaka (penelitian terdahulu).
+Berikut ini hanya contoh penulisan Pembahasan, silahkan sesuaikan dengan kasus yang akan
+dibahas :
+A. Pengolahan Data Menggunakan Perhitungan Metode MOORA
+GAP= Criteria Value-Minimum Value
+∑ 𝑁𝐶
+𝑁𝐶𝐼 =
+∑ 𝐼𝐶
+∑ 𝑁𝑆
+𝑁𝑆𝐼 =
+∑ 𝐼𝑆
+𝑁 =(𝑥)% 𝑁𝐶𝐼+(𝑥)% 𝑁𝑆
+𝑅 = (𝑥)% 𝑁𝐾𝐼+(𝑥)% 𝑁𝑆𝐾+(𝑥)% 𝑁𝑃
+Table IV.1.
+Aspek kriteria and target value
+Table IV.2.
+Pengelompokan Core faktor dan secondary faktor
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 75
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 79 ---
+Table IV.3
+Mapping GAP communication
+Table IV.4.
+Pemeringkatan
+4.2. Potensi Hasil.
+Berisi tentang manfaat, artikel ilmiah, peluang perolehan Hak Kekayaan Intelektual atau
+sejenisnya dan/atau manfaat terhadap aspek sosial-ekonomi-pendidikan dan lain-lain.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 76
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 80 ---
+BAB V
+PENUTUP
+5.1. Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada dan berisi tentang kelebihan
+dan kekurangan penelitian yang di buat.. Kesimpulan merupakan jawaban dari permasalahan yang
+diangkat.
+5.2. Saran-saran
+Berisi tentang solusi tentang kelemahan sistem yang dibuat dan juga dalam pembahasan saran
+melihat dari aspek manajerial, aspek sistem dan aspek penelitian (pembahasan) selanjutnya.
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET/KEABSAHAN DATA
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran 1. Bukti Instrumen penelitian (kuesioner/data set)
+Lampiran 2. Bukti Submit/Publish Artikel Ilmiah
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 77
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 81 ---
+B.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Rekayasa Perangakat Lunak
+Hal. 78
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika

@@ -1,0 +1,1425 @@
+--- HALAMAN 1 ---
+Penyusunan Tugas Akhir
+Program Studi
+Sistem Informasi (S1)
+2026
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. i
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 2 ---
+KATA PENGANTAR
+Tiada kata yang lebih indah selain puji syukur yang penyusun panjatkan kehadirat
+Tuhan Yang Maha Esa yang telah melimpahkan rahmat dan karunia-Nya, sehingga pada
+akhirnya penyusun dapat menyelesaikan Petunjuk Teknis Penyusunan Tugas Akhir ini tepat
+pada waktunya.
+Petunjuk Teknis Penyusunan Tugas Akhir ini dibuat sebagai pelengkap pedoman
+penulisan Laporan Skripsi Program Studi Sistem Informasi (Program Diploma Tiga) Fakultas
+Teknik dan Informatika Universitas Bina Sarana Informatika. Petunjuk Teknis Penyusunan
+Tugas Akhir ini menjelaskan secara lebih detail isi dari pedoman penyusunan laporan Skripsi
+tersebut. Dengan demikian, diharapkan mahasiswa dapat lebih memahami bagaimana cara
+menyusun Skripsi dengan baik.
+Dalam penyusunan Petunjuk Teknis Penyusunan Tugas Akhir ini, tidak sedikit
+hambatan yang penyusun hadapi. Namun penyusun menyadari bahwa kelancaran dalam
+penyusunan Petunjuk Teknis Penyusunan Tugas Akhir ini tidak lain berkat bantuan dan
+dorongan dari berbagai pihak, sehingga kendala-kendala yang penyusun hadapi dapat teratasi.
+Semoga Petunjuk Teknis Penyusunan Tugas Akhir ini dapat mengakomodasi semua
+aspek yang berkaitan dengan materi dan teknik penulisan dalam penyusunan Skripsi, sehingga
+tidak terjadi lagi persepsi yang berbeda dalam penyusunan laporan Skripsi.
+Akhir kata, Penyusun berharap agar Petunjuk Teknis Penyusunan Tugas Akhir ini
+dapat bermanfaat bagi peningkatan kualitas Skripsi mahasiswa Universitas Bina Sarana
+Informatika, Aamiin.
+Jakarta, Februari 2026
+Tim Penyusun
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. ii
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 3 ---
+DAFTAR ISI
+Halaman
+Lembar Judul ........................................................................................................................... i
+Kata Pengantar .......................................................................................................................... ii
+Daftar Isi ................................................................................................................................... iii
+1. Outline Implementasi Sistem Informasi ........................................................................ 1
+A. Kode dan Ketentuan Outline ................................................................................... 1
+B. Bentuk Outline ........................................................................................................ 1
+C. Penjelasan Outline ................................................................................................... 4
+2. Outline Perancangan Animasi Interaktif ....................................................................... 12
+A. Kode dan Ketentuan Outline ................................................................................... 12
+B. Bentuk Outline ........................................................................................................ 12
+C. Penjelasan Outline ................................................................................................... 15
+3. Outline Program Sistem Pendukung Keputusan ......................................................... 34
+A. Kode dan Ketentuan Outline ................................................................................... 34
+B. Bentuk Outline ........................................................................................................ 34
+C. Penjelasan Outline ................................................................................................... 36
+4. Outline Penelitian Ilmiah ................................................................................................ 40
+D. Kode dan Ketentuan Outline ................................................................................... 40
+E. Bentuk Outline ........................................................................................................ 40
+F. Penjelasan Outline ................................................................................................... 41
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. iii
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 5 ---
+Outline Skripsi Program Studi Sistem Informasi Program Sarjana (S1)
+No Kode Outline Nama Outline
+1 169 Implementasi Sistem Informasi
+2 135 Perancangan Animasi Interaktif (Web/Mobile/Game)
+3 136 Program Sistem Pendukung Keputusan
+(Web/Mobile/Desktop)
+4 170 Penelitian Ilmiah
+OUTLINE IMPLEMENTASI SISTEM INFORMASI
+Kode Outline : 169
+Nama Outline : Implementasi Sistem Informasi
+Metode Pengerjaan : Kelompok (Maksimal 3 Mahasiswa) atau Individu
+Bukti Riset : Surat Keterangan PKL/Riset
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib (Submit/Review/LoA/publish)
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Tidak
+- Karya : Laporan Skripsi, Program Bisnis
+(Web/Mobile/Desktop)
+- Berita Acara Serah Terima Karya : Wajib
+Ketentuan Outline :
+1. Mahasiswa WAJIB Melakukan Riset/PKL dan Aplikasi Wajib diimplementasikan di Mitra
+2. Berkelompok maksimal 3 mahasiswa atau dilakukan secara individu
+3. Bagi yang berkelompok mempersiapkan nama kelompok pada saat melaksanakan
+pendaftaran skripsi. Pendaftaran skripsi dilakukan oleh masing-masing mahasiswa
+4. Ukuran kertas menggunakan A4 dengan ketentuan margin sesuai pada Pedoman Penyusunan
+Skripsi dan Tugas Akhir
+5. Pada outline ini mahasiwa wajib menggunakan 10 buah referensi artikel yang berasal dari
+jurnal minimal 5 tahun terakhir.
+Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 1
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 6 ---
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Ide Perangkat Lunak
+1.2. Analisa Masalah dan Solusi
+1.3. Tujuan dan Manfaat Perangkat Lunak
+1.4. Batasan Perangkat Lunak
+BAB II LANDASAN TEORI
+2.1. Konsep Dasar Sistem
+2.2. Teori Pendukung
+BAB III PEMBAHASAN
+3.1. Metode Pengembangan Perangkat Lunak
+3.2. Tahapan Pengembangan Perangkat Lunak
+BAB IV PENUTUP
+4.1. Kesimpulan
+4.2. Saran-saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+SURAT KETERANGAN RISET
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN 1)
+1)Keterangan Lampiran:
+Penjelasan Berita Acara Serah Terima Aplikasi
+A. Dokumentasi Serah Terima Aplikasi:
+Dokumen serah terima aplikasi yang harus dilengkapi mahasiswa:
+1. Sertifikat apresiasi dari Mitra (desain oleh prodi, diusulkan ke mitra).
+2. Berita Acara Serah Terima (BAST) aplikasi.
+3. Lima Foto penyerahan sertifikat dan aplikasi.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 2
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 7 ---
+4. Foto presentasi, proses penandatangan BAST, serah terima BAST, penyerahan sertifikat
+Press release penyerahan serah terima aplikasi.
+5. Surat tugas mahasiswa penyerahan Aplikasi (dipersiapkan program studi)
+Catatan:
+1. Kelompok yang telah memiliki dokumen serah terima aplikasi pada saat melakukan PKL dapat
+dipergunakan untuk skipsi.
+2. Jika aplikasi terdapat pengembangan fitur-fitur selama skripsi, kelompok dapat mengajukan serah
+terima baru
+3. Kelompok yang telah memiliki dokumen serah terima aplikasi selama PKL, prodi akan melengkapi
+dokumen pada point A1, A5
+A. Pengajuan Serah Terima Aplikasi:
+Prosedur pengajuan serah terima aplikasi:
+1. Ajukan 3 minggu serah terima sebelum sidang
+2. Mahasiswa kirim dokumen serah terima ke email Kaprodi (pastikan file word)
+3. Kaprodi mengirimkan dokumen yang sudah ditandatangani ke mahasiswa
+4. Email kaprodi dan contoh-contoh dokumen serah terima dapat diakses pada link:
+https://bit.ly/SerahTerimaAplikasi2025
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 3
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 8 ---
+A. Penjelasan Sistematika Penulisan
+BAB I
+PENDAHULUAN
+1.1.Latar Belakang Ide Perangkat Lunak
+Latar belakang berisikan alasan pengambilan judul, masalah yang dialami dengan dilandasi
+dari artikel ilmiah (Jurnal) atau melalui data yang sah yaitu data primer dari perusahaan/instansi
+tempat obyek penelitian atau menggunakan data sekunder.
+Contoh penulisan latar belakang Ide Perangkat Lunak :
+Kehadiran globalisasi telah menyentuh hampir semua aspek kehidupan termasuk dunia
+pendidikan, salah satunya adalah pembelajaran bahasa. Selain memiliki peranan sebagai alat
+komunikasi, bahasa juga berfungsi sebagai alat penyampai pesan dari seseorang kepada orang
+lain, bahkan bahasa menjadi lebih berkembang sebagai sarana pertukaran informasi antar negara
+tentang budaya, teknologi dan keilmuan lainnya. Salah satu bahasa asing yang sangat berkembang
+pesat saat ini adalah bahasa Arab dan bahasa Inggris, kedua bahasa ini merupakan bahasa yang
+banyak digunakan dan diajarkan kepada anak-anak saat ini. Bahasa Arab dan bahasa Inggris
+diajarkan disekolah berfungsi sebagai cara untuk mempelajari ilmu agama dan ilmu pengetahuan
+dari mulai membaca, menulis sampai berbicara. Pembelajaran bahasa Arab dan bahasa Inggris
+kebanyakan hanya dilakukan ketika tatap muka disekolah, dan siswa di tuntut untuk menghafal
+bahasa Arab dan bahasa Inggris dengan membaca buku dan kamus bahasa. Akan tetapi untuk
+anak-anak yang belum fasih membaca akan mengalami kesulitan dengan sistem belajar seperti ini.
+Untuk meningkatkan sistem pembelajaran bahasa Arab dan bahasa Inggris maka tepat
+kiranya jika dibuat sebuah alat informasi berupa sebuah game animasi interakif yang tentunya
+akan membantu meningkatkan proses belajar anak khususnya anak usia dini yang belum fasih
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 4
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 9 ---
+membaca, karena dengan menyajikan animasi interaktif, masyarakat khususnya anak-anak akan
+lebih tertarik dan lebih mudah memahami dan mempelajari bahasa Arab dan bahasa Inggris.
+Menurut Adiwisastra (2015:206) Perkembangan teknologi informasi dan komunikasi membawa
+dampak besar pada berbagai bidang kehidupan, salah satunya yaitu bidang pendidikan harus
+memikirkan dan melaksanakan pembelajaran yang sesuai dengan kebutuhan siswa dan mengemas
+proses pembelajaran yang lebih bermakna, menarik, mengikuti perkembangan iptek, serta dapat
+membantu siswa meningkatkan prestasi belajarnya. Pada proses pembelajaran, komputer telah
+dilibatkan sebagai sarana pembelajaran.
+Dalam rangka meningkatkan proses pembelajaran menjadi lebih menarik sehingga muncul
+minat dan ketertarikan untuk mempelajari bahasa Arab dan bahasa Inggris sesuai perkembangan
+teknologi.
+1.2. Analisa Masalah Dan Solusi
+Menganalisa masalah yang ada dan mengemukakan solusi yang akan diusulkan.
+Contoh penulisan analisa masalah dan solusi :
+Berdasarkan latar belakang diatas, maka dapat diidentifikasikan permasalahan sebagai
+berikut:
+1. Masih banyak anak-anak atau masyarakat yang mengalami kesulitan dalam mempelajari
+bahasa Arab dan bahasa Inggris
+2. Masih kurang menariknya penyampaian materi tentang pelajaran bahasa Arab dan bahasa
+Inggris kepada anak-anak atau masyarakat terutama anak yang belum fasih membaca
+3. Bagaimana cara membuat anak-anak atau masyarakat lebih mudah memahami dan tertarik
+untuk belajar bahasa Arab dan bahasa Inggris.
+Dengan aplikasi pengenalan bahasa Arab dan bahasa Inggris berbasis android diharapkan
+anak-anak atau masyarakat lebih tertarik untuk belajar bahasa dan memudahkan sistem
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 5
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 10 ---
+pembelajaran karena disajikan dengan sarana audio visual yang interaktif, yang dapat diakses
+dimana saja dengan tampilan yang menarik dan mudah difahami.
+1.3.Tujuan dan Manfaat Perangkat Lunak
+Mengemukakan tujuan dan manfaat dari perangkat lunak yang diusulkan
+Contoh penulisan Tujuan dan Manfaat Perangkat Lunak:
+Tujuan dan Manfaat Perangkat Lunak adalah sebagai berikut
+1. Membangun sebuah aplikasi pengenalan bahasa Arab dan bahasa Inggris berbasis andorid
+untuk memotivasi anak-anak lebih bersemangat dalam mempelajari bahasa.
+2. Membantu anak-anak yang belum fasih membaca dalam mempelajari bahasa.
+3. Memanfaatkan teknologi sebagai sarana peningkatan belajar khususnya pembelajaran bidang
+bahasa.
+1.4.Batasan Perangkat Lunak
+Menuliskan batasan perangkat lunak yang akan di buat
+Contoh penulisan Batasan Perangkat Lunak:
+Batasan perangkat lunak yang akan dibuat adalah pengenalan bahasa Arab dan bahasa
+Inggris yang berisi delapan materi yaitu alam semesta, alat tulis, anggota tubuh, angka, buah-
+buahan, jenis kendaraan, dan nama hari. Dan aplikasi ini menggunakan bahasa Indonesia sebahai
+bahasa default.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 6
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 11 ---
+BAB II
+LANDASAN TEORI
+2.1. Konsep Dasar Sistem
+Menjelaskan tentang teori yang berhubungan dengan judul TA yang dibuat (dari setiap
+kata yang diangkat sebagai judul). Penulisan definisi ini diikuti dengan mencantumkan nama
+penulis dan buku/jurnal dari mana definisi tersebut dikutip (sesuaikan dengan petunjuk penulisan
+kutipan).
+Contoh teori konsep dasar sistem:
+A. Model Pembelajaran Berbasis Web
+Menjelaskan tentang definisi model pembelajaran berbasis web, kelebihan model
+pembelajaran berbasis web dan fungsi model pembelajaran berbasis web.
+B. Sistem
+Menjelaskan definisi sistem dan sistem berorientasi obyek (oop).
+C. Website /Program*
+* Untuk rancangan website :
+- Menjelaskan tentang definisi internet, website dan aplikasi berbasis web (seperti: web
+browser, web server).
+* Untuk rancangan program :
+- Menjelaskan tentang Program(konsep dasar program, karakteristik pembuatan program),
+bahasa pemrograman yang digunakan(contoh VB.Net, Java, dll)
+D. Basis Data
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 7
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 12 ---
+Menjelaskan tentang definisi basis data dan aplikasi basis data yang digunakan pada
+website yang dibangun.
+E. Model Pengembangan Perangkat Lunak
+Menjelaskan model pengembangan waterfall (air terjun).
+2.2. Teori Pendukung
+Menuliskan teori pendukung yang digunakan dalam penulisan Skripsi
+Contoh penulisan Teori Pendukung :
+A. Entity Relationship Diagram
+Menjelaskan tentang definsi ERD, komponen ERD, dan LRS.
+B. Unified Modelling Language
+Menjelaskan tentang definisi UML, activity diagram, use case diagram, class diagram, dan
+sequence diagram.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 8
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 13 ---
+BAB III
+PEMBAHASAN
+3.1 Metode Pengembangan Perangkat Lunak
+Menuliskan penjelasan tahapan metode pengembangan perangkat lunak yang akan
+digunakan dikaitkan dengan judul Skripsi yang di buat (contoh : Water Fall Model, Prototyping
+Model, R&D, Agile Software Development, dll)
+Contoh Penulisan Metode Pengembangan Perangkat Lunak:
+Model SDLC air terjun (waterfall) sering juga disebut model sekuensial linier (sequential
+linear) atau alur hidup klasik (classic life cycle). Model air terjun menyediakan pendekatan alur
+hidup perangkat lunak secara sekuensial atau terurut dimulai dari analisis, desain, pengkodean,
+pengujian, dan tahap pendukung (support)” (Sukamto & Shalahuddin, 2018).
+Adapun tahapan yang metode SDLC yang akan digunakan adalah sebagai berikut :
+2. Analisis Kebutuhan Perangkat Lunak
+Dalam tahap awal, penulis akan melakukan analisa terhadap kebutuhan dalam membuat
+perancangan web penjualan obat hewan. Pengguna yang terlibat ada 2 kategori yaitu, admin
+dan user. Admin adalah yang mengelola data master yang dapat megubah, menambah dan
+menghapus. Sedangkan user adalah yang memiliki akun (account) yang telah terdaftar pada
+website yang dapat memesan dan membayar pembelian obat – obatan hewan.
+3. Desain
+Setelah tahap analisa kebutuhan terpenuhi, maka dalam perancangan ini akan dilakukan
+proses perancangan sistem dan perangkat lunak dengan membagi kebutuhan perangkat keras
+(hardware) dan perangkat lunak (software) sehingga akan ditetapkan hampir seluruh
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 9
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 14 ---
+perancangan sistem. Proses ini terfokus pada rancangan antar muka, struktur basis data dan
+rancangan struktur navigasi. Rancangan antar muka yang meliputi rancangan untuk admin dan
+juga user. Sedangkan rancangan struktur basis data meliputi Entity Relationship Diagram,
+Logical Record Structure dan Spesifikasi File.
+4. Pembuatan Kode Program
+Setelah selesai merancang desain, penulis melakukan pengkodingan pada program yang
+dirancang menggunakan HTML, PHP, CSS, JavaScript, XAMPP, Framework Codeigniter
+dan software Sublime Text 3 untuk menulis kode program.
+5. Pengujian
+Kemudian untuk memastikan program yang pengkodingannya telah selesai, penulis
+melakukan pengujian dengan menggunakan metode blackbox testing untuk menguji hak akses
+admin, serta user seperti pendaftaran user, login user, pembelian obat hewan, login admin,
+tambah produk, tambah kategori dan penginputan resi yang bertujuan untuk menemukan
+kesalahan yang mungkin terjadi agar bisa diperbaiki sebelum pemakaian program.
+6. Pendukung (Support) atau Pemeliharaan (Maintenance)
+Mendukung program di lingkungannya dan melakukan pemeliharaan. Pemeliharaan
+mencakup koreksi dari berbagai error yang tidak di temukan pada tahap-tahap sebelumnya,
+melakukan perbaikan atas implementasi unit sistem dan pengembangan layanan sistem, dan
+persyaratan-persyaratan baru ditambahkan.
+3.2 Tahapan Pengembangan Perangkat Lunak
+Menuliskan implementasi setiap tahapan dalam metode pengembangan perangkat lunak
+yang sudah dijelaskan/disebutkan pada sub bab 3.1.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 10
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 15 ---
+BAB IV
+PENUTUP
+4.1. Kesimpulan
+Berisi tentang uraian perubahan system yang telah dilakukan untuk menjawab masalah yang
+di tuliskan di latar belakang masalah (BAB I).
+4.2. Saran
+Menguraikan saran yang mendukung keberhasilan dari implementasi program yang
+diusulkan serta pengembangan ke arah yang akan datang.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 11
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 16 ---
+OUTLINE PERANCANGAN ANIMASI INTERAKTIF
+Kode Outline : 135
+Nama Outline : Perancangan Animasi Interaktif (Web/Mobile/Game)
+Metode Pengerjaan : Individu
+Bukti Riset : Surat Keterangan PKL/Riset atau Surat Keabsahan Data
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib (Submit/Review/LoA/Publish)
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Tidak
+- Karya : Laporan Skripsi, Aplikasi
+- Berita Acara Serah Terima Karya : Tidak
+Ketentuan :
+1) Pada outline ini jika mahasiswa melakukan riset pada perusahaan/instansi pemerintah/institusi
+Pendidikan/lembaga swadaya masyarakat/organisasi kemasyarakatan yang legal maka harus
+dibuktikan dengan surat keterangan PKL/Riset asli dari perusahaan yang menggunakan kop surat
+dengan logo, tandatangan dan stempel asli.
+2) Pada outline ini mahasiwa wajib menggunakan 10 buah referensi artikel yang berasal dari jurnal
+minimal 5 tahun terakhir.
+Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Kata Pengantar Abstraksi
+Daftar Isi
+Daftar Ssimbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Identifikasi Permasalahan
+1.3. Perumusan Masalah
+1.4. Maksud dan Tujuan
+1.5. Metode Penelitian
+1.5.1. Teknik Pengumpulan data
+A. Observasi
+B. Wawancara
+C. Studi Pustaka
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 12
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 17 ---
+1.5.2. Model Pengembangan Sistem*
+A. Analisa Kebutuhan Sistem
+B. Desain
+C. Code generation
+D. Testing
+E. Support
+1.6. Ruang lingkup
+BAB II LANDASAN TEORI
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+BAB III PERANCANGAN DAN PEMBAHASAN
+3.1. Tinjauan Institusi/Perusahaan *
+3.1.1. Sejarah Institusi/Perusahaan*
+3.1. Struktur Organisasi dan Fungsi*
+3.2. Analisa Kebutuhan Software
+3.3. Desain
+3.3.1. Karakteristik software
+3.3.2. Perancangan story board
+3.3.3. User Interface
+3.3.4. State Trasition Diagram
+3.4. Code Generation
+3.4.1.Testing
+a. White Box
+b. Black Box
+3.4.2. Support
+3.5.Hasil Pengolahan Data Kuesioner Animasi Interaktif
+BAB IV PENUTUP
+4.1. Kesimpulan
+4.2. Saran-saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+LEMBAR KONSULTASI BIMBINGAN
+SURAT KETERANGAN RISET
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Daftar Kuesioner Uji Coba Animasi Interaktif
+Catatan:
+1. Mahasiswa untuk outline animasi tidak wajib riset (optional), jika melakukan riset maka
+wajib melampirkan surat riset.
+2. Sumber referensi (Jurnal) 10 buah wajib diletakan pada link google drive
+3. Latar Belakang Masalah
+Berisi fakta permasalahan yang ada di perusahaan, di perkuat dengan minimal 1 kutipan
+jurnal penelitian yang terdahulu. Jurnal yang digunakan harus memiliki Nama Jurnal dan
+ISSN atau Vol Number
+4. Model Pengembangan Sistem
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 13
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 18 ---
+Jika Model Pengembangan Sistem yang digunakan bukanWaterfall Model, maka isi dari
+tahapan Model Pengembangan Sistem yang dibahas disesuaikan dengan model
+pengembangan sistem yang akan digunakan
+5. Tinjauan Pustaka
+Berisi tentang semua teori-teori yang berhubungan dengan skripsi yang akan dibahas
+6. Penelitian Terkait
+Berisi tentang penelitian yang terkait dengan permasalah yang diangkat. Contoh cara
+penulisan penelitian terkait dapat dilihat pada penjelasan Bab 2 di Petunjuk Teknis
+Penyusunan Tugas Akhir.
+7. Analisa Kebutuhan Software
+Menarasikan tentang kebutuhan fungsional (software dapat melakukan apa saja dan akan di
+terapkan dimana).
+8. Desain
+a. Karakteristik software berisi tentang :
+1. format
+2. rule
+3. policy
+4. scenario
+5. roles
+6. event/challenges
+7. decision
+8. levels
+9. score model
+10. indicator
+11. symbol
+Catatan : sesuaikan dengan kasus yang dibuat
+b. Perancangan story board
+c. User Interface
+Menampilkan desain antar muka animasi yang akan dibuat
+d. State Trasition Diagram
+9. Testing
+a. White Box Testing
+Menguji algoritma program yang dibuat, boleh melihat sebagian atau keseluruhan dari
+program.
+b. Black Box Testing
+Menguji inputan dari program, apakah menghasilkan hasil sesuai yang diharapkan.
+10. Support
+Berisi tentang Spesifikasi Hardware dan Software
+11. Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada dan berisi tentang
+kelebihan dan kekurangan sistem yang di buat.
+12. Saran-saran
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 14
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 19 ---
+Berisi tentang solusi tentang kelemahan sistem yang dibuat dan juga dalam pembahasan
+saran melihat dari aspek manajerial, aspek sistem dan aspek penelitian (pembahasan)
+selanjutnya.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 15
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 20 ---
+BAB I
+PENDAHULUAN
+1.1 Latar Belakang Masalah
+Berisi fakta permasalahan yang ada di perusahaan, di perkuat dengan kutipan jurnal
+penelitian yang terdahulu.
+Berikut ini hanya contoh penulisan latar belakang masalah, silahkan sesuaikan dengan kasus
+yang akan dibahas :
+Android sebagai salah satu sistem operasi yang sedang berkembang pesat di pasar mempunyai
+banyak kelebihan untuk pengembangnya, karna sistem operasi berbasis linux ini bersifat free
+(gratis). Android menyediakan platform terbuka bagi para pengembang untuk menciptakan
+aplikasi mereka sendiri untuk digunakan oleh bermacam peranti bergerak, sehingga banyak
+pengembang yang ingin mengembangkan sistem operasi tersebut.
+Menurut Fajaraditya, dkk (2013:53) Dengan pemanfaatan teknologi pula, pengembangan
+pengetahuan juga, seharusnya menjadi menarik khususnya dalam dunia pendidikan. Maka dari
+itu pendidikan, dukungan pendidikan yang disinergikan dengan teknologi akan memberikan
+suatu nilai tambah yan positif. Teknologi dalam dunia yang sibuk seperti sekarang ini diikuti
+dengan serbuan serta buaian produk-produk dan budaya luar dirasa perlu mendapatkan perhatian.
+Dalam artian, diperlukan suatu filtrasi bahkan antisipasi dari sisi gelap teknologi itu sendiri
+sejak dini.
+1.2 Identifikasi Permasalahan
+Mengidentifikasikan masalah yang terjadi diperusahaan yang di riset
+Berikut ini hanya contoh penulisan identifikasi masalah, silahkan sesuaikan dengan
+kasus yang akan dibahas :
+1. Ketidakpahaman pelajar terhadap suatu pelajaran tertentu mungkin disebabkan karena
+pelajaran yang diajarkan tidak memiliki interface yang menarik sehingga untuk seterusnya
+pelajar akan merasa jenuh untuk pelajaran tersebut.
+2. Tampilan yang menarik yang dapat menggambarkan pelajaran tersebut secara audiovisual
+akan memberikan daya tarik terhadap suatu pelajaran.
+3. Bagaimana membuat pelajar dapat lebih mudah mengerti dan tertarik pada pelajaran
+mengenal pahlawan indonesia.
+1.3 Perumusan Masalah
+Berikut ini hanya contoh penulisan perumusan masalah, silahkan sesuaikan dengan kasus
+yang akan dibahas :
+Perancangan game pendidikan tentang pengenalan pahlawan-pahlawan indonesia
+dengan berbasis android, diharapkan dapat memudahkan pengguna dalam proses belajar
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 16
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 21 ---
+mengenal pahlwan Indonesia melalui media visual yang interaktif dengan tampilan yang
+menarik dan mudah dipahami
+1.4 Maksud dan Tujuan
+Maksud dalam penulisan skripsi berisi maksud yang tertuju pada pembangunan animasi
+interaktif dan bertujuan untuk mahasiswa sebagai salah satu syarat kelulusan program
+sarjana pada Universitas Bina Sarana Informatika.
+1.5 Metode Penelitian
+1.5.1. Teknik Pengumpulan Data
+A. Observasi
+Menjelaskan tentang proses observasi yang dilakukan
+B. Wawancara
+Menjelaskan tentang proses wawancara yang dilakukan
+C. Studi Pustaka
+Menjelaskan tentang studi pustaka yang dilakukan
+1.5.2. Model Pengembangan Sistem
+A. Analisa Kebutuhan Software
+Menganalisa semua kebutuhan yang dibutuhkan termasuk dokumen dan interface yang
+diperlukan guna menentukan solusi piranti lunak (software) yang diperlukan yang akan
+digunakan sebagai proses komputerisasi sistem.
+B. Desain
+Mendefinisikan kebutuhan sistem yang terkait dengan pengembangan aplikasi terkait
+rancangan database, software architecture dan user interface yang akan di buat.
+C. Code Generation
+Menentukan bahasa pemrograman yang akan digunakan, dan menentukan apakah program
+yang dibuat termasuk pemrograman terstruktur atau pemrograman berbasis object.
+D. Testing
+Mendeskripsikan proses pengujian yang akan dilakukan dengan menggunakan blackbox
+testing.
+E. Support
+Mendefinisikan upaya-upaya pengembangan terhadap sistem yang sedang dibuat dalam
+menghadapi mengantisipasi perkembangan maupun perubahan sistem bersangkutan terkait
+dengan hardware dan software yang akan digunakan
+Catatan :
+ Disesuaikan dengan permasalahan yang dibahas didalam skripsi yang dibuat
+ Jika Model Pengembangan sistem yang digunakan BUKAN WaterFall Model, maka
+tahapannya disesuiakan dengan model pengembangan sistem yang akan dibahas pada
+skripsi
+1.6. Ruang Lingkup
+Ruang lingkup pembahasan pada penulisan skripsi ini adalah pengenalan pahlawan
+pahlawan indonsesia, sejarah kemerdekaan indonesia, beserta latihan dalam bentuk
+permainan interaktif menebak gambar pahlawan indonesia.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 17
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 22 ---
+BAB II
+LANDASAN TEORI
+2.1. Tinjauan Pustaka
+Berisi tentang semua teori-teori yang berhubungan dengan skripsi yang akan dibahas
+Berikut ini hanya contoh penulisan Tinjauan Pustaka, silahkan sesuaikan dengan kasus yang
+akan dibahas :
+A. Konsep Dasar Program
+...........................................................................................
+B. Android
+..................................................................................................
+C. Pengujian White Box
+..................................................................................................
+D. Pengujian Black Box
+.................................................................................................
+E. Story Board
+.................................................................................................
+Dst....... disesuaikan dengan kebutuhan skripsi yang dibahas
+2.2. Penelitian Terkait
+Berisi tentang kutipan minimal dari 5 jurnal yang terkait dan mendukung dari
+permasalahan yang diangkat yang menunjukan state of the art dari penelitian terdahulu
+(5 tahun terakhir).
+Berikut ini hanya contoh penulisan Penelitian Terkait, silahkan sesuaikan dengan kasus yang
+akan dibahas :
+Menurut Rachman, dkk (2010:2) “Penggunaan media game ringan untuk mempopulerkan
+budaya di Indonesia tidak akan efektif jika tidak menarik”. Untuk membuat menjadi lebih
+menarik, digunakan unsur psikologis yang diintegrasikan ke dalam game yang akan dibuat.
+Unsur tersebut berupa ”emosi” yang diciptakan untuk membangkitkan semangat dan sifat
+penasaran pemain. Bentuknya berupa sebuah animasi wajah yang senantiasa berekspresi dan
+mengomentari setiap langkah pemain. Untuk mewujudkan hal di atas, diperlukan sebuah
+teknologi yang mampu mengakomodasi peng-integrasian unsur psikologis ke dalam game
+tersebut. Dibutuhkan sebuah rancangan agen cerdas yang mampu membuat pemain merasa
+nyaman, senang, dan tertantang untuk menyelesaikan game yang mengandung materi tentang
+kebudayaan.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 18
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 23 ---
+Menurut Holla dan Katti (2012:486) “Android adalah sistem operasi mobile generasi baru yang
+berjalan pada Linux Kernel”. Android Mobile Application Pengembangan didasarkan pada
+kode bahasa Jawa, karena memungkinkan pengembang untuk menulis kode dalam bahasa
+Jawa.
+Kode-kode dapat mengontrol perangkat mobile melalui Google-enabled library Java.
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 19
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 24 ---
+BAB III
+PERANCANGAN DAN PEMBAHASAN
+3.1. Tinjauan Institusi/Perusahaan
+3.1.1. Sejarah Institusi/Perusahaan
+3.1.2. Struktur Organisasi dan Fungsi
+3.2. Analisa Kebutuhan
+Menganalisa kebutuhan apa saja yang dibutuhkan oleh pengguna dan kebutuhan dalam
+pembuatan game. Diambil berdasarkan wawancara, metode pengumpulan data, Software
+dan Hardware.
+3.3. Desain
+3.3.1. KarakteristikSoftware
+Dalam merancang sebuah sistem dalam hal ini adalah game harus berpedoman
+kepada karakteristik dan unsur yang terdapat pada game, yaitu :
+1. Format
+Contoh format seperti berikut:
+Game edukasi yang akan dibuat terdiri dari 3 elemen utama yaitu Belajar, Latihan, dan
+Bermain. Pada menu Belajar pemain di kenalkan kosakata Bahasa Inggris yang
+ditampilkan berdasarkan Abjad (A-Z) yang dilengkapi dengan gambar dan disertai suara
+untuk melafalkan kosakata objek yang ditampilkan pada gambar. Pada menu Latihan
+pemain akan di minta untuk menjawab kosakata Inggris-Indonesia atau sebaliknya yang
+dibuat dengan lima (5) tingkatan dengan perbedaan tingkat kesulitan dari tingkat paling
+rendah dengan jumlah soal lebih sedikit hingga tingkat paling tinggi dengan jumlah soal
+lebih banyak. Pada menu Bermain pemain akan bermain puzzle gambar, dimana pemain
+akan di minta untuk menyusun gambar yang sudah diacak dalam waktu yang telah di
+tentukan. Menu Belajar juga di buat dengan 4 tingkatan yang berbeda kesulitannya.
+2. Rules
+Contoh rules seperti berikut:
+Pada game ini, pemain harus lebih dulu mempelajari kosakata yang telah disusun
+berdasarkan abjad pada menu Belajar. Setelah itu pemain dapat memilih menu Latihan
+untuk menjawab kosakata dari Indonesia - Inggris atau sebaliknya yang terbagi menjadi
+lima (5) level masing - masingnya. Tiap level memiliki jumlah soal yang berbeda. Pemain
+juga dapat memilih menu Bermain yang terdapat empat (empat) buah puzzle dimana
+pemain dapat bermain dengan menyusun gambar yang telah diacak dalam waktu yang telah
+ditentukan.
+3. Policy
+Contoh policy seperti berikut:
+Ketika pemain dapat menjawab minimal setengah dari jumlah soal, maka pemain
+dikategorikan “Pandai” dan dapat langsung ke level berikutnya, tetapi jika pemain
+menjawab kurang dari setengah jumlah soal maka pemain dapat kembali mengulang soal
+pada level tersebut.
+4. Scenario
+Contoh scenario seperti berikut:
+Pertama kali pemain akan di perkenalkan dengan kosakata yang disusun berdasarkan abjad
+dari A-Z sebelum menjawab soal latihan. Setelah itu pemain akan di minta untuk
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 20
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 25 ---
+menjawab kosakata Inggris-Indonesia atau sebaliknya yang dibuat dengan lima (5)
+tingkatan dengan perbedaan tingkat kesulitan dari tingkat paling rendah dengan jumlah soal
+lebih sedikit hingga tingkat paling tinggi dengan jumlah soal lebih banyak. Selain itu
+pemain dapat bermain puzzle gambar, dimana pemain akan di minta untuk menyusun
+gambar yang sudah diacak dalam waktu yang telah di tentukan. Semua proses mulai dari
+pilihan Belajar, Bermain dan Latihan di sertai gambar dan suara musik agar siswa dapat
+dengan mudah mengenal objek yang sesuai dengan kosakata yang ditampilkan.
+5. Events/Challenge
+Contoh event/challenge seperti berikut:
+Pada permainan ini tantangan yang diberikan adalah pemain harus menjawab sejumlah soal
+yang berbeda pada setiap levelnya.Soal yang diberikan berupa kosakata yang harus
+dijawab oleh pemain baik itu kosakata Indonesia - Inggris ataupun sebaliknya.Jika semua
+soal dapat dijawab maka pemain otomatis dapat berpindah ke level berikutnya. Selain itu
+pemain juga akan ditantang untuk menyusun gambar yang telah di acak dalam waktu yang
+telah ditentukan. Tantangan yang diberikan agar pemain dapat mengingat dan mengasah
+logikanya sambil bermain dan tujuan pembelajaran pun dapat tercapai.
+6. Roles
+Contoh roles seperti beikut:
+Pemain harus dapat menjawab soal tentang menebak kosakata Indonesia – Inggris atau
+sebaliknya pada setiap levelnya dengan benar dan harus dapat menyusun puzzle gambar
+yang telah di acak dalam waktu yang telah ditentukan.
+7. Decisions
+Contoh decisions seperti berikut:
+Keputusan yang dapat dibuat pemain dalam hal ini adalah misalnya dalam menebak
+kosakata mana yang tepat agar dapat menyelesaikan permainan dengan lebih cepat.
+Selain itu pada permainan puzzle, pemain dapat membuat keputusan untuk meletakkan
+gambar yang sesuai pada posisi yangb tepat.
+8. Levels
+Contoh levels seperti berikut:
+Permainan yang dibuat akan terdiri dari beberapa tingkat kesulitan dan masing-masing
+terdiri lagi dari soal-soal yang berbeda jumlahnya. Pemain harus dapat menjawab semua
+soal pada level yang lebih kecil agar otomatis dapat berpindah ke level berikutnya. Untuk
+permainan puzzle, juga dibuat dalam tingkatan yang kesulitan dan limit waktu yang
+berbeda setiap levelnya.
+9. Score model
+Contoh score model seperti berikut:
+Dalam hal ini, Game hanya menetukan berapa banyak jumlah soal yang dapat dijawab
+dalam setiap levelnya. Jika lebih dari setengah jumlahnya maka pemain dikategorikan
+“Berhasil”, tetapi jika kurang pemain dikategorikan “Belum Berhasil” dan dapat
+mengulang menjawab soal pada level yang sama.
+10. Indicators
+Contoh indicators seperti berikut:
+Indikator yang digunakan adalah berupa Abjad (A–Z) yang berfungsi untuk
+mengkategorikan kosakata yang ditampilkan. Ini dilakukan agar pemain mudah untuk
+mengulang kosakata yang kemungkinan pemain lupa dengan kembali mencari pada
+kategori Huruf depan kosakata tersebut agar pemain termotivasi dalam menjawab soal
+yang diberikan.
+11. Symbols
+Contoh symbols seperti berikut:
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 21
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 26 ---
+Sebagai penunjuk ke state berikutnya atau ke state sebelumnya digunakan tanda panah.
+Selain itu juga terdapat tombol-tombol pada menu yang berupa gambar yang digunakan
+untuk menuju ke menu – menu yang disediakan.
+Catatan : Dari masing-msing unsur di atas dijelaskan kaitannya dengan game yang dibuat.
+3.3.2. Perancangan Story Board
+Berisi pembahasan mengenai alur cerita dari game yang akan disampaikan dengan
+menggunakan tulisan dan gambar.
+Contoh :
+A. Storyboard Menu Opening
+Berikut ini adalah gambaran dari Storyboard Menu Opening seperti yang dijelaskan
+pada tabel di bawah ini :
+Tabel III.1.
+Storyboard Menu Opening (Contoh)
+3.3. 2 St at e T r a nsiti o n D i ag r a m
+State Transition Diagram adalah suatu pemodelan peralatan (modeling tool) yang
+menggambarkan sifat ketergantungan terhadap suatu sistem waktu nyata (real time
+system), dan tampilan tatap muka (interface) pada sistem aktif (online system). Pemodelan
+ini juga penulis gunakan dalam menjelaskan alur- alur dari aplikasi yang penulis rancang
+Contoh :
+1. Scene Menu Utama
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 22
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 27 ---
+Gambar III.1.
+State Transition Diagram Main Menu
+Menggambarkan menu awal aplikasi dimana pertama kali user akan menemui opening dengan
+sebuah tombol enter, lalu akan masuk ke menu utama yang terdapat tombol Pengenalan
+BagianBagian Gitar, Tuning Gitar ke Tone Standart, Pengenalan Cord-Cord Dasar dan
+Fingering, Memainkan Sample Lagu Dengan Cord Standart,Penutup dan Bonus live video.
+1. ScenePengenalan Bagian-Bagian Gitar
+Gambar III.2
+State Transition Diagram Pengenalan Bagian-Bagian Gitar
+Dalam scene ini menggambarkan agar mengetahui nama bagian-bagian pada gitar maka user
+harus memilih tombol-tombol yang ada,adapun tombol yang menjadi pilihan ,Bottonhijau,
+orange, merah, ungu, biru dan buttonback untuk kembali ke menu utama.
+Catatan : disesuaikan dengan animasi yang dibuat
+3.4. Code Generation
+3.4.1. Testing
+Aplikasi game yang telah dibuat, selanjutnya diuji melalui teknik pengujian perangkat
+lunak yang
+meliputi pengujian white box dan black box.
+a. Pengujian White Box
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 23
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 28 ---
+Yang dimaksud Metode White Box adalah suatu metode desain test case yang
+menggunakan struktur kontrol desain prosedural untuk memperoleh test case. Dengan
+menggunakan metode pengujian White Box, perekayasaan sistem dapat melakukan test
+case yang dapat :
+1. Memberikan jaminan bahwa semua jalur independen pada suatu modul telah digunakan
+paling tidak satu kali.
+2. Menggunakan semua keputusan logis pada sisi true dan false.
+3. Mengeksekusi semua loop (perulangan) pada batasan mereka dan pada batas.
+4. operasional pengguna aplikasi
+Tidak semua hal pengujian dilakukan terhadap keseluruhan program secara utuh, namun
+dalam hal ini dilakukan sampel pengujian terhadap level tertentu yang dijalankan. Sebagai
+contoh, akan dibahas pengujian terhadap level 1, yang prinsip kerjanya sama dengan level 2, 3, 4
+dan 5 dari game ini. Secara garis besar, algoritma dari level 1 adalah sebagai berikut:
+1. Pemain diharuskan melewati rambu-rambu lalulintas dengan benar.
+2. Tiap rambu yang dilalui dengan benar, maka akan mendapatkan score atau nilai 10 dan
+nilai tersebut akan di akumulasikan jika melewati rambu berikutnya dengan benar.
+3. Jika pemain melanggar ketentuan rambu lalulintas sebanyak tiga kali, maka pemain
+tidak dapat melanjutkan ke level berikutnya.
+4. Pemain dapat melanjutkan ke level berikutnya jika dapat memainkan permainan pada tujuan akhir
+atau
+Finish.
+Dibawah ini merupakan gambar bagan alir Game Simulasi Pengenalan Rambu Lalulintas
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 24
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 29 ---
+Gambar III.3
+Bagan Alir Game
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 25
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 30 ---
+Gambar III.4
+Grafik Alir Game
+stop( );
+_root.Layar_mc.gotoAndPlay(1);
+_root.Gigi_var = 1;
+_root.Tilang_var = 0;
+_root.Score_var = 0;
+_root.SpeedoMeter_var = 0;
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 26
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 31 ---
+_root.Layar_mc.gotoAndPlay(1);
+_root.Depth_var = 100;
+_root.Control_var = 1;
+_root.Level_txt=_root.Level_var
+onClipEvent
+(enterFrame) { if
+(Key.isDown(Key.UP)) {
+this._y -=
+_root.Gigi_var/2; this._rotation = 0;
+_root.SpeedoMeter_var += 2;
+} else if
+(Key.isDown(Key.DOWN))
+{ this._y +=
+_root.Gigi_var/2;
+this._rotation = 180;
+_root.SpeedoMeter_var += 2;
+} else if
+(Key.isDown(Key.LEFT))
+{ this._x -=
+_root.Gigi_var/2; this._rotation = -
+90;
+_root.SpeedoMeter_var += 2;
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 27
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 32 ---
+} else if
+(Key.isDown(Key.RIGHT))
+{ this._x +=
+_root.Gigi_var/2;
+this._rotation = 90;
+_root.SpeedoMeter_var += 2;
+}
+}
+onClipEvent (enterFrame) {
+if (this.hitTest(_root.Mobil_mc)) {
+i = 1;
+} else {
+if (i == 1 and
+_root.Rambu_mc.LampuMerah1_mc.Lampu_var
+== "Hijau") {
+_root.Score_var += 10;
+duplicateMovieClip(_root.FxBonusScore_
+mc, "mc"+_root.Depth_var,
+_root.Depth_var); _root["mc"+_root.Depth_var]._x =
+_root.Mobil_mc._x;
+_root["mc"+_root.Depth_var]._y =
+_root.Mobil_mc._y;
+i = 0;
+}
+}
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 28
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 33 ---
+if (this.hitTest(_root.Mobil_mc) and
+_root.Rambu_mc.LampuMerah1_mc.Lampu_var
+== "Merah") {
+_root.KotakTeks_mc.gotoAndStop(3);
+}
+}
+onClipEvent (enterFrame) {
+if (this.hitTest(_root.Mobil_mc)) {
+_root.KotakTeks_mc.gotoAndStop(2);
+}
+}
+_root.Level_var+=1;
+If(_root.Level_var=<5){
+}
+_root.gotoAndStop(“Finish_lb”);
+_root.SaveData( );
+on(press){
+}
+on (press) {
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 29
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 34 ---
+_root.Score_var = 0;
+_root.Tilang_var = 0;
+_root.gotoAndStop("Game_lb");
+}
+on (press) {
+_root.gotoAndStop("Menu_lb");
+}
+_root.gotoAndStop("Menu_lb");
+_root.Tilang_var+=1;
+If(_root.Tilang_var<3){
+}
+_root.gotoAndStop(“Finish_lb”);
+_root.SaveData( );
+Kompleksitas Siklomatis (pengukuran kuantitatif terhadap kompleksitaslogis suatu
+program) dari grafik alir dapat diperoleh dengan perhitungan:
+Dimana:
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 30
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 35 ---
+E = Jumlah edge grafik alir yang ditandakan dengan gambar panah
+N = Jumlah simpul grafik alir yang ditandakan dengan gambar lingkaran
+Sehingga kompleksitas siklomatisnya
+V(G) = 23 – 18 + 2 = 7
+Basis set yang dihasilkan dari jalur independent secara linier adalah jalur sebagai berikut:
+1 – 2 – 3 – 4 – 5 – 15 – 16 – 17 – 18 – 10 – 11 – 12 – 13 – 14
+1 – 2 – 3 – 4 – 5 – 6 – 7 – 8 – 9 – 10 – 11 – 12 – 13 – 14
+1 – 2 – 3 – 4 – 5 – 6 – 7 – 8 – 9 – 10 – 11 – 12 – 13 – 11
+1 – 2 – 3 – 4 – 5 – 6 – 4
+1 – 2 – 3 – 4 – 5 – 6 – 7 – 8 – 3
+1 – 2 – 3 – 4 – 5 – 15 – 16 – 17 – 18 – 11 – 12 – 2
+1 – 2 – 3 – 4 – 5 – 15 – 16 – 3
+Ketika aplikasi dijalankan, maka terlihat bahwa salah satu basis set yang dihasilkan adalah 1 –
+2
+–
+3 – 4 – 5 – 15 – 16 – 17 – 18 – 10 – 11 – 12 – 13 – 14 dan terlihat bahwa simpul telah
+dieksekusi satu kali.
+Berdasarkan pengamatan ketentuan tersebut dari segi kelayakan software, sistem ini
+telah memenuhi syarat. Adapun untuk level 2, alur jalannya permainan sama dengan level 1,
+hanya berubah pada perbedaan rambu. Jadi dapat dikatakan bahwa hasil pengujian untuk level 2
+juga telah memenuhi syarat.
+b. Pengujian Black Box
+Dalam pengujian berikutnya dilakukan untuk memastikan bahwa suatu event atau
+masukan akan menjalankan proses yang tepat dan menghasilkan output sesuai dengan rancangan
+yang dibuat
+Tabel III.2
+Pengujian Black Box
+OUTPUT/NEXT HASIL
+STAGE PENGUJIAN
+INPUT/EVENT PROS
+ES
+Tombol on (press) {
+Menampilkan menu
+p
+ra
+e
+m
+ng
+b
+e
+u
+n alan _
+}
+r oot.gotoAndStop("DaftarRambu_lb");
+pengenalan rambu
+Sesuai
+on (press) {
+Tombol mulai
+permainan _root.gotoAndStop("Game_lb"); Memulai permainan Sesuai
+}
+on (press) {
+Tombol nilai _root.gotoAndStop("NilaiTertinggi"); Menampilkan menu Sesuai
+}
+Tertinggi nilai tertinggi
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 31
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 36 ---
+on (press) {
+Tombol Keluar fscommand("quit", ""); Keluar/menutup Sesuai
+}
+program
+3.4.2. Support
+Berisi tentang Spesifikasi Hardware dan Software
+Tabel III.3
+Kebutuhan Hardware dan Software
+Catatan : spesifikasi yang di tampilkan adalah spesifikasi minimal yang disarankan.
+3.5. Hasil Pengolahan Data Kuesioner Animasi Interaktif
+Dalam pembuatan program tersebut dilakukan wawancara langsung dengan siswa/siswi dan
+para guru di SDN Grogol Utara 10 Pagi mengenai program animasi yang telah di buat. Kuesioner
+diberikan kepada 40 siswa/siswi tentang bagaimana pendapat mereka setelah aplikasi ini
+dijalankan, yang terdiri dari 10 pertanyaan. Dan kuesioner kepada 10 orang guru tentang pengaruh
+proses pengajaran setelah menjalankan aplikasi ini, yang terdiri dari 10 pertanyaan. Berikut ini
+adalah rincian dari item-item kuesioner untuk para siswi/siwa dan guru SDN Grogol Utara 10 Pagi:
+Contoh :
+Tabel III.4.
+Kuesioner Aplikasi Mengenal Olah raga Atletik untuk
+siswa/siswi
+No. Pertanyaan untuk siswa / siswi YA TIDAK
+Soal
+1 Menurut adik-adik apakah aplikasi Ini sangat mudah digunakan ?
+2 Apakah aplikasi ini dapat membantu adik-adik dalam mengenal
+3 Apakah setelah mencoba aplikasi ini adik-adik lebih tertarik untuk
+4 Apakah aplikasi ini merangsang adik-adik lebih kreatif dalam
+belajar
+5 Menurut adik-adik apakah aplikasi ini menarik untuk di pelajari ?
+6 Menurut adik-adik apakah soal-soal yang ada di quiz interaktif
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 32
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 37 ---
+sulit
+7 Apakah suara didalam aplikasi ini terdengar jelas ?
+8 Apakah gambar dan animasi yang terdapat di aplikasi ini menarik
+bagi
+9 Apakah video dan bahasa yang ada diaplikasi ini mudah
+dimengerti ?
+10 Apakah dengan adanya aplikasi ini pelajaran teori itu
+membosankan ?
+Ket: beri tanda silang ( √ ) pada jawaban yang di pilih
+*untuk pertanyaan dalam kuisioner disesuaikan dengan metode yang digunakan
+Berikut ini adalah bagan dari Kuesioner Aplikasi mengenal olahraga atletik untuk siswa/siswi:
+Gambar III.6
+Tampilan Grafik Kuesioner Para siswa/siswi
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 33
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 38 ---
+BAB IV
+PENUTUP
+5.1. Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada.
+5.2. Saran-saran
+Dalam pembahasan saran melihat dari aspek manajerial, aspek sistem dan aspek
+penelitian (pembahasan) selanjutnya.
+DAFTAR PUSTAKA
+Minimal 10 jurnal, kemudian ditambahakn dengan buku dapat ditambahkan dengan e-
+book, dll
+DAFTAR RIWAYAT HIDUP
+LEMBARKONSULTASI BIMBINGAN SURAT
+KETERANGAN RISET/PKL* LAMPIRAN
+Daftar Kuesioner Uji Coba Animasi Interaktif
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 34
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 39 ---
+OUTLINE PROGRAM SISTEM PENDUKUNG KEPUTUSAN
+Kode Outline : 136
+Nama Outline : Program Sistem Pendukung Keputusan (Web/Mobile/Dekstop)
+Metode Pengerjaan : Kelompok (Maksimal 3 Mahasiswa) atau Individu
+Bukti Riset : Surat Keterangan PKL/Riset atau Surat Keabsahan Data
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib (Submit/Review/LoA/Publish)
+- Hak Kekayaan Intelektual (HKI) : Disarankan
+- Buku : Tidak
+- Karya : Laporan Skripsi,
+Program/Aplikasi Pendukung Keputusan
+(Web/Mobile/Dekstop)
+- Berita Acara Serah Terima Karya : Tidak
+Ketentuan :
+1) Berkelompok maksimal 3 mahasiswa atau dilakukan secara individu
+2) Bagi yang berkelompok mempersiapkan nama kelompok pada saat melaksanakan
+pendaftaran skripsi. Pendaftaran dan Unggah skripsi dilakukan oleh masing-masing
+mahasiswa
+3) Jika sumber data berupa data primer maka mahasiswa diwajibkan melakukan
+wawancara pada perusahaan/instansi pemerintah/institusi Pendidikan/lembaga swadaya
+masyarakat/organisasi kemasyarakatan yang legal dengan minimal 3 orang pakar dan
+melampirkan Surat keterangan Riset/PKL
+4) Jika sumber data berupa data sekunder makan mahasiswa wajib mengisi Surat
+Keabsahan Data
+Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 35
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 40 ---
+Daftar Lampiran Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+1.1. Latar Belakang Masalah
+1.2. Perumusan Masalah
+1.3. Maksud dan Tujuan
+1.4. Metode Penelitian
+1.5. Ruang Lingkup
+BAB II TINJAUAN PUSTAKA
+2.1. Tinjauan Pustaka
+2.2. Penelitian Terkait
+BAB III ANALISA DAN PERANCANGAN
+3.1. Analisa Kebutuhan Program
+3.1.1. Tinjauan Objek Riset*
+3.1.2. Analisa Kebutuhan Pengguna
+3.1.3. Analisa Kebutuhan Software
+3.2. Kerangka Kerja
+3.2.1. Data Understnding
+3.2.2. Data Preparation
+3.2.3. Modelling
+BAB IV IMPLEMENTASI DAN PENGUJIAN
+4.1. Implementasi (Deployment)
+4.1.1. Rancangan Antarmuka
+4.1.2. Code Generation
+4.2. Usability Testing
+BAB V PENUTUP
+5.1. Kesimpulan
+5.2. Saran-saran
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+LEMBAR KONSULTASI BIMBINGAN
+SURAT KETERANGAN RISET
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran A. Daftar Pertanyaan/ Kuesioner riset (Jika Menggunakan data Primer)
+Lampiran B. Sample Dataset (Jika Menggunakan data Sekunder lampirkan Maksimal 3
+Halaman)
+Lampiran C. Daftar Pertanyaan / Kuesioner riset (Usability Testing / Post-Test)
+Catatan:
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 36
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 41 ---
+1. Apabila menggunakan Data Primer maka Mahasiswa WAJIB melakukan RISET atau observasi di
+tempat atau lebih, tetapi jumlah pakar yang harus di wawancara minimal 3 orang.
+2. Sumber referensi (Jurnal) 10 Paper maksimal tahun terbit 5 tahun terakhir.
+3. Point 3.1.1 * Wajib digunakan jika riset
+BAB I
+PENDAHULUAN
+Berisi fakta permasalahan yang ada di perusahaan, diantaranya:
+1.1. Latar Belakang Masalah
+{masalah-masalah yang ditemukan}
+1.2. Perumusan Masalah
+{masalah utama yang mau diangkat}
+1.3. Maksud dan Tujuan
+{alasan kenapa masalah itu diangkat/dibahas}
+1.4. Metode Penelitian
+{metode atau algoritma apa yang mau digunakan utk menyelesaikan masalah}
+1.5. Ruang Lingkup
+{batasan atau lingkup yang akan di evaluasi}
+Petunjuk Teknis Penyusunan Tugas Akhir Hal. 37
+Program Studi Sistem Informasi (S1)
+Fakultas Teknik dan Informatika Universitas Bina Sarana Informatika
+
+--- HALAMAN 42 ---
+BAB II
+TINJAUAN PUSTAKA
+Berisi tentang semua teori-teori yang berhubungan dengan skripsi yang akan dibahas, meliputi:
+2.1. Penelitian Terkait
+{paper-paper peneliti sebelumnya yang terkait}
+2.2. State of The Art
+{tabel resume dari paper peneliti sebelumnya sehingga mahasiswa dapat
+menunjukkan apa pembeda dengan ruang lingkup yang akan dibahas}
+2.3. Teori Pendukung
+{Teori Model atau pendukung lainnya yang digunakan}
+BAB III
+ANALISA DAN PERANCANGAN
+3.1. Analisa Kebutuhan Program
+3.1.1. Tinjauan Objek Riset*
+{untuk yang menggunakan data Primer detailkan sejarah, struktur Organisasi dan lainnya}
+3.1.2. Analisa Kebutuhan Pengguna
+{fitur atau menu yang diperlukan pengguna termasuk uraian business Understanding}
+3.1.3. Analisa Kebutuhan Software
+{kebutuhan pengembangan aplikasi}
+3.2. Kerangka Kerja
+3.2.1. Data Understanding
+{Deskripsi data}
+3.2.2. Data Preparation
+{cleaning, testing}
+3.2.3. Modelling
+{metode/algoritma, seting parameter/variabel, rule (digambarkan dengan Flowchart),
+Evaluasi/ validasi Model}
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 38
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 43 ---
+BAB IV
+IMPLEMENTASI DAN PENGUJIAN
+4.1. Implementasi (Deployment)
+4.2.1. Rancangan Antarmuka
+{tampilan antarmuka atau wireframe UI}
+4.2.2. Code Generation
+{Penggalan kode metode/algoritma yang digunakan}
+4.2. Usability Testing
+{Wawancara wajib dilakukan dengan minimal 3 orang pakar (pre-test) dan Pengujian Sistem
+dilakukan 10-30 responden (post-test)}
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 39
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 44 ---
+BAB V
+PENUTUP
+5.1 Kesimpulan
+Dalam pembahasan kesimpulan menjawab permasalahan yang ada dan berisi tentang kelebihan
+dan kekurangan sistem yang dibuat.
+5.2 Saran
+Berisi tentang solusi tentang kelemahan sistem yang dibuat dan juga dalam pembahasan saran
+melihat dari aspek manajerial, aspek sistem dan aspek penelitian (pembahasan) selanjutnya.
+DAFTAR PUSTAKA
+Jumlah referensi minimal 10 Paper (Jurnal) maksimal tahun terbit 5 tahun terakhir., dapat ditambahkan
+dengan e-book, dll
+DAFTAR RIWAYAT HIDUP
+LEMBAR KONSULTASI BIMBINGAN
+SURAT KETERANGAN RISET
+BUKTI HASIL PENGECEKAN PLAGIARISME
+LAMPIRAN
+Lampiran A. Daftar Pertanyaan/ Kuesioner riset (Jika Menggunakan data Primer)
+Lampiran B. Sample Dataset (Jika Menggunakan data Sekunder lampirkan Maksimal 3
+Halaman)
+Lampiran C. Daftar Pertanyaan / Kuesioner riset (Usability Testing / Post-Test)
+*Contoh : (bentuk tidak mengikat dan diletakkan pada lampiran)
+Lembar Kuesioner
+Nama : …………………..
+Jabatan : ……………………
+Tanda Tangan : ………………..…
+Kuesioner Pre-test
+Jawaban
+No Pernyataan Ya Tidak
+1 Merasakan gejala panas tinggi mendadak
+2 Demam naik dan dihari berikutnya turun kemudian naik lagi
+3 Nafsu makan berkurang
+.... Dst
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 40
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 45 ---
+OUTLINE PENELITIAN ILMIAH
+1. Kode Outline : 170
+Nama Outline : Penelitian Ilmiah
+Metode Pengerjaan : Kelompok (Maksimal 3 Mahasiswa) atau Individu
+Bukti Riset : Surat Keterangan PKL/Riset
+Luaran :
+- Publikasi Artikel Ilmiah : Wajib (Submit/Review/LoA/Publish)
+- Hak Kekayaan Intelektual (HKI) : Disarankan (HKI untuk aplikasinya)
+- Buku : Tidak
+- Karya : Laporan Skripsi,
+Aplikasi (Jika berhubungan dengan pengembangan
+Sistem Informasi)
+- Berita Acara Serah Terima Karya : Disarankan (BAST untuk serah terima aplikasi)
+Ketentuan :
+1. Outline Penelitian Ilmiah :
+A. Bidang penelitian mengacu pada roadmap Penelitian Program Studi Sistem Informasi,
+diantaranya :
+a. Bidang Sistem Terintegrasi (Integration System)
+b. Bidang Sistem Penunjang Keputusan (Decision Support System)
+c. Bidang Sistem Pakar (Artificial Intelegent) dan Data Science
+d. Bidang Technopreneur (E-Business)
+e. Bidang Sistem Pemerintahan dan Kota Pintar (E-Government & Smart City)
+f. Bidang Manajemen Sistem Informasi di Organisasi (Enterprise Systems & IT Governance)
+g. Bidang Sistem Informasi Kesehatan (Telemedicine dan e-health)
+B. Secara umum tujuan utama penelitian ilmiah yaitu: Eksploratif (Penemuan), menemukan sesuatu
+yang baru. Verifikatif (Pengujian), menguji kebenaran teori yang telah ada. Developmental
+(Pengembangan), mengembangkan sistem informasi.
+2. Luaran outline penelitian ilmiah adalah publikasi penelitian. Dosen dan mahasiswa dapat menentukan
+target publikasi penelitian
+3. Bagi mahasiswa yang memilih outline Penelitian Ilmiah, wajib mempersiapkan kelompok maksimal 3
+mahasiswa, wajib mempersiapkan nama kelompok yang akan dientry pada saat melakukan
+pendaftaran Skripsi. Pendaftaran skripsi dilakukan oleh masing-masing mahasiswa. Outline penelitian
+ilmiah juga diperbolehkan secara individu
+4. Sistematika Outline Penelitian Ilmiah sebagai berikut:
+Bentuk Outline :
+Lembar Judul Skripsi
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 41
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 46 ---
+Lembar Konsultasi Skripsi
+Lembar Persembahan
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+BAB I PENDAHULUAN
+BAB II METODOLOGI PENELITIAN
+BAB III HASIL DAN PEMBAHASAN
+BAB IV KESIMPULAN
+DAFTAR PUSTAKA
+DAFTAR RIWAYAT HIDUP
+LEMBAR KONSULTASI BIMBINGAN
+SURAT KETERANGAN RISET/PKL atau KEABSAHAN DATA
+BUKTI HASIL PENGECEKAN PLAGIARISME
+BUKTI SUBMIT/REVIEW/LOA/PUBLISH
+A. Penjelasan Outline Penelitian Ilmiah
+1. Bagian Awal, berisi:
+Lembar Judul Skripsi
+Lembar Persembahan
+Lembar Pernyataan Keaslian Skripsi
+Lembar Pernyataan Persetujuan Publikasi Karya Ilmiah
+Lembar Persetujuan dan Pengesahan Skripsi
+Lembar Pedoman Penggunaan Hak Cipta
+Lembar Konsultasi Skripsi
+Kata Pengantar
+Abstraksi
+Daftar Isi
+Daftar Simbol
+Daftar Gambar
+Daftar Tabel
+Daftar Lampiran
+Keterangan:
+1. Pada bagian ini berisi dokumen yang telah di standarkan di Universitas Bina Sarana
+Informatika yang tertuang pada Pedoman Penyusunan Laporan Skripsi
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 42
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 47 ---
+2. Kata Pengantar tetap mengacu pada Pedoman Penyusunan Laporan Skripsi
+3. Abtraksi mengacu pada ketentuan dari publikasi jurnal yang dituju
+4. Penggunaan Daftar Simbol, Daftar Gambar, Daftar Tabel menyesuaiakan pada Bagian
+Pembahasan Materi Penelitian
+2. Bagian Pembahasan Materi Penelitian
+BAB I Pendahuluan
+BAB II Metodologi Penelitian
+BAB III Hasil Dan Pembahasan
+BAB IV Kesimpulan
+Catatan:
+1. Sistem pembahasan Materi Penelitian hanya sebagai contoh yang diadopsi dari jurnal:
+a. INSAN, http://jurnal.bsi.ac.id/index.php/jinsan
+b. Paradigma, https://jurnal.bsi.ac.id/index.php/paradigma
+c. CEDDI, https://journal.ceddi.id/index.php
+d. IJIRCST, https://www.ijircst.org/
+2. Sumber referensi yang digunakan sebanyak minimal 15 artikel ilmiah
+3. Poin-poin pembahasan pada bagian ini bersifat dinamis disesuaikan dengan template jurnal
+yang dituju. Secara umum penjelasan pembahasan point-point di atas sebagai berikut:
+BAB I Pendahuluan
+Secara umum terdiri dari latar belakang masalah, tujuan penelitian, penelitian terdahulu,
+gambaran metode usulan dan state of the art (kebaruan)
+BAB II Metodologi Penelitian
+Berisi kerangka penelitian yang menyampaikan tahapan-tahapan penelitian beserta
+penjelasannya. Selain itu penjelasan mengenai metode usulan yang digunakan untuk
+mengatasi permasalahan penelitian dan mencapai tujuan penelitia
+BAB III Hasil dan Pembahasan
+Menyampaikan hasil dari tiap tahapan-tahapan penelitian beserta pembahasannya.
+Menyampaikan hasil akhir penelitian sesuai dengan tujuan penelitian. Gunakan tabel dan
+grafik untuk pembahasan yang jelas dan efisien (mempresentasikan, menjelaskan,
+mendiskusikan dan membandingkan, menyimpulkan)
+BAB IV Kesimpulan
+Simpulkan hasil dari penelitian bukan rangkuman percobaan. Kesimpulan menekankan pada
+temuan penting hasil penelitian. kesimpulan harus selaras dan mampu menjawab tujuan
+penelitian.
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 43
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 48 ---
+3. Bagian Akhir
+Referensi
+Daftar Riwayat Hidup
+Lembar Konsultasi Bimbingan
+Surat Keterangan PKL/Riset/Keabsahan Data
+Bukti Hasil Pengecekan Plagiarisme
+Lampiran Bukti Publikasi
+Pada bagian akhir yang perlu diperhatikan adalah
+1. Surat Keterangan PKL/Riset
+a. Apabila menggunakan data primer dan skunder yang diambil dari institusi secara
+lansung wajib Surat Keterangan PKL/Riset
+b. Apabila menggunakan data skunder yang merupakan data publik, maka tidak wajib
+melampirkan Surat Keterangan PKL/Riset
+2. Lampiran Bukti Publikasi
+a. Bentuk jurnal nasional/internasional
+Contoh lampiran : Bukti submit/ Letter of Acceptance (LoA)/Paper jurnal yang sudah
+terbit
+b. Didesiminasikan/dipresentasikan secara oral dan dimuat dalam prosiding yang
+dipublikasikan (ber ISSN/ISBN): Nasional/Internasional
+Contoh lampiran:
+1) Submit/Letter of Accepted (jadwal presentasi)/prosiding seminar yang sudah
+dipublikasikan
+2) Khusus yang sudah selesai mengikut desiminasi menambahkan Sertifikat,
+Dokumentasi (minimal foto)
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 44
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
+
+--- HALAMAN 49 ---
+Petunjuk Teknis Penyusunan Tugas Akhir Program Studi Sistem Informasi Hal. 45
+Program Sarjana Fakultas Teknik dan Informatika
+Universitas Bina Sarana Informatika
