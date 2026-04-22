@@ -82,6 +82,31 @@ export default async function DashboardPage() {
   const { data: maintenanceActionLogs } = await maintenanceActionLogsPromise
   const { data: purchaseHistory } = await purchaseHistoryPromise
 
+  // Fetch lab tests for this customer's machines
+  const machineIds = (machines || []).map(m => m.id)
+  const labTestsPromise = machineIds.length > 0
+    ? supabase
+        .from('oil_lab_tests')
+        .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, product:oil_products(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan), pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at')
+        .in('machine_id', machineIds)
+        .order('test_date', { ascending: false })
+    : Promise.resolve({ data: [] })
+
+  // Fetch dismissed alerts states
+  const alertReadsPromise = supabase
+    .from('oil_alert_actions')
+    .select('alert_key')
+    .eq('action_type', 'customer_read')
+    .eq('actor_id', profile.id)
+
+  const [labTestsResult, alertReadsResult] = await Promise.all([
+    labTestsPromise,
+    alertReadsPromise
+  ])
+
+  const initialLabTests = labTestsResult.data || []
+  const initialDismissedAlertIds = (alertReadsResult.data || []).map(row => row.alert_key)
+
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
     id: profile.id,
@@ -106,6 +131,8 @@ export default async function DashboardPage() {
       initialMaintenanceActions={maintenanceActions || []}
       initialMaintenanceActionLogs={maintenanceActionLogs || []}
       initialPurchaseHistory={purchaseHistory || []}
+      initialLabTests={initialLabTests}
+      initialDismissedAlertIds={initialDismissedAlertIds}
     />
   )
 }

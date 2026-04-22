@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AdminClient from './AdminClient'
+import type { AdminUser } from '@/lib/types'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -36,7 +37,7 @@ export default async function AdminPage() {
   }
 
   // Run all queries in parallel for faster initial load
-  const [customersResult, machinesResult, recentTestsResult] = await Promise.all([
+  const [customersResult, machinesResult, recentTestsResult, productsResult, usersResult, purchasesResult] = await Promise.all([
     supabase
       .from('oil_customers')
       .select(`
@@ -51,8 +52,7 @@ export default async function AdminPage() {
         customer:oil_customers(company_name),
         lab_tests:oil_lab_tests(count)
       `)
-      .order('created_at', { ascending: false })
-      .limit(10),
+      .order('machine_name'),
     supabase
       .from('oil_lab_tests')
       .select(`
@@ -60,21 +60,38 @@ export default async function AdminPage() {
         machine:machine_id(machine_name, customer_id),
         product:product_id(product_name)
       `)
-      .order('test_date', { ascending: false })
-      .limit(20)
+      .order('test_date', { ascending: false }),
+    supabase
+      .from('oil_products')
+      .select('*')
+      .order('id'),
+    supabase
+      .from('oil_profiles')
+      .select('id, full_name, email, phone_number, role, customer_id, created_at, updated_at, customer:oil_customers(company_name)')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('oil_purchase_history')
+      .select('*, customer:oil_customers(company_name), product:oil_products(product_name)')
+      .order('purchase_date', { ascending: false })
   ])
 
   const customers = customersResult.data
   const machines = machinesResult.data
   const recentTests = recentTestsResult.data
+  const products = productsResult.data
+  const users = usersResult.data
+  const purchases = purchasesResult.data
 
   return (
     <AdminClient
       user={user}
-      profile={profile}
+      profile={profile as any}
       customers={customers || []}
       machines={machines || []}
       recentTests={recentTests || []}
+      initialProducts={products || []}
+      initialUsers={(users as unknown as AdminUser[]) || []}
+      initialPurchases={purchases || []}
     />
   )
 }

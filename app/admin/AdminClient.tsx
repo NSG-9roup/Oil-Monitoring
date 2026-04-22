@@ -10,6 +10,15 @@ import Image from 'next/image'
 import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, AdminPurchase } from '@/lib/types'
 import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
 import { logger } from '@/lib/logger'
+import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, createPurchase, updatePurchase, deletePurchase } from '@/app/actions/adminActions'
+import { AdminOverviewTab } from './components/AdminOverviewTab'
+import { AdminCustomersTab } from './components/AdminCustomersTab'
+import { AdminMachinesTab } from './components/AdminMachinesTab'
+import { AdminProductsTab } from './components/AdminProductsTab'
+import { AdminTestsTab } from './components/AdminTestsTab'
+import { AdminAlertsTab } from './components/AdminAlertsTab'
+import { AdminPurchasesTab } from './components/AdminPurchasesTab'
+import { AdminUsersTab } from './components/AdminUsersTab'
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -48,6 +57,9 @@ interface AdminClientProps {
   customers: Customer[]
   machines: AdminMachine[]
   recentTests: AdminLabTest[]
+  initialProducts: AdminProduct[]
+  initialUsers: AdminUser[]
+  initialPurchases: AdminPurchase[]
 }
 
 type ModalType = 'add-customer' | 'edit-customer' | 'set-customer-pin' | 'import-customers' | 'add-machine' | 'edit-machine' | 'add-test' | 'edit-test' | 'add-product' | 'edit-product' | 'import-products' | 'add-purchase' | 'edit-purchase' | 'add-user' | 'edit-user' | 'upload-logo' | null
@@ -106,6 +118,9 @@ export default function AdminClient({
   customers: initialCustomers,
   machines: initialMachines,
   recentTests: initialTests,
+  initialProducts,
+  initialUsers,
+  initialPurchases,
 }: AdminClientProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -116,9 +131,9 @@ export default function AdminClient({
   const [customers, setCustomers] = useState<Customer[]>(normalizeCustomers(initialCustomers as CustomerWithPinHash[]))
   const [machines, setMachines] = useState<AdminMachine[]>(initialMachines)
   const [recentTests, setRecentTests] = useState<AdminLabTest[]>(initialTests)
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [products, setProducts] = useState<AdminProduct[]>([])
-  const [purchases, setPurchases] = useState<AdminPurchase[]>([])
+  const [users, setUsers] = useState<AdminUser[]>(initialUsers)
+  const [products, setProducts] = useState<AdminProduct[]>(initialProducts)
+  const [purchases, setPurchases] = useState<AdminPurchase[]>(initialPurchases)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<FormDataState>({})
   const [uploadingLogo, setUploadingLogo] = useState(false)
@@ -140,6 +155,16 @@ export default function AdminClient({
   const [quickAddData, setQuickAddData] = useState<FormDataState>({})
   const [uniqueProductTypes, setUniqueProductTypes] = useState<string[]>([])
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
+
+  // Sync props to state on Server Action revalidation
+  useEffect(() => {
+    setCustomers(normalizeCustomers(initialCustomers as CustomerWithPinHash[]))
+    setMachines(initialMachines)
+    setRecentTests(initialTests)
+    setProducts(initialProducts)
+    setUsers(initialUsers)
+    setPurchases(initialPurchases)
+  }, [initialCustomers, initialMachines, initialTests, initialProducts, initialUsers, initialPurchases])
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
   const [alertQueue, setAlertQueue] = useState<DashboardAlert[]>([])
   const [reviewedAlertIds, setReviewedAlertIds] = useState<string[]>([])
@@ -150,87 +175,22 @@ export default function AdminClient({
   const [emailLanguage, setEmailLanguage] = useState<'id' | 'en'>('id')
 
   // Load customers
-  const loadCustomers = async () => {
-    const { data, error } = await supabase
-      .from('oil_customers')
-      .select('*')
-      .order('company_name')
-    if (error) logger.error('Failed to load ', error.message)
-    setCustomers(normalizeCustomers((data || []) as CustomerWithPinHash[]))
-  }
+  
 
   // Load machines
-  const loadMachines = async () => {
-    const { data, error } = await supabase
-      .from('oil_machines')
-      .select('*, customer:oil_customers(company_name)')
-      .order('machine_name')
-    if (error) logger.error('Failed to load ', error.message)
-    setMachines(data || [])
-  }
+  
 
   // Load users
-  const loadUsers = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('oil_profiles')
-      .select('id, full_name, email, phone_number, role, customer_id, created_at, updated_at, customer:oil_customers(company_name)')
-      .order('created_at', { ascending: false })
-    if (error) logger.error('Failed to load ', error.message)
-    const normalizedUsers: AdminUser[] = (data || []).map((row) => ({
-      ...row,
-      customer: Array.isArray(row.customer) ? (row.customer[0] ?? null) : row.customer,
-    }))
-    setUsers(normalizedUsers)
-  }, [supabase])
+
 
   // Load products
-  const loadProducts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('oil_products')
-      .select('*')
-      .order('id')
-    if (error) logger.error('Failed to load ', error.message)
-    setProducts(data || [])
-    
-    // Extract unique product types for autocomplete
-    if (data) {
-      const types = [...new Set(data.map(p => p.product_type).filter(Boolean))]
-      setUniqueProductTypes(types)
-    }
-  }, [supabase])
+
 
   // Load recent tests
-  const loadTests = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('oil_lab_tests')
-      .select(`
-        *,
-        machine:machine_id (
-          machine_name,
-          customer_id,
-          customer:customer_id (company_name)
-        ),
-        product:product_id (
-          product_name,
-          product_type
-        )
-      `)
-      .order('test_date', { ascending: false })
-      .limit(50)
-    if (error) logger.error('Failed to load ', error.message)
-    setRecentTests(data || [])
-  }, [supabase])
+
 
   // Load purchases
-  const loadPurchases = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('oil_purchase_history')
-      .select('*, customer:oil_customers(company_name), product:oil_products(product_name)')
-      .order('purchase_date', { ascending: false })
-      .limit(100)
-    if (error) logger.error('Failed to load ', error.message)
-    setPurchases(data || [])
-  }, [supabase])
+
 
   const loadAlertQueue = useCallback(async () => {
     try {
@@ -370,43 +330,13 @@ export default function AdminClient({
   }, [supabase])
 
   // Load users when switching to users tab
-  useEffect(() => {
-    if (activeTab === 'overview') {
-      loadTests()
-    }
-    if (activeTab === 'users') {
-      loadUsers()
-    }
-    if (activeTab === 'products') {
-      loadProducts()
-    }
-    if (activeTab === 'tests') {
-      loadTests()
-    }
-    if (activeTab === 'alerts') {
-      loadAlertQueue()
-    }
-    if (activeTab === 'purchases') {
-      loadPurchases()
-    }
-  }, [activeTab, loadAlertQueue, loadProducts, loadPurchases, loadTests, loadUsers])
-
+  
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.replace('/login')
   }
 
-  const refreshData = () => {
-    // Refresh semua data yang sedang aktif
-    loadCustomers()
-    loadMachines()
-    loadTests() // Always load tests for overview Recent Activity
-    if (activeTab === 'users') loadUsers()
-    if (activeTab === 'products') loadProducts()
-    if (activeTab === 'alerts') loadAlertQueue()
-    if (activeTab === 'purchases') loadPurchases()
-    router.refresh()
-  }
+  
 
   const markAlertReviewed = (alertId: string) => {
     const found = alertQueue.find((item) => item.id === alertId)
@@ -536,24 +466,16 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-customer') {
-        const { error } = await supabase
-          .from('oil_customers')
-          .insert([formData])
-        if (error) throw error
+        await createCustomer(formData)
         alert('Customer added successfully!')
       } else if (modalOpen === 'edit-customer') {
         const selectedItemId = selectedItem?.id
         if (!selectedItemId) throw new Error('No customer selected')
-        const { error } = await supabase
-          .from('oil_customers')
-          .update(formData)
-          .eq('id', selectedItemId)
-        if (error) throw error
+        await updateCustomer(selectedItemId, formData)
         alert('Customer updated successfully!')
       }
       setModalOpen(null)
-      refreshData()
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -561,61 +483,15 @@ export default function AdminClient({
   }
 
   const handleDeleteCustomer = async (id: string) => {
-    // C3: Cascade delete preview — hitung berapa data yang akan ikut terhapus
-    setLoading(true)
-    let machineCount = 0, testCount = 0, userCount = 0, purchaseCount = 0
-    try {
-      const [mResult, uResult, puResult] = await Promise.all([
-        supabase.from('oil_machines').select('id', { count: 'exact', head: true }).eq('customer_id', id),
-        supabase.from('oil_profiles').select('id', { count: 'exact', head: true }).eq('customer_id', id),
-        supabase.from('oil_purchase_history').select('id', { count: 'exact', head: true }).eq('customer_id', id),
-      ])
-      machineCount = mResult.count ?? 0
-      userCount = uResult.count ?? 0
-      purchaseCount = puResult.count ?? 0
-
-      // Hitung tests dari mesin yang akan terhapus
-      if (machineCount > 0) {
-        const { data: machineIds } = await supabase.from('oil_machines').select('id').eq('customer_id', id)
-        if (machineIds && machineIds.length > 0) {
-          const ids = machineIds.map(m => m.id)
-          const tResult = await supabase.from('oil_lab_tests').select('id', { count: 'exact', head: true }).in('machine_id', ids)
-          testCount = tResult.count ?? 0
-        }
-      }
-    } catch {
-      // Jika gagal count, tetap tampilkan konfirmasi sederhana
-    } finally {
-      setLoading(false)
-    }
-
-    const confirmMessage = [
-      '⚠️ KONFIRMASI PENGHAPUSAN CUSTOMER',
-      '',
-      'Anda akan menghapus customer beserta SEMUA data berikut:',
-      `  • ${machineCount} mesin`,
-      `  • ${testCount} catatan lab test`,
-      `  • ${userCount} akun user`,
-      `  • ${purchaseCount} riwayat pembelian`,
-      '',
-      'AKSI INI TIDAK BISA DIBATALKAN!',
-      '',
-      'Ketik OK untuk konfirmasi penghapusan.',
-    ].join('\n')
-
-    if (!confirm(confirmMessage)) return
-
+    const confirmMessage = "Menghapus customer ini juga akan MENGHAPUS SELURUH.\nAnda yakin 100%?"
+    if (!window.confirm(confirmMessage)) return
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('oil_customers')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      alert(`Customer dan ${machineCount} mesin, ${testCount} lab test, ${userCount} user, ${purchaseCount} pembelian berhasil dihapus.`)
-      refreshData()
-    } catch (error: unknown) {
-      alert('Error: ' + getErrorMessage(error))
+      await deleteCustomer(id)
+      alert("Customer dan seluruh relasi berhasil dihapus.")
+      if (selectedItem?.id === id) setSelectedItem(null)
+    } catch (error: any) {
+      alert("Gagal menghapus: " + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -806,7 +682,7 @@ export default function AdminClient({
       
       alert('Logo uploaded successfully!')
       setModalOpen(null)
-      refreshData()
+      router.refresh()
     } catch (error: unknown) {
       console.error('Upload error:', error)
       alert('Error uploading logo: ' + getErrorMessage(error))
@@ -839,7 +715,7 @@ export default function AdminClient({
       
       alert('Logo deleted successfully!')
       setModalOpen(null)
-      refreshData()
+      router.refresh()
     } catch (error: unknown) {
       alert('Error deleting logo: ' + getErrorMessage(error))
     } finally {
@@ -873,24 +749,15 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-machine') {
-        const { error } = await supabase
-          .from('oil_machines')
-          .insert([formData])
-        if (error) throw error
+        await createMachine(formData)
         alert('Machine added successfully!')
       } else if (modalOpen === 'edit-machine') {
-        const selectedItemId = selectedItem?.id
-        if (!selectedItemId) throw new Error('No machine selected')
-        const { error } = await supabase
-          .from('oil_machines')
-          .update(formData)
-          .eq('id', selectedItemId)
-        if (error) throw error
+        if (!selectedItem?.id) throw new Error('No machine selected')
+        await updateMachine(selectedItem.id, formData)
         alert('Machine updated successfully!')
       }
       setModalOpen(null)
-      refreshData()
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -898,17 +765,12 @@ export default function AdminClient({
   }
 
   const handleDeleteMachine = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this machine?')) return
+    if (!window.confirm('Are you sure you want to delete this machine?')) return
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('oil_machines')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      alert('Machine deleted successfully!')
-      refreshData()
-    } catch (error: unknown) {
+      await deleteMachine(id)
+      if (selectedItem?.id === id) setSelectedItem(null)
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -941,7 +803,7 @@ export default function AdminClient({
       if (error) throw error
       
       // Refresh machines list
-      await loadMachines()
+      router.refresh()
       
       // Restore lab test form and auto-select new machine
       restoreLabTestDraft(data.id, 'machine')
@@ -984,7 +846,7 @@ export default function AdminClient({
       if (error) throw error
       
       // Refresh products list
-      await loadProducts()
+      router.refresh()
       
       // Restore lab test form and auto-select new product
       restoreLabTestDraft(data.id, 'product')
@@ -1029,29 +891,15 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-product') {
-        const { error } = await supabase
-          .from('oil_products')
-          .insert([formData])
-        if (error) throw error
+        await createProduct(formData)
         alert('Product added successfully!')
       } else if (modalOpen === 'edit-product') {
-        const selectedItemId = selectedItem?.id
-        if (!selectedItemId) throw new Error('No product selected')
-        const { error } = await supabase
-          .from('oil_products')
-          .update(formData)
-          .eq('id', selectedItemId)
-        if (error) throw error
+        if (!selectedItem?.id) throw new Error('No product selected')
+        await updateProduct(selectedItem.id, formData)
         alert('Product updated successfully!')
       }
       setModalOpen(null)
-      // Reload products
-      const { data: productsData } = await supabase
-        .from('oil_products')
-        .select('*')
-        .order('id')
-      setProducts(productsData || [])
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -1059,22 +907,12 @@ export default function AdminClient({
   }
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return
+    if (!window.confirm('Are you sure you want to delete this product?')) return
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('oil_products')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      alert('Product deleted successfully!')
-      // Reload products
-      const { data: productsData } = await supabase
-        .from('oil_products')
-        .select('*')
-        .order('id')
-      setProducts(productsData || [])
-    } catch (error: unknown) {
+      await deleteProduct(id)
+      if (selectedItem?.id === id) setSelectedItem(null)
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -1121,113 +959,29 @@ export default function AdminClient({
   const handleSavePurchase = async () => {
     setLoading(true)
     try {
-      const toNumber = (value: unknown) => {
-        if (value === null || value === undefined) return 0
-        // Handle inputs like "1,250.50" or "1250,50" safely.
-        const raw = String(value).trim()
-        if (!raw) return 0
-        const normalized = raw.includes(',') && !raw.includes('.')
-          ? raw.replace(/\./g, '').replace(',', '.')
-          : raw.replace(/,/g, '')
-        const parsed = Number(normalized)
-        return Number.isFinite(parsed) ? parsed : 0
-      }
-
-      const round2 = (num: number) => Math.round(num * 100) / 100
-
-      const quantity = round2(toNumber(formData.quantity))
-      const unitPrice = round2(toNumber(formData.unit_price))
-      const totalPrice = round2(toNumber(formData.total_price) || (quantity * unitPrice))
-
-      const MAX_QUANTITY = 99999999.99 // NUMERIC(10,2)
-      const MAX_UNIT_PRICE = 9999999999.99 // NUMERIC(12,2)
-      const MAX_TOTAL_PRICE = 999999999999.99 // NUMERIC(14,2)
-
-      if (quantity > MAX_QUANTITY) {
-        throw new Error('Quantity terlalu besar. Maksimal 99,999,999.99')
-      }
-      if (unitPrice > MAX_UNIT_PRICE) {
-        throw new Error('Unit Price terlalu besar. Maksimal 9,999,999,999.99')
-      }
-      if (totalPrice > MAX_TOTAL_PRICE) {
-        throw new Error('Total Price terlalu besar. Maksimal 999,999,999,999.99')
-      }
-
-      const purchaseData = {
-        customer_id: formData.customer_id,
-        product_id: formData.product_id,
-        purchase_date: formData.purchase_date,
-        quantity,
-        unit_price: unitPrice,
-        total_price: totalPrice,
-        status: formData.status
-      }
-
-      const purchaseDataNoTotal = {
-        customer_id: formData.customer_id,
-        product_id: formData.product_id,
-        purchase_date: formData.purchase_date,
-        quantity,
-        unit_price: unitPrice,
-        status: formData.status
-      }
-
       if (modalOpen === 'add-purchase') {
-        let { error } = await supabase
-          .from('oil_purchase_history')
-          .insert([purchaseData])
-        if (error?.message?.includes("'total_price'")) {
-          const retry = await supabase
-            .from('oil_purchase_history')
-            .insert([purchaseDataNoTotal])
-          error = retry.error
-        }
-        if (error) throw error
-        alert('Purchase added successfully!')
+        await createPurchase(formData)
+        alert('Purchase record added successfully!')
       } else if (modalOpen === 'edit-purchase') {
-        const selectedItemId = selectedItem?.id
-        if (!selectedItemId) throw new Error('No purchase selected')
-        let { error } = await supabase
-          .from('oil_purchase_history')
-          .update(purchaseData)
-          .eq('id', selectedItemId)
-        if (error?.message?.includes("'total_price'")) {
-          const retry = await supabase
-            .from('oil_purchase_history')
-            .update(purchaseDataNoTotal)
-            .eq('id', selectedItemId)
-          error = retry.error
-        }
-        if (error) throw error
-        alert('Purchase updated successfully!')
+        if (!selectedItem?.id) throw new Error('No record selected')
+        await updatePurchase(selectedItem.id, formData)
+        alert('Purchase record updated successfully!')
       }
-      
-      await loadPurchases()
       setModalOpen(null)
-    } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error).toLowerCase()
-      if (errorMessage.includes('numeric field overflow')) {
-        alert('Error: nilai angka terlalu besar untuk kolom database. Cek Quantity, Unit Price, dan Total Price.')
-      } else {
-        alert('Error: ' + getErrorMessage(error))
-      }
+    } catch (error: any) {
+      alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
     }
   }
 
   const handleDeletePurchase = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this purchase?')) return
+    if (!window.confirm('Are you sure you want to delete this purchase?')) return
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('oil_purchase_history')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      alert('Purchase deleted successfully!')
-      await loadPurchases()
-    } catch (error: unknown) {
+      await deletePurchase(id)
+      if (selectedItem?.id === id) setSelectedItem(null)
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -1275,76 +1029,16 @@ export default function AdminClient({
   const handleSaveTest = async () => {
     setLoading(true)
     try {
-      // Validate required fields
-      if (!formData.machine_id) {
-        alert('Please select a machine')
-        setLoading(false)
-        return
-      }
-      if (!formData.product_id) {
-        alert('Please select a product')
-        setLoading(false)
-        return
-      }
-      
-      let pdfPath = formData.pdf_path || null
-      
-      // Upload PDF if selected
-      const pdfFile = formData.pdfFile
-      if (pdfFile instanceof File) {
-        const file = pdfFile
-        const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-        const { data, error: uploadError } = await supabase.storage
-          .from('lab-reports')
-          .upload(fileName, file)
-        
-        if (uploadError) throw uploadError
-        pdfPath = data.path
-      }
-      
-      // Convert water content from PPM to decimal if needed
-      let waterContentDecimal = parseFloat(String(formData.water_content ?? '')) || null
-      if (waterContentDecimal !== null && formData.water_content_unit === 'PPM') {
-        waterContentDecimal = waterContentDecimal / 10000 // PPM to decimal (198 PPM = 0.0198)
-      } else if (waterContentDecimal !== null && formData.water_content_unit === 'PERCENT') {
-        waterContentDecimal = waterContentDecimal / 100 // Percent to decimal (0.5% = 0.005)
-      }
-      
-      const testData = {
-        machine_id: formData.machine_id,
-        product_id: formData.product_id || null,
-        test_date: formData.test_date,
-        viscosity_40c: parseFloat(String(formData.viscosity_40c ?? '')) || null,
-        viscosity_100c: parseFloat(String(formData.viscosity_100c ?? '')) || null,
-        water_content: waterContentDecimal,
-        water_content_unit: formData.water_content_unit || 'PPM',
-        tan_value: parseFloat(String(formData.tan_value ?? '')) || null,
-        pdf_path: pdfPath,
-      }
-      
       if (modalOpen === 'add-test') {
-        const { error } = await supabase
-          .from('oil_lab_tests')
-          .insert([testData])
-        if (error) throw error
-        alert('Lab test added successfully!')
+        await createTest(formData)
+        alert('Lab test recorded successfully!')
       } else if (modalOpen === 'edit-test') {
-        const selectedItemId = selectedItem?.id
-        if (!selectedItemId) throw new Error('No lab test selected')
-        const { error } = await supabase
-          .from('oil_lab_tests')
-          .update(testData)
-          .eq('id', selectedItemId)
-        if (error) throw error
+        if (!selectedItem?.id) throw new Error('No test selected')
+        await updateTest(selectedItem.id, formData)
         alert('Lab test updated successfully!')
       }
-      
-      // Reload tests immediately
-      await loadTests()
       setModalOpen(null)
-      clearLabTestDraft() // Clear draft after successful save
-      refreshData()
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -1352,18 +1046,12 @@ export default function AdminClient({
   }
 
   const handleDeleteTest = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this lab test?')) return
+    if (!window.confirm('Area you sure you want to delete this test record?')) return
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('oil_lab_tests')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      alert('Lab test deleted successfully!')
-      await loadTests()
-      refreshData()
-    } catch (error: unknown) {
+      await deleteTest(id)
+      if (selectedItem?.id === id) setSelectedItem(null)
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -1396,51 +1084,15 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-user') {
-        const response = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'create',
-            email: formData.email,
-            password: formData.password,
-            full_name: formData.full_name,
-            contact_email: formData.contact_email,
-            phone_number: formData.phone_number,
-            role: formData.role,
-            customer_id: formData.customer_id,
-          }),
-        })
-        
-        const data = await response.json()
-        if (!response.ok) throw new Error(data.error)
-        
-        alert('User created successfully!')
-        await loadUsers()
+        await createUser({ ...formData, action: 'create' })
+        alert('User profile added successfully!')
       } else if (modalOpen === 'edit-user') {
-        const selectedItemId = selectedItem?.id
-        if (!selectedItemId) throw new Error('No user selected')
-        const response = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update',
-            userId: selectedItemId,
-            full_name: formData.full_name,
-            contact_email: formData.contact_email,
-            phone_number: formData.phone_number,
-            role: formData.role,
-            customer_id: formData.customer_id,
-          }),
-        })
-        
-        const data = await response.json()
-        if (!response.ok) throw new Error(data.error)
-        
-        alert('User updated successfully!')
-        await loadUsers()
+        if (!selectedItem?.id) throw new Error('No user selected')
+        await updateUser(selectedItem.id, { ...formData, action: 'update' })
+        alert('User profile updated successfully!')
       }
       setModalOpen(null)
-    } catch (error: unknown) {
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -1448,24 +1100,16 @@ export default function AdminClient({
   }
 
   const handleDeleteUser = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return
+    if (id === user.id) {
+      alert('You cannot delete yourself')
+      return
+    }
+    if (!window.confirm('Are you sure you want to delete this user?')) return
     setLoading(true)
     try {
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'delete',
-          userId: id,
-        }),
-      })
-      
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error)
-      
-      alert('User deleted successfully!')
-      await loadUsers()
-    } catch (error: unknown) {
+      await deleteUser(id)
+      if (selectedItem?.id === id) setSelectedItem(null)
+    } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
       setLoading(false)
@@ -3976,7 +3620,7 @@ export default function AdminClient({
                         
                         setImportResult(results)
                         setImportLoading(false)
-                        if (results.success > 0) loadCustomers()
+                        if (results.success > 0) router.refresh()
                       }}
                       disabled={csvData.length === 0 || importLoading}
                       className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
