@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AdminClient from './AdminClient'
-import type { AdminUser } from '@/lib/types'
+import type { AdminProfile, AdminUser } from '@/lib/types'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -17,19 +17,28 @@ export default async function AdminPage() {
   // Get user profile
   const { data: profile, error: profileError } = await supabase
     .from('oil_profiles')
-    .select('*')
+    .select('id, full_name, email, phone_number, role, customer_id, created_at, updated_at, customer:oil_customers(id, company_name, status, logo_url, created_at, updated_at)')
     .eq('id', user.id)
     .single()
 
+  const normalizedProfile: AdminProfile | null = profile
+    ? {
+        ...profile,
+        customer: Array.isArray(profile.customer)
+          ? profile.customer[0] ?? null
+          : profile.customer ?? null,
+      }
+    : null
+
   // Check if user is admin
-  if (!profile || !['admin', 'sales'].includes(profile.role)) {
+  if (!normalizedProfile || !['admin', 'sales'].includes(normalizedProfile.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
           <p className="text-gray-600">You do not have admin access.</p>
           <p className="text-xs text-gray-500 mt-2">User: {user.email}</p>
-          <p className="text-xs text-gray-500">Role: {profile?.role || 'none'}</p>
+          <p className="text-xs text-gray-500">Role: {normalizedProfile?.role || 'none'}</p>
           {profileError && <p className="text-xs text-red-500 mt-2">{profileError.message}</p>}
         </div>
       </div>
@@ -81,16 +90,22 @@ export default async function AdminPage() {
   const products = productsResult.data
   const users = usersResult.data
   const purchases = purchasesResult.data
+  const normalizedUsers = (users || []).map((row) => ({
+    ...row,
+    customer: Array.isArray(row.customer)
+      ? row.customer[0] ?? null
+      : row.customer ?? null,
+  })) as AdminUser[]
 
   return (
     <AdminClient
       user={user}
-      profile={profile as any}
+      profile={normalizedProfile}
       customers={customers || []}
       machines={machines || []}
       recentTests={recentTests || []}
       initialProducts={products || []}
-      initialUsers={(users as unknown as AdminUser[]) || []}
+      initialUsers={normalizedUsers}
       initialPurchases={purchases || []}
     />
   )

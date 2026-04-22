@@ -1,24 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import imageCompression from 'browser-image-compression'
 import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
-import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, AdminPurchase } from '@/lib/types'
+import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, AdminPurchase, UserRole } from '@/lib/types'
 import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
 import { logger } from '@/lib/logger'
 import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, createPurchase, updatePurchase, deletePurchase } from '@/app/actions/adminActions'
-import { AdminOverviewTab } from './components/AdminOverviewTab'
-import { AdminCustomersTab } from './components/AdminCustomersTab'
-import { AdminMachinesTab } from './components/AdminMachinesTab'
-import { AdminProductsTab } from './components/AdminProductsTab'
-import { AdminTestsTab } from './components/AdminTestsTab'
-import { AdminAlertsTab } from './components/AdminAlertsTab'
-import { AdminPurchasesTab } from './components/AdminPurchasesTab'
-import { AdminUsersTab } from './components/AdminUsersTab'
+
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -36,6 +29,85 @@ const formatDate = (value?: string | number | Date) => {
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unknown error'
+
+const toOptionalString = (value?: FormValue) => {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed ? trimmed : undefined
+}
+
+const toOptionalNumber = (value?: FormValue) => {
+  if (typeof value !== 'string' && typeof value !== 'number') return undefined
+  if (value === '') return undefined
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numericValue) ? numericValue : undefined
+}
+
+const buildMachinePayload = (data: FormDataState) => ({
+  machine_name: data.machine_name ?? '',
+  customer_id: toOptionalString(data.customer_id),
+  serial_number: toOptionalString(data.serial_number),
+  model: toOptionalString(data.model),
+  location: toOptionalString(data.location),
+  status: data.status ?? 'active',
+})
+
+const buildProductPayload = (data: FormDataState) => ({
+  product_name: data.product_name ?? '',
+  product_type: data.product_type ?? '',
+  base_oil: toOptionalString(data.base_oil),
+  viscosity_grade: toOptionalString(data.viscosity_grade),
+  baseline_viscosity_40c: toOptionalNumber(data.baseline_viscosity_40c),
+  baseline_viscosity_100c: toOptionalNumber(data.baseline_viscosity_100c),
+  baseline_tan: toOptionalNumber(data.baseline_tan),
+  oil_grade: toOptionalString(data.oil_grade),
+})
+
+const buildPurchasePayload = (data: FormDataState) => ({
+  customer_id: toOptionalString(data.customer_id),
+  product_id: toOptionalString(data.product_id),
+  quantity: toOptionalNumber(data.quantity),
+  purchase_date: data.purchase_date ?? '',
+  unit_price: toOptionalNumber(data.unit_price),
+  total_price: toOptionalNumber(data.total_price),
+})
+
+const buildTestPayload = (data: FormDataState) => ({
+  machine_id: toOptionalString(data.machine_id),
+  product_id: toOptionalString(data.product_id),
+  test_date: data.test_date ?? '',
+  viscosity_40c: toOptionalNumber(data.viscosity_40c),
+  viscosity_100c: toOptionalNumber(data.viscosity_100c),
+  water_content: toOptionalNumber(data.water_content),
+  water_content_unit: data.water_content_unit,
+  tan_value: toOptionalNumber(data.tan_value),
+  notes: toOptionalString(data.notes),
+})
+
+const buildCreateUserPayload = (data: FormDataState) => ({
+  email: data.email?.trim() ?? '',
+  password: data.password ?? '',
+  full_name: data.full_name?.trim() ?? '',
+  phone_number: toOptionalString(data.phone_number),
+  role: data.role ?? 'customer',
+  customer_id: toOptionalString(data.customer_id),
+  contact_email: toOptionalString(data.contact_email),
+})
+
+const buildUpdateUserPayload = (data: FormDataState) => ({
+  full_name: toOptionalString(data.full_name),
+  phone_number: toOptionalString(data.phone_number),
+  role: data.role,
+  customer_id: toOptionalString(data.customer_id),
+  contact_email: toOptionalString(data.contact_email),
+})
+
+type LatestMachineTestRow = {
+  machine_id: string
+  test_date: string
+  water_content: number | null
+  tan_value: number | null
+}
 
 type CustomerWithPinHash = Customer & {
   user_management_pin_hash?: string | null
@@ -81,18 +153,20 @@ type CsvRow = {
 
 interface FormDataState {
   company_name?: string
+  full_name?: string
   machine_name?: string
   customer_id?: string | null
   product_name?: string
   product_type?: string
   test_date?: string
   email?: string
-  role?: string
+  role?: UserRole
   phone_number?: string
   contact_email?: string
   password?: string
   status?: string
   location?: string | null
+  purchase_date?: string
   serial_number?: string
   model?: string
   base_oil?: string | null
@@ -153,7 +227,10 @@ export default function AdminClient({
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null)
   const [quickAddModal, setQuickAddModal] = useState<'machine' | 'product' | null>(null)
   const [quickAddData, setQuickAddData] = useState<FormDataState>({})
-  const [uniqueProductTypes, setUniqueProductTypes] = useState<string[]>([])
+  const uniqueProductTypes = useMemo(
+    () => [...new Set(products.map((p) => p.product_type).filter(Boolean))],
+    [products]
+  )
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
 
   // Sync props to state on Server Action revalidation
@@ -208,7 +285,7 @@ export default function AdminClient({
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_latest_machine_tests')
       
       if (!rpcError && rpcData) {
-        rpcData.forEach((row: any) => {
+        ;(rpcData as LatestMachineTestRow[]).forEach((row) => {
           latestByMachine.set(row.machine_id, {
             test_date: row.test_date,
             water_content: row.water_content,
@@ -732,11 +809,11 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-machine') {
-        await createMachine(formData)
+        await createMachine(buildMachinePayload(formData))
         alert('Machine added successfully!')
       } else if (modalOpen === 'edit-machine') {
         if (!selectedItem?.id) throw new Error('No machine selected')
-        await updateMachine(selectedItem.id, formData)
+        await updateMachine(selectedItem.id, buildMachinePayload(formData))
         alert('Machine updated successfully!')
       }
       setModalOpen(null)
@@ -874,11 +951,11 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-product') {
-        await createProduct(formData)
+        await createProduct(buildProductPayload(formData))
         alert('Product added successfully!')
       } else if (modalOpen === 'edit-product') {
         if (!selectedItem?.id) throw new Error('No product selected')
-        await updateProduct(selectedItem.id, formData)
+        await updateProduct(selectedItem.id, buildProductPayload(formData))
         alert('Product updated successfully!')
       }
       setModalOpen(null)
@@ -943,11 +1020,11 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-purchase') {
-        await createPurchase(formData)
+        await createPurchase(buildPurchasePayload(formData))
         alert('Purchase record added successfully!')
       } else if (modalOpen === 'edit-purchase') {
         if (!selectedItem?.id) throw new Error('No record selected')
-        await updatePurchase(selectedItem.id, formData)
+        await updatePurchase(selectedItem.id, buildPurchasePayload(formData))
         alert('Purchase record updated successfully!')
       }
       setModalOpen(null)
@@ -1013,11 +1090,11 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-test') {
-        await createTest(formData)
+        await createTest(buildTestPayload(formData))
         alert('Lab test recorded successfully!')
       } else if (modalOpen === 'edit-test') {
         if (!selectedItem?.id) throw new Error('No test selected')
-        await updateTest(selectedItem.id, formData)
+        await updateTest(selectedItem.id, buildTestPayload(formData))
         alert('Lab test updated successfully!')
       }
       setModalOpen(null)
@@ -1067,11 +1144,11 @@ export default function AdminClient({
     setLoading(true)
     try {
       if (modalOpen === 'add-user') {
-        await createUser({ ...formData, action: 'create' })
+        await createUser({ ...buildCreateUserPayload(formData), action: 'create' })
         alert('User profile added successfully!')
       } else if (modalOpen === 'edit-user') {
         if (!selectedItem?.id) throw new Error('No user selected')
-        await updateUser(selectedItem.id, { ...formData, action: 'update' })
+        await updateUser(selectedItem.id, { ...buildUpdateUserPayload(formData), action: 'update' })
         alert('User profile updated successfully!')
       }
       setModalOpen(null)
@@ -3407,7 +3484,7 @@ export default function AdminClient({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select
                   value={formData.role || 'customer'}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="customer">Customer</option>

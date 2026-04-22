@@ -10,11 +10,11 @@ interface TeamMember {
 
 interface TeamManagementSectionProps {
   language: 'id' | 'en'
-  profile: any
+  profile: { customer_id?: string | null; customer?: { company_name?: string } | null } | null
   teamMembers: TeamMember[]
   teamMemberCount: number
-  teamForm: any
-  setTeamForm: React.Dispatch<React.SetStateAction<any>>
+  teamForm: { full_name: string; email: string; phone_number: string; admin_pin: string; password: string }
+  setTeamForm: React.Dispatch<React.SetStateAction<{ full_name: string; email: string; phone_number: string; admin_pin: string; password: string }>>
   teamSaving: boolean
   handleCreateTeamUser: () => void
   onManageProfile: () => void
@@ -116,7 +116,7 @@ export function TeamManagementSection({
               <input
                 type="text"
                 value={teamForm.full_name}
-                onChange={(e) => setTeamForm((prev: any) => ({ ...prev, full_name: e.target.value }))}
+                onChange={(e) => setTeamForm((prev) => ({ ...prev, full_name: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </label>
@@ -125,7 +125,7 @@ export function TeamManagementSection({
               <input
                 type="email"
                 value={teamForm.email}
-                onChange={(e) => setTeamForm((prev: any) => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => setTeamForm((prev) => ({ ...prev, email: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </label>
@@ -134,7 +134,7 @@ export function TeamManagementSection({
               <input
                 type="tel"
                 value={teamForm.phone_number}
-                onChange={(e) => setTeamForm((prev: any) => ({ ...prev, phone_number: e.target.value }))}
+                onChange={(e) => setTeamForm((prev) => ({ ...prev, phone_number: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </label>
@@ -143,7 +143,7 @@ export function TeamManagementSection({
               <input
                 type="password"
                 value={teamForm.admin_pin}
-                onChange={(e) => setTeamForm((prev: any) => ({ ...prev, admin_pin: e.target.value }))}
+                onChange={(e) => setTeamForm((prev) => ({ ...prev, admin_pin: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <p className="text-xs text-gray-500 mt-1">{copy.teamPinHint}</p>
@@ -153,7 +153,7 @@ export function TeamManagementSection({
               <input
                 type="password"
                 value={teamForm.password}
-                onChange={(e) => setTeamForm((prev: any) => ({ ...prev, password: e.target.value }))}
+                onChange={(e) => setTeamForm((prev) => ({ ...prev, password: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <p className="text-xs text-gray-500 mt-1">{copy.teamPasswordHint}</p>

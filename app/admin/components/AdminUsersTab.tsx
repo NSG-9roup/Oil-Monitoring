@@ -62,7 +62,7 @@ export function AdminUsersTab({
 
       {users.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          No users found. Click "🔄 Reload" or "+ Add User" to create one.
+          No users found. Click &quot;🔄 Reload&quot; or &quot;+ Add User&quot; to create one.
         </div>
       )}
       {users.length > 0 && (

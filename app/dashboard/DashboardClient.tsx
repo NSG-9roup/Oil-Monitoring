@@ -613,6 +613,10 @@ export default function DashboardClient({
     [dashboardShortcutItems, router, scrollToSection]
   )
 
+  const loadFleetInsights = useCallback(() => {
+    router.refresh()
+  }, [router])
+
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem('dashboard-language') as Language | null
     if (savedLanguage === 'id' || savedLanguage === 'en') {

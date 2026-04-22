@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
-import type { Customer } from '@/lib/types'
+import type { Customer, AdminProfile } from '@/lib/types'
 
 interface AdminCustomersTabProps {
   customers: Customer[]
-  profile: any
+  profile: AdminProfile | null
   onOpenImport: () => void
   onOpenAdd: () => void
   onOpenEdit: (customer: Customer) => void
@@ -199,7 +199,7 @@ export function AdminCustomersTab({
                     </svg>
                     Edit
                   </button>
-                  {profile.role === 'admin' && (
+                  {profile?.role === 'admin' && (
                     <button
                       onClick={() => onOpenPin(customer)}
                       className="inline-flex items-center px-3 py-1.5 text-amber-700 hover:text-white bg-amber-100 hover:bg-amber-600 rounded-lg transition-all"

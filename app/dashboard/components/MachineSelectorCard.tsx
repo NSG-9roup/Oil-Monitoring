@@ -1,7 +1,7 @@
 import React from 'react'
 
 interface MachineSelectorCardProps {
-  machine: any
+  machine: { id: string; machine_name: string; location?: string | null }
   isSelected: boolean
   onClick: () => void
   status: { level: 'critical' | 'warning' | 'normal'; text: string } | null
@@ -9,7 +9,7 @@ interface MachineSelectorCardProps {
   samplingLabel: string
   healthScore: number | null
   daysSinceTest: number | null
-  copy: any
+  copy: Record<string, string>
 }
 
 export function MachineSelectorCard({

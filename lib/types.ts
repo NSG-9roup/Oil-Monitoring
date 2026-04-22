@@ -181,6 +181,7 @@ export interface UserFormData {
   password?: string
   full_name: string
   phone_number?: string
+  contact_email?: string
   role: UserRole
   customer_id?: string
 }
