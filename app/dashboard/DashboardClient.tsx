@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot } from 'recharts'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
 import OilDropLoader from '@/app/components/OilDropLoader'
@@ -12,8 +11,15 @@ import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
 import type { MaintenanceAction, MaintenanceActionLog, MaintenanceActionPriority, MaintenanceActionStatus, MaintenanceVerificationStatus } from '@/lib/types'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
-import { GlossaryTooltip } from '@/app/components/GlossaryTooltip'
 import { OnboardingTour, ReplayOnboardingButton } from '@/app/components/OnboardingTour'
+import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
+import { ReliabilitySection } from '@/app/dashboard/components/ReliabilitySection'
+import { AlertsSection } from '@/app/dashboard/components/AlertsSection'
+import { MaintenanceActionBoardSection } from '@/app/dashboard/components/MaintenanceActionBoardSection'
+import { TrendSection } from '@/app/dashboard/components/TrendSection'
+import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
+import { PurchasesSection } from '@/app/dashboard/components/PurchasesSection'
+import { InsightsSection } from '@/app/dashboard/components/InsightsSection'
 
 interface Machine {
   id: string
@@ -130,6 +136,16 @@ interface ReliabilityInsight {
   trendStability: number
   deteriorationSignal: boolean
   recommendation: string
+}
+
+interface ActionBoardFormState {
+  machine_id: string
+  title: string
+  description: string
+  priority: MaintenanceActionPriority
+  due_date: string
+  owner_profile_id: string
+  alert_key: string
 }
 
 const formatLocalDateInput = (date: Date) => {
@@ -492,10 +508,11 @@ export default function DashboardClient({
   const [maintenanceActionLogs] = useState<MaintenanceActionLog[]>(initialMaintenanceActionLogs)
   const [purchaseHistory] = useState<PurchaseHistoryRecord[]>(initialPurchaseHistory)
   const [actionSaving, setActionSaving] = useState(false)
+  const [activeShortcut, setActiveShortcut] = useState('section-snapshot')
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
   const [actionFilter, setActionFilter] = useState<'all' | MaintenanceActionStatus>('open')
-  const [actionForm, setActionForm] = useState({
+  const [actionForm, setActionForm] = useState<ActionBoardFormState>({
     machine_id: initialMachines[0]?.id || '',
     title: '',
     description: '',
@@ -504,6 +521,69 @@ export default function DashboardClient({
     owner_profile_id: '',
     alert_key: '',
   })
+
+  const updateActionForm = useCallback((patch: Partial<ActionBoardFormState>) => {
+    setActionForm((prev) => ({ ...prev, ...patch }))
+  }, [])
+
+  const scrollToSection = useCallback((sectionId: string) => {
+    const section = document.getElementById(sectionId)
+    if (!section) return
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setActiveShortcut(sectionId)
+  }, [])
+
+  const dashboardShortcutItems = useMemo(
+    () => [
+      {
+        id: 'section-snapshot',
+        label: language === 'id' ? 'Ringkasan Mesin' : 'Machine Snapshot',
+        type: 'section' as const,
+      },
+      {
+        id: 'section-trend',
+        label: language === 'id' ? 'Tren Oli' : 'Oil Trends',
+        type: 'section' as const,
+      },
+      {
+        id: 'section-lab-reports',
+        label: language === 'id' ? 'Laporan Lab' : 'Lab Reports',
+        type: 'section' as const,
+      },
+      {
+        id: 'section-purchases',
+        label: language === 'id' ? 'Pembelian Oli' : 'Oil Purchases',
+        type: 'section' as const,
+      },
+      {
+        id: 'route-compare',
+        label: language === 'id' ? 'Banding Mesin' : 'Machine Compare',
+        type: 'route' as const,
+        href: '/dashboard/compare',
+      },
+      {
+        id: 'section-insights',
+        label: language === 'id' ? 'Insight Prioritas' : 'Priority Insights',
+        type: 'section' as const,
+      },
+    ],
+    [language]
+  )
+
+  const handleShortcutClick = useCallback(
+    (shortcutId: string) => {
+      const selected = dashboardShortcutItems.find((item) => item.id === shortcutId)
+      if (!selected) return
+
+      if (selected.type === 'route' && selected.href) {
+        router.push(selected.href)
+        return
+      }
+
+      scrollToSection(shortcutId)
+    },
+    [dashboardShortcutItems, router, scrollToSection]
+  )
 
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem('dashboard-language') as Language | null
@@ -515,6 +595,35 @@ export default function DashboardClient({
   useEffect(() => {
     window.localStorage.setItem('dashboard-language', language)
   }, [language])
+
+  useEffect(() => {
+    const sectionIds = ['section-snapshot', 'section-trend', 'section-lab-reports', 'section-purchases', 'section-insights']
+    const observedSections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section))
+
+    if (observedSections.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+
+        if (visible[0]?.target?.id) {
+          setActiveShortcut(visible[0].target.id)
+        }
+      },
+      {
+        root: null,
+        rootMargin: '-30% 0px -55% 0px',
+        threshold: [0.1, 0.2, 0.4, 0.6],
+      }
+    )
+
+    observedSections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
+  }, [machines.length])
 
   useEffect(() => {
     // Initial maintenance actions are loaded from the server so the board stays persistent.
@@ -2004,459 +2113,100 @@ export default function DashboardClient({
           </div>
         </div>
 
-
-        <section style={{ order: 8 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
-                {language === 'id' ? 'Reliability Intelligence' : 'Reliability Intelligence'}
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'id'
-                  ? 'Pantau keandalan dari kualitas sampling, kestabilan tren, dan efektivitas eksekusi maintenance.'
-                  : 'Track reliability from sampling quality, trend stability, and maintenance execution effectiveness.'}
-              </p>
-            </div>
-            <div className={`px-4 py-3 rounded-2xl border ${fleetReliabilityScore >= 80 ? 'bg-emerald-50 border-emerald-200' : fleetReliabilityScore >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Fleet Reliability Pulse' : 'Fleet Reliability Pulse'}</p>
-              <p className={`text-3xl font-black ${fleetReliabilityScore >= 80 ? 'text-emerald-700' : fleetReliabilityScore >= 60 ? 'text-amber-700' : 'text-red-700'}`}>
-                {fleetReliabilityScore}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-5 text-xs font-semibold">
-            <div className="rounded-2xl bg-red-50 border border-red-200 px-3 py-2 text-center">
-              <div className="text-red-700 uppercase tracking-wide">{language === 'id' ? 'Fragile' : 'Fragile'}</div>
-              <div className="text-lg font-black text-red-900">{fragileReliabilityCount}</div>
-            </div>
-            <div className="rounded-2xl bg-amber-50 border border-amber-200 px-3 py-2 text-center">
-              <div className="text-amber-700 uppercase tracking-wide">{language === 'id' ? 'Watchlist' : 'Watchlist'}</div>
-              <div className="text-lg font-black text-amber-900">{watchlistReliabilityCount}</div>
-            </div>
-            <div className="rounded-2xl bg-blue-50 border border-blue-200 px-3 py-2 text-center">
-              <div className="text-blue-700 uppercase tracking-wide">{language === 'id' ? 'Signal Deteriorating' : 'Deteriorating Signal'}</div>
-              <div className="text-lg font-black text-blue-900">{deteriorationCount}</div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
-              <div className="text-gray-700 uppercase tracking-wide">{language === 'id' ? 'Machines Scored' : 'Machines Scored'}</div>
-              <div className="text-lg font-black text-gray-900">{reliabilityInsights.length}</div>
-            </div>
-          </div>
-
-          {topReliabilityRisks.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center text-gray-600">
-              {language === 'id' ? 'Belum ada data cukup untuk reliability intelligence.' : 'Not enough data yet for reliability intelligence.'}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {topReliabilityRisks.map((insight) => (
-                <div key={insight.machineId} className={`rounded-2xl border px-4 py-4 ${insight.riskBand === 'fragile' ? 'border-red-200 bg-red-50/70' : insight.riskBand === 'watchlist' ? 'border-amber-200 bg-amber-50/70' : 'border-emerald-200 bg-emerald-50/70'}`}>
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <p className="font-bold text-gray-900">{insight.machineName}</p>
-                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${insight.riskBand === 'fragile' ? 'bg-red-100 text-red-700' : insight.riskBand === 'watchlist' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                          {insight.riskBand}
-                        </span>
-                        {insight.deteriorationSignal && (
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-blue-100 text-blue-700">
-                            {language === 'id' ? 'Trend menurun' : 'Trend deteriorating'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-700">{insight.recommendation}</p>
-                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
-                        <span>{language === 'id' ? 'Data completeness' : 'Data completeness'}: {insight.dataCompleteness}</span>
-                        <span>{language === 'id' ? 'Sampling discipline' : 'Sampling discipline'}: {insight.samplingDiscipline}</span>
-                        <span>{language === 'id' ? 'Execution reliability' : 'Execution reliability'}: {insight.executionReliability}</span>
-                        <span>{language === 'id' ? 'Trend stability' : 'Trend stability'}: {insight.trendStability}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Reliability Score' : 'Reliability Score'}</p>
-                      <p className={`text-3xl font-black ${insight.reliabilityScore >= 80 ? 'text-emerald-700' : insight.reliabilityScore >= 60 ? 'text-amber-700' : 'text-red-700'}`}>
-                        {insight.reliabilityScore}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section style={{ order: 6 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{copy.alertManagementTitle}</h2>
-              <p className="text-sm text-gray-600 mt-1">{copy.alertManagementDesc}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={resetAlertInbox}
-                className="px-3 py-2 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors"
-              >
-                {copy.resetInbox}
-              </button>
-            </div>
-          </div>
-
-          {visibleAlerts.length === 0 ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 font-medium">
-              {copy.alertEmpty}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {visibleAlerts.slice(0, 6).map((alertItem) => (
-                <div
-                  key={alertItem.id}
-                  className={`rounded-2xl border px-4 py-4 ${
-                    alertItem.severity === 'critical'
-                      ? 'border-red-200 bg-red-50/70'
-                      : 'border-amber-200 bg-amber-50/70'
-                  }`}
-                >
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-black uppercase tracking-wide ${alertItem.severity === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>
-                          {alertItem.severity === 'critical'
-                            ? copy.criticalLabel
-                            : alertItem.severity === 'warning'
-                            ? copy.warningLabel
-                            : alertItem.severity === 'normal'
-                            ? copy.normalLabel
-                            : copy.unknownLabel}
-                        </span>
-                        <span className="text-xs text-gray-500">{copy.alertMachine}: {alertItem.machineName}</span>
-                      </div>
-                      <p className="font-bold text-gray-900">{alertItem.title}</p>
-                      <p className="text-sm text-gray-700 mt-1">{alertItem.message}</p>
-                      <p className="text-sm text-gray-800 mt-2"><span className="font-semibold">{copy.alertNextAction}:</span> {alertItem.recommendedAction}</p>
-                    </div>
-                    <div className="flex flex-col gap-2 self-start">
-                      <button
-                        onClick={() => handleCreateActionFromAlert(alertItem)}
-                        disabled={actionSaving}
-                        className="px-3 py-1.5 rounded-lg bg-primary-600 border border-primary-600 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-                      >
-                        {language === 'id' ? 'Buat action' : 'Create action'}
-                      </button>
-                      <button
-                        onClick={() => dismissAlert(alertItem.id)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100"
-                      >
-                        {copy.markAsRead}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section style={{ order: 7 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">{language === 'id' ? 'Action Board Maintenance' : 'Maintenance Action Board'}</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'id'
-                  ? 'Kelola pekerjaan maintenance dari insight, due date, dan penanggung jawab dalam satu alur.'
-                  : 'Manage maintenance work from insights, due dates, and owners in one workflow.'}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
-              <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">{language === 'id' ? 'Open' : 'Open'}</div>
-                <div className="text-lg font-black text-gray-900">{maintenanceActionStats.open}</div>
-              </div>
-              <div className="rounded-2xl bg-blue-50 border border-blue-200 px-3 py-2 text-center">
-                <div className="text-blue-700 uppercase tracking-wide">{language === 'id' ? 'Active' : 'Active'}</div>
-                <div className="text-lg font-black text-blue-900">{maintenanceActionStats.inProgress}</div>
-              </div>
-              <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-center">
-                <div className="text-emerald-700 uppercase tracking-wide">{language === 'id' ? 'Done' : 'Done'}</div>
-                <div className="text-lg font-black text-emerald-900">{maintenanceActionStats.completed}</div>
-              </div>
-              <div className="rounded-2xl bg-red-50 border border-red-200 px-3 py-2 text-center">
-                <div className="text-red-700 uppercase tracking-wide">{language === 'id' ? 'Overdue' : 'Overdue'}</div>
-                <div className="text-lg font-black text-red-900">{maintenanceActionStats.overdue}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 mb-5">
-            {(['all', 'open', 'assigned', 'in_progress', 'completed', 'verified', 'overdue'] as const).map((status) => (
-              <button
-                key={status}
-                type="button"
-                onClick={() => setActionFilter(status)}
-                className={`px-3 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
-                  actionFilter === status ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {status.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-            <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5 shadow-sm">
-              <h3 className="text-lg font-black text-gray-900">{language === 'id' ? 'Buat Action Baru' : 'Create New Action'}</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'id'
-                  ? 'Action bisa dibuat dari alert atau diinput manual oleh tim customer.'
-                  : 'Actions can be created from alerts or entered manually by the customer team.'}
-              </p>
-
-              <div className="mt-5 space-y-4">
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Machine</span>
-                  <select
-                    value={actionForm.machine_id}
-                    onChange={(e) => setActionForm((prev) => ({ ...prev, machine_id: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">{language === 'id' ? 'Pilih machine' : 'Select machine'}</option>
-                    {machines.map((machine) => (
-                      <option key={machine.id} value={machine.id}>
-                        {machine.machine_name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Title</span>
-                  <input
-                    type="text"
-                    value={actionForm.title}
-                    onChange={(e) => setActionForm((prev) => ({ ...prev, title: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Description</span>
-                  <textarea
-                    value={actionForm.description}
-                    onChange={(e) => setActionForm((prev) => ({ ...prev, description: e.target.value }))}
-                    rows={3}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Priority</span>
-                    <select
-                      value={actionForm.priority}
-                      onChange={(e) => setActionForm((prev) => ({ ...prev, priority: e.target.value as MaintenanceActionPriority }))}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Due date</span>
-                    <input
-                      type="date"
-                      value={actionForm.due_date}
-                      onChange={(e) => setActionForm((prev) => ({ ...prev, due_date: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </label>
-                </div>
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Owner</span>
-                  <select
-                    value={actionForm.owner_profile_id}
-                    onChange={(e) => setActionForm((prev) => ({ ...prev, owner_profile_id: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">{language === 'id' ? 'Belum ditugaskan' : 'Unassigned'}</option>
-                    {teamMembers.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => handleCreateMaintenanceAction()}
-                  disabled={actionSaving}
-                  className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-secondary-500 px-4 py-3 text-white font-bold shadow-lg hover:from-primary-600 hover:to-secondary-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {actionSaving ? (language === 'id' ? 'Menyimpan...' : 'Saving...') : (language === 'id' ? 'Simpan Action' : 'Save Action')}
-                </button>
-              </div>
-            </div>
-
-            <div className="xl:col-span-3 space-y-3">
-              {visibleMaintenanceActions.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center text-gray-600">
-                  {language === 'id' ? 'Belum ada maintenance action untuk filter ini.' : 'No maintenance actions match this filter yet.'}
-                </div>
-              ) : (
-                visibleMaintenanceActions.map((action) => {
-                  const isOverdue = Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
-                  return (
-                    <div key={action.id} className={`rounded-2xl border px-4 py-4 ${isOverdue ? 'border-red-200 bg-red-50/70' : 'border-gray-200 bg-white'}`}>
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <span className="text-xs font-black uppercase tracking-wide text-gray-500">{action.machine?.machine_name || '-'}</span>
-                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${action.priority === 'high' ? 'bg-red-100 text-red-700' : action.priority === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                              {action.priority}
-                            </span>
-                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${action.status === 'completed' || action.status === 'verified' ? 'bg-emerald-100 text-emerald-700' : action.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                              {action.status.replace('_', ' ')}
-                            </span>
-                            {isOverdue && <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-red-100 text-red-700">Overdue</span>}
-                          </div>
-                          <p className="font-bold text-gray-900">{action.title}</p>
-                          <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{action.description || (language === 'id' ? 'Tidak ada deskripsi.' : 'No description provided.')}</p>
-                          <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
-                            <span>{language === 'id' ? 'Due' : 'Due'}: {action.due_date || '-'}</span>
-                            <span>{language === 'id' ? 'Owner' : 'Owner'}: {action.owner?.full_name || (language === 'id' ? 'Belum ditugaskan' : 'Unassigned')}</span>
-                            <span>{language === 'id' ? 'Alert' : 'Alert'}: {action.alert_key || '-'}</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 lg:justify-end">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'in_progress' })}
-                            disabled={actionSaving}
-                            className="px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-sm font-semibold disabled:opacity-60"
-                          >
-                            {language === 'id' ? 'Mulai' : 'Start'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'completed' })}
-                            disabled={actionSaving}
-                            className="px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-semibold disabled:opacity-60"
-                          >
-                            {language === 'id' ? 'Selesai' : 'Complete'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'verified', verification_status: 'passed' })}
-                            disabled={actionSaving}
-                            className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-semibold disabled:opacity-60"
-                          >
-                            {language === 'id' ? 'Verify OK' : 'Verify OK'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateMaintenanceAction(action.id, { status: 'open', verification_status: 'failed' })}
-                            disabled={actionSaving}
-                            className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm font-semibold disabled:opacity-60"
-                          >
-                            {language === 'id' ? 'Verify Fail' : 'Verify Fail'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-        </section>
-
-        <div style={{ order: 2 }} className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
-          <button
-            onClick={handleExportFleetReport}
-            className="w-full bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-900 hover:to-slate-800 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2h-5.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 0010.586 2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div className="text-left">
-                <h3 className="text-xl font-black">{copy.exportPdfTitle}</h3>
-                <p className="text-white/90 text-sm font-medium mt-1">{copy.exportPdfDesc}</p>
-              </div>
-            </div>
-            <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
-
-          <button
-            onClick={handleExportTrustRoiSnapshot}
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div className="text-left">
-                <h3 className="text-xl font-black">{language === 'id' ? 'Export Trust & ROI Snapshot' : 'Export Trust & ROI Snapshot'}</h3>
-                <p className="text-white/90 text-sm font-medium mt-1">
-                  {language === 'id'
-                    ? 'Unduh ringkasan trust enterprise, audit event, dan estimasi ROI.'
-                    : 'Download the enterprise trust, audit event, and ROI snapshot.'}
-                </p>
-              </div>
-            </div>
-            <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
-
-          <button
-            onClick={() => router.push('/purchases')}
-            className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 rounded-2xl shadow-xl p-6 text-white transition-all transform hover:scale-[1.02] flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
-              <div className="text-left">
-                <h3 className="text-xl font-black">{copy.purchaseHistoryTitle}</h3>
-                <p className="text-white/90 text-sm font-medium mt-1">{copy.purchaseHistoryDesc}</p>
-              </div>
-            </div>
-            <svg className="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+        <div style={{ order: 1.5 }}>
+          <ShortcutNavigator
+            ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
+            items={dashboardShortcutItems.map((shortcut) => ({
+              id: shortcut.id,
+              label: shortcut.label,
+              isActive: shortcut.type === 'section' && activeShortcut === shortcut.id,
+            }))}
+            onItemClick={handleShortcutClick}
+          />
         </div>
 
-        {/* Phase 1: Rule-Based Insight Engine */}
-        <section style={{ order: 11 }} className="mb-8 bg-white/80 backdrop-blur rounded-3xl shadow-xl p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-3xl font-black text-gray-900">{copy.insightTitle}</h2>
-              <p className="text-gray-600 font-medium mt-1">{copy.insightDesc}</p>
-            </div>
-            <button
-              onClick={loadFleetInsights}
-              disabled={fleetInsightsLoading}
-              className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
-            >
-              {fleetInsightsLoading ? (language === 'id' ? 'Memuat...' : 'Loading...') : copy.refreshInsights}
-            </button>
-          </div>
+        <ReliabilitySection
+          language={language}
+          fleetReliabilityScore={fleetReliabilityScore}
+          fragileReliabilityCount={fragileReliabilityCount}
+          watchlistReliabilityCount={watchlistReliabilityCount}
+          deteriorationCount={deteriorationCount}
+          reliabilityInsightsCount={reliabilityInsights.length}
+          topReliabilityRisks={topReliabilityRisks}
+          onOpenCompare={() => router.push('/dashboard/compare')}
+        />
 
-        </section>
+        <AlertsSection
+          language={language}
+          title={copy.alertManagementTitle}
+          description={copy.alertManagementDesc}
+          emptyLabel={copy.alertEmpty}
+          resetLabel={copy.resetInbox}
+          criticalLabel={copy.criticalLabel}
+          warningLabel={copy.warningLabel}
+          normalLabel={copy.normalLabel}
+          unknownLabel={copy.unknownLabel}
+          alertMachineLabel={copy.alertMachine}
+          alertNextActionLabel={copy.alertNextAction}
+          markAsReadLabel={copy.markAsRead}
+          visibleAlerts={visibleAlerts}
+          actionSaving={actionSaving}
+          onOpenActionCenter={() => scrollToSection('section-actions')}
+          onResetInbox={resetAlertInbox}
+          onCreateActionFromAlert={handleCreateActionFromAlert}
+          onDismissAlert={dismissAlert}
+        />
+
+        <MaintenanceActionBoardSection
+          language={language}
+          maintenanceActionStats={maintenanceActionStats}
+          actionFilter={actionFilter}
+          visibleMaintenanceActions={visibleMaintenanceActions}
+          actionForm={actionForm}
+          machines={machines.map((machine) => ({ id: machine.id, machine_name: machine.machine_name }))}
+          teamMembers={teamMembers.map((member) => ({ id: member.id, full_name: member.full_name }))}
+          todayIso={todayIso}
+          actionSaving={actionSaving}
+          onOpenCompare={() => router.push('/dashboard/compare')}
+          onActionFilterChange={setActionFilter}
+          onActionFormChange={updateActionForm}
+          onCreateMaintenanceAction={handleCreateMaintenanceAction}
+          onUpdateMaintenanceAction={handleUpdateMaintenanceAction}
+        />
+
+        <PurchasesSection
+          language={language}
+          exportPdfTitle={copy.exportPdfTitle}
+          exportPdfDesc={copy.exportPdfDesc}
+          purchaseHistoryTitle={copy.purchaseHistoryTitle}
+          purchaseHistoryDesc={copy.purchaseHistoryDesc}
+          onExportFleetReport={handleExportFleetReport}
+          onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
+          onOpenPurchases={() => router.push('/purchases')}
+        />
+
+        <InsightsSection
+          language={language}
+          title={copy.insightTitle}
+          description={copy.insightDesc}
+          refreshLabel={copy.refreshInsights}
+          loading={fleetInsightsLoading}
+          onOpenCompare={() => router.push('/dashboard/compare')}
+          onRefresh={loadFleetInsights}
+        />
 
         <section style={{ order: 10 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.teamManagementTitle}</h2>
               <p className="text-gray-600 font-medium mt-1">{copy.teamManagementDesc}</p>
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/profile')}
+                className="mt-3 px-3 py-2 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors"
+              >
+                {language === 'id' ? 'Kelola Profil' : 'Manage Profile'}
+              </button>
             </div>
             <div className="flex flex-wrap gap-2 text-sm font-semibold">
               <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">{teamMemberCount} {copy.user}</span>
@@ -2576,6 +2326,13 @@ export default function DashboardClient({
                   ? 'Validasi kesiapan enterprise melalui traceability tindakan, kualitas verifikasi, dan dampak finansial yang terukur.'
                   : 'Validate enterprise readiness through action traceability, verification quality, and measurable financial impact.'}
               </p>
+              <button
+                type="button"
+                onClick={() => router.push('/purchases')}
+                className="mt-3 px-3 py-2 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors"
+              >
+                {language === 'id' ? 'Buka Purchase Analytics' : 'Open Purchase Analytics'}
+              </button>
             </div>
             <div className={`px-4 py-3 rounded-2xl border ${enterpriseTrustScore >= 80 ? 'bg-emerald-50 border-emerald-200' : enterpriseTrustScore >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
               <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Enterprise Trust Score' : 'Enterprise Trust Score'}</p>
@@ -2669,13 +2426,20 @@ export default function DashboardClient({
         </section>
 
         {/* Machine Health Overview - Neuros Style with Horizontal Carousel */}
-        <div style={{ order: 3 }} className="mb-8">
+        <div id="section-snapshot" style={{ order: 3 }} className="mb-8">
           <div className="mb-6 flex items-end justify-between">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.machineHealthTitle}</h2>
               <p className="text-gray-600 font-medium mt-1">{copy.machineHealthDesc}</p>
             </div>
             <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/compare')}
+                className="px-3 py-2 rounded-lg bg-white border-2 border-gray-200 hover:border-primary-500 hover:bg-primary-50 text-xs font-bold uppercase tracking-wide transition-all shadow-md hover:shadow-lg"
+              >
+                {language === 'id' ? 'Compare' : 'Compare'}
+              </button>
               <button
                 onClick={() => {
                   const container = document.getElementById('machine-carousel')
@@ -2996,7 +2760,7 @@ export default function DashboardClient({
         </div>
 
         {/* Charts & Data Section */}
-        <div style={{ order: 5 }}>
+        <div id="section-trend" style={{ order: 5 }}>
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-20">
@@ -3020,537 +2784,63 @@ export default function DashboardClient({
         {/* Dashboard Content */}
         {!loading && selectedMachine && (
           <div className="space-y-8 motion-soft-enter">
-            {/* Charts Section */}
-            <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
-              <div className="mb-6">
-                  <h2 className="text-3xl font-black text-gray-900">{copy.performanceTitle}</h2>
-                  <p className="text-gray-600 font-medium mt-1">{copy.performanceDesc}</p>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="w-3 h-3 bg-primary-500 rounded-full mr-3"></span>
-                  <GlossaryTooltip termKey="viscosity40c" language={language} label="Viscosity Trend" />
-                </h3>
-                {chartData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[200px] sm:h-[250px] lg:h-[300px] text-gray-400">
-                    <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <p className="font-semibold">{copy.noSampleData}</p>
-                    <p className="text-sm text-gray-400 mt-1">{copy.checkConsole}</p>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={chartHeight}>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '0',
-                          borderRadius: '12px'
-                        }}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#f97316" strokeWidth={3} dot={{ fill: '#f97316', r: 5 }} />
-                      <Line type="monotone" dataKey="viscosity_100c" name="Viscosity @100°C" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 5 }} />
-                      {selectedMachineTrendAlerts
-                        .filter((alert) => alert.parameter === 'Viscosity')
-                        .map((alert) => (
-                          <ReferenceDot
-                            key={alert.id}
-                            x={new Date(alert.chartDate).toLocaleDateString()}
-                            y={alert.chartValue}
-                            r={7}
-                            fill="#ef4444"
-                            stroke="#ffffff"
-                            strokeWidth={2}
-                          />
-                        ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
+            <TrendSection
+              language={language}
+              chartData={chartData}
+              chartHeight={chartHeight}
+              selectedMachineTrendAlerts={selectedMachineTrendAlerts}
+              performanceTitle={copy.performanceTitle}
+              performanceDesc={copy.performanceDesc}
+              noSampleData={copy.noSampleData}
+              checkConsole={copy.checkConsole}
+              noDataAvailable={copy.noDataAvailable}
+              trendAlertsTitle={copy.trendAlertsTitle}
+              trendAlertsDesc={copy.trendAlertsDesc}
+              activeTrendAlertsLabel={copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}
+              noTrendAlerts={copy.noTrendAlerts}
+              severityLowLabel={copy.trend.severityLow}
+              severityMediumLabel={copy.trend.severityMedium}
+              severityHighLabel={copy.trend.severityHigh}
+              recommendedActionLabel={copy.trend.recommendedAction}
+              onOpenLabDetails={() => scrollToSection('section-lab-reports')}
+              onOpenActionCenter={() => scrollToSection('section-actions')}
+            />
 
-              {/* Water Content Chart */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="w-3 h-3 bg-secondary-500 rounded-full mr-3"></span>
-                  <GlossaryTooltip termKey="waterContent" language={language} label={language === 'id' ? 'Kandungan Air' : 'Water Content'} />
-                </h3>
-                {chartData.length === 0 ? (
-                  <div className="flex items-center justify-center h-[300px] text-gray-400">
-                    <p>{copy.noDataAvailable}</p>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '0',
-                          borderRadius: '12px',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="water" stroke="#dc2626" strokeWidth={3} dot={{ fill: '#dc2626', r: 5 }} />
-                      {selectedMachineTrendAlerts
-                        .filter((alert) => alert.parameter === 'Water content')
-                        .map((alert) => (
-                          <ReferenceDot
-                            key={alert.id}
-                            x={new Date(alert.chartDate).toLocaleDateString()}
-                            y={alert.chartValue}
-                            r={7}
-                            fill="#f59e0b"
-                            stroke="#ffffff"
-                            strokeWidth={2}
-                          />
-                        ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-
-              {/* TAN Chart */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="w-3 h-3 bg-industrial-500 rounded-full mr-3"></span>
-                  <GlossaryTooltip termKey="tan" language={language} label="Total Acid Number (TAN)" />
-                </h3>
-                {chartData.length === 0 ? (
-                  <div className="flex items-center justify-center h-[300px] text-gray-400">
-                    <p>{copy.noDataAvailable}</p>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '0',
-                          borderRadius: '12px',
-                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="tan" stroke="#b91c1c" strokeWidth={3} dot={{ fill: '#b91c1c', r: 5 }} />
-                      {selectedMachineTrendAlerts
-                        .filter((alert) => alert.parameter === 'TAN')
-                        .map((alert) => (
-                          <ReferenceDot
-                            key={alert.id}
-                            x={new Date(alert.chartDate).toLocaleDateString()}
-                            y={alert.chartValue}
-                            r={7}
-                            fill="#8b5cf6"
-                            stroke="#ffffff"
-                            strokeWidth={2}
-                          />
-                        ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-              </div>
-            </div>
-
-            <section className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-3xl font-black text-gray-900">{copy.trendAlertsTitle}</h2>
-                  <p className="text-gray-600 font-medium mt-1">{copy.trendAlertsDesc}</p>
-                </div>
-                <div className="text-sm text-gray-600 font-semibold">
-                  {copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}
-                </div>
-              </div>
-
-              {selectedMachineTrendAlerts.length === 0 ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 font-medium">
-                  {copy.noTrendAlerts}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                  {selectedMachineTrendAlerts.map((alert) => (
-                    <div
-                      key={alert.id}
-                      className={`rounded-2xl border p-5 ${
-                        alert.severity === 'High'
-                          ? 'border-red-200 bg-red-50/70'
-                          : alert.severity === 'Medium'
-                          ? 'border-amber-200 bg-amber-50/70'
-                          : 'border-sky-200 bg-sky-50/70'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-3 mb-3">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wide ${
-                          alert.severity === 'High'
-                            ? 'bg-red-100 text-red-700'
-                            : alert.severity === 'Medium'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-sky-100 text-sky-700'
-                        }`}>
-                          {alert.severity === 'High' ? copy.trend.severityHigh : alert.severity === 'Medium' ? copy.trend.severityMedium : copy.trend.severityLow}
-                        </span>
-                        <span className="text-xs font-semibold text-gray-500">{alert.parameter}</span>
-                      </div>
-                      <h3 className="text-lg font-black text-gray-900">{alert.title}</h3>
-                      <p className="text-sm text-gray-700 mt-2">{alert.message}</p>
-                      <p className="text-sm text-gray-800 mt-3"><span className="font-semibold">{copy.trend.recommendedAction}:</span> {alert.recommendedAction}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* Lab Reports */}
-            <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
-              <div className="mb-6">
-                <h2 className="text-3xl font-black text-gray-900">{copy.labReportsTitle}</h2>
-                <p className="text-gray-600 font-medium mt-1">{copy.reportCountSuffix(filteredReports.length)}</p>
-              </div>
-              {filteredReports.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>{copy.labReportsEmpty}</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {filteredReports.map((report, index) => {
-                    const previousReport = index > 0 ? filteredReports[index - 1] : null
-                    const status = getStatus(
-                      report.viscosity_40c || 0,
-                      report.water_content || 0,
-                      report.tan_value || 0,
-                      report.product
-                    )
-                    const viscosity40Trend = getTrend(report.viscosity_40c || 0, previousReport?.viscosity_40c ?? null)
-                    const viscosity100Trend = getTrend(report.viscosity_100c || 0, previousReport?.viscosity_100c ?? null)
-                    const waterTrend = getTrend(report.water_content ? report.water_content * 100 : 0, previousReport?.water_content ? previousReport.water_content * 100 : null)
-                    const tanTrend = getTrend(report.tan_value || 0, previousReport?.tan_value ?? null)
-                    const recommendations = getRecommendations(
-                      report.viscosity_40c || 0,
-                      report.water_content || 0,
-                      report.tan_value || 0,
-                      report.product,
-                      previousReport,
-                      report.evaluation_mode
-                    )
-                    const isExpanded = expandedReports.has(report.id)
-
-                    return (
-                      <div key={report.id} className="bg-white rounded-2xl shadow-lg border-2 border-primary-100 overflow-hidden hover:shadow-xl transition-all">
-                        {/* Compact Header - Always Visible */}
-                        <div 
-                          onClick={() => toggleReport(report.id)}
-                          className="cursor-pointer hover:bg-primary-50 transition-colors duration-200"
-                        >
-                          <div className="px-6 py-4 flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <p className="font-bold text-gray-900 text-lg">
-                                  {new Date(report.test_date).toLocaleDateString('id-ID', { 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric' 
-                                  })}
-                                </p>
-                                <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                  status.level === 'critical' ? 'bg-red-100 text-red-800' :
-                                  status.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-green-100 text-green-800'
-                                }`}>
-                                  {status.level === 'critical'
-                                    ? copy.criticalLabel
-                                    : status.level === 'warning'
-                                    ? copy.warningLabel
-                                    : status.level === 'normal'
-                                    ? copy.normalLabel
-                                    : copy.unknownLabel}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-6 text-sm">
-                                <span className="text-gray-600">
-                                  <span className="font-semibold text-blue-900">{copy.viscosityLabel}:</span> {report.viscosity_40c?.toFixed(1) || copy.notAvailable} / {report.viscosity_100c?.toFixed(1) || copy.notAvailable} cSt
-                                </span>
-                                <span className="text-gray-600">
-                                  <span className="font-semibold text-cyan-900">{copy.waterContentLabel}:</span> {report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%
-                                </span>
-                                <span className="text-gray-600">
-                                  <span className="font-semibold text-purple-900">{copy.tanValueLabel}:</span> {report.tan_value?.toFixed(2) || copy.notAvailable} mg KOH/g
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {report.pdf_path && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    const pdfPath = report.pdf_path
-                                    if (!pdfPath) return
-                                    const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
-                                    if (data?.publicUrl) {
-                                      setCurrentPdfUrl(data.publicUrl)
-                                      setPdfViewerOpen(true)
-                                    }
-                                  }}
-                                  className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-                                >
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  {copy.viewReport}
-                                </button>
-                              )}
-                              <svg 
-                                className={`w-6 h-6 text-primary-600 transition-transform duration-300 ${
-                                  isExpanded ? 'rotate-180' : ''
-                                }`}
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Expanded Content - Slide Down Animation */}
-                        <div 
-                          className={`transition-all duration-500 ease-in-out ${
-                            isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
-                          } overflow-hidden`}
-                        >
-                          {/* Status Header */}
-                          <div className={`px-6 py-4 bg-gradient-to-r border-t-2 border-gray-200 ${
-                            status.level === 'critical' ? 'from-red-500 to-red-600' :
-                            status.level === 'warning' ? 'from-yellow-500 to-orange-500' :
-                            'from-green-500 to-green-600'
-                          }`}>
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <div className="flex items-center gap-3">
-                                  <h4 className="text-xl font-black text-white">{copy.completeAnalysis}</h4>
-                                  <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full">
-                                    {status.text.toUpperCase()}
-                                  </span>
-                                </div>
-                                <p className="text-white/80 text-xs mt-2 font-medium">
-                                  {copy.evaluationBasedOnIndustryStandard}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Content */}
-                          <div className="p-6">
-                            {/* Machine & Product Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6 border-b-2 border-gray-100">
-                              <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">{copy.machineLabel}</p>
-                                  <p className="text-sm font-bold text-gray-900 mt-1">{selectedMachine?.machine_name}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <svg className="w-5 h-5 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">{copy.productLabel}</p>
-                                  <p className="text-sm font-bold text-gray-900 mt-1">{report.product?.product_name || copy.notAvailable}</p>
-                                  {report.product?.product_type && (
-                                    <p className="text-xs text-gray-600 mt-0.5">{report.product.product_type}</p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Test Results with Trends */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border-2 border-blue-200">
-                                <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">{copy.viscosityLabel} 40°C</p>
-                                  <span className={`text-lg font-black ${
-                                    viscosity40Trend.direction === 'up' ? 'text-red-600' :
-                                    viscosity40Trend.direction === 'down' ? 'text-green-600' :
-                                    'text-gray-600'
-                                  }`}>{viscosity40Trend.icon}</span>
-                                </div>
-                                <p className="text-3xl font-black text-blue-900">{report.viscosity_40c?.toFixed(1) || copy.notAvailable}</p>
-                                <p className="text-xs text-blue-700 mt-1 font-semibold">cSt</p>
-                              </div>
-
-                              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-4 border-2 border-indigo-200">
-                                <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-indigo-800 uppercase tracking-wide">{copy.viscosityLabel} 100°C</p>
-                                  <span className={`text-lg font-black ${
-                                    viscosity100Trend.direction === 'up' ? 'text-red-600' :
-                                    viscosity100Trend.direction === 'down' ? 'text-green-600' :
-                                    'text-gray-600'
-                                  }`}>{viscosity100Trend.icon}</span>
-                                </div>
-                                <p className="text-3xl font-black text-indigo-900">{report.viscosity_100c?.toFixed(1) || copy.notAvailable}</p>
-                                <p className="text-xs text-indigo-700 mt-1 font-semibold">cSt</p>
-                              </div>
-                              
-                              <div className="bg-gradient-to-br from-cyan-50 to-cyan-100/50 rounded-xl p-4 border-2 border-cyan-200">
-                                <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-cyan-800 uppercase tracking-wide">{copy.waterContentLabel}</p>
-                                  <span className={`text-lg font-black ${
-                                    waterTrend.direction === 'up' ? 'text-red-600' :
-                                    waterTrend.direction === 'down' ? 'text-green-600' :
-                                    'text-gray-600'
-                                  }`}>{waterTrend.icon}</span>
-                                </div>
-                                <p className="text-3xl font-black text-cyan-900">
-                                  {report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%
-                                </p>
-                                <p className="text-xs text-cyan-700 mt-1 font-semibold">by volume</p>
-                                <p className="text-xs text-cyan-600 mt-2 font-medium">
-                                  ≈ {report.water_content ? (report.water_content * 10000).toFixed(0) : '0'} ppm
-                                </p>
-                              </div>
-                              
-                              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border-2 border-purple-200">
-                                <div className="flex justify-between items-start mb-2">
-                                  <p className="text-xs font-bold text-purple-800 uppercase tracking-wide">{copy.tanValueLabel}</p>
-                                  <span className={`text-lg font-black ${
-                                    tanTrend.direction === 'up' ? 'text-red-600' :
-                                    tanTrend.direction === 'down' ? 'text-green-600' :
-                                    'text-gray-600'
-                                  }`}>{tanTrend.icon}</span>
-                                </div>
-                                <p className="text-3xl font-black text-purple-900">{report.tan_value?.toFixed(2) || copy.notAvailable}</p>
-                                <p className="text-xs text-purple-700 mt-1 font-semibold">mg KOH/g</p>
-                              </div>
-                            </div>
-
-                            {/* Recommendations */}
-                            <div className={`rounded-xl p-4 border-2 mb-4 ${
-                              status.level === 'critical' ? 'bg-red-50 border-red-200' :
-                              status.level === 'warning' ? 'bg-yellow-50 border-yellow-200' :
-                              'bg-green-50 border-green-200'
-                            }`}>
-                              <h5 className={`text-sm font-black uppercase tracking-wide mb-3 flex items-center ${
-                                status.level === 'critical' ? 'text-red-800' :
-                                status.level === 'warning' ? 'text-yellow-800' :
-                                'text-green-800'
-                              }`}>
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                </svg>
-                                Recommendations
-                              </h5>
-                              <ul className="space-y-3">
-                                {recommendations.map((rec, idx) => {
-                                  const actionPriority = rec.severity === 'critical' ? 'Immediate Action' :
-                                                       rec.severity === 'warning' ? 'Plan Maintenance' :
-                                                       'Monitor';
-                                  return (
-                                    <li key={idx} className={`p-4 rounded-lg border-l-4 ${
-                                      rec.severity === 'critical' ? 'bg-red-50 border-red-500' :
-                                      rec.severity === 'warning' ? 'bg-yellow-50 border-yellow-500' :
-                                      'bg-green-50 border-green-500'
-                                    }`}>
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-xl flex-shrink-0">{rec.icon}</span>
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <p className={`text-sm font-bold ${
-                                              rec.severity === 'critical' ? 'text-red-800' :
-                                              rec.severity === 'warning' ? 'text-yellow-800' :
-                                              'text-green-800'
-                                            }`}>{rec.text}</p>
-                                            <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${
-                                              rec.severity === 'critical' ? 'bg-red-200 text-red-800' :
-                                              rec.severity === 'warning' ? 'bg-yellow-200 text-yellow-800' :
-                                              'bg-green-200 text-green-800'
-                                            }`}>
-                                              {actionPriority}
-                                            </span>
-                                          </div>
-                                          <p className={`text-xs mt-2 ${
-                                            rec.severity === 'critical' ? 'text-red-600' :
-                                            rec.severity === 'warning' ? 'text-yellow-600' :
-                                            'text-green-600'
-                                          }`}>→ {rec.action}</p>
-                                        </div>
-                                      </div>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-
-                            {/* View & Download Buttons */}
-                            {report.pdf_path && (
-                              <div className="flex gap-3">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    const pdfPath = report.pdf_path
-                                    if (!pdfPath) return
-                                    const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
-                                    if (data?.publicUrl) {
-                                      setCurrentPdfUrl(data.publicUrl)
-                                      setPdfViewerOpen(true)
-                                    }
-                                  }}
-                                  className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
-                                >
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  View Report
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    const pdfPath = report.pdf_path
-                                    if (!pdfPath) return
-                                    handleDownloadPDF(pdfPath, report.test_date)
-                                  }}
-                                  className="flex-1 bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-4 py-3 rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
-                                >
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  Download PDF
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+            <LabReportsSection
+              language={language}
+              title={copy.labReportsTitle}
+              description={copy.reportCountSuffix(filteredReports.length)}
+              reports={filteredReports}
+              expandedReports={expandedReports}
+              selectedMachineName={selectedMachine.machine_name}
+              criticalLabel={copy.criticalLabel}
+              warningLabel={copy.warningLabel}
+              normalLabel={copy.normalLabel}
+              unknownLabel={copy.unknownLabel}
+              viscosityLabel={copy.viscosityLabel}
+              waterContentLabel={copy.waterContentLabel}
+              tanValueLabel={copy.tanValueLabel}
+              notAvailableLabel={copy.notAvailable}
+              emptyLabel={copy.labReportsEmpty}
+              completeAnalysisLabel={copy.completeAnalysis}
+              evaluationLabel={copy.evaluationBasedOnIndustryStandard}
+              machineLabel={copy.machineLabel}
+              productLabel={copy.productLabel}
+              viewReportLabel={copy.viewReport}
+              onOpenPurchaseAnalytics={() => router.push('/purchases')}
+              onToggleReport={toggleReport}
+              onOpenReportPdf={(pdfPath) => {
+                const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
+                if (data?.publicUrl) {
+                  setCurrentPdfUrl(data.publicUrl)
+                  setPdfViewerOpen(true)
+                }
+              }}
+              onDownloadReportPdf={handleDownloadPDF}
+              getStatus={getStatus}
+              getTrend={getTrend}
+              getRecommendations={getRecommendations}
+            />
           </div>
         )}
         </div>{/* end order:5 charts section */}
