@@ -86,10 +86,10 @@ export default async function DashboardPage() {
   const labTestsPromise = machineIds.length > 0
     ? supabase
         .from('oil_lab_tests')
-        .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, product:oil_products(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan), pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at')
+        .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan), pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at')
         .in('machine_id', machineIds)
         .order('test_date', { ascending: false })
-    : Promise.resolve({ data: [] })
+    : Promise.resolve({ data: [], error: null })
 
   // Fetch dismissed alerts states
   const alertReadsPromise = supabase
@@ -103,7 +103,31 @@ export default async function DashboardPage() {
     alertReadsPromise
   ])
 
-  const initialLabTests = labTestsResult.data || []
+  if (labTestsResult.error) {
+    console.error('[dashboard/page] primary lab test query failed:', labTestsResult.error.message)
+  }
+
+  let initialLabTests = labTestsResult.data || []
+
+  // Fallback: query by customer via machine relation when primary query returns empty
+  if (initialLabTests.length === 0 && profile.customer_id) {
+    const fallbackLabTestsResult = await supabase
+      .from('oil_lab_tests')
+      .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan), pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at, machine:machine_id!inner(customer_id)')
+      .eq('machine.customer_id', profile.customer_id)
+      .order('test_date', { ascending: false })
+
+    if (fallbackLabTestsResult.error) {
+      console.error('[dashboard/page] fallback lab test query failed:', fallbackLabTestsResult.error.message)
+    } else {
+      initialLabTests = (fallbackLabTestsResult.data || []).map((row) => {
+        const rest = { ...row }
+        Reflect.deleteProperty(rest, 'machine')
+        return rest
+      })
+    }
+  }
+
   const initialDismissedAlertIds = (alertReadsResult.data || []).map(row => row.alert_key)
 
   // Sanitize profile to only serializable data
