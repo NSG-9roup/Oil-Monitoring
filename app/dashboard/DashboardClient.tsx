@@ -516,10 +516,11 @@ export default function DashboardClient({
 
   // Derive oilSamples from server-prefetched lab tests (no client fetch needed)
   const oilSamples = useMemo(() => {
-    if (!chartMachine) return []
-    return [...normalizedLabTests]
-      .filter((t) => t.machine_id === chartMachine.id)
-      .sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime())
+    const allSorted = [...normalizedLabTests].sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime())
+    if (!chartMachine) return allSorted
+
+    const selectedMachineSamples = allSorted.filter((t) => t.machine_id === chartMachine.id)
+    return selectedMachineSamples.length > 0 ? selectedMachineSamples : allSorted
   }, [chartMachine, normalizedLabTests]) as OilSample[]
 
   const labReports = oilSamples as LabReport[]
@@ -1407,6 +1408,7 @@ export default function DashboardClient({
 
   const filteredSamples = filterByTimeRange(oilSamples)
   const filteredReports = filterByTimeRange(labReports)
+  const hasVisibleLabData = filteredReports.length > 0 || filteredSamples.length > 0
 
   const machineInsights = machines
     .map((machine) => {
@@ -2639,7 +2641,7 @@ export default function DashboardClient({
         )}
 
         {/* No Machine Selected State */}
-        {!loading && !selectedMachine && (
+        {!loading && !selectedMachine && !hasVisibleLabData && (
           <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
             <div className="text-gray-400 mb-4">
               <svg className="mx-auto h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2652,7 +2654,7 @@ export default function DashboardClient({
         )}
 
         {/* Dashboard Content */}
-        {!loading && selectedMachine && (
+        {!loading && (selectedMachine || hasVisibleLabData) && (
           <div className="space-y-8 motion-soft-enter">
             <TrendSection
               language={language}
@@ -2682,7 +2684,7 @@ export default function DashboardClient({
               description={copy.reportCountSuffix(filteredReports.length)}
               reports={filteredReports}
               expandedReports={expandedReports}
-              selectedMachineName={selectedMachine.machine_name}
+              selectedMachineName={selectedMachine?.machine_name || (language === 'id' ? 'Semua Mesin' : 'All Machines')}
               criticalLabel={copy.criticalLabel}
               warningLabel={copy.warningLabel}
               normalLabel={copy.normalLabel}
