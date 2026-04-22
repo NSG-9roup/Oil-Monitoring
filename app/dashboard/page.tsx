@@ -86,7 +86,7 @@ export default async function DashboardPage() {
   const labTestsPromise = machineIds.length > 0
     ? supabase
         .from('oil_lab_tests')
-        .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan), pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at')
+        .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at')
         .in('machine_id', machineIds)
         .order('test_date', { ascending: false })
     : Promise.resolve({ data: [], error: null })
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
   if (initialLabTests.length === 0 && profile.customer_id) {
     const fallbackLabTestsResult = await supabase
       .from('oil_lab_tests')
-      .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan), pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at, machine:machine_id!inner(customer_id)')
+      .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at, machine:machine_id!inner(customer_id)')
       .eq('machine.customer_id', profile.customer_id)
       .order('test_date', { ascending: false })
 
