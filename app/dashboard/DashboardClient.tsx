@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
@@ -485,6 +485,7 @@ export default function DashboardClient({
   initialDismissedAlertIds,
 }: DashboardClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const detailsRef = useRef<HTMLDivElement>(null)
   const [language, setLanguage] = useState<Language>('id')
@@ -507,6 +508,7 @@ export default function DashboardClient({
   }, [initialLabTests])
 
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(() => preferredMachine)
+  const debugMode = searchParams.get('debug') === '1'
   const chartMachine = useMemo(() => {
     if (selectedMachine && normalizedLabTests.some((test) => test.machine_id === selectedMachine.id)) {
       return selectedMachine
@@ -524,6 +526,10 @@ export default function DashboardClient({
   }, [chartMachine, normalizedLabTests]) as OilSample[]
 
   const labReports = oilSamples as LabReport[]
+  const debugLabMachineIds = useMemo(
+    () => Array.from(new Set((normalizedLabTests || []).map((test) => test.machine_id))).slice(0, 12),
+    [normalizedLabTests]
+  )
 
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
@@ -1906,6 +1912,25 @@ export default function DashboardClient({
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+        {debugMode && (
+          <section className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900">
+            <h2 className="text-sm font-black uppercase tracking-wide mb-2">Dashboard Data Debug</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+              <div><span className="font-bold">customer_id:</span> {profile?.customer_id || '-'}</div>
+              <div><span className="font-bold">machines:</span> {machines.length}</div>
+              <div><span className="font-bold">initialLabTests:</span> {initialLabTests.length}</div>
+              <div><span className="font-bold">normalizedLabTests:</span> {normalizedLabTests.length}</div>
+              <div><span className="font-bold">selectedMachine:</span> {selectedMachine?.id || '-'}</div>
+              <div><span className="font-bold">chartMachine:</span> {chartMachine?.id || '-'}</div>
+              <div><span className="font-bold">filteredSamples:</span> {filteredSamples.length}</div>
+              <div><span className="font-bold">filteredReports:</span> {filteredReports.length}</div>
+            </div>
+            <div className="mt-2 break-all">
+              <span className="font-bold">machineIdsInLabTests:</span> {debugLabMachineIds.join(', ') || '-'}
+            </div>
+          </section>
+        )}
+
         {/* Customer Detail Card - Neuros Style */}
         <div style={{ order: 1 }} className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 overflow-hidden relative">
           {/* Decorative gradient overlay */}
