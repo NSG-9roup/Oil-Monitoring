@@ -492,15 +492,22 @@ export default function DashboardClient({
   
   const [loading] = useState(false)
   const [machines] = useState<Machine[]>(initialMachines)
-  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(initialMachines[0] || null)
+  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null)
+
+  const normalizedLabTests = useMemo(() => {
+    return (initialLabTests || []).map((test) => {
+      const product = Array.isArray(test.product) ? test.product[0] : test.product
+      return { ...test, product }
+    }) as Array<OilSample & { machine_id: string }>
+  }, [initialLabTests])
 
   // Derive oilSamples from server-prefetched lab tests (no client fetch needed)
   const oilSamples = useMemo(() => {
     if (!selectedMachine) return []
-    return [...initialLabTests]
+    return [...normalizedLabTests]
       .filter((t) => t.machine_id === selectedMachine.id)
       .sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime())
-  }, [selectedMachine, initialLabTests]) as OilSample[]
+  }, [normalizedLabTests, selectedMachine]) as OilSample[]
 
   const labReports = oilSamples as LabReport[]
 
@@ -514,15 +521,28 @@ export default function DashboardClient({
   const { latestTestByMachineId, fleetHistoryByMachineId } = useMemo(() => {
     const latestMap: Record<string, OilSample> = {}
     const historyMap: Record<string, OilSample[]> = {}
-    ;(initialLabTests || []).forEach((test) => {
-      const product = Array.isArray(test.product) ? test.product[0] : test.product
-      const t = { ...test, product } as OilSample & { machine_id: string }
+    normalizedLabTests.forEach((t) => {
       if (!historyMap[t.machine_id]) historyMap[t.machine_id] = []
       historyMap[t.machine_id].push(t)
       if (!latestMap[t.machine_id]) latestMap[t.machine_id] = t
     })
     return { latestTestByMachineId: latestMap, fleetHistoryByMachineId: historyMap }
-  }, [initialLabTests])
+  }, [normalizedLabTests])
+
+  useEffect(() => {
+    if (machines.length === 0) {
+      setSelectedMachine(null)
+      return
+    }
+
+    setSelectedMachine((prev) => {
+      if (prev && machines.some((machine) => machine.id === prev.id)) {
+        return prev
+      }
+      const machineWithData = machines.find((machine) => Boolean(latestTestByMachineId[machine.id]))
+      return machineWithData || machines[0]
+    })
+  }, [latestTestByMachineId, machines])
 
   // Use server-prefetched dismissed alerts
   const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>(initialDismissedAlertIds)
@@ -2345,8 +2365,7 @@ export default function DashboardClient({
           >
             {machines.map((machine) => {
               // Get latest test for this machine
-              const machineTests = labReports.filter((test) => test.machine_id === machine.id)
-              const latestTest = machineTests.length > 0 ? machineTests[0] : null
+              const latestTest = latestTestByMachineId[machine.id] || null
               const healthScore = latestTest ? calculateHealthScore(latestTest) : null
               const status = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product) : null
               const daysSinceTest = latestTest ? Math.floor((Date.now() - new Date(latestTest.test_date).getTime()) / (1000 * 60 * 60 * 24)) : null

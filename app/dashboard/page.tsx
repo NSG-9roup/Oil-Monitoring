@@ -45,7 +45,6 @@ export default async function DashboardPage() {
     .from('oil_machines')
     .select('*')
     .eq('customer_id', profile.customer_id)
-    .eq('status', 'active')
     .order('machine_name')
 
   const teamMembersPromise = supabase
