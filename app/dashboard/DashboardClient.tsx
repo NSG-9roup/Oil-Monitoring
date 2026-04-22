@@ -11,7 +11,6 @@ import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
 import type { MaintenanceAction, MaintenanceActionLog, MaintenanceActionPriority, MaintenanceActionStatus, MaintenanceVerificationStatus } from '@/lib/types'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
-import { OnboardingTour, ReplayOnboardingButton } from '@/app/components/OnboardingTour'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
 import { ReliabilitySection } from '@/app/dashboard/components/ReliabilitySection'
 import { AlertsSection } from '@/app/dashboard/components/AlertsSection'
@@ -19,7 +18,6 @@ import { MaintenanceActionBoardSection } from '@/app/dashboard/components/Mainte
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { PurchasesSection } from '@/app/dashboard/components/PurchasesSection'
-import { InsightsSection } from '@/app/dashboard/components/InsightsSection'
 import { createTeamUser, createMaintenanceAction, updateMaintenanceAction } from '@/app/actions/dashboardActions'
 
 interface Machine {
@@ -492,7 +490,7 @@ export default function DashboardClient({
   const [language, setLanguage] = useState<Language>('id')
   const copy = dashboardCopy[language]
   
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false)
   const [machines] = useState<Machine[]>(initialMachines)
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(initialMachines[0] || null)
 
@@ -511,7 +509,6 @@ export default function DashboardClient({
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' })
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
-  const [fleetInsightsLoading] = useState(false)
 
   // Derive fleet maps from server-prefetched lab tests (no client fetch needed)
   const { latestTestByMachineId, fleetHistoryByMachineId } = useMemo(() => {
@@ -529,7 +526,7 @@ export default function DashboardClient({
 
   // Use server-prefetched dismissed alerts
   const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>(initialDismissedAlertIds)
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialTeamMembers)
+  const [teamMembers] = useState<TeamMember[]>(initialTeamMembers)
   const [teamForm, setTeamForm] = useState({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
   const [teamSaving, setTeamSaving] = useState(false)
   const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
@@ -537,7 +534,7 @@ export default function DashboardClient({
   const [purchaseHistory] = useState<PurchaseHistoryRecord[]>(initialPurchaseHistory)
   const [actionSaving, setActionSaving] = useState(false)
   const [activeShortcut, setActiveShortcut] = useState('section-snapshot')
-  const [showAdvancedSections, setShowAdvancedSections] = useState(false)
+  const showAdvancedSections = false
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
   const [actionFilter, setActionFilter] = useState<'all' | MaintenanceActionStatus>('open')
@@ -590,11 +587,6 @@ export default function DashboardClient({
         type: 'route' as const,
         href: '/dashboard/compare',
       },
-      {
-        id: 'section-insights',
-        label: language === 'id' ? 'Insight Prioritas' : 'Priority Insights',
-        type: 'section' as const,
-      },
     ],
     [language]
   )
@@ -614,10 +606,6 @@ export default function DashboardClient({
     [dashboardShortcutItems, router, scrollToSection]
   )
 
-  const loadFleetInsights = useCallback(() => {
-    router.refresh()
-  }, [router])
-
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem('dashboard-language') as Language | null
     if (savedLanguage === 'id' || savedLanguage === 'en') {
@@ -630,7 +618,7 @@ export default function DashboardClient({
   }, [language])
 
   useEffect(() => {
-    const sectionIds = ['section-snapshot', 'section-trend', 'section-lab-reports', 'section-purchases', 'section-insights']
+    const sectionIds = ['section-snapshot', 'section-trend', 'section-lab-reports', 'section-purchases']
     const observedSections = sectionIds
       .map((id) => document.getElementById(id))
       .filter((section): section is HTMLElement => Boolean(section))
@@ -1857,7 +1845,6 @@ export default function DashboardClient({
                   </select>
                 </label>
               </div>
-              <ReplayOnboardingButton language={language} />
               <button
                 onClick={() => router.push('/dashboard/compare')}
                 className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold hover:bg-orange-100 transition-colors"
@@ -1904,7 +1891,6 @@ export default function DashboardClient({
         </div>
       </header>
 
-      <OnboardingTour language={language} />
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
         {/* Customer Detail Card - Neuros Style */}
         <div style={{ order: 1 }} className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 overflow-hidden relative">
@@ -2004,26 +1990,11 @@ export default function DashboardClient({
         </div>
 
         <div style={{ order: 1.6 }} className="mb-6">
-          <button
-            type="button"
-            onClick={() => setShowAdvancedSections((prev) => !prev)}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition-colors"
-          >
-            {showAdvancedSections
-              ? language === 'id'
-                ? 'Sembunyikan Section Lanjutan'
-                : 'Hide Advanced Sections'
-              : language === 'id'
-              ? 'Tampilkan Section Lanjutan'
-              : 'Show Advanced Sections'}
-          </button>
-          {!showAdvancedSections && (
-            <p className="mt-2 text-sm text-gray-500">
-              {language === 'id'
-                ? 'Mode ringkas aktif supaya dashboard tidak terlalu panjang.'
-                : 'Compact mode is active to keep the dashboard shorter.'}
-            </p>
-          )}
+          <p className="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+            {language === 'id'
+              ? 'Lean V2 aktif: mode operasional ringkas tanpa section lanjutan.'
+              : 'Lean V2 is active: compact operational mode without advanced sections.'}
+          </p>
         </div>
 
         {showAdvancedSections && (
@@ -2086,16 +2057,6 @@ export default function DashboardClient({
               onExportFleetReport={handleExportFleetReport}
               onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
               onOpenPurchases={() => router.push('/purchases')}
-            />
-
-            <InsightsSection
-              language={language}
-              title={copy.insightTitle}
-              description={copy.insightDesc}
-              refreshLabel={copy.refreshInsights}
-              loading={fleetInsightsLoading}
-              onOpenCompare={() => router.push('/dashboard/compare')}
-              onRefresh={loadFleetInsights}
             />
 
             <section style={{ order: 10 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
