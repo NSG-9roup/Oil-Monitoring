@@ -2,6 +2,7 @@ export type DashboardLanguage = 'id' | 'en'
 
 export interface ChartPoint {
   date: string
+  isoDate?: string
   viscosity_40c: number
   viscosity_100c: number
   water: number

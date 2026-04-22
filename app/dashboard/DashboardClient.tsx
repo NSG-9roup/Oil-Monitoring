@@ -537,6 +537,7 @@ export default function DashboardClient({
   const [purchaseHistory] = useState<PurchaseHistoryRecord[]>(initialPurchaseHistory)
   const [actionSaving, setActionSaving] = useState(false)
   const [activeShortcut, setActiveShortcut] = useState('section-snapshot')
+  const [showAdvancedSections, setShowAdvancedSections] = useState(false)
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
   const [actionFilter, setActionFilter] = useState<'all' | MaintenanceActionStatus>('open')
@@ -1777,13 +1778,20 @@ export default function DashboardClient({
   }
 
 
-  const chartData = filteredSamples.map(sample => ({
-    date: new Date(sample.test_date).toLocaleDateString(),
-    viscosity_40c: sample.viscosity_40c || 0,
-    viscosity_100c: sample.viscosity_100c || 0,
-    water: sample.water_content ? sample.water_content * 100 : 0,
-    tan: sample.tan_value || 0
-  }))
+  const chartData = filteredSamples.map((sample) => {
+    const parsedDate = new Date(sample.test_date)
+    const safeDate = Number.isNaN(parsedDate.getTime()) ? sample.test_date : parsedDate.toLocaleDateString()
+    const safeIsoDate = Number.isNaN(parsedDate.getTime()) ? sample.test_date : parsedDate.toISOString().slice(0, 10)
+
+    return {
+      date: safeDate,
+      isoDate: safeIsoDate,
+      viscosity_40c: Number(sample.viscosity_40c ?? 0),
+      viscosity_100c: Number(sample.viscosity_100c ?? 0),
+      water: Number(sample.water_content ?? 0) * 100,
+      tan: Number(sample.tan_value ?? 0),
+    }
+  })
 
   return (
     <div className="clean-ui customer-panel min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
@@ -1995,77 +2003,102 @@ export default function DashboardClient({
           />
         </div>
 
-        <ReliabilitySection
-          language={language}
-          fleetReliabilityScore={fleetReliabilityScore}
-          fragileReliabilityCount={fragileReliabilityCount}
-          watchlistReliabilityCount={watchlistReliabilityCount}
-          deteriorationCount={deteriorationCount}
-          reliabilityInsightsCount={reliabilityInsights.length}
-          topReliabilityRisks={topReliabilityRisks}
-          onOpenCompare={() => router.push('/dashboard/compare')}
-        />
+        <div style={{ order: 1.6 }} className="mb-6">
+          <button
+            type="button"
+            onClick={() => setShowAdvancedSections((prev) => !prev)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition-colors"
+          >
+            {showAdvancedSections
+              ? language === 'id'
+                ? 'Sembunyikan Section Lanjutan'
+                : 'Hide Advanced Sections'
+              : language === 'id'
+              ? 'Tampilkan Section Lanjutan'
+              : 'Show Advanced Sections'}
+          </button>
+          {!showAdvancedSections && (
+            <p className="mt-2 text-sm text-gray-500">
+              {language === 'id'
+                ? 'Mode ringkas aktif supaya dashboard tidak terlalu panjang.'
+                : 'Compact mode is active to keep the dashboard shorter.'}
+            </p>
+          )}
+        </div>
 
-        <AlertsSection
-          language={language}
-          title={copy.alertManagementTitle}
-          description={copy.alertManagementDesc}
-          emptyLabel={copy.alertEmpty}
-          resetLabel={copy.resetInbox}
-          criticalLabel={copy.criticalLabel}
-          warningLabel={copy.warningLabel}
-          normalLabel={copy.normalLabel}
-          unknownLabel={copy.unknownLabel}
-          alertMachineLabel={copy.alertMachine}
-          alertNextActionLabel={copy.alertNextAction}
-          markAsReadLabel={copy.markAsRead}
-          visibleAlerts={visibleAlerts}
-          actionSaving={actionSaving}
-          onOpenActionCenter={() => scrollToSection('section-actions')}
-          onResetInbox={resetAlertInbox}
-          onCreateActionFromAlert={handleCreateActionFromAlert}
-          onDismissAlert={dismissAlert}
-        />
+        {showAdvancedSections && (
+          <>
+            <ReliabilitySection
+              language={language}
+              fleetReliabilityScore={fleetReliabilityScore}
+              fragileReliabilityCount={fragileReliabilityCount}
+              watchlistReliabilityCount={watchlistReliabilityCount}
+              deteriorationCount={deteriorationCount}
+              reliabilityInsightsCount={reliabilityInsights.length}
+              topReliabilityRisks={topReliabilityRisks}
+              onOpenCompare={() => router.push('/dashboard/compare')}
+            />
 
-        <MaintenanceActionBoardSection
-          language={language}
-          maintenanceActionStats={maintenanceActionStats}
-          actionFilter={actionFilter}
-          visibleMaintenanceActions={visibleMaintenanceActions}
-          actionForm={actionForm}
-          machines={machines.map((machine) => ({ id: machine.id, machine_name: machine.machine_name }))}
-          teamMembers={teamMembers.map((member) => ({ id: member.id, full_name: member.full_name }))}
-          todayIso={todayIso}
-          actionSaving={actionSaving}
-          onOpenCompare={() => router.push('/dashboard/compare')}
-          onActionFilterChange={setActionFilter}
-          onActionFormChange={updateActionForm}
-          onCreateMaintenanceAction={handleCreateMaintenanceAction}
-          onUpdateMaintenanceAction={handleUpdateMaintenanceAction}
-        />
+            <AlertsSection
+              language={language}
+              title={copy.alertManagementTitle}
+              description={copy.alertManagementDesc}
+              emptyLabel={copy.alertEmpty}
+              resetLabel={copy.resetInbox}
+              criticalLabel={copy.criticalLabel}
+              warningLabel={copy.warningLabel}
+              normalLabel={copy.normalLabel}
+              unknownLabel={copy.unknownLabel}
+              alertMachineLabel={copy.alertMachine}
+              alertNextActionLabel={copy.alertNextAction}
+              markAsReadLabel={copy.markAsRead}
+              visibleAlerts={visibleAlerts}
+              actionSaving={actionSaving}
+              onOpenActionCenter={() => scrollToSection('section-actions')}
+              onResetInbox={resetAlertInbox}
+              onCreateActionFromAlert={handleCreateActionFromAlert}
+              onDismissAlert={dismissAlert}
+            />
 
-        <PurchasesSection
-          language={language}
-          exportPdfTitle={copy.exportPdfTitle}
-          exportPdfDesc={copy.exportPdfDesc}
-          purchaseHistoryTitle={copy.purchaseHistoryTitle}
-          purchaseHistoryDesc={copy.purchaseHistoryDesc}
-          onExportFleetReport={handleExportFleetReport}
-          onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
-          onOpenPurchases={() => router.push('/purchases')}
-        />
+            <MaintenanceActionBoardSection
+              language={language}
+              maintenanceActionStats={maintenanceActionStats}
+              actionFilter={actionFilter}
+              visibleMaintenanceActions={visibleMaintenanceActions}
+              actionForm={actionForm}
+              machines={machines.map((machine) => ({ id: machine.id, machine_name: machine.machine_name }))}
+              teamMembers={teamMembers.map((member) => ({ id: member.id, full_name: member.full_name }))}
+              todayIso={todayIso}
+              actionSaving={actionSaving}
+              onOpenCompare={() => router.push('/dashboard/compare')}
+              onActionFilterChange={setActionFilter}
+              onActionFormChange={updateActionForm}
+              onCreateMaintenanceAction={handleCreateMaintenanceAction}
+              onUpdateMaintenanceAction={handleUpdateMaintenanceAction}
+            />
 
-        <InsightsSection
-          language={language}
-          title={copy.insightTitle}
-          description={copy.insightDesc}
-          refreshLabel={copy.refreshInsights}
-          loading={fleetInsightsLoading}
-          onOpenCompare={() => router.push('/dashboard/compare')}
-          onRefresh={loadFleetInsights}
-        />
+            <PurchasesSection
+              language={language}
+              exportPdfTitle={copy.exportPdfTitle}
+              exportPdfDesc={copy.exportPdfDesc}
+              purchaseHistoryTitle={copy.purchaseHistoryTitle}
+              purchaseHistoryDesc={copy.purchaseHistoryDesc}
+              onExportFleetReport={handleExportFleetReport}
+              onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
+              onOpenPurchases={() => router.push('/purchases')}
+            />
 
-        <section style={{ order: 10 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+            <InsightsSection
+              language={language}
+              title={copy.insightTitle}
+              description={copy.insightDesc}
+              refreshLabel={copy.refreshInsights}
+              loading={fleetInsightsLoading}
+              onOpenCompare={() => router.push('/dashboard/compare')}
+              onRefresh={loadFleetInsights}
+            />
+
+            <section style={{ order: 10 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-3xl font-black text-gray-900">{copy.teamManagementTitle}</h2>
@@ -2183,9 +2216,9 @@ export default function DashboardClient({
               </div>
             </div>
           </div>
-        </section>
+          </section>
 
-        <section style={{ order: 9 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <section style={{ order: 9 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
@@ -2293,7 +2326,9 @@ export default function DashboardClient({
                 : 'Note: ROI is a model estimate based on purchase history, action verification, and avoided downtime potential.'}
             </p>
           </div>
-        </section>
+            </section>
+          </>
+        )}
 
         {/* Machine Health Overview - Neuros Style with Horizontal Carousel */}
         <div id="section-snapshot" style={{ order: 3 }} className="mb-8">

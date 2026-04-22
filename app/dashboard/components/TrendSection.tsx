@@ -46,6 +46,19 @@ export function TrendSection({
   onOpenLabDetails,
   onOpenActionCenter,
 }: TrendSectionProps) {
+  const xAxisKey = chartData.some((point) => point.isoDate) ? 'isoDate' : 'date'
+  const formatDateLabel = (value: string) => {
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) return value
+    return parsed.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')
+  }
+
+  const resolveAlertX = (alertDate: string) => {
+    const parsed = new Date(alertDate)
+    if (Number.isNaN(parsed.getTime())) return alertDate
+    return xAxisKey === 'isoDate' ? parsed.toISOString().slice(0, 10) : parsed.toLocaleDateString()
+  }
+
   return (
     <>
       <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
@@ -82,16 +95,19 @@ export function TrendSection({
               <ResponsiveContainer width="100%" height={chartHeight}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <Tooltip contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px' }} />
+                  <Tooltip
+                    labelFormatter={(value) => formatDateLabel(String(value))}
+                    contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px' }}
+                  />
                   <Legend />
                   <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#f97316" strokeWidth={3} dot={{ fill: '#f97316', r: 5 }} />
                   <Line type="monotone" dataKey="viscosity_100c" name="Viscosity @100°C" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 5 }} />
                   {selectedMachineTrendAlerts
                     .filter((alert) => alert.parameter === 'Viscosity')
                     .map((alert) => (
-                      <ReferenceDot key={alert.id} x={new Date(alert.chartDate).toLocaleDateString()} y={alert.chartValue} r={7} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
+                      <ReferenceDot key={alert.id} x={resolveAlertX(alert.chartDate)} y={alert.chartValue} r={7} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
                     ))}
                 </LineChart>
               </ResponsiveContainer>
@@ -111,9 +127,10 @@ export function TrendSection({
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
+                    labelFormatter={(value) => formatDateLabel(String(value))}
                     contentStyle={{
                       backgroundColor: 'white',
                       border: '0',
@@ -126,7 +143,7 @@ export function TrendSection({
                   {selectedMachineTrendAlerts
                     .filter((alert) => alert.parameter === 'Water content')
                     .map((alert) => (
-                      <ReferenceDot key={alert.id} x={new Date(alert.chartDate).toLocaleDateString()} y={alert.chartValue} r={7} fill="#f59e0b" stroke="#ffffff" strokeWidth={2} />
+                      <ReferenceDot key={alert.id} x={resolveAlertX(alert.chartDate)} y={alert.chartValue} r={7} fill="#f59e0b" stroke="#ffffff" strokeWidth={2} />
                     ))}
                 </LineChart>
               </ResponsiveContainer>
@@ -146,9 +163,10 @@ export function TrendSection({
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
+                    labelFormatter={(value) => formatDateLabel(String(value))}
                     contentStyle={{
                       backgroundColor: 'white',
                       border: '0',
@@ -161,7 +179,7 @@ export function TrendSection({
                   {selectedMachineTrendAlerts
                     .filter((alert) => alert.parameter === 'TAN')
                     .map((alert) => (
-                      <ReferenceDot key={alert.id} x={new Date(alert.chartDate).toLocaleDateString()} y={alert.chartValue} r={7} fill="#8b5cf6" stroke="#ffffff" strokeWidth={2} />
+                      <ReferenceDot key={alert.id} x={resolveAlertX(alert.chartDate)} y={alert.chartValue} r={7} fill="#8b5cf6" stroke="#ffffff" strokeWidth={2} />
                     ))}
                 </LineChart>
               </ResponsiveContainer>
