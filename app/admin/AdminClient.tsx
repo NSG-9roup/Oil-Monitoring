@@ -174,23 +174,6 @@ export default function AdminClient({
   const [alertCustomerFilter, setAlertCustomerFilter] = useState<string>('all')
   const [emailLanguage, setEmailLanguage] = useState<'id' | 'en'>('id')
 
-  // Load customers
-  
-
-  // Load machines
-  
-
-  // Load users
-
-
-  // Load products
-
-
-  // Load recent tests
-
-
-  // Load purchases
-
 
   const loadAlertQueue = useCallback(async () => {
     try {
