@@ -492,7 +492,14 @@ export default function DashboardClient({
   
   const [loading] = useState(false)
   const [machines] = useState<Machine[]>(initialMachines)
-  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null)
+  const preferredMachine = useMemo(() => {
+    const machineWithData = initialMachines.find((machine) =>
+      (initialLabTests || []).some((test) => test.machine_id === machine.id)
+    )
+    return machineWithData || initialMachines[0] || null
+  }, [initialMachines, initialLabTests])
+
+  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(() => preferredMachine)
 
   const normalizedLabTests = useMemo(() => {
     return (initialLabTests || []).map((test) => {
@@ -601,12 +608,6 @@ export default function DashboardClient({
         label: language === 'id' ? 'Pembelian Oli' : 'Oil Purchases',
         type: 'section' as const,
       },
-      {
-        id: 'route-compare',
-        label: language === 'id' ? 'Banding Mesin' : 'Machine Compare',
-        type: 'route' as const,
-        href: '/dashboard/compare',
-      },
     ],
     [language]
   )
@@ -616,14 +617,9 @@ export default function DashboardClient({
       const selected = dashboardShortcutItems.find((item) => item.id === shortcutId)
       if (!selected) return
 
-      if (selected.type === 'route' && selected.href) {
-        router.push(selected.href)
-        return
-      }
-
       scrollToSection(shortcutId)
     },
-    [dashboardShortcutItems, router, scrollToSection]
+    [dashboardShortcutItems, scrollToSection]
   )
 
   useEffect(() => {
@@ -1866,16 +1862,6 @@ export default function DashboardClient({
                 </label>
               </div>
               <button
-                onClick={() => router.push('/dashboard/compare')}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold hover:bg-orange-100 transition-colors"
-                title={language === 'id' ? 'Bandingkan mesin' : 'Compare machines'}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                {language === 'id' ? 'Bandingkan' : 'Compare'}
-              </button>
-              <button
                 onClick={() => router.push('/dashboard/profile')}
                 className="bg-white border text-gray-700 p-2 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:shadow-md border-gray-200 flex items-center justify-center gap-2"
                 title={language === 'id' ? 'Profil Saya' : 'My Profile'}
@@ -2319,13 +2305,6 @@ export default function DashboardClient({
               <p className="text-gray-600 font-medium mt-1">{copy.machineHealthDesc}</p>
             </div>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard/compare')}
-                className="px-3 py-2 rounded-lg bg-white border-2 border-gray-200 hover:border-primary-500 hover:bg-primary-50 text-xs font-bold uppercase tracking-wide transition-all shadow-md hover:shadow-lg"
-              >
-                {language === 'id' ? 'Compare' : 'Compare'}
-              </button>
               <button
                 onClick={() => {
                   const container = document.getElementById('machine-carousel')
