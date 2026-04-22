@@ -3,6 +3,34 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+type TeamUserData = {
+  full_name: string
+  email: string
+  phone_number?: string | null
+  admin_pin: string
+  password: string
+}
+
+type MaintenanceActionData = {
+  machine_id: string
+  title: string
+  description?: string | null
+  priority: string
+  due_date?: string | null
+  owner_profile_id?: string | null
+  alert_key?: string | null
+  source_payload?: Record<string, unknown> | null
+}
+
+type MaintenanceActionUpdate = {
+  status?: string
+  owner_profile_id?: string | null
+  verification_status?: string
+  due_date?: string | null
+  evidence_notes?: string | null
+  [key: string]: unknown
+}
+
 /**
  * Helper to verify customer permissions and get their profile
  */
@@ -27,7 +55,7 @@ async function verifyCustomer() {
   return { supabase, user, profile }
 }
 
-export async function createTeamUser(data: any) {
+export async function createTeamUser(data: TeamUserData) {
   const { profile } = await verifyCustomer()
 
   const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
@@ -37,8 +65,6 @@ export async function createTeamUser(data: any) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Needs admin pin logic, assuming backend check handles it or we pass it
-  // For now just basic creation
   const { data: authData, error: authError } = await supabaseService.auth.admin.createUser({
     email: data.email,
     password: data.password,
@@ -67,7 +93,7 @@ export async function createTeamUser(data: any) {
   return { success: true }
 }
 
-export async function createMaintenanceAction(data: any) {
+export async function createMaintenanceAction(data: MaintenanceActionData) {
   const { supabase, profile } = await verifyCustomer()
   const insertData = { ...data, customer_id: profile.customer_id }
   const { error } = await supabase.from('oil_maintenance_actions').insert([insertData])
@@ -76,7 +102,7 @@ export async function createMaintenanceAction(data: any) {
   return { success: true }
 }
 
-export async function updateMaintenanceAction(id: string, data: any) {
+export async function updateMaintenanceAction(id: string, data: MaintenanceActionUpdate) {
   const { supabase } = await verifyCustomer()
   const { error } = await supabase.from('oil_maintenance_actions').update(data).eq('id', id)
   if (error) throw new Error(error.message)
@@ -88,7 +114,7 @@ export async function dismissAlert(alertKey: string) {
   const { supabase, profile, user } = await verifyCustomer()
   const { error } = await supabase.from('oil_alert_actions').upsert({
     alert_key: alertKey,
-    actor_id: profile.id || user.id, // Ensure we use proper ID
+    actor_id: profile.id || user.id,
     action_type: 'customer_read',
     metadata: {
       read_at: new Date().toISOString()
@@ -98,5 +124,6 @@ export async function dismissAlert(alertKey: string) {
   })
   
   if (error) throw new Error(error.message)
+  revalidatePath('/dashboard')
   return { success: true }
 }

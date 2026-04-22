@@ -117,7 +117,7 @@ export function AdminProductsTab({
             {filteredProducts.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                  No products found. Click "Add Product" to create one.
+                  No products found. Click &quot;Add Product&quot; to create one.
                 </td>
               </tr>
             )}

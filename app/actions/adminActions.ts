@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { CustomerFormData, MachineFormData, ProductFormData, LabTestFormData, PurchaseFormData, UserFormData } from '@/lib/types'
 
 /**
  * Helper to verify admin permissions and get the server client.
@@ -29,7 +30,7 @@ async function verifyAdmin() {
 
 // --- CUSTOMERS ---
 
-export async function createCustomer(data: any) {
+export async function createCustomer(data: Partial<CustomerFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_customers').insert([data])
   if (error) throw new Error(error.message)
@@ -37,7 +38,7 @@ export async function createCustomer(data: any) {
   return { success: true }
 }
 
-export async function updateCustomer(id: string, data: any) {
+export async function updateCustomer(id: string, data: Partial<CustomerFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_customers').update(data).eq('id', id)
   if (error) throw new Error(error.message)
@@ -55,7 +56,7 @@ export async function deleteCustomer(id: string) {
 
 // --- MACHINES ---
 
-export async function createMachine(data: any) {
+export async function createMachine(data: Partial<MachineFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_machines').insert([data])
   if (error) throw new Error(error.message)
@@ -63,7 +64,7 @@ export async function createMachine(data: any) {
   return { success: true }
 }
 
-export async function updateMachine(id: string, data: any) {
+export async function updateMachine(id: string, data: Partial<MachineFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_machines').update(data).eq('id', id)
   if (error) throw new Error(error.message)
@@ -81,7 +82,7 @@ export async function deleteMachine(id: string) {
 
 // --- PRODUCTS ---
 
-export async function createProduct(data: any) {
+export async function createProduct(data: Partial<ProductFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_products').insert([data])
   if (error) throw new Error(error.message)
@@ -89,7 +90,7 @@ export async function createProduct(data: any) {
   return { success: true }
 }
 
-export async function updateProduct(id: string, data: any) {
+export async function updateProduct(id: string, data: Partial<ProductFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_products').update(data).eq('id', id)
   if (error) throw new Error(error.message)
@@ -107,7 +108,7 @@ export async function deleteProduct(id: string) {
 
 // --- TESTS ---
 
-export async function createTest(data: any) {
+export async function createTest(data: Partial<LabTestFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_lab_tests').insert([data])
   if (error) throw new Error(error.message)
@@ -115,7 +116,7 @@ export async function createTest(data: any) {
   return { success: true }
 }
 
-export async function updateTest(id: string, data: any) {
+export async function updateTest(id: string, data: Partial<LabTestFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_lab_tests').update(data).eq('id', id)
   if (error) throw new Error(error.message)
@@ -133,7 +134,7 @@ export async function deleteTest(id: string) {
 
 // --- PURCHASES ---
 
-export async function createPurchase(data: any) {
+export async function createPurchase(data: Partial<PurchaseFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_purchase_history').insert([data])
   if (error) throw new Error(error.message)
@@ -141,7 +142,7 @@ export async function createPurchase(data: any) {
   return { success: true }
 }
 
-export async function updatePurchase(id: string, data: any) {
+export async function updatePurchase(id: string, data: Partial<PurchaseFormData>) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_purchase_history').update(data).eq('id', id)
   if (error) throw new Error(error.message)
@@ -159,12 +160,12 @@ export async function deletePurchase(id: string) {
 
 // --- USERS ---
 
-export async function createUser(data: any) {
-  const adminSupabase = await verifyAdmin() // Verify the current user is an admin
-  
+export async function createUser(data: UserFormData & { action?: string }) {
+  await verifyAdmin() // Verify the current user is an admin
+
   // Need service role for auth admin
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabaseService = createClient(
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+  const supabaseService = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
@@ -200,14 +201,15 @@ export async function createUser(data: any) {
     throw new Error(profileError.message)
   }
 
+  revalidatePath('/admin')
   return { success: true }
 }
 
-export async function updateUser(id: string, data: any) {
-  const adminSupabase = await verifyAdmin()
+export async function updateUser(id: string, data: Partial<UserFormData> & { action?: string }) {
+  await verifyAdmin()
   
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabaseService = createClient(
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+  const supabaseService = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
@@ -229,14 +231,15 @@ export async function updateUser(id: string, data: any) {
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+  revalidatePath('/admin')
   return { success: true }
 }
 
 export async function deleteUser(id: string) {
-  const adminSupabase = await verifyAdmin()
+  await verifyAdmin()
   
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabaseService = createClient(
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+  const supabaseService = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
@@ -245,5 +248,6 @@ export async function deleteUser(id: string) {
   const { error: authError } = await supabaseService.auth.admin.deleteUser(id)
   if (authError) throw new Error(authError.message)
 
+  revalidatePath('/admin')
   return { success: true }
 }

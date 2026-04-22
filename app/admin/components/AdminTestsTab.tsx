@@ -293,7 +293,7 @@ export function AdminTestsTab({
             {filteredTests.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                  No lab tests found. Click "Add Lab Test" to create one.
+                  No lab tests found. Click &quot;Add Lab Test&quot; to create one.
                 </td>
               </tr>
             )}

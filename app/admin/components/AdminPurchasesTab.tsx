@@ -233,7 +233,7 @@ export function AdminPurchasesTab({
             {filteredPurchases.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
-                  No purchase history found. Click "Add Purchase" to create one.
+                  No purchase history found. Click &quot;Add Purchase&quot; to create one.
                 </td>
               </tr>
             )}

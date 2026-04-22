@@ -20,6 +20,7 @@ import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { PurchasesSection } from '@/app/dashboard/components/PurchasesSection'
 import { InsightsSection } from '@/app/dashboard/components/InsightsSection'
+import { createTeamUser, createMaintenanceAction, updateMaintenanceAction } from '@/app/actions/dashboardActions'
 
 interface Machine {
   id: string
@@ -99,6 +100,8 @@ interface DashboardClientProps {
   initialMaintenanceActions: MaintenanceAction[]
   initialMaintenanceActionLogs: MaintenanceActionLog[]
   initialPurchaseHistory: PurchaseHistoryRecord[]
+  initialLabTests: any[]
+  initialDismissedAlertIds: string[]
 }
 
 interface PurchaseHistoryRecord {
@@ -480,6 +483,8 @@ export default function DashboardClient({
   initialMaintenanceActions,
   initialMaintenanceActionLogs,
   initialPurchaseHistory,
+  initialLabTests,
+  initialDismissedAlertIds,
 }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -490,17 +495,40 @@ export default function DashboardClient({
   const [loading, setLoading] = useState(false)
   const [machines] = useState<Machine[]>(initialMachines)
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(initialMachines[0] || null)
-  const [oilSamples, setOilSamples] = useState<OilSample[]>([])
-  const [labReports, setLabReports] = useState<LabReport[]>([])
+
+  // Derive oilSamples from server-prefetched lab tests (no client fetch needed)
+  const oilSamples = useMemo(() => {
+    if (!selectedMachine) return []
+    return [...initialLabTests]
+      .filter((t) => t.machine_id === selectedMachine.id)
+      .sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime())
+  }, [selectedMachine, initialLabTests]) as OilSample[]
+
+  const labReports = oilSamples as LabReport[]
+
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' })
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
-  const [latestTestByMachineId, setLatestTestByMachineId] = useState<Record<string, OilSample>>({})
-  const [fleetHistoryByMachineId, setFleetHistoryByMachineId] = useState<Record<string, OilSample[]>>({})
-  const [fleetInsightsLoading, setFleetInsightsLoading] = useState(false)
-  const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([])
+  const [fleetInsightsLoading] = useState(false)
+
+  // Derive fleet maps from server-prefetched lab tests (no client fetch needed)
+  const { latestTestByMachineId, fleetHistoryByMachineId } = useMemo(() => {
+    const latestMap: Record<string, OilSample> = {}
+    const historyMap: Record<string, OilSample[]> = {}
+    ;(initialLabTests || []).forEach((test) => {
+      const product = Array.isArray(test.product) ? test.product[0] : test.product
+      const t = { ...test, product } as OilSample & { machine_id: string }
+      if (!historyMap[t.machine_id]) historyMap[t.machine_id] = []
+      historyMap[t.machine_id].push(t)
+      if (!latestMap[t.machine_id]) latestMap[t.machine_id] = t
+    })
+    return { latestTestByMachineId: latestMap, fleetHistoryByMachineId: historyMap }
+  }, [initialLabTests])
+
+  // Use server-prefetched dismissed alerts
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>(initialDismissedAlertIds)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialTeamMembers)
   const [teamForm, setTeamForm] = useState({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
   const [teamSaving, setTeamSaving] = useState(false)
@@ -1136,49 +1164,21 @@ export default function DashboardClient({
 
     setTeamSaving(true)
     try {
-      const response = await fetch('/api/customer/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'create',
-          full_name: teamForm.full_name.trim(),
-          email: teamForm.email.trim(),
-          phone_number: teamForm.phone_number.trim() || null,
-          admin_pin: teamForm.admin_pin.trim(),
-          password: teamForm.password,
-        }),
+      await createTeamUser({
+        full_name: teamForm.full_name.trim(),
+        email: teamForm.email.trim(),
+        phone_number: teamForm.phone_number.trim() || null,
+        admin_pin: teamForm.admin_pin.trim(),
+        password: teamForm.password,
       })
 
-      const payload = await response.json()
-      if (!response.ok) {
-        throw new Error(payload.error || copy.teamCreateError)
-      }
-
-      if (payload.profile) {
-        setTeamMembers((prev) => [payload.profile, ...prev])
-      }
       setTeamForm({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
       alert(copy.teamCreateSuccess)
+      router.refresh()
     } catch (error: unknown) {
       alert(`${copy.teamCreateError}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setTeamSaving(false)
-    }
-  }
-
-  const refreshMaintenanceAction = async (actionId: string) => {
-    const response = await fetch('/api/customer/actions')
-    const payload = await response.json()
-
-    if (!response.ok) {
-      throw new Error(payload.error || 'Failed to refresh maintenance actions')
-    }
-
-    const updatedAction = (payload.actions || []).find((action: MaintenanceAction) => action.id === actionId)
-    if (updatedAction) {
-      setMaintenanceActions((prev) => prev.map((action) => (action.id === actionId ? updatedAction : action)))
     }
   }
 
@@ -1194,28 +1194,8 @@ export default function DashboardClient({
   ) => {
     setActionSaving(true)
     try {
-      const response = await fetch('/api/customer/actions', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update',
-          action_id: actionId,
-          ...payload,
-        }),
-      })
-
-      const responsePayload = await response.json()
-      if (!response.ok) {
-        throw new Error(responsePayload.error || 'Failed to update maintenance action')
-      }
-
-      if (responsePayload.action) {
-        setMaintenanceActions((prev) => prev.map((action) => (action.id === actionId ? responsePayload.action : action)))
-      } else {
-        await refreshMaintenanceAction(actionId)
-      }
+      await updateMaintenanceAction(actionId, payload)
+      router.refresh()
     } catch (error: unknown) {
       alert(error instanceof Error ? error.message : 'Failed to update maintenance action')
     } finally {
@@ -1239,34 +1219,18 @@ export default function DashboardClient({
 
     setActionSaving(true)
     try {
-      const response = await fetch('/api/customer/actions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      await createMaintenanceAction({
+        machine_id: machineId,
+        title,
+        description: description || null,
+        priority,
+        due_date: dueDate,
+        owner_profile_id: ownerProfileId,
+        alert_key: alertKey,
+        source_payload: overrides?.source_payload || {
+          created_from: 'dashboard_action_board',
         },
-        body: JSON.stringify({
-          action: 'create',
-          machine_id: machineId,
-          title,
-          description: description || null,
-          priority,
-          due_date: dueDate,
-          owner_profile_id: ownerProfileId,
-          alert_key: alertKey,
-          source_payload: overrides?.source_payload || {
-            created_from: 'dashboard_action_board',
-          },
-        }),
       })
-
-      const responsePayload = await response.json()
-      if (!response.ok) {
-        throw new Error(responsePayload.error || 'Failed to create maintenance action')
-      }
-
-      if (responsePayload.action) {
-        setMaintenanceActions((prev) => [responsePayload.action, ...prev.filter((action) => action.id !== responsePayload.action.id)])
-      }
 
       setActionForm({
         machine_id: initialMachines[0]?.id || '',
@@ -1277,6 +1241,7 @@ export default function DashboardClient({
         owner_profile_id: '',
         alert_key: '',
       })
+      router.refresh()
     } catch (error: unknown) {
       alert(error instanceof Error ? error.message : 'Failed to create maintenance action')
     } finally {
@@ -1374,89 +1339,6 @@ export default function DashboardClient({
     return alerts.slice(0, 3)
   }
 
-  const loadFleetInsights = useCallback(async () => {
-    const machineIds = machines.map((machine) => machine.id)
-    if (machineIds.length === 0) {
-      setLatestTestByMachineId({})
-      setFleetHistoryByMachineId({})
-      return
-    }
-
-    setFleetInsightsLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('oil_lab_tests')
-        .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, product:oil_products(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)')
-        .in('machine_id', machineIds)
-        .order('test_date', { ascending: false })
-
-      if (error) {
-        logger.error('Failed to load fleet insights:', error.message)
-        setLatestTestByMachineId({})
-        return
-      }
-
-      const latestMap: Record<string, OilSample> = {}
-      const historyMap: Record<string, OilSample[]> = {}
-      ;(data || []).forEach((test) => {
-        const product = Array.isArray(test.product) ? test.product[0] : test.product
-        const normalizedTest = {
-          ...test,
-          product,
-        } as OilSample & { machine_id: string }
-
-        if (!historyMap[normalizedTest.machine_id]) {
-          historyMap[normalizedTest.machine_id] = []
-        }
-        historyMap[normalizedTest.machine_id].push(normalizedTest)
-
-        if (!latestMap[normalizedTest.machine_id]) {
-          latestMap[normalizedTest.machine_id] = normalizedTest
-        }
-      })
-
-      setLatestTestByMachineId(latestMap)
-      setFleetHistoryByMachineId(historyMap)
-    } catch (error) {
-      logger.error('Fleet insight error:', error)
-      setLatestTestByMachineId({})
-      setFleetHistoryByMachineId({})
-    } finally {
-      setFleetInsightsLoading(false)
-    }
-  }, [machines, supabase])
-
-  const loadMachineData = useCallback(async (machineId: string) => {
-    setLoading(true)
-    try {
-      // Get lab tests (these contain the sample data for charts)
-      const testsRes = await supabase
-        .from('oil_lab_tests')
-        .select('*, product:oil_products(product_name, product_type)')
-        .eq('machine_id', machineId)
-        .order('test_date', { ascending: true })
-
-      const tests = testsRes.data || []
-      setOilSamples(tests) // Lab tests ARE the samples
-      setLabReports(tests) // Also use for lab reports
-    } catch (error) {
-      logger.error('Error loading machine data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [supabase])
-
-  useEffect(() => {
-    if (selectedMachine) {
-      loadMachineData(selectedMachine.id)
-    }
-  }, [loadMachineData, selectedMachine])
-
-  useEffect(() => {
-    if (machines.length > 0) {
-      loadFleetInsights()
-    }
-  }, [loadFleetInsights, machines])
 
   useEffect(() => {
     router.prefetch('/purchases')
@@ -1890,22 +1772,6 @@ export default function DashboardClient({
     })()
   }
 
-  useEffect(() => {
-    void (async () => {
-      const { data, error } = await supabase
-        .from('oil_alert_actions')
-        .select('alert_key')
-        .eq('action_type', 'customer_read')
-        .eq('actor_id', profile?.id || user.id)
-
-      if (error) {
-        logger.error('Failed to load customer alert read states:', error.message)
-        return
-      }
-
-      setDismissedAlertIds((data || []).map((row) => row.alert_key))
-    })()
-  }, [profile?.id, supabase, user.id])
 
   const chartData = filteredSamples.map(sample => ({
     date: new Date(sample.test_date).toLocaleDateString(),
