@@ -499,8 +499,6 @@ export default function DashboardClient({
     return machineWithData || initialMachines[0] || null
   }, [initialMachines, initialLabTests])
 
-  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(() => preferredMachine)
-
   const normalizedLabTests = useMemo(() => {
     return (initialLabTests || []).map((test) => {
       const product = Array.isArray(test.product) ? test.product[0] : test.product
@@ -508,13 +506,21 @@ export default function DashboardClient({
     }) as Array<OilSample & { machine_id: string }>
   }, [initialLabTests])
 
+  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(() => preferredMachine)
+  const chartMachine = useMemo(() => {
+    if (selectedMachine && normalizedLabTests.some((test) => test.machine_id === selectedMachine.id)) {
+      return selectedMachine
+    }
+    return preferredMachine
+  }, [normalizedLabTests, preferredMachine, selectedMachine])
+
   // Derive oilSamples from server-prefetched lab tests (no client fetch needed)
   const oilSamples = useMemo(() => {
-    if (!selectedMachine) return []
+    if (!chartMachine) return []
     return [...normalizedLabTests]
-      .filter((t) => t.machine_id === selectedMachine.id)
+      .filter((t) => t.machine_id === chartMachine.id)
       .sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime())
-  }, [normalizedLabTests, selectedMachine]) as OilSample[]
+  }, [chartMachine, normalizedLabTests]) as OilSample[]
 
   const labReports = oilSamples as LabReport[]
 
@@ -543,13 +549,13 @@ export default function DashboardClient({
     }
 
     setSelectedMachine((prev) => {
-      if (prev && machines.some((machine) => machine.id === prev.id)) {
+      if (prev && machines.some((machine) => machine.id === prev.id) && normalizedLabTests.some((test) => test.machine_id === prev.id)) {
         return prev
       }
       const machineWithData = machines.find((machine) => Boolean(latestTestByMachineId[machine.id]))
       return machineWithData || machines[0]
     })
-  }, [latestTestByMachineId, machines])
+  }, [latestTestByMachineId, machines, normalizedLabTests])
 
   // Use server-prefetched dismissed alerts
   const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>(initialDismissedAlertIds)
