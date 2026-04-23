@@ -268,8 +268,8 @@ const dashboardCopy = {
     customRange: 'Kustom',
     startDate: 'Tanggal Mulai',
     endDate: 'Tanggal Selesai',
-    performanceTitle: 'Tren Kinerja',
-    performanceDesc: 'Pantau perubahan parameter kondisi oli dari waktu ke waktu.',
+    performanceTitle: 'Tren Performa',
+    performanceDesc: 'Visualisasi metrik kunci dan indikator kondisi pelumas dalam rentang waktu terpilih.',
     noSampleData: 'Tidak ada data sampel',
     checkConsole: 'Periksa console browser untuk detail debug.',
     noDataAvailable: 'Tidak ada data tersedia',
@@ -423,7 +423,7 @@ const dashboardCopy = {
     startDate: 'Start Date',
     endDate: 'End Date',
     performanceTitle: 'Performance Trends',
-    performanceDesc: 'Monitor how oil condition parameters change over time.',
+    performanceDesc: 'Key metrics visualization and lubricant condition indicators within the selected time range.',
     noSampleData: 'No sample data available',
     checkConsole: 'Check the browser console for debug details.',
     noDataAvailable: 'No data available',
@@ -530,6 +530,18 @@ export default function DashboardClient({
     () => Array.from(new Set((normalizedLabTests || []).map((test) => test.machine_id))).slice(0, 12),
     [normalizedLabTests]
   )
+
+  const activeBaselines = useMemo(() => {
+    if (!chartMachine || oilSamples.length === 0) return null
+    const latestWithProduct = [...oilSamples].reverse().find(s => s.product)
+    if (!latestWithProduct) return null
+    
+    return {
+      viscosity40: latestWithProduct.product?.baseline_viscosity_40c,
+      viscosity100: latestWithProduct.product?.baseline_viscosity_100c,
+      tan: latestWithProduct.product?.baseline_tan
+    }
+  }, [chartMachine, oilSamples])
 
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
@@ -954,6 +966,22 @@ export default function DashboardClient({
     // ============================================================
     return { level: 'normal', color: 'green', text: 'Normal' }
   }
+
+  const getMachineHealth = (machineId: string) => {
+    const latestTest = latestTestByMachineId[machineId]
+    if (!latestTest) {
+      return { score: '-', status: 'Unknown', color: 'gray' }
+    }
+    const score = calculateHealthScore(latestTest)
+    const statusInfo = getStatus(
+      latestTest.viscosity_40c || 0,
+      latestTest.water_content || 0,
+      latestTest.tan_value || 0,
+      latestTest.product
+    )
+    return { score, status: statusInfo.text, color: statusInfo.color }
+  }
+
 
   // Calculate trend compared to previous test
   const getTrend = (currentValue: number, previousValue: number | null) => {
@@ -1816,50 +1844,68 @@ export default function DashboardClient({
       {/* Header */}
       <header className="bg-white shadow-lg sticky top-0 z-50 border-b-2 border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-4">
             {/* Left: NSG Logo + Brand */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <Image
                 src="https://i.imgur.com/8nqsjFz.png"
                 alt="Nabel Sakha Gemilang"
-                width={132}
-                height={40}
-                className="h-10 w-auto object-contain"
+                width={100}
+                height={30}
+                className="h-8 w-auto object-contain flex-shrink-0"
                 unoptimized
               />
-              <div className="border-l-2 border-gray-300 pl-3">
-                <h1 className="text-xl font-bold text-gray-800">OilTrack™</h1>
+              <div className="hidden md:block border-l-2 border-gray-100 pl-3">
+                <h1 className="text-lg font-black text-gray-900 tracking-tighter">OilTrack™</h1>
+              </div>
+            </div>
+
+            {/* Middle: Customer Logo (Minimalist) */}
+            <div className="hidden lg:flex flex-1 justify-center min-w-0">
+              <div className="bg-gray-50/80 px-4 py-1.5 rounded-2xl border border-gray-100 flex items-center gap-3">
+                {profile?.customer?.logo_url && (
+                  <Image
+                    src={profile.customer.logo_url}
+                    alt="Customer logo"
+                    width={100}
+                    height={30}
+                    className="h-6 w-auto object-contain"
+                    unoptimized
+                  />
+                )}
+                <span className="text-xs font-black text-gray-900 uppercase tracking-wider truncate max-w-[200px]">
+                  {profile?.customer?.company_name}
+                </span>
               </div>
             </div>
             
-            {/* Right: User Info + Logout */}
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-gray-500 text-xs">{profile?.customer?.company_name}</p>
-                <p className="text-gray-800 font-medium text-sm">{profile?.email || user.email}</p>
+            {/* Right: User Info + Stats + Language */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Machine Count Badge */}
+              <div className="hidden sm:flex items-center gap-2 bg-gray-900 text-white px-3 py-1.5 rounded-xl shadow-sm">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-70">Fleet</span>
+                <span className="text-sm font-black">{machines.length}</span>
               </div>
-              <div className="hidden sm:flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{copy.languageSelector}</span>
-                <div className="flex items-center rounded-lg bg-white border border-gray-200 p-0.5 text-xs font-semibold shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('id')}
-                    aria-label="Bahasa Indonesia"
-                    title="Bahasa Indonesia"
-                    className={`px-3 py-1.5 rounded-md transition-colors text-sm ${language === 'id' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
-                  >
-                    🇮🇩
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage('en')}
-                    aria-label="English"
-                    title="English"
-                    className={`px-3 py-1.5 rounded-md transition-colors text-sm ${language === 'en' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
-                  >
-                    🇬🇧
-                  </button>
-                </div>
+
+              <div className="text-right hidden xl:block">
+                <p className="text-gray-800 font-bold text-xs">{profile?.email || user.email}</p>
+              </div>
+
+              <div className="flex items-center rounded-xl bg-gray-100 border border-gray-200 p-0.5 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setLanguage('id')}
+                  className={`px-2 py-1 rounded-lg transition-all ${language === 'id' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  ID
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('en')}
+                  className={`px-2 py-1 rounded-lg transition-all ${language === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  EN
+                </button>
               </div>
 
               <div className="sm:hidden">
@@ -1875,28 +1921,8 @@ export default function DashboardClient({
                   </select>
                 </label>
               </div>
-              <button
-                onClick={() => router.push('/dashboard/profile')}
-                className="bg-white border text-gray-700 p-2 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:shadow-md border-gray-200 flex items-center justify-center gap-2"
-                title={language === 'id' ? 'Profil Saya' : 'My Profile'}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="hidden sm:inline font-medium text-sm">{language === 'id' ? 'Profil' : 'Profile'}</span>
-              </button>
-              <div className="relative" title={copy.dashboardAlerts}>
-                <div className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                </div>
-                {visibleAlerts.length > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[11px] font-bold flex items-center justify-center">
-                    {visibleAlerts.length}
-                  </span>
-                )}
-              </div>
+
+
               <button
                 onClick={handleSignOut}
                 className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -1911,124 +1937,61 @@ export default function DashboardClient({
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
-        {debugMode && (
-          <section className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900">
-            <h2 className="text-sm font-black uppercase tracking-wide mb-2">Dashboard Data Debug</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
-              <div><span className="font-bold">customer_id:</span> {profile?.customer_id || '-'}</div>
-              <div><span className="font-bold">machines:</span> {machines.length}</div>
-              <div><span className="font-bold">initialLabTests:</span> {initialLabTests.length}</div>
-              <div><span className="font-bold">normalizedLabTests:</span> {normalizedLabTests.length}</div>
-              <div><span className="font-bold">selectedMachine:</span> {selectedMachine?.id || '-'}</div>
-              <div><span className="font-bold">chartMachine:</span> {chartMachine?.id || '-'}</div>
-              <div><span className="font-bold">filteredSamples:</span> {filteredSamples.length}</div>
-              <div><span className="font-bold">filteredReports:</span> {filteredReports.length}</div>
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col">
+        {/* Welcome Text (Minimalist) */}
+        <div style={{ order: 1 }} className="mb-4">
+          <h2 className="text-xl font-black text-gray-900 tracking-tight">
+            {copy.welcomeBack}, <span className="text-primary-600">{profile?.full_name?.split(' ')[0] || 'User'}</span>
+          </h2>
+        </div>
+
+        {/* Unified Control Bar (Navigator + Time Range) */}
+        <div style={{ order: 2 }} className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex flex-col xl:flex-row xl:items-center">
+            {/* Shortcut Navigator */}
+            <div className="flex-1 p-2 overflow-x-auto">
+              <ShortcutNavigator
+                ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
+                items={dashboardShortcutItems.map((shortcut) => ({
+                  id: shortcut.id,
+                  label: shortcut.label,
+                  isActive: shortcut.type === 'section' && activeShortcut === shortcut.id,
+                }))}
+                onItemClick={handleShortcutClick}
+              />
             </div>
-            <div className="mt-2 break-all">
-              <span className="font-bold">machineIdsInLabTests:</span> {debugLabMachineIds.join(', ') || '-'}
-            </div>
-          </section>
-        )}
-
-        {/* Customer Detail Card - Neuros Style */}
-        <div style={{ order: 1 }} className="mb-8 bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 overflow-hidden relative">
-          {/* Decorative gradient overlay */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-500/5 to-secondary-500/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
-          
-          <div className="relative z-10">
-            {/* Welcome Header */}
-            <div className="mb-6">
-              <p className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">{copy.welcomeBack}</p>
-              <h1 className="text-4xl font-black text-gray-900">
-                {profile?.customer?.company_name?.split(' ').map((word: string, i: number) => (
-                  <span key={`${word}-${i}`} className={i > 0 && i % 2 === 0 ? 'text-red-600' : i > 0 ? 'text-orange-600' : ''}>
-                    {i > 0 ? ' ' : ''}
-                    {word}
-                  </span>
-                ))}
-              </h1>
-            </div>
-
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              {/* Logo */}
-              <div className="flex-shrink-0">
-                <div className="w-40 h-32 rounded-2xl overflow-hidden bg-white border-2 border-gray-200 flex items-center justify-center shadow-xl p-4 hover:scale-105 transition-transform duration-300">
-                  {profile?.customer?.logo_url ? (
-                    <Image
-                      src={profile.customer.logo_url}
-                      alt={profile.customer.company_name || 'Customer logo'}
-                      width={140}
-                      height={96}
-                      className="max-w-full max-h-full object-contain"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center">
-                      <span className="text-white font-black text-4xl">
-                        {profile?.customer?.company_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'NA'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Stats Grid */}
-              <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4">
-                {/* Status */}
-                <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">{copy.status}</p>
-                  <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold border-2 ${
-                    profile?.customer?.status === 'active' 
-                      ? 'bg-green-50 text-green-700 border-green-300' 
-                      : 'bg-gray-100 text-gray-700 border-gray-300'
-                  }`}>
-                    {profile?.customer?.status === 'active' && (
-                      <span className="w-2.5 h-2.5 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                    )}
-                    {profile?.customer?.status === 'active' ? copy.active : copy.inactive}
-                  </div>
-                </div>
-
-                {/* Total Machines */}
-                <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">{copy.machines}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-gray-900">{machines.length}</span>
-                    <span className="text-sm text-gray-500 font-semibold">{copy.totalLabel}</span>
-                  </div>
-                </div>
-
-                {/* User Name */}
-                <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 col-span-2 md:col-span-1">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">{copy.user}</p>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-bold text-gray-900 truncate">{profile?.full_name || profile?.email || 'User'}</span>
-                  </div>
-                </div>
-              </div>
+            
+            {/* Vertical Separator */}
+            <div className="hidden xl:block w-px h-8 bg-gray-200 mx-2"></div>
+            
+            {/* Horizontal Separator (Mobile) */}
+            <div className="xl:hidden h-px w-full bg-gray-100"></div>
+            
+            {/* Time Range Filter */}
+            <div className="flex items-center gap-1.5 p-2 overflow-x-auto bg-gray-50/50 xl:bg-transparent">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-2 ml-2">{copy.timeRangeTitle}</span>
+              {['7d', '30d', '90d', '6m', 'all'].map((range) => (
+                <button 
+                  key={range}
+                  onClick={() => setTimeRange(range as any)} 
+                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] tracking-wide transition-all whitespace-nowrap ${timeRange === range ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                >
+                  {range === '7d' ? (language === 'id' ? '7H' : '7D') : 
+                   range === '30d' ? (language === 'id' ? '30H' : '30D') : 
+                   range === '90d' ? (language === 'id' ? '90H' : '90D') : 
+                   range === '6m' ? (language === 'id' ? '6B' : '6M') : 
+                   (language === 'id' ? 'SEMUA' : 'ALL')}
+                </button>
+              ))}
             </div>
           </div>
         </div>
-
-        <div style={{ order: 1.5 }}>
-          <ShortcutNavigator
-            ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
-            items={dashboardShortcutItems.map((shortcut) => ({
-              id: shortcut.id,
-              label: shortcut.label,
-              isActive: shortcut.type === 'section' && activeShortcut === shortcut.id,
-            }))}
-            onItemClick={handleShortcutClick}
-          />
-        </div>
-
-
+          {timeRange === 'custom' && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
+              <label className="block"><span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.startDate}</span><input type="date" value={customDateRange.start} onChange={(e) => setCustomDateRange((prev) => ({ ...prev, start: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500" /></label>
+              <label className="block"><span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.endDate}</span><input type="date" value={customDateRange.end} onChange={(e) => setCustomDateRange((prev) => ({ ...prev, end: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500" /></label>
+            </div>
+          )}
 
         {showAdvancedSections && (
           <>
@@ -2043,26 +2006,7 @@ export default function DashboardClient({
               onOpenCompare={() => router.push('/dashboard/compare')}
             />
 
-            <AlertsSection
-              language={language}
-              title={copy.alertManagementTitle}
-              description={copy.alertManagementDesc}
-              emptyLabel={copy.alertEmpty}
-              resetLabel={copy.resetInbox}
-              criticalLabel={copy.criticalLabel}
-              warningLabel={copy.warningLabel}
-              normalLabel={copy.normalLabel}
-              unknownLabel={copy.unknownLabel}
-              alertMachineLabel={copy.alertMachine}
-              alertNextActionLabel={copy.alertNextAction}
-              markAsReadLabel={copy.markAsRead}
-              visibleAlerts={visibleAlerts}
-              actionSaving={actionSaving}
-              onOpenActionCenter={() => scrollToSection('section-actions')}
-              onResetInbox={resetAlertInbox}
-              onCreateActionFromAlert={handleCreateActionFromAlert}
-              onDismissAlert={dismissAlert}
-            />
+
 
             <MaintenanceActionBoardSection
               language={language}
@@ -2199,455 +2143,141 @@ export default function DashboardClient({
               </div>
             </div>
           </div>
-          </section>
+        </section>
+      </>
+    )}
 
-          <section style={{ order: 9 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
-                {language === 'id' ? 'Enterprise Trust & ROI' : 'Enterprise Trust & ROI'}
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {language === 'id'
-                  ? 'Validasi kesiapan enterprise melalui traceability tindakan, kualitas verifikasi, dan dampak finansial yang terukur.'
-                  : 'Validate enterprise readiness through action traceability, verification quality, and measurable financial impact.'}
-              </p>
-              <button
-                type="button"
-                onClick={() => router.push('/purchases')}
-                className="mt-3 px-3 py-2 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors"
-              >
-                {language === 'id' ? 'Buka Purchase Analytics' : 'Open Purchase Analytics'}
-              </button>
-            </div>
-            <div className={`px-4 py-3 rounded-2xl border ${enterpriseTrustScore >= 80 ? 'bg-emerald-50 border-emerald-200' : enterpriseTrustScore >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{language === 'id' ? 'Enterprise Trust Score' : 'Enterprise Trust Score'}</p>
-              <p className={`text-3xl font-black ${enterpriseTrustScore >= 80 ? 'text-emerald-700' : enterpriseTrustScore >= 60 ? 'text-amber-700' : 'text-red-700'}`}>
-                {enterpriseTrustScore}
-              </p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 xl:grid-cols-6 gap-3 mb-5 text-xs font-semibold">
-            <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
-              <div className="text-gray-600 uppercase tracking-wide">{language === 'id' ? 'Assignment' : 'Assignment'}</div>
-              <div className="text-lg font-black text-gray-900">{assignmentCoverageRate}%</div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 border border-gray-200 px-3 py-2 text-center">
-              <div className="text-gray-600 uppercase tracking-wide">{language === 'id' ? 'Due Date' : 'Due Date'}</div>
-              <div className="text-lg font-black text-gray-900">{dueDateCoverageRate}%</div>
-            </div>
-            <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-center">
-              <div className="text-emerald-700 uppercase tracking-wide">{language === 'id' ? 'Verify Pass' : 'Verify Pass'}</div>
-              <div className="text-lg font-black text-emerald-900">{verificationPassRate}%</div>
-            </div>
-            <div className="rounded-2xl bg-blue-50 border border-blue-200 px-3 py-2 text-center">
-              <div className="text-blue-700 uppercase tracking-wide">{language === 'id' ? 'Evidence' : 'Evidence'}</div>
-              <div className="text-lg font-black text-blue-900">{evidenceCoverageRate}%</div>
-            </div>
-            <div className="rounded-2xl bg-purple-50 border border-purple-200 px-3 py-2 text-center">
-              <div className="text-purple-700 uppercase tracking-wide">{language === 'id' ? 'Traceability' : 'Traceability'}</div>
-              <div className="text-lg font-black text-purple-900">{traceabilityRate}%</div>
-            </div>
-            <div className="rounded-2xl bg-red-50 border border-red-200 px-3 py-2 text-center">
-              <div className="text-red-700 uppercase tracking-wide">{language === 'id' ? 'Overdue' : 'Overdue'}</div>
-              <div className="text-lg font-black text-red-900">{overdueRate}%</div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{language === 'id' ? 'Total Spend (Completed Purchase)' : 'Total Spend (Completed Purchase)'}</p>
-              <p className="text-2xl font-black text-gray-900">Rp {Math.round(totalSpend).toLocaleString('id-ID')}</p>
-            </div>
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700 mb-1">{language === 'id' ? 'Estimated Savings' : 'Estimated Savings'}</p>
-              <p className="text-2xl font-black text-emerald-900">Rp {Math.round(estimatedSavings).toLocaleString('id-ID')}</p>
-            </div>
-            <div className={`rounded-2xl border px-4 py-4 ${netImpact >= 0 ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
-              <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${netImpact >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{language === 'id' ? 'ROI Net Impact' : 'ROI Net Impact'}</p>
-              <p className={`text-2xl font-black ${netImpact >= 0 ? 'text-blue-900' : 'text-red-900'}`}>Rp {Math.round(netImpact).toLocaleString('id-ID')}</p>
-              <p className={`text-sm font-semibold mt-1 ${netImpact >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{roiPercent}% ROI</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-            <h3 className="text-lg font-black text-gray-900 mb-3">{language === 'id' ? 'Audit Event Summary' : 'Audit Event Summary'}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2 text-xs font-semibold">
-              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">created</div>
-                <div className="text-base font-black text-gray-900">{logEventBreakdown.created || 0}</div>
-              </div>
-              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">updated</div>
-                <div className="text-base font-black text-gray-900">{logEventBreakdown.updated || 0}</div>
-              </div>
-              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">status</div>
-                <div className="text-base font-black text-gray-900">{logEventBreakdown.status_changed || 0}</div>
-              </div>
-              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">assigned</div>
-                <div className="text-base font-black text-gray-900">{logEventBreakdown.assigned || 0}</div>
-              </div>
-              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">completed</div>
-                <div className="text-base font-black text-gray-900">{logEventBreakdown.completed || 0}</div>
-              </div>
-              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">verified</div>
-                <div className="text-base font-black text-gray-900">{logEventBreakdown.verified || 0}</div>
-              </div>
-              <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
-                <div className="text-gray-500 uppercase tracking-wide">reopened</div>
-                <div className="text-base font-black text-gray-900">{logEventBreakdown.reopened || 0}</div>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 mt-3">
-              {language === 'id'
-                ? 'Catatan: ROI adalah estimasi model berbasis histori purchase, verifikasi action, dan potensi downtime yang dihindari.'
-                : 'Note: ROI is a model estimate based on purchase history, action verification, and avoided downtime potential.'}
-            </p>
-          </div>
-            </section>
-          </>
-        )}
-
-        {/* Purchases Section - Always visible */}
-        <PurchasesSection
-          language={language}
-          exportPdfTitle={copy.exportPdfTitle}
-          exportPdfDesc={copy.exportPdfDesc}
-          purchaseHistoryTitle={copy.purchaseHistoryTitle}
-          purchaseHistoryDesc={copy.purchaseHistoryDesc}
-          onExportFleetReport={handleExportFleetReport}
-          onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
-          onOpenPurchases={() => router.push('/purchases')}
-        />
-
-        {/* Machine Health Overview - Neuros Style with Horizontal Carousel */}
         <div id="section-snapshot" style={{ order: 3 }} className="mb-8">
-          <div className="mb-6 flex items-end justify-between">
-            <div>
-              <h2 className="text-3xl font-black text-gray-900">{copy.machineHealthTitle}</h2>
-              <p className="text-gray-600 font-medium mt-1">{copy.machineHealthDesc}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  const container = document.getElementById('machine-carousel')
-                  if (container) container.scrollBy({ left: -400, behavior: 'smooth' })
-                }}
-                className="p-2 rounded-lg bg-white border-2 border-gray-200 hover:border-primary-500 hover:bg-primary-50 transition-all shadow-md hover:shadow-lg"
-                aria-label="Scroll left"
-              >
-                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={() => {
-                  const container = document.getElementById('machine-carousel')
-                  if (container) container.scrollBy({ left: 400, behavior: 'smooth' })
-                }}
-                className="p-2 rounded-lg bg-white border-2 border-gray-200 hover:border-primary-500 hover:bg-primary-50 transition-all shadow-md hover:shadow-lg"
-                aria-label="Scroll right"
-              >
-                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+          <div className="mb-4">
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">{copy.machineHealthTitle}</h2>
+            <p className="text-gray-500 text-sm font-medium mt-0.5">{copy.machineHealthDesc}</p>
           </div>
 
-          {/* Horizontal Scrolling Container */}
-          <div 
-            id="machine-carousel"
-            className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth"
-            style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#f97316 #f3f4f6',
-              WebkitOverflowScrolling: 'touch'
-            }}
-          >
-            {machines.map((machine) => {
-              // Get latest test for this machine
-              const latestTest = latestTestByMachineId[machine.id] || null
-              const healthScore = latestTest ? calculateHealthScore(latestTest) : null
-              const status = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product) : null
-              const daysSinceTest = latestTest ? Math.floor((Date.now() - new Date(latestTest.test_date).getTime()) / (1000 * 60 * 60 * 24)) : null
-              const samplingState = daysSinceTest === null
-                ? 'overdue'
-                : daysSinceTest > 60
-                ? 'overdue'
-                : daysSinceTest > 30
-                ? 'upcoming'
-                : 'on-schedule'
-              const samplingLabel = daysSinceTest === null
-                ? copy.noTestData
-                : samplingState === 'overdue'
-                ? copy.samplingInitialRequired
-                : samplingState === 'upcoming'
-                ? copy.nextSamplingIn(Math.max(1, 60 - daysSinceTest))
-                : copy.onSchedule(Math.max(1, 90 - daysSinceTest))
-
-              return (
-                <div 
-                  key={machine.id}
-                  onClick={() => {
-                    setSelectedMachine(machine)
-                    setTimeout(() => {
-                      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }, 100)
-                  }}
-                  className={`group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden flex-shrink-0 w-80 snap-start ${
-                    samplingState === 'overdue'
-                      ? 'border-red-200 hover:border-red-300'
-                      : selectedMachine?.id === machine.id 
-                      ? 'border-primary-500 ring-4 ring-primary-100' 
-                      : 'border-gray-100 hover:border-primary-300'
-                  }`}
-                >
-                  {/* Status Indicator Bar */}
-                  <div className={`h-1.5 w-full ${
-                    !status ? 'bg-gray-300' :
-                    status.level === 'critical' ? 'bg-gradient-to-r from-red-500 to-red-600' :
-                    status.level === 'warning' ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
-                    'bg-gradient-to-r from-green-400 to-green-500'
-                  }`}></div>
-
-                  <div className="p-6">
-                    {/* Machine Name & Status */}
-                    <div className="mb-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
-                          {machine.machine_name}
-                        </h3>
-                        {status && (
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                            status.level === 'critical' ? 'bg-red-100 text-red-700 border border-red-300' :
-                            status.level === 'warning' ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' :
-                            'bg-green-100 text-green-700 border border-green-300'
-                          }`}>
-                            {status.level === 'critical' && '🔴'}
-                            {status.level === 'warning' && '🟡'}
-                            {status.level === 'normal' && '🟢'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 font-medium">{machine.location || copy.noLocation}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                          samplingState === 'overdue'
-                            ? 'bg-red-100 text-red-700 border-red-200'
-                            : samplingState === 'upcoming'
-                            ? 'bg-amber-100 text-amber-700 border-amber-200'
-                            : 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                        }`}>
-                          {samplingLabel}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Health Score */}
-                    {healthScore !== null ? (
-                      <div className="mb-4">
-                        <div className="flex items-baseline justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">{copy.healthScore}</span>
-                          <span className={`text-2xl font-black ${
-                            healthScore >= 80 ? 'text-green-600' :
-                            healthScore >= 60 ? 'text-yellow-600' :
-                            'text-red-600'
-                          }`}>{healthScore}<span className="text-sm text-gray-400">/100</span></span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              healthScore >= 80 ? 'bg-gradient-to-r from-green-400 to-green-600' :
-                              healthScore >= 60 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
-                              'bg-gradient-to-r from-red-400 to-red-600'
-                            }`}
-                            style={{ width: `${healthScore}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mb-4 text-center py-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500 font-medium">{copy.noTestData}</p>
-                      </div>
-                    )}
-
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-600 font-semibold mb-0.5">{copy.lastTest}</p>
-                        <p className="font-bold text-gray-900">
-                          {daysSinceTest !== null ? (
-                            daysSinceTest === 0 ? copy.today :
-                            daysSinceTest === 1 ? copy.yesterday :
-                            `${daysSinceTest} ${copy.daysAgo}`
-                          ) : copy.never}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-600 font-semibold mb-0.5">{copy.statusLabel}</p>
-                        <p className="font-bold text-gray-900">
-                          {status?.text || copy.unknownStatus}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Hover Indicator */}
-                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center text-primary-600 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                      {copy.viewDetails} →
-                    </div>
+          <div className="relative bg-white rounded-[2rem] shadow-xl border-4 border-gray-50 overflow-hidden min-h-[280px]">
+            <div className="flex flex-col lg:flex-row items-stretch">
+              
+              {/* LEFT SIDE: Machine Carousel (Master List) */}
+              <div className="flex-1 p-5 flex flex-col justify-center min-w-0 border-r border-gray-100">
+                <div className="flex items-center justify-between mb-6 px-2">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Equipment Fleet</h3>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => document.getElementById('machine-master-list')?.scrollBy({ left: -260, behavior: 'smooth' })}
+                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <button 
+                      onClick={() => document.getElementById('machine-master-list')?.scrollBy({ left: 260, behavior: 'smooth' })}
+                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
                   </div>
                 </div>
-              )
-            })}
-          </div>
-
-          {/* Scroll Indicator */}
-          <div className="flex justify-center gap-2 mt-4">
-            {machines.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  const container = document.getElementById('machine-carousel')
-                  if (container) {
-                    const cardWidth = 320 + 24 // width + gap
-                    container.scrollTo({ left: cardWidth * index, behavior: 'smooth' })
-                  }
-                }}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  selectedMachine?.id === machines[index]?.id
-                    ? 'w-8 bg-gradient-to-r from-primary-500 to-secondary-600'
-                    : 'w-1.5 bg-gray-300 hover:bg-gray-400'
-                }`}
-                aria-label={`Go to machine ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Machine Selector & Time Range Filter - Side by Side */}
-        <div ref={detailsRef} style={{ order: 4 }} className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Machine Selector */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-primary-500">
-            <div className="flex justify-between items-center mb-4">
-              <label htmlFor="machine-select" className="block text-lg font-semibold text-gray-800">
-                {copy.selectMachine}
-              </label>
-              <span className="text-sm text-gray-600 bg-primary-50 px-3 py-1 rounded-full">
-                {machines.length} {machines.length === 1 ? 'machine' : 'machines'}
-              </span>
-            </div>
-            <select
-              id="machine-select"
-              value={selectedMachine?.id || ''}
-              onChange={(e) => {
-                const machine = machines.find(m => m.id === e.target.value)
-                setSelectedMachine(machine || null)
-              }}
-              className="w-full px-4 py-3 bg-white border-2 border-primary-300 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-              suppressHydrationWarning
-            >
-              {machines.map(machine => (
-                <option key={machine.id} value={machine.id}>
-                  {machine.machine_name} - {machine.model} ({machine.location || copy.noLocation})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Time Range Filter */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-secondary-500">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">{copy.timeRangeTitle}</h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setTimeRange('7d')}
-                className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${
-                  timeRange === '7d'
-                    ? 'bg-gradient-industrial text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {language === 'id' ? '7 Hari' : '7 Days'}
-              </button>
-              <button
-                onClick={() => setTimeRange('30d')}
-                className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${
-                  timeRange === '30d'
-                    ? 'bg-gradient-industrial text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {language === 'id' ? '30 Hari' : '30 Days'}
-              </button>
-              <button
-                onClick={() => setTimeRange('90d')}
-                className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${
-                  timeRange === '90d'
-                    ? 'bg-gradient-industrial text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {language === 'id' ? '90 Hari' : '90 Days'}
-              </button>
-              <button
-                onClick={() => setTimeRange('6m')}
-                className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${
-                  timeRange === '6m'
-                    ? 'bg-gradient-industrial text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {language === 'id' ? '6 Bulan' : '6 Months'}
-              </button>
-              <button
-                onClick={() => setTimeRange('all')}
-                className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${
-                  timeRange === 'all'
-                    ? 'bg-gradient-industrial text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {language === 'id' ? 'Semua Waktu' : 'All Time'}
-              </button>
-              <button
-                onClick={() => setTimeRange('custom')}
-                className={`px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${
-                  timeRange === 'custom'
-                    ? 'bg-gradient-industrial text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {copy.customRange}
-              </button>
-            </div>
-
-            {timeRange === 'custom' && (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="block">
-                  <span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.startDate}</span>
-                  <input
-                    type="date"
-                    value={customDateRange.start}
-                    onChange={(e) => setCustomDateRange((prev) => ({ ...prev, start: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500"
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.endDate}</span>
-                  <input
-                    type="date"
-                    value={customDateRange.end}
-                    onChange={(e) => setCustomDateRange((prev) => ({ ...prev, end: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500"
-                  />
-                </label>
+                
+                <div 
+                  id="machine-master-list"
+                  className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide px-2 snap-x scroll-smooth"
+                >
+                  {machines.map((machine) => {
+                    const isActive = selectedMachine?.id === machine.id
+                    const latestTest = latestTestByMachineId[machine.id] || null
+                    const healthScore = latestTest ? calculateHealthScore(latestTest) : null
+                    const statusInfo = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product) : { text: 'Unknown', color: 'gray' }
+                    
+                    return (
+                      <div
+                        key={machine.id}
+                        onClick={() => setSelectedMachine(machine)}
+                        className={`
+                          flex-shrink-0 w-[200px] snap-start cursor-pointer transition-all duration-300 rounded-2xl p-4 border-2
+                          ${isActive 
+                            ? 'bg-gray-900 border-gray-900 shadow-lg scale-105' 
+                            : 'bg-white border-gray-50 hover:border-gray-200 shadow-sm'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`w-2.5 h-2.5 rounded-full ${statusInfo.text === 'Critical' ? 'bg-red-500 animate-pulse' : statusInfo.text === 'Warning' ? 'bg-amber-500' : statusInfo.text === 'Normal' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
+                          <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">{machine.location || 'Area A'}</span>
+                        </div>
+                        <p className={`font-black text-base truncate mb-0.5 ${isActive ? 'text-white' : 'text-gray-900'}`}>{machine.machine_name}</p>
+                        <div className="mt-3 flex items-baseline gap-1">
+                          <span className={`text-xl font-black ${isActive ? 'text-white' : 'text-gray-900'}`}>{healthScore || '-'}</span>
+                          <span className="text-[9px] font-bold text-gray-500">/100</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            )}
+
+              {/* MIDDLE: VERTICAL SEPARATOR */}
+              <div className="hidden lg:flex items-center">
+                <div className="w-[4px] h-[180px] bg-gradient-to-b from-transparent via-gray-200 to-transparent rounded-full -ml-[2px] z-10"></div>
+              </div>
+
+              {/* RIGHT SIDE: Detail Card */}
+              <div className="w-full lg:w-[420px] bg-gray-50/50 p-6 relative overflow-hidden flex items-center">
+                {selectedMachine ? (
+                  <div key={selectedMachine.id} className="w-full animate-in slide-in-from-left fade-in duration-500">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="max-w-[75%]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider
+                            ${(latestTestByMachineId[selectedMachine.id] ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text : 'Unknown') === 'Critical' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}
+                          `}>
+                            SAMPLING OVERDUE
+                          </span>
+                        </div>
+                        <h4 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">{selectedMachine.machine_name}</h4>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Health</p>
+                        <div className="flex items-baseline justify-end gap-1">
+                          <span className="text-4xl font-black text-gray-900 tracking-tighter">
+                            {latestTestByMachineId[selectedMachine.id] ? calculateHealthScore(latestTestByMachineId[selectedMachine.id]) : '-'}
+                          </span>
+                          <span className="text-xs font-bold text-gray-400">/100</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">{copy.lastTest}</p>
+                        <p className="text-lg font-black text-gray-900">
+                          {latestTestByMachineId[selectedMachine.id] ? 
+                            Math.floor((Date.now() - new Date(latestTestByMachineId[selectedMachine.id].test_date).getTime()) / (1000 * 60 * 60 * 24)) + 'd ago'
+                            : 'No data'}
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">Status</p>
+                        <p className={`text-lg font-black ${
+                          (latestTestByMachineId[selectedMachine.id] ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text : 'Unknown') === 'Critical' 
+                            ? 'text-red-600' : 'text-emerald-600'
+                        }`}>
+                          {latestTestByMachineId[selectedMachine.id] ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text : 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full text-center py-16">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-bold text-gray-400 italic">Select a machine from the fleet list to view detailed health analytics</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2695,10 +2325,35 @@ export default function DashboardClient({
               severityMediumLabel={copy.trend.severityMedium}
               severityHighLabel={copy.trend.severityHigh}
               recommendedActionLabel={copy.trend.recommendedAction}
+              totalAnalysisCount={filteredReports.length}
+              fleetHealthIndex={avgHealthScore}
+              baselineViscosity40={activeBaselines?.viscosity40}
+              baselineViscosity100={activeBaselines?.viscosity100}
+              baselineTan={activeBaselines?.tan}
               onOpenLabDetails={() => scrollToSection('section-lab-reports')}
               onOpenActionCenter={() => scrollToSection('section-actions')}
             />
+          </div>
+        )}
 
+        {/* Purchases Section - Always visible & inserted between Trends and Lab Reports */}
+        <div className="my-8 w-full">
+          <PurchasesSection
+            language={language}
+            exportPdfTitle={copy.exportPdfTitle}
+            exportPdfDesc={copy.exportPdfDesc}
+            purchaseHistoryTitle={copy.purchaseHistoryTitle}
+            purchaseHistoryDesc={copy.purchaseHistoryDesc}
+            onExportFleetReport={handleExportFleetReport}
+            onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
+            onOpenPurchases={() => router.push('/purchases')}
+          />
+        </div>
+
+
+
+        {!loading && (selectedMachine || hasVisibleLabData) && (
+          <div className="space-y-8 motion-soft-enter">
             <LabReportsSection
               language={language}
               title={copy.labReportsTitle}
@@ -2736,8 +2391,8 @@ export default function DashboardClient({
             />
           </div>
         )}
-        </div>{/* end order:5 charts section */}
-      </main>
+      </div>
+    </main>
 
       {/* Footer */}
       <footer className="bg-white border-t-2 border-gray-200 sticky bottom-0 z-40" style={{ boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)' }}>

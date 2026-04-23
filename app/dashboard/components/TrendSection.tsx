@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot, ReferenceArea, ReferenceLine, Label } from 'recharts'
 import { GlossaryTooltip } from '@/app/components/GlossaryTooltip'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import type { ChartPoint, DashboardLanguage, TrendAlertItem } from '@/app/dashboard/components/types'
@@ -21,6 +21,11 @@ interface TrendSectionProps {
   severityMediumLabel: string
   severityHighLabel: string
   recommendedActionLabel: string
+  totalAnalysisCount: number
+  fleetHealthIndex: number | null
+  baselineViscosity40?: number | null
+  baselineViscosity100?: number | null
+  baselineTan?: number | null
   onOpenLabDetails: () => void
   onOpenActionCenter: () => void
 }
@@ -43,6 +48,11 @@ export function TrendSection({
   severityMediumLabel,
   severityHighLabel,
   recommendedActionLabel,
+  totalAnalysisCount,
+  fleetHealthIndex,
+  baselineViscosity40,
+  baselineViscosity100,
+  baselineTan,
   onOpenLabDetails,
   onOpenActionCenter,
 }: TrendSectionProps) {
@@ -61,24 +71,63 @@ export function TrendSection({
 
   return (
     <>
-      <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
+      <div className="bg-white rounded-[32px] shadow-xl border border-gray-100 p-8 sm:p-10 mb-8">
         <SectionHeader
           title={performanceTitle}
           description={performanceDesc}
-          titleClassName="text-3xl"
+          titleClassName="text-3xl lg:text-4xl"
           actions={
-            <button
-              type="button"
-              onClick={onOpenLabDetails}
-              className="px-4 py-2 rounded-xl border border-primary-200 text-primary-700 font-semibold hover:bg-primary-50 transition-colors"
-            >
-              {language === 'id' ? 'Lihat Detail Laporan' : 'View Report Details'}
-            </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="px-5 py-3 rounded-2xl bg-gray-50/80 border border-gray-100 flex flex-col justify-center min-w-[140px]">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">
+                  {language === 'id' ? 'Total Analisis' : 'Total Analysis'}
+                </p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-black text-gray-900 leading-none">{totalAnalysisCount}</span>
+                  <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">{language === 'id' ? 'Laporan' : 'Reports'}</span>
+                </div>
+              </div>
+              
+              <div className={`px-5 py-3 rounded-2xl border flex flex-col justify-center min-w-[160px] ${
+                fleetHealthIndex !== null && fleetHealthIndex >= 80 
+                  ? 'bg-emerald-50/80 border-emerald-100' 
+                  : fleetHealthIndex !== null && fleetHealthIndex >= 60 
+                  ? 'bg-amber-50/80 border-amber-100' 
+                  : 'bg-gray-50/80 border-gray-100'
+              }`}>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">
+                  {language === 'id' ? 'Fleet Health Index' : 'Fleet Health Index'}
+                </p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-2xl font-black leading-none ${
+                    fleetHealthIndex !== null && fleetHealthIndex >= 80 
+                      ? 'text-emerald-700' 
+                      : fleetHealthIndex !== null && fleetHealthIndex >= 60 
+                      ? 'text-amber-700' 
+                      : 'text-gray-900'
+                  }`}>
+                    {fleetHealthIndex !== null ? `${fleetHealthIndex}%` : 'N/A'}
+                  </span>
+                  <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">{language === 'id' ? 'Skor' : 'Score'}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onOpenLabDetails}
+                className="ml-2 px-8 py-4 rounded-full bg-gray-900 text-white text-[11px] font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
+              >
+                {language === 'id' ? 'LIHAT DETAIL' : 'VIEW DETAILS'}
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           }
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="w-3 h-3 bg-primary-500 rounded-full mr-3"></span>
               <GlossaryTooltip termKey="viscosity40c" language={language} label="Viscosity Trend" />
@@ -101,9 +150,32 @@ export function TrendSection({
                     labelFormatter={(value) => formatDateLabel(String(value))}
                     contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px' }}
                   />
-                  <Legend />
-                  <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#f97316" strokeWidth={3} dot={{ fill: '#f97316', r: 5 }} />
-                  <Line type="monotone" dataKey="viscosity_100c" name="Viscosity @100°C" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 5 }} />
+                  <Legend verticalAlign="top" height={36}/>
+                  
+                  {/* Healthy Band (±10%) */}
+                  {baselineViscosity40 && (
+                    <ReferenceArea 
+                      y1={baselineViscosity40 * 0.9} 
+                      y2={baselineViscosity40 * 1.1} 
+                      fill="#10b981" 
+                      fillOpacity={0.1} 
+                    />
+                  )}
+                  
+                  {/* Warning Limits (±20%) */}
+                  {baselineViscosity40 && (
+                    <>
+                      <ReferenceLine y={baselineViscosity40 * 1.2} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value="Max (+20%)" position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                      <ReferenceLine y={baselineViscosity40 * 0.8} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value="Min (-20%)" position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                    </>
+                  )}
+
+                  <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#ea580c" strokeWidth={4} dot={{ fill: '#ea580c', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                  <Line type="monotone" dataKey="viscosity_100c" name="Viscosity @100°C" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 4 }} />
                   {selectedMachineTrendAlerts
                     .filter((alert) => alert.parameter === 'Viscosity')
                     .map((alert) => (
@@ -138,8 +210,17 @@ export function TrendSection({
                       boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                     }}
                   />
-                  <Legend />
-                  <Line type="monotone" dataKey="water" stroke="#dc2626" strokeWidth={3} dot={{ fill: '#dc2626', r: 5 }} />
+                  <Legend verticalAlign="top" height={36} />
+                  
+                  {/* Water Critical Limit (0.2% or 2000 PPM) */}
+                  <ReferenceLine y={0.2} stroke="#dc2626" strokeWidth={2} strokeDasharray="5 5">
+                    <Label value="CRITICAL (0.2%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#dc2626', fontWeight: 'bold' }} />
+                  </ReferenceLine>
+                  <ReferenceLine y={0.05} stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3">
+                    <Label value="WARNING (0.05%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#f59e0b', fontWeight: 'bold' }} />
+                  </ReferenceLine>
+
+                  <Line type="monotone" dataKey="water" name={language === 'id' ? 'Kandungan Air (%)' : 'Water Content (%)'} stroke="#0284c7" strokeWidth={4} dot={{ fill: '#0284c7', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   {selectedMachineTrendAlerts
                     .filter((alert) => alert.parameter === 'Water content')
                     .map((alert) => (
@@ -174,8 +255,21 @@ export function TrendSection({
                       boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                     }}
                   />
-                  <Legend />
-                  <Line type="monotone" dataKey="tan" stroke="#b91c1c" strokeWidth={3} dot={{ fill: '#b91c1c', r: 5 }} />
+                  <Legend verticalAlign="top" height={36} />
+                  
+                  {/* TAN Critical Limit (2.0) */}
+                  <ReferenceLine y={2.0} stroke="#b91c1c" strokeWidth={2} strokeDasharray="5 5">
+                    <Label value="LIMIT (2.0)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#b91c1c', fontWeight: 'bold' }} />
+                  </ReferenceLine>
+                  
+                  {/* Baseline Line */}
+                  {baselineTan && (
+                    <ReferenceLine y={baselineTan} stroke="#9ca3af" strokeDasharray="3 3">
+                      <Label value="New Oil Baseline" position="insideTopRight" style={{ fontSize: '10px', fill: '#9ca3af' }} />
+                    </ReferenceLine>
+                  )}
+
+                  <Line type="monotone" dataKey="tan" name="Acid Number (mg KOH/g)" stroke="#b91c1c" strokeWidth={4} dot={{ fill: '#b91c1c', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   {selectedMachineTrendAlerts
                     .filter((alert) => alert.parameter === 'TAN')
                     .map((alert) => (

@@ -88,8 +88,7 @@ export default async function DashboardPage() {
         .from('oil_lab_tests')
         .select(`
           id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content,
-          tan_value, evaluation_mode, pdf_path, is_flagged, overall_status,
-          recommendations, is_critical_trend, created_at,
+          tan_value, pdf_path, created_at,
           product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)
         `)
         .in('machine_id', machineIds)
@@ -132,8 +131,7 @@ export default async function DashboardPage() {
       .from('oil_lab_tests')
       .select(`
         id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content,
-        tan_value, evaluation_mode, pdf_path, is_flagged, overall_status,
-        recommendations, is_critical_trend, created_at,
+        tan_value, pdf_path, created_at,
         product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)
       `)
       .in('machine_id', machineIds)
