@@ -109,22 +109,30 @@ export default async function DashboardPage() {
 
   let initialLabTests = labTestsResult.data || []
 
-  // Fallback: query by customer via machine relation when primary query returns empty
+  // Fallback: use service-role client when anon access returns no tests (usually RLS)
   if (initialLabTests.length === 0 && profile.customer_id) {
-    const fallbackLabTestsResult = await supabase
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
+    const supabaseService = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    )
+
+    const fallbackLabTestsResult = await supabaseService
       .from('oil_lab_tests')
-      .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at, machine:machine_id!inner(customer_id)')
-      .eq('machine.customer_id', profile.customer_id)
+      .select('id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, tan_value, evaluation_mode, pdf_path, is_flagged, overall_status, recommendations, is_critical_trend, created_at')
+      .in('machine_id', machineIds)
       .order('test_date', { ascending: false })
 
     if (fallbackLabTestsResult.error) {
-      console.error('[dashboard/page] fallback lab test query failed:', fallbackLabTestsResult.error.message)
+      console.error('[dashboard/page] service-role fallback lab test query failed:', fallbackLabTestsResult.error.message)
     } else {
-      initialLabTests = (fallbackLabTestsResult.data || []).map((row) => {
-        const rest = { ...row }
-        Reflect.deleteProperty(rest, 'machine')
-        return rest
-      })
+      initialLabTests = fallbackLabTestsResult.data || []
     }
   }
 
