@@ -75,7 +75,7 @@ export function LabReportsSection({
   getRecommendations,
 }: LabReportsSectionProps) {
   return (
-    <div id="section-lab-reports" className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
+    <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
       <SectionHeader
         title={title}
         description={description}

@@ -2028,13 +2028,7 @@ export default function DashboardClient({
           />
         </div>
 
-        <div style={{ order: 1.6 }} className="mb-6">
-          <p className="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
-            {language === 'id'
-              ? 'Lean V2 aktif: mode operasional ringkas tanpa section lanjutan.'
-              : 'Lean V2 is active: compact operational mode without advanced sections.'}
-          </p>
-        </div>
+
 
         {showAdvancedSections && (
           <>
@@ -2085,17 +2079,6 @@ export default function DashboardClient({
               onActionFormChange={updateActionForm}
               onCreateMaintenanceAction={handleCreateMaintenanceAction}
               onUpdateMaintenanceAction={handleUpdateMaintenanceAction}
-            />
-
-            <PurchasesSection
-              language={language}
-              exportPdfTitle={copy.exportPdfTitle}
-              exportPdfDesc={copy.exportPdfDesc}
-              purchaseHistoryTitle={copy.purchaseHistoryTitle}
-              purchaseHistoryDesc={copy.purchaseHistoryDesc}
-              onExportFleetReport={handleExportFleetReport}
-              onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
-              onOpenPurchases={() => router.push('/purchases')}
             />
 
             <section style={{ order: 10 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
@@ -2329,6 +2312,18 @@ export default function DashboardClient({
             </section>
           </>
         )}
+
+        {/* Purchases Section - Always visible */}
+        <PurchasesSection
+          language={language}
+          exportPdfTitle={copy.exportPdfTitle}
+          exportPdfDesc={copy.exportPdfDesc}
+          purchaseHistoryTitle={copy.purchaseHistoryTitle}
+          purchaseHistoryDesc={copy.purchaseHistoryDesc}
+          onExportFleetReport={handleExportFleetReport}
+          onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
+          onOpenPurchases={() => router.push('/purchases')}
+        />
 
         {/* Machine Health Overview - Neuros Style with Horizontal Carousel */}
         <div id="section-snapshot" style={{ order: 3 }} className="mb-8">
@@ -2658,6 +2653,7 @@ export default function DashboardClient({
 
         {/* Charts & Data Section */}
         <div id="section-trend" style={{ order: 5 }}>
+        <div id="section-lab-reports" />
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-20">
