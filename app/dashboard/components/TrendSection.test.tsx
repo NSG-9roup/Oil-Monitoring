@@ -33,7 +33,7 @@ describe('TrendSection', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: 'View Report Details' }))
+    await user.click(screen.getByRole('button', { name: 'VIEW DETAILS' }))
     await user.click(screen.getByRole('button', { name: 'Follow Up in Action Center' }))
 
     expect(onOpenLabDetails).toHaveBeenCalledTimes(1)

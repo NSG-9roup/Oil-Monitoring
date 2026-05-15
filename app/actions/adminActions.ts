@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { CustomerFormData, MachineFormData, ProductFormData, LabTestFormData, PurchaseFormData, UserFormData } from '@/lib/types'
+import type { CustomerFormData, MachineFormData, ProductFormData, LabTestFormData, UserFormData } from '@/lib/types'
 
 /**
  * Helper to verify admin permissions and get the server client.
@@ -127,32 +127,6 @@ export async function updateTest(id: string, data: Partial<LabTestFormData>) {
 export async function deleteTest(id: string) {
   const supabase = await verifyAdmin()
   const { error } = await supabase.from('oil_lab_tests').delete().eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath('/admin')
-  return { success: true }
-}
-
-// --- PURCHASES ---
-
-export async function createPurchase(data: Partial<PurchaseFormData>) {
-  const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_purchase_history').insert([data])
-  if (error) throw new Error(error.message)
-  revalidatePath('/admin')
-  return { success: true }
-}
-
-export async function updatePurchase(id: string, data: Partial<PurchaseFormData>) {
-  const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_purchase_history').update(data).eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath('/admin')
-  return { success: true }
-}
-
-export async function deletePurchase(id: string) {
-  const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_purchase_history').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/admin')
   return { success: true }

@@ -7,8 +7,7 @@ export async function updateSession(request: NextRequest) {
   const isProtectedPath =
     pathname === '/' ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/purchases')
+    pathname.startsWith('/dashboard')
 
   // Fast-path: if no Supabase auth cookie and user is hitting a protected page, redirect immediately.
   const hasSupabaseAuthCookie = request.cookies

@@ -10,7 +10,7 @@ const profileSchema = z.object({
   phone_number: z.string().optional(),
 })
 
-export default function ProfileClient({ initialProfile, userEmail }: { initialProfile: Record<string, unknown> & { id?: string, full_name?: string, phone_number?: string, role?: string, customers?: { company_name?: string } }, userEmail: string }) {
+export default function ProfileClient({ initialProfile, userEmail }: { initialProfile: Record<string, unknown> & { id?: string, full_name?: string, phone_number?: string, role?: string, customer?: { company_name?: string } }, userEmail: string }) {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -28,7 +28,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
       setIsSaving(true)
 
       const { error } = await supabase
-        .from('profiles')
+        .from('oil_profiles')
         .update({
           full_name: formData.full_name,
           phone_number: formData.phone_number,
@@ -77,7 +77,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{initialProfile.full_name}</h2>
-          <p className="text-gray-500">{initialProfile.customers?.company_name || 'System Admin'}</p>
+          <p className="text-gray-500">{initialProfile.customer?.company_name || 'System Admin'}</p>
           <span className="inline-block mt-2 px-3 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full capitalize">
             {initialProfile.role}
           </span>
@@ -124,13 +124,13 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
             />
           </div>
 
-          {initialProfile.customers && (
+          {initialProfile.customer && (
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">Company</label>
               <input
                 type="text"
                 disabled
-                value={initialProfile.customers.company_name}
+                value={initialProfile.customer.company_name}
                 className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-100 text-gray-500"
               />
             </div>

@@ -19,10 +19,10 @@ export default async function ProfilePage() {
 
   // Fetch full profile data
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('oil_profiles')
     .select(`
       *,
-      customers (
+      customer:customer_id (
         company_name,
         status
       )
@@ -34,11 +34,18 @@ export default async function ProfilePage() {
     redirect('/login')
   }
 
+  const normalizedProfile = {
+    ...profile,
+    customer: Array.isArray(profile.customer)
+      ? profile.customer[0] ?? null
+      : profile.customer ?? null,
+  }
+
   return (
     <div className="p-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">My Profile</h1>
-        <ProfileClient initialProfile={profile} userEmail={user.email || ''} />
+        <ProfileClient initialProfile={normalizedProfile} userEmail={user.email || ''} />
       </div>
     </div>
   )

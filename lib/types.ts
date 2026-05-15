@@ -119,25 +119,6 @@ export interface AdminLabTest extends LabTest {
   }
 }
 
-export interface PurchaseHistory {
-  id: string
-  customer_id: string
-  product_id: string
-  quantity: number
-  purchase_date: string
-  unit_price: number
-  total_price: number
-  status: 'completed' | 'pending' | 'cancelled'
-  created_at: string
-  updated_at: string
-}
-
-// Admin Purchase with nested relations
-export interface AdminPurchase extends PurchaseHistory {
-  customer?: { company_name: string }
-  product?: { product_name: string }
-}
-
 // Form data types
 export interface CustomerFormData {
   company_name: string
@@ -184,15 +165,6 @@ export interface UserFormData {
   contact_email?: string
   role: UserRole
   customer_id?: string
-}
-
-export interface PurchaseFormData {
-  customer_id: string
-  product_id: string
-  quantity: number
-  purchase_date: string
-  unit_price: number
-  total_price: number
 }
 
 export type MaintenanceActionStatus = 'open' | 'assigned' | 'in_progress' | 'completed' | 'verified' | 'overdue'

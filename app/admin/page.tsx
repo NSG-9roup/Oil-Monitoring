@@ -45,8 +45,7 @@ export default async function AdminPage() {
     )
   }
 
-  // Run all queries in parallel for faster initial load
-  const [customersResult, machinesResult, recentTestsResult, productsResult, usersResult, purchasesResult] = await Promise.all([
+  const [customersResult, machinesResult, recentTestsResult, productsResult, usersResult, maintenanceActionsResult] = await Promise.all([
     supabase
       .from('oil_customers')
       .select(`
@@ -79,9 +78,13 @@ export default async function AdminPage() {
       .select('id, full_name, email, phone_number, role, customer_id, created_at, updated_at, customer:oil_customers(company_name)')
       .order('created_at', { ascending: false }),
     supabase
-      .from('oil_purchase_history')
-      .select('*, customer:oil_customers(company_name), product:oil_products(product_name)')
-      .order('purchase_date', { ascending: false })
+      .from('oil_maintenance_actions')
+      .select(`
+        *,
+        machine:oil_machines(machine_name, location),
+        customer:oil_customers(company_name, logo_url)
+      `)
+      .order('created_at', { ascending: false })
   ])
 
   const customers = customersResult.data
@@ -89,7 +92,7 @@ export default async function AdminPage() {
   const recentTests = recentTestsResult.data
   const products = productsResult.data
   const users = usersResult.data
-  const purchases = purchasesResult.data
+  const maintenanceActions = maintenanceActionsResult.data
   const normalizedUsers = (users || []).map((row) => ({
     ...row,
     customer: Array.isArray(row.customer)
@@ -106,7 +109,7 @@ export default async function AdminPage() {
       recentTests={recentTests || []}
       initialProducts={products || []}
       initialUsers={normalizedUsers}
-      initialPurchases={purchases || []}
+      initialMaintenanceActions={maintenanceActions || []}
     />
   )
 }

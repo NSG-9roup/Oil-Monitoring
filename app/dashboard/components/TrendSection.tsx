@@ -174,6 +174,12 @@ export function TrendSection({
                     </>
                   )}
 
+                  {baselineViscosity100 && (
+                    <ReferenceLine y={baselineViscosity100} stroke="#6366f1" strokeDasharray="4 2">
+                      <Label value="Baseline @100°C" position="insideTopLeft" style={{ fontSize: '10px', fill: '#6366f1', fontWeight: 'bold' }} />
+                    </ReferenceLine>
+                  )}
+
                   <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#ea580c" strokeWidth={4} dot={{ fill: '#ea580c', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   <Line type="monotone" dataKey="viscosity_100c" name="Viscosity @100°C" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 4 }} />
                   {selectedMachineTrendAlerts
@@ -282,64 +288,6 @@ export function TrendSection({
         </div>
       </div>
 
-      <section className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-        <SectionHeader
-          title={trendAlertsTitle}
-          description={trendAlertsDesc}
-          titleClassName="text-3xl"
-          actions={
-            <>
-              <button
-                type="button"
-                onClick={onOpenActionCenter}
-                className="px-4 py-2 rounded-xl border border-primary-200 text-primary-700 font-semibold hover:bg-primary-50 transition-colors"
-              >
-                {language === 'id' ? 'Tindak Lanjuti di Action Center' : 'Follow Up in Action Center'}
-              </button>
-              <div className="px-3 py-2 rounded-xl bg-gray-100 text-sm text-gray-700 font-semibold">{activeTrendAlertsLabel}</div>
-            </>
-          }
-        />
-
-        {selectedMachineTrendAlerts.length === 0 ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 font-medium">{noTrendAlerts}</div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            {selectedMachineTrendAlerts.map((alert) => (
-              <div
-                key={alert.id}
-                className={`rounded-2xl border p-5 ${
-                  alert.severity === 'High'
-                    ? 'border-red-200 bg-red-50/70'
-                    : alert.severity === 'Medium'
-                    ? 'border-amber-200 bg-amber-50/70'
-                    : 'border-sky-200 bg-sky-50/70'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wide ${
-                      alert.severity === 'High'
-                        ? 'bg-red-100 text-red-700'
-                        : alert.severity === 'Medium'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-sky-100 text-sky-700'
-                    }`}
-                  >
-                    {alert.severity === 'High' ? severityHighLabel : alert.severity === 'Medium' ? severityMediumLabel : severityLowLabel}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-500">{alert.parameter}</span>
-                </div>
-                <h3 className="text-lg font-black text-gray-900">{alert.title}</h3>
-                <p className="text-sm text-gray-700 mt-2">{alert.message}</p>
-                <p className="text-sm text-gray-800 mt-3">
-                  <span className="font-semibold">{recommendedActionLabel}:</span> {alert.recommendedAction}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
     </>
   )
 }

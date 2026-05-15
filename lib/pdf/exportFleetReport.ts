@@ -180,137 +180,165 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
     loadImageDataUrl('/footer.png'),
   ])
 
+  // --- HEADER SECTION ---
   if (headerImage) {
     await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
   } else {
-    doc.setFillColor(190, 24, 93)
-    doc.rect(0, 0, pageWidth, 78, 'F')
+    // Elegant dynamic header if image is missing
+    const gradientColors = [[190, 24, 93], [157, 23, 77]]
+    doc.setFillColor(gradientColors[0][0], gradientColors[0][1], gradientColors[0][2])
+    doc.rect(0, 0, pageWidth, 85, 'F')
     doc.setTextColor(255, 255, 255)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(18)
-    doc.text(copy.title, 40, 40)
+    doc.setFontSize(22)
+    doc.text(copy.title, 40, 42)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
-    doc.text(`${copy.generated}: ${formatDateTime(meta.generatedAt)}`, 40, 58)
+    doc.setTextColor(255, 255, 255, 0.8)
+    doc.text(`${copy.generated}: ${formatDateTime(meta.generatedAt)}`, 40, 62)
   }
 
-  // Company block
+  // --- CUSTOMER PROFILE CARD ---
+  const profileY = headerImage ? 85 : 100
   doc.setTextColor(17, 24, 39)
-  doc.setFillColor(249, 250, 251)
-  doc.roundedRect(40, 95, pageWidth - 80, 72, 8, 8, 'F')
+  doc.setFillColor(248, 250, 252)
+  doc.setDrawColor(226, 232, 240)
+  doc.roundedRect(40, profileY, pageWidth - 80, 72, 10, 10, 'FD')
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.text(meta.companyName || '-', 52, 118)
+  doc.setFontSize(14)
+  doc.text(meta.companyName || '-', 55, profileY + 25)
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
-  doc.text(`${copy.customerEmail}: ${meta.customerEmail || '-'}`, 52, 136)
-  doc.text(`${copy.generatedBy}: ${meta.generatedBy || '-'}`, 52, 151)
+  doc.setTextColor(100, 116, 139)
+  doc.text(`${copy.customerEmail}: ${meta.customerEmail || '-'}`, 55, profileY + 45)
+  doc.text(`${copy.generatedBy}: ${meta.generatedBy || '-'}`, 55, profileY + 60)
 
-  // Summary cards
-  const cardY = 190
+  // --- SUMMARY STATS CARDS ---
+  const cardY = profileY + 88
   const cardGap = 12
   const cardWidth = (pageWidth - 80 - cardGap * 3) / 4
   const stats = [
-    { label: copy.stats.critical, value: String(meta.criticalCount), color: [220, 38, 38] as [number, number, number] },
-    { label: copy.stats.warning, value: String(meta.warningCount), color: [245, 158, 11] as [number, number, number] },
-    { label: copy.stats.healthy, value: String(meta.healthyCount), color: [22, 163, 74] as [number, number, number] },
-    { label: copy.stats.avgHealth, value: meta.avgHealthScore !== null ? `${meta.avgHealthScore}/100` : '-', color: [30, 64, 175] as [number, number, number] },
+    { label: copy.stats.critical, value: String(meta.criticalCount), color: [220, 38, 38], bg: [254, 242, 242] },
+    { label: copy.stats.warning, value: String(meta.warningCount), color: [217, 119, 6], bg: [255, 251, 235] },
+    { label: copy.stats.healthy, value: String(meta.healthyCount), color: [21, 128, 61], bg: [240, 253, 244] },
+    { label: copy.stats.avgHealth, value: meta.avgHealthScore !== null ? `${meta.avgHealthScore}` : '-', color: [30, 64, 175], bg: [239, 246, 255] },
   ]
 
   stats.forEach((stat, index) => {
     const x = 40 + index * (cardWidth + cardGap)
 
+    // Shadow-like effect
+    doc.setFillColor(241, 245, 249)
+    doc.roundedRect(x + 1, cardY + 1, cardWidth, 80, 8, 8, 'F')
+    
     doc.setFillColor(255, 255, 255)
-    doc.setDrawColor(229, 231, 235)
-    doc.roundedRect(x, cardY, cardWidth, 74, 8, 8, 'FD')
+    doc.setDrawColor(226, 232, 240)
+    doc.roundedRect(x, cardY, cardWidth, 80, 8, 8, 'FD')
 
-    doc.setTextColor(107, 114, 128)
+    // Top indicator line
+    doc.setFillColor(stat.color[0], stat.color[1], stat.color[2])
+    doc.rect(x + 10, cardY, cardWidth - 20, 3, 'F')
+
+    doc.setTextColor(100, 116, 139)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
+    doc.setFontSize(8)
     doc.text(stat.label.toUpperCase(), x + 12, cardY + 22)
 
-    doc.setTextColor(...stat.color)
+    doc.setTextColor(stat.color[0], stat.color[1], stat.color[2])
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(18)
-    doc.text(stat.value, x + 12, cardY + 50)
+    doc.setFontSize(22)
+    doc.text(stat.value, x + 12, cardY + 54)
+    
+    if (index === 3 && meta.avgHealthScore !== null) {
+      doc.setFontSize(10)
+      doc.text('/100', x + 12 + doc.getTextWidth(stat.value), cardY + 54)
+    }
   })
 
+  // --- TABLE SECTION ---
   doc.setTextColor(17, 24, 39)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.text(copy.maintenanceQueue, 40, 292)
+  doc.setFontSize(13)
+  doc.text(copy.maintenanceQueue, 40, cardY + 115)
 
   autoTable(doc, {
-    startY: 305,
+    startY: cardY + 130,
     head: [['#', copy.table.machine, copy.table.location, copy.table.lastTest, copy.table.status, copy.table.health, copy.table.nextAction]],
     body: rows.map((row, index) => [
       String(index + 1),
       row.machineName,
       row.location || '-',
       `${formatDate(row.lastTestDate)}${row.daysSinceTest !== null ? ` (${row.daysSinceTest}d)` : ''}`,
-      row.statusText,
-      row.healthScore !== null ? `${row.healthScore}/100` : '-',
+      row.statusText.toUpperCase(),
+      row.healthScore !== null ? `${row.healthScore}` : '-',
       row.nextAction,
     ]),
     headStyles: {
-      fillColor: [31, 41, 55],
+      fillColor: [30, 41, 59],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'left',
+      fontSize: 10,
     },
     styles: {
       fontSize: 9,
-      lineColor: [229, 231, 235],
-      lineWidth: 0.4,
-      cellPadding: 6,
-      valign: 'top',
-    },
-    alternateRowStyles: {
-      fillColor: [249, 250, 251],
+      lineColor: [241, 245, 249],
+      lineWidth: 0.5,
+      cellPadding: 8,
+      valign: 'middle',
     },
     columnStyles: {
-      0: { cellWidth: 26, halign: 'center' },
-      1: { cellWidth: 95 },
-      2: { cellWidth: 80 },
-      3: { cellWidth: 90 },
-      4: { cellWidth: 62 },
-      5: { cellWidth: 52, halign: 'center' },
-      6: { cellWidth: 130 },
+      0: { cellWidth: 26, halign: 'center', textColor: [100, 116, 139] },
+      1: { cellWidth: 95, fontStyle: 'bold' },
+      2: { cellWidth: 80, textColor: [71, 85, 105] },
+      3: { cellWidth: 95, fontSize: 8.5 },
+      4: { cellWidth: 70, halign: 'center' },
+      5: { cellWidth: 45, halign: 'center', fontStyle: 'bold' },
+      6: { cellWidth: 104, fontSize: 8 },
+    },
+    alternateRowStyles: {
+      fillColor: [252, 253, 254],
     },
     didParseCell: (data) => {
       if (data.section !== 'body' || data.column.index !== 4) return
 
       const status = String(data.cell.raw || '').toLowerCase()
       if (status.includes('critical')) {
+        data.cell.styles.fillColor = [254, 242, 242]
         data.cell.styles.textColor = [185, 28, 28]
         data.cell.styles.fontStyle = 'bold'
       } else if (status.includes('warning')) {
+        data.cell.styles.fillColor = [255, 251, 235]
         data.cell.styles.textColor = [180, 83, 9]
         data.cell.styles.fontStyle = 'bold'
       } else if (status.includes('normal')) {
+        data.cell.styles.fillColor = [240, 253, 244]
         data.cell.styles.textColor = [21, 128, 61]
         data.cell.styles.fontStyle = 'bold'
       }
     },
-    margin: { left: 40, right: 40, bottom: 72 },
+    margin: { left: 40, right: 40, bottom: 80 },
   })
 
+  // --- FOOTER SECTION ---
   const totalPages = doc.getNumberOfPages()
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page)
-    if (headerImage) {
-      await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
-    }
+    if (headerImage) await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
     if (footerImage) {
       await addImageContain(doc, footerImage, 0, pageHeight - 52, pageWidth, 52)
+    } else {
+      doc.setDrawColor(226, 232, 240)
+      doc.line(40, pageHeight - 60, pageWidth - 40, pageHeight - 60)
     }
+
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
-    doc.setTextColor(107, 114, 128)
-    doc.text(copy.confidential, 40, pageHeight - 16)
-    doc.text(`${copy.page} ${page} of ${totalPages}`, pageWidth - 92, pageHeight - 16)
+    doc.setTextColor(148, 163, 184)
+    doc.text(copy.confidential, 40, pageHeight - 25)
+    doc.text(`${copy.page} ${page} of ${totalPages}`, pageWidth - 95, pageHeight - 25)
   }
 
   const safeCompany = (meta.companyName || 'Customer').replace(/[^a-z0-9]+/gi, '_')
@@ -337,152 +365,164 @@ export async function exportTrustRoiSnapshotPdf(
     ? 'Ringkasan kepercayaan enterprise, traceability, dan dampak finansial'
     : 'Enterprise trust, traceability, and financial impact summary'
 
+  // --- HEADER ---
   if (headerImage) {
     await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
   } else {
     doc.setFillColor(15, 23, 42)
-    doc.rect(0, 0, pageWidth, 78, 'F')
+    doc.rect(0, 0, pageWidth, 85, 'F')
   }
 
-  doc.setTextColor(17, 24, 39)
+  const startY = headerImage ? 95 : 110
+  doc.setTextColor(15, 23, 42)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(19)
-  doc.text(title, 40, 108)
+  doc.setFontSize(24)
+  doc.text(title, 40, startY)
+  
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(107, 114, 128)
-  doc.text(subTitle, 40, 124)
+  doc.setFontSize(11)
+  doc.setTextColor(100, 116, 139)
+  doc.text(subTitle, 40, startY + 18)
 
-  doc.setFillColor(249, 250, 251)
-  doc.roundedRect(40, 138, pageWidth - 80, 74, 8, 8, 'F')
-  doc.setTextColor(17, 24, 39)
+  // Info Card
+  doc.setFillColor(248, 250, 252)
+  doc.setDrawColor(226, 232, 240)
+  doc.roundedRect(40, startY + 35, pageWidth - 80, 65, 8, 8, 'FD')
+  
+  doc.setTextColor(15, 23, 42)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(12)
-  doc.text(meta.companyName || '-', 52, 160)
+  doc.text(meta.companyName || '-', 55, startY + 58)
+  
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
-  doc.text(`${language === 'id' ? 'Email Customer' : 'Customer Email'}: ${meta.customerEmail || '-'}`, 52, 178)
-  doc.text(`${language === 'id' ? 'Dibuat oleh' : 'Generated by'}: ${meta.generatedBy || '-'}`, 52, 193)
+  doc.setTextColor(100, 116, 139)
+  doc.text(`${language === 'id' ? 'Email Customer' : 'Customer Email'}: ${meta.customerEmail || '-'}`, 55, startY + 76)
+  doc.text(`${language === 'id' ? 'Dibuat oleh' : 'Generated by'}: ${meta.generatedBy || '-'}`, 55, startY + 90)
 
-  const cardY = 228
+  // --- KPI CARDS ---
+  const cardY = startY + 115
   const cardGap = 12
   const cardWidth = (pageWidth - 80 - cardGap * 2) / 3
-  const topCards = [
+  
+  const kpis = [
     {
-      label: language === 'id' ? 'Trust Score' : 'Trust Score',
+      label: 'TRUST SCORE',
       value: String(meta.trustScore),
-      color: meta.trustScore >= 80 ? [22, 163, 74] : meta.trustScore >= 60 ? [245, 158, 11] : [220, 38, 38],
+      color: meta.trustScore >= 80 ? [21, 128, 61] : meta.trustScore >= 60 ? [217, 119, 6] : [185, 28, 28],
     },
     {
-      label: language === 'id' ? 'Reliability Pulse' : 'Reliability Pulse',
+      label: 'RELIABILITY PULSE',
       value: String(meta.reliabilityScore),
-      color: meta.reliabilityScore >= 80 ? [22, 163, 74] : meta.reliabilityScore >= 60 ? [245, 158, 11] : [220, 38, 38],
+      color: meta.reliabilityScore >= 80 ? [21, 128, 61] : meta.reliabilityScore >= 60 ? [217, 119, 6] : [185, 28, 28],
     },
     {
-      label: language === 'id' ? 'ROI' : 'ROI',
+      label: 'ESTIMATED ROI',
       value: `${meta.roiPercent}%`,
       color: meta.roiPercent >= 0 ? [30, 64, 175] : [185, 28, 28],
     },
   ]
 
-  topCards.forEach((card, index) => {
+  kpis.forEach((card, index) => {
     const x = 40 + index * (cardWidth + cardGap)
     doc.setFillColor(255, 255, 255)
-    doc.setDrawColor(229, 231, 235)
-    doc.roundedRect(x, cardY, cardWidth, 74, 8, 8, 'FD')
-    doc.setTextColor(107, 114, 128)
+    doc.setDrawColor(226, 232, 240)
+    doc.roundedRect(x, cardY, cardWidth, 85, 10, 10, 'FD')
+    
+    doc.setTextColor(100, 116, 139)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.text(card.label.toUpperCase(), x + 12, cardY + 22)
+    doc.setFontSize(8.5)
+    doc.text(card.label, x + 15, cardY + 25)
+    
     doc.setTextColor(card.color[0], card.color[1], card.color[2])
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(18)
-    doc.text(card.value, x + 12, cardY + 50)
+    doc.setFontSize(28)
+    doc.text(card.value, x + 15, cardY + 60)
   })
 
+  // --- MAIN METRICS TABLE ---
+  // HIDE ROWS WITH 0 VALUE (Except those that are positive like 100% compliance)
+  const metricRows = [
+    [language === 'id' ? 'Total Investasi Produk (Completed)' : 'Total Product Investment (Completed)', formatCurrencyIdr(meta.totalSpend), meta.totalSpend],
+    [language === 'id' ? 'Estimasi Penghematan (Estimated Savings)' : 'Estimated Savings', formatCurrencyIdr(meta.estimatedSavings), meta.estimatedSavings],
+    [language === 'id' ? 'Dampak Finansial Bersih (Net Impact)' : 'Net Financial Impact', formatCurrencyIdr(meta.netImpact), meta.netImpact],
+    [language === 'id' ? 'Potensi Downtime Dicegah (Jam)' : 'Avoided Downtime (Hours)', `${meta.avoidedDowntimeHours} Hrs`, meta.avoidedDowntimeHours],
+    ['Assignment Coverage', `${meta.assignmentCoverageRate}%`, meta.assignmentCoverageRate],
+    ['Due Date Compliance', `${meta.dueDateCoverageRate}%`, meta.dueDateCoverageRate],
+    ['Verification Pass Rate', `${meta.verificationPassRate}%`, meta.verificationPassRate],
+    ['Evidence Coverage', `${meta.evidenceCoverageRate}%`, meta.evidenceCoverageRate],
+    ['Data Traceability Rate', `${meta.traceabilityRate}%`, meta.traceabilityRate],
+    ['Overdue Risk Rate', `${meta.overdueRate}%`, meta.overdueRate],
+  ].filter(row => row[2] !== 0 || row[0].includes('Risk') || row[0].includes('Compliance'))
+
   autoTable(doc, {
-    startY: 322,
-    head: [[
-      language === 'id' ? 'Metrik' : 'Metric',
-      language === 'id' ? 'Nilai' : 'Value',
-    ]],
-    body: [
-      [language === 'id' ? 'Total Spend (Completed Purchase)' : 'Total Spend (Completed Purchase)', formatCurrencyIdr(meta.totalSpend)],
-      [language === 'id' ? 'Estimated Savings' : 'Estimated Savings', formatCurrencyIdr(meta.estimatedSavings)],
-      [language === 'id' ? 'Net Impact' : 'Net Impact', formatCurrencyIdr(meta.netImpact)],
-      [language === 'id' ? 'Avoided Downtime (Jam)' : 'Avoided Downtime (Hours)', String(meta.avoidedDowntimeHours)],
-      [language === 'id' ? 'Assignment Coverage' : 'Assignment Coverage', `${meta.assignmentCoverageRate}%`],
-      [language === 'id' ? 'Due Date Coverage' : 'Due Date Coverage', `${meta.dueDateCoverageRate}%`],
-      [language === 'id' ? 'Verification Pass Rate' : 'Verification Pass Rate', `${meta.verificationPassRate}%`],
-      [language === 'id' ? 'Evidence Coverage' : 'Evidence Coverage', `${meta.evidenceCoverageRate}%`],
-      [language === 'id' ? 'Traceability Rate' : 'Traceability Rate', `${meta.traceabilityRate}%`],
-      [language === 'id' ? 'Overdue Rate' : 'Overdue Rate', `${meta.overdueRate}%`],
-    ],
+    startY: cardY + 105,
+    head: [[language === 'id' ? 'ANALISIS METRIK' : 'METRIC ANALYSIS', language === 'id' ? 'NILAI' : 'VALUE']],
+    body: metricRows.map(row => [row[0], row[1]]),
     headStyles: {
-      fillColor: [31, 41, 55],
+      fillColor: [15, 23, 42],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      halign: 'left',
+      fontSize: 10,
     },
     styles: {
       fontSize: 9,
-      lineColor: [229, 231, 235],
-      lineWidth: 0.4,
-      cellPadding: 6,
-      valign: 'middle',
+      cellPadding: 10,
+      lineColor: [241, 245, 249],
+      lineWidth: 0.5,
+    },
+    columnStyles: {
+      0: { cellWidth: 320, fontStyle: 'bold', textColor: [51, 65, 85] },
+      1: { cellWidth: 150, halign: 'right', fontStyle: 'bold' },
     },
     alternateRowStyles: {
-      fillColor: [249, 250, 251],
+      fillColor: [250, 251, 253],
     },
-    columnStyles: {
-      0: { cellWidth: 290 },
-      1: { cellWidth: 180 },
-    },
-    margin: { left: 40, right: 40, bottom: 72 },
+    margin: { left: 40, right: 40 },
   })
 
-  const metricTable = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable
-  const auditStartY = (metricTable?.finalY || 520) + 20
+  // Audit Events - ONLY SHOW IF THERE ARE LOGS
+  const hasAuditLogs = auditRows.some(row => row.count > 0)
+  if (hasAuditLogs) {
+    const lastY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 30
+    doc.setTextColor(15, 23, 42)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(13)
+    doc.text(language === 'id' ? 'Ringkasan Jejak Audit' : 'Audit Trail Summary', 40, lastY)
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.setTextColor(17, 24, 39)
-  doc.text(language === 'id' ? 'Ringkasan Audit Event' : 'Audit Event Summary', 40, auditStartY)
+    autoTable(doc, {
+      startY: lastY + 12,
+      head: [[language === 'id' ? 'EVENT' : 'EVENT TYPE', language === 'id' ? 'JUMLAH' : 'TOTAL COUNT']],
+      body: auditRows.filter(row => row.count > 0).map((row) => [row.eventType.toUpperCase().replace('_', ' '), String(row.count)]),
+      headStyles: {
+        fillColor: [71, 85, 105],
+        textColor: [255, 255, 255],
+        fontSize: 9,
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 7,
+      },
+      columnStyles: {
+        0: { cellWidth: 350 },
+        1: { cellWidth: 120, halign: 'center', fontStyle: 'bold' },
+      },
+      margin: { left: 40, right: 40, bottom: 80 },
+    })
+  }
 
-  autoTable(doc, {
-    startY: auditStartY + 10,
-    head: [[language === 'id' ? 'Event' : 'Event', language === 'id' ? 'Jumlah' : 'Count']],
-    body: auditRows.map((row) => [row.eventType, String(row.count)]),
-    headStyles: {
-      fillColor: [17, 24, 39],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      halign: 'left',
-    },
-    styles: {
-      fontSize: 9,
-      lineColor: [229, 231, 235],
-      lineWidth: 0.4,
-      cellPadding: 6,
-      valign: 'middle',
-    },
-    columnStyles: {
-      0: { cellWidth: 360 },
-      1: { cellWidth: 110, halign: 'center' },
-    },
-    margin: { left: 40, right: 40, bottom: 72 },
-  })
-
+  // --- FOOTER ---
   const totalPages = doc.getNumberOfPages()
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page)
     if (headerImage) await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
     if (footerImage) await addImageContain(doc, footerImage, 0, pageHeight - 52, pageWidth, 52)
+    
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
-    doc.setTextColor(107, 114, 128)
-    doc.text(language === 'id' ? 'Laporan Rahasia OilTrack' : 'OilTrack Confidential Report', 40, pageHeight - 16)
-    doc.text(`${language === 'id' ? 'Halaman' : 'Page'} ${page} of ${totalPages}`, pageWidth - 92, pageHeight - 16)
+    doc.setTextColor(148, 163, 184)
+    doc.text(language === 'id' ? 'Laporan Rahasia OilTrack' : 'OilTrack Confidential Report', 40, pageHeight - 25)
+    doc.text(`${language === 'id' ? 'Halaman' : 'Page'} ${page} of ${totalPages}`, pageWidth - 95, pageHeight - 25)
   }
 
   const safeCompany = (meta.companyName || 'Customer').replace(/[^a-z0-9]+/gi, '_')

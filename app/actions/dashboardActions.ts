@@ -127,3 +127,142 @@ export async function dismissAlert(alertKey: string) {
   revalidatePath('/dashboard')
   return { success: true }
 }
+
+export async function requestLabTest(data: {
+  machine_id?: string
+  title: string
+  description: string
+  due_date?: string
+  priority: string
+  is_new_machine: boolean
+  new_machine_data?: {
+    machine_name: string
+    model?: string
+    location?: string
+  }
+}) {
+  const { supabase, profile } = await verifyCustomer()
+
+  const insertData = {
+    customer_id: profile.customer_id,
+    machine_id: data.machine_id || null,
+    title: data.title,
+    description: data.description,
+    due_date: data.due_date || null,
+    priority: data.priority,
+    status: 'open',
+    source_payload: {
+      is_new_machine: data.is_new_machine,
+      new_machine_data: data.new_machine_data
+    }
+  }
+
+  const { error } = await supabase.from('oil_maintenance_actions').insert([insertData])
+  if (error) throw new Error(error.message)
+  
+  revalidatePath('/dashboard')
+  revalidatePath('/sales')
+  return { success: true }
+}
+
+export async function updateActionStatus(actionId: string, status: string, notes?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: actorProfile, error: actorProfileError } = await supabase
+    .from('oil_profiles')
+    .select('role, customer_id')
+    .eq('id', user.id)
+    .single()
+
+  if (actorProfileError || !actorProfile) {
+    throw new Error('Forbidden')
+  }
+
+  const { data: targetAction, error: targetActionError } = await supabase
+    .from('oil_maintenance_actions')
+    .select('customer_id')
+    .eq('id', actionId)
+    .single()
+
+  if (targetActionError || !targetAction) {
+    throw new Error('Action not found')
+  }
+
+  const canManageAll = actorProfile.role === 'admin' || actorProfile.role === 'sales'
+  const canManageOwnCustomer =
+    actorProfile.role === 'customer' &&
+    !!actorProfile.customer_id &&
+    actorProfile.customer_id === targetAction.customer_id
+
+  if (!canManageAll && !canManageOwnCustomer) {
+    throw new Error('Forbidden')
+  }
+
+  const updateData: {
+    status: string
+    evidence_notes?: string
+    completed_at?: string
+  } = { status }
+  if (notes) updateData.evidence_notes = notes
+  if (status === 'completed') updateData.completed_at = new Date().toISOString()
+
+  const { error } = await supabase
+    .from('oil_maintenance_actions')
+    .update(updateData)
+    .eq('id', actionId)
+
+  if (error) throw new Error(error.message)
+  
+  revalidatePath('/dashboard')
+  revalidatePath('/sales')
+  revalidatePath('/admin')
+  return { success: true }
+}
+
+export async function registerMachineFromAction(actionId: string, machineData: {
+  customer_id: string
+  machine_name: string
+  model?: string
+  location?: string
+  serial_number?: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Verify admin access
+  const { data: profile } = await supabase.from('oil_profiles').select('role').eq('id', user?.id).single()
+  if (profile?.role !== 'admin') throw new Error('Forbidden: Admin access required')
+
+  // 1. Create the machine
+  const { data: machine, error: machineError } = await supabase
+    .from('oil_machines')
+    .insert([{
+      customer_id: machineData.customer_id,
+      machine_name: machineData.machine_name,
+      model: machineData.model,
+      location: machineData.location,
+      serial_number: machineData.serial_number,
+      status: 'active'
+    }])
+    .select()
+    .single()
+
+  if (machineError) throw new Error(machineError.message)
+
+  // 2. Update the action with the new machine_id and mark as assigned (or in_progress)
+  const { error: actionError } = await supabase
+    .from('oil_maintenance_actions')
+    .update({ 
+      machine_id: machine.id,
+      title: `Lab Test Request: ${machine.machine_name}` 
+    })
+    .eq('id', actionId)
+
+  if (actionError) throw new Error(actionError.message)
+
+  revalidatePath('/dashboard')
+  revalidatePath('/admin')
+  return { success: true, machineId: machine.id }
+}

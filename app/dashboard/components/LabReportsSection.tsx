@@ -29,7 +29,6 @@ interface LabReportsSectionProps {
   machineLabel: string
   productLabel: string
   viewReportLabel: string
-  onOpenPurchaseAnalytics: () => void
   onToggleReport: (reportId: string) => void
   onOpenReportPdf: (pdfPath: string) => void
   onDownloadReportPdf: (pdfPath: string, testDate: string) => void
@@ -66,7 +65,6 @@ export function LabReportsSection({
   machineLabel,
   productLabel,
   viewReportLabel,
-  onOpenPurchaseAnalytics,
   onToggleReport,
   onOpenReportPdf,
   onDownloadReportPdf,
@@ -80,15 +78,6 @@ export function LabReportsSection({
         title={title}
         description={description}
         titleClassName="text-3xl"
-        actions={
-          <button
-            type="button"
-            onClick={onOpenPurchaseAnalytics}
-            className="px-4 py-2 rounded-xl border border-primary-200 text-primary-700 font-semibold hover:bg-primary-50 transition-colors"
-          >
-            {language === 'id' ? 'Buka Purchase Analytics' : 'Open Purchase Analytics'}
-          </button>
-        }
       />
 
       {reports.length === 0 ? (
@@ -181,7 +170,7 @@ export function LabReportsSection({
                           {viewReportLabel}
                         </button>
                       )}
-                      <svg className={`w-6 h-6 text-primary-600 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className={isExpanded ? 'w-6 h-6 text-primary-600 transition-transform duration-300 rotate-180' : 'w-6 h-6 text-primary-600 transition-transform duration-300'} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>

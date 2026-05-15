@@ -54,7 +54,19 @@ export default async function DashboardPage() {
     .eq('role', 'customer')
     .order('created_at', { ascending: false })
 
-  const maintenanceActionsPromise = supabase
+  const { data: machines } = await machinesPromise
+  const { data: teamMembers } = await teamMembersPromise
+
+  // Initialize service client for fallback (RLS issues)
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
+  const supabaseService = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  // Fetch Maintenance Actions with fallback
+  const { data: maintenanceActions, error: actionsError } = await supabase
     .from('oil_maintenance_actions')
     .select(`
       *,
@@ -64,22 +76,32 @@ export default async function DashboardPage() {
     .eq('customer_id', profile.customer_id)
     .order('created_at', { ascending: false })
 
-  const maintenanceActionLogsPromise = supabase
+  if ((!maintenanceActions || maintenanceActions.length === 0) && !actionsError) {
+    const fallback = await supabaseService
+      .from('oil_maintenance_actions')
+      .select(`
+        *,
+        machine:oil_machines(machine_name, location),
+        owner:oil_profiles!oil_maintenance_actions_owner_profile_id_fkey(full_name, email)
+      `)
+      .eq('customer_id', profile.customer_id)
+      .order('created_at', { ascending: false })
+    maintenanceActions = fallback.data
+  }
+
+  // Fetch Logs with fallback
+  const { data: maintenanceActionLogs, error: logsError } = await supabase
     .from('oil_maintenance_action_logs')
     .select('id, action_id, actor_id, event_type, from_status, to_status, metadata, created_at')
     .order('created_at', { ascending: false })
 
-  const purchaseHistoryPromise = supabase
-    .from('oil_purchase_history')
-    .select('id, quantity, unit_price, total_price, status, purchase_date')
-    .eq('customer_id', profile.customer_id)
-    .order('purchase_date', { ascending: false })
-  
-  const { data: machines } = await machinesPromise
-  const { data: teamMembers } = await teamMembersPromise
-  const { data: maintenanceActions } = await maintenanceActionsPromise
-  const { data: maintenanceActionLogs } = await maintenanceActionLogsPromise
-  const { data: purchaseHistory } = await purchaseHistoryPromise
+  if ((!maintenanceActionLogs || maintenanceActionLogs.length === 0) && !logsError) {
+    const fallback = await supabaseService
+      .from('oil_maintenance_action_logs')
+      .select('id, action_id, actor_id, event_type, from_status, to_status, metadata, created_at')
+      .order('created_at', { ascending: false })
+    maintenanceActionLogs = fallback.data
+  }
 
   // Fetch lab tests for this customer's machines
   const machineIds = (machines || []).map(m => m.id)
@@ -95,38 +117,12 @@ export default async function DashboardPage() {
         .order('test_date', { ascending: false })
     : Promise.resolve({ data: [], error: null })
 
-  // Fetch dismissed alerts states
-  const alertReadsPromise = supabase
-    .from('oil_alert_actions')
-    .select('alert_key')
-    .eq('action_type', 'customer_read')
-    .eq('actor_id', profile.id)
-
-  const [labTestsResult, alertReadsResult] = await Promise.all([
-    labTestsPromise,
-    alertReadsPromise
-  ])
-
-  if (labTestsResult.error) {
-    console.error('[dashboard/page] primary lab test query failed:', labTestsResult.error.message)
-  }
+  const [labTestsResult] = await Promise.all([labTestsPromise])
 
   let initialLabTests = labTestsResult.data || []
 
-  // Fallback: use service-role client when anon access returns no tests (usually RLS)
-  if (initialLabTests.length === 0 && profile.customer_id) {
-    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
-    const supabaseService = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    )
-
+  // Fallback for lab tests
+  if (initialLabTests.length === 0 && profile.customer_id && machineIds.length > 0) {
     const fallbackLabTestsResult = await supabaseService
       .from('oil_lab_tests')
       .select(`
@@ -137,14 +133,10 @@ export default async function DashboardPage() {
       .in('machine_id', machineIds)
       .order('test_date', { ascending: false })
 
-    if (fallbackLabTestsResult.error) {
-      console.error('[dashboard/page] service-role fallback lab test query failed:', fallbackLabTestsResult.error.message)
-    } else {
+    if (!fallbackLabTestsResult.error) {
       initialLabTests = fallbackLabTestsResult.data || []
     }
   }
-
-  const initialDismissedAlertIds = (alertReadsResult.data || []).map(row => row.alert_key)
 
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
@@ -169,9 +161,7 @@ export default async function DashboardPage() {
       initialTeamMembers={teamMembers || []}
       initialMaintenanceActions={maintenanceActions || []}
       initialMaintenanceActionLogs={maintenanceActionLogs || []}
-      initialPurchaseHistory={purchaseHistory || []}
       initialLabTests={initialLabTests}
-      initialDismissedAlertIds={initialDismissedAlertIds}
     />
   )
 }

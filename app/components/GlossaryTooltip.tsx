@@ -23,9 +23,12 @@ export function GlossaryTooltip({
 }: GlossaryTooltipProps) {
   const [open, setOpen] = useState(false)
   const entry = glossary[termKey][language]
+  const containerClassName = className
+    ? `relative inline-flex items-center gap-1 ${className}`
+    : 'relative inline-flex items-center gap-1'
 
   return (
-    <span className={`relative inline-flex items-center gap-1 ${className}`}>
+    <span className={containerClassName}>
       <span>{label ?? entry.term}</span>
       <button
         type="button"

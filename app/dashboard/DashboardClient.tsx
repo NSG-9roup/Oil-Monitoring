@@ -1,24 +1,21 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
 import OilDropLoader from '@/app/components/OilDropLoader'
 import { exportFleetReportPdf, exportTrustRoiSnapshotPdf, type FleetReportRow, type TrustRoiAuditRow } from '@/lib/pdf/exportFleetReport'
-import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
 import type { MaintenanceAction, MaintenanceActionLog, MaintenanceActionPriority, MaintenanceActionStatus, MaintenanceVerificationStatus } from '@/lib/types'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
 import { ReliabilitySection } from '@/app/dashboard/components/ReliabilitySection'
-import { AlertsSection } from '@/app/dashboard/components/AlertsSection'
 import { MaintenanceActionBoardSection } from '@/app/dashboard/components/MaintenanceActionBoardSection'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
-import { PurchasesSection } from '@/app/dashboard/components/PurchasesSection'
-import { createTeamUser, createMaintenanceAction, updateMaintenanceAction } from '@/app/actions/dashboardActions'
+import { createTeamUser, createMaintenanceAction, updateMaintenanceAction, requestLabTest } from '@/app/actions/dashboardActions'
 
 interface Machine {
   id: string
@@ -97,18 +94,7 @@ interface DashboardClientProps {
   initialTeamMembers: TeamMember[]
   initialMaintenanceActions: MaintenanceAction[]
   initialMaintenanceActionLogs: MaintenanceActionLog[]
-  initialPurchaseHistory: PurchaseHistoryRecord[]
   initialLabTests: any[]
-  initialDismissedAlertIds: string[]
-}
-
-interface PurchaseHistoryRecord {
-  id: string
-  quantity: number
-  unit_price: number
-  total_price?: number | null
-  status: 'completed' | 'pending' | 'cancelled'
-  purchase_date: string
 }
 
 type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
@@ -156,18 +142,13 @@ const formatLocalDateInput = (date: Date) => {
   return `${year}-${month}-${day}`
 }
 
-const addDays = (date: Date, days: number) => {
-  const next = new Date(date)
-  next.setDate(next.getDate() + days)
-  return next
-}
-
 const dashboardCopy = {
   id: {
     languageLabel: 'Bahasa Indonesia',
     languageShort: 'ID',
     languageSelector: 'Bahasa',
     welcomeBack: 'Selamat datang kembali',
+    welcomeSubtitle: 'Pantau dan analisis indeks kesehatan oli armada Anda secara real-time.',
     status: 'Status',
     machines: 'Mesin',
     user: 'Pengguna',
@@ -184,80 +165,108 @@ const dashboardCopy = {
     actionOverdueLabel: 'Terlambat',
     actionDuePrefix: 'Jatuh tempo',
     tbd: 'Belum ditentukan',
-    dashboardAlerts: 'Alert dashboard',
+    dashboardAlerts: 'Peringatan dashboard',
     signOut: 'Keluar',
-    alertManagementTitle: 'Manajemen Alert',
-    alertManagementDesc: 'Manajemen alert membantu tim memantau perubahan kondisi oli yang penting dan mengambil tindakan sebelum masalah menjadi kritis.',
-    alertEmpty: 'Belum ada alert aktif. Kondisi monitoring saat ini stabil.',
-    resetInbox: 'Reset Inbox',
-    alertSeverity: 'tingkat alert',
+    alertManagementTitle: 'Manajemen Peringatan',
+    alertManagementDesc: 'Fitur ini membantu tim memantau perubahan penting pada kondisi oli dan mengambil langkah pencegahan sebelum masalah menjadi kritis.',
+    alertEmpty: 'Belum ada peringatan aktif. Kondisi pemantauan saat ini stabil.',
+    resetInbox: 'Reset Kotak Masuk',
+    alertSeverity: 'tingkat peringatan',
     alertMachine: 'Mesin',
     alertNextAction: 'Langkah berikutnya',
-    exportPdfTitle: 'Ekspor Laporan Fleet (PDF)',
+    exportPdfTitle: 'Ekspor Laporan Armada (PDF)',
     exportPdfDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format premium.',
-    purchaseHistoryTitle: 'Riwayat Pembelian',
-    purchaseHistoryDesc: 'Lihat catatan pembelian dan histori transaksi secara detail.',
-    teamManagementTitle: 'Manajemen User Perusahaan',
-    teamManagementDesc: 'Tambahkan anggota tim untuk perusahaan yang sama agar mereka bisa ikut mengakses dashboard dan data monitoring.',
-    teamMembersTitle: 'Daftar User Perusahaan',
-    teamMembersEmpty: 'Belum ada user lain pada perusahaan ini.',
-    teamRoleCustomer: 'Customer User',
-    teamAddFormTitle: 'Tambah User Baru',
-    teamAddFormDesc: 'User baru akan otomatis terhubung ke perusahaan yang sama dengan akun ini.',
+    analysisAndReports: 'Analisis & Laporan',
+    oilTrend: 'Tren Oli',
+    labResults: 'Hasil Lab',
+    smartAlertTitle: 'Peringatan Cerdas Berbasis Tren',
+    smartAlertDesc: 'Deteksi pola kenaikan, perubahan abnormal, dan kondisi yang mendekati batas kritis.',
+    activeAlerts: 'peringatan tren aktif',
+    actionCenter: 'Tindak Lanjuti di Action Center',
+    exportFleetPdf: 'Ekspor Laporan Armada (PDF)',
+    exportFleetDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format laporan resmi.',
+    exportRoiPdf: 'Ekspor Trust & ROI Snapshot',
+    exportRoiDesc: 'Unduh ringkasan kepercayaan perusahaan, catatan audit, dan estimasi ROI.',
+    teamManagementTitle: 'Manajemen Pengguna Perusahaan',
+    teamManagementDesc: 'Kelola anggota tim perusahaan agar mereka dapat mengakses dashboard dan data pemantauan secara bersamaan.',
+    teamMembersTitle: 'Daftar Pengguna Perusahaan',
+    teamMembersEmpty: 'Belum ada pengguna lain yang terdaftar di perusahaan ini.',
+    teamRoleCustomer: 'Pengguna Pelanggan',
+    teamAddFormTitle: 'Tambah Pengguna Baru',
+    teamAddFormDesc: 'Pengguna baru akan otomatis terhubung dengan profil perusahaan akun ini.',
     teamFullName: 'Nama Lengkap',
     teamEmail: 'Email',
     teamPhone: 'No. Telepon',
     teamPin: 'PIN Otorisasi',
-    teamPinHint: 'Hanya user yang punya PIN yang bisa menambah user baru.',
-    teamPassword: 'Password',
-    teamPasswordHint: 'Minimal 8 karakter, huruf besar, huruf kecil, dan angka.',
-    teamCreateButton: 'Tambah User',
+    teamPinHint: 'Hanya pengguna dengan hak akses PIN yang dapat menambahkan anggota baru.',
+    teamPassword: 'Kata Sandi',
+    teamPasswordHint: 'Minimal 8 karakter, gunakan kombinasi huruf besar, kecil, dan angka.',
+    teamCreateButton: 'Tambah Pengguna',
     teamCreatingButton: 'Menambahkan...',
-    teamCreateSuccess: 'User perusahaan berhasil ditambahkan.',
-    teamCreateError: 'Gagal menambahkan user perusahaan',
-    insightTitle: 'Mesin Prioritas & Insight Operasional',
-    insightDesc: 'Intelijen tahap awal untuk penilaian kesehatan, peringkat prioritas, dan tindakan maintenance.',
-    refreshInsights: 'Segarkan Insight',
+    teamCreateSuccess: 'Pengguna perusahaan berhasil ditambahkan.',
+    teamCreateError: 'Gagal menambahkan pengguna perusahaan',
+    requestLab: {
+      openButton: 'Ajukan Uji Lab',
+      title: 'Permintaan Uji Laboratorium',
+      subtitle: 'Jadwalkan pengambilan sampel oli oleh tim field sales kami di lokasi Anda.',
+      machineInfo: 'Informasi Mesin',
+      unregisteredMachine: 'Mesin tidak terdaftar?',
+      registeredMachinePlaceholder: 'Pilih Mesin Terdaftar',
+      noLocation: 'Tanpa Lokasi',
+      newMachineNamePlaceholder: 'Nama Mesin Baru (Contoh: Pompa Hidrolik A)',
+      modelPlaceholder: 'Model / Tipe',
+      locationPlaceholder: 'Lokasi / Area',
+      priorityLabel: 'Prioritas',
+      preferredDateLabel: 'Rencana Tanggal Pengambilan Sampel (Opsional)',
+      preferredDateHint: 'Tanggal ini akan menjadi target batas waktu (due date) pengajuan.',
+      notesLabel: 'Catatan Tambahan',
+      notesPlaceholder: 'Contoh: Mesin terdengar kasar, oli berbusa, atau kendala teknis lainnya.',
+      sending: 'Mengirim...',
+      submit: 'Kirim Permintaan',
+    },
+    insightTitle: 'Prioritas Mesin & Wawasan Operasional',
+    insightDesc: 'Analisis cerdas untuk penilaian kesehatan, peringkat prioritas, dan rekomendasi tindakan perawatan.',
+    refreshInsights: 'Perbarui Wawasan',
     criticalMachines: 'Mesin Kritis',
     warningMachines: 'Mesin Waspada',
     healthyMachines: 'Mesin Sehat',
     averageHealth: 'Rata-rata Kesehatan',
-    focusCritical: (count: number) => `Butuh perhatian segera: ${count} mesin berada dalam kondisi kritis. Prioritaskan pemeriksaan sumber kontaminasi dan sampling ulang dalam 72 jam.`,
-    focusWarning: (count: number) => `Kondisi sistem masih terkendali tetapi waspada: ${count} mesin perlu pemantauan lebih dekat. Jadwalkan sampling verifikasi dalam 14 hari ke depan.`,
-    focusHealthy: 'Kondisi sistem sehat secara keseluruhan. Lanjutkan sampling rutin bulanan dan jaga kontrol pencegahan kontaminasi tetap aktif.',
-    maintenanceTitle: 'Tracker Tindakan Maintenance',
-    maintenanceDesc: 'Ubah insight dashboard menjadi pekerjaan yang bisa ditugaskan dan ditrack oleh engineer atau tim maintenance.',
-    pending: 'Pending',
+    focusCritical: (count: number) => `Perhatian segera: ${count} mesin dalam kondisi kritis. Prioritaskan pemeriksaan sumber kontaminasi dan uji ulang dalam 72 jam.`,
+    focusWarning: (count: number) => `Sistem stabil namun perlu waspada: ${count} mesin membutuhkan pemantauan intensif. Jadwalkan uji verifikasi dalam 14 hari ke depan.`,
+    focusHealthy: 'Kondisi sistem secara keseluruhan sehat. Lanjutkan pengambilan sampel rutin bulanan dan pastikan kontrol kontaminasi tetap terjaga.',
+    maintenanceTitle: 'Pelacak Tindakan Perawatan',
+    maintenanceDesc: 'Ubah wawasan dashboard menjadi tugas yang dapat didelegasikan dan dipantau oleh tim teknisi.',
+    pending: 'Menunggu',
     completed: 'Selesai',
     overdue: 'Terlambat',
-    actionCompletion: 'Penyelesaian action',
-    pic: 'PIC',
-    dueDate: 'Tanggal selesai',
+    actionCompletion: 'Penyelesaian Tindakan',
+    pic: 'Penanggung Jawab (PIC)',
+    dueDate: 'Batas Waktu',
     notes: 'Catatan',
-    picPlaceholder: 'Engineer / teknisi',
-    notesPlaceholder: 'Komentar atau observasi teknisi',
+    picPlaceholder: 'Teknisi / Engineer',
+    notesPlaceholder: 'Catatan hasil observasi teknisi',
     samplingCompliance: 'Kepatuhan Sampling',
     onTime: 'tepat waktu',
     overdueSampling: 'terlambat',
-    maintenancePending: 'Action Pending',
-    maintenanceCompleted: 'Action Completed',
-    maintenanceOverdue: 'Overdue Actions',
-    maintenanceSummaryPending: 'Pekerjaan maintenance yang masih menunggu assignment atau penyelesaian.',
-    maintenanceSummaryCompleted: 'Pekerjaan yang sudah diselesaikan oleh tim maintenance.',
-    maintenanceSummaryOverdue: 'Pekerjaan yang melewati due date dan perlu tindak lanjut segera.',
+    maintenancePending: 'Tindakan Menunggu',
+    maintenanceCompleted: 'Tindakan Selesai',
+    maintenanceOverdue: 'Tindakan Terlambat',
+    maintenanceSummaryPending: 'Tugas perawatan yang masih menunggu penugasan atau penyelesaian.',
+    maintenanceSummaryCompleted: 'Tugas yang telah berhasil diselesaikan oleh tim teknisi.',
+    maintenanceSummaryOverdue: 'Tugas yang telah melewati batas waktu dan butuh tindak lanjut segera.',
     machineHealthTitle: 'Ringkasan Kesehatan Mesin',
-    machineHealthDesc: 'Monitoring kondisi peralatan secara real-time.',
+    machineHealthDesc: 'Pemantauan kondisi peralatan secara real-time.',
     selectMachine: 'Pilih Mesin',
-    noMachineSelectedTitle: 'Belum ada mesin dipilih',
-    noMachineSelectedDesc: 'Silakan pilih mesin dari daftar di atas untuk melihat datanya.',
-    lastTest: 'Tes terakhir',
-    lastTestLabel: 'Tes terakhir',
+    noMachineSelectedTitle: 'Belum Ada Mesin Terpilih',
+    noMachineSelectedDesc: 'Silakan pilih mesin dari daftar untuk melihat analisis data selengkapnya.',
+    lastTest: 'Uji terakhir',
+    lastTestLabel: 'Uji terakhir',
     statusLabel: 'Status',
     notAvailable: 'Tidak tersedia',
     daysAgo: 'hari lalu',
     unknownStatus: 'Tidak diketahui',
     noDataStatus: 'Belum ada data',
-    initialSamplingAction: 'Jadwalkan sampling awal sekarang',
+    initialSamplingAction: 'Jadwalkan pengambilan sampel awal sekarang',
     criticalLabel: 'Kritis',
     warningLabel: 'Waspada',
     normalLabel: 'Normal',
@@ -269,49 +278,49 @@ const dashboardCopy = {
     startDate: 'Tanggal Mulai',
     endDate: 'Tanggal Selesai',
     performanceTitle: 'Tren Performa',
-    performanceDesc: 'Visualisasi metrik kunci dan indikator kondisi pelumas dalam rentang waktu terpilih.',
-    noSampleData: 'Tidak ada data sampel',
-    checkConsole: 'Periksa console browser untuk detail debug.',
-    noDataAvailable: 'Tidak ada data tersedia',
-    trendAlertsTitle: 'Alert Cerdas Berbasis Tren',
-    trendAlertsDesc: 'Deteksi pola kenaikan, perubahan abnormal, dan kondisi mendekati batas kritis.',
-    noTrendAlerts: 'Tidak ada anomali tren pada rentang waktu yang dipilih.',
-    activeTrendAlerts: (count: number) => `${count} alert tren aktif`,
+    performanceDesc: 'Visualisasi metrik utama dan indikator kondisi pelumas dalam rentang waktu yang dipilih.',
+    noSampleData: 'Data sampel tidak ditemukan',
+    checkConsole: 'Periksa konsol browser untuk rincian debug.',
+    noDataAvailable: 'Data tidak tersedia',
+    trendAlertsTitle: 'Peringatan Cerdas Berbasis Tren',
+    trendAlertsDesc: 'Deteksi pola anomali dan kondisi yang mendekati batas kritis secara otomatis.',
+    noTrendAlerts: 'Tidak ditemukan anomali tren pada rentang waktu ini.',
+    activeTrendAlerts: (count: number) => `${count} peringatan tren aktif`,
     labReportsTitle: 'Laporan Laboratorium',
-    labReportsEmpty: 'Belum ada laporan laboratorium pada rentang waktu yang dipilih',
-    reportCountSuffix: (count: number) => `${count} ${count === 1 ? 'laporan' : 'laporan'} pada rentang waktu ini`,
+    labReportsEmpty: 'Belum ada laporan laboratorium pada rentang waktu ini.',
+    reportCountSuffix: (count: number) => `${count} laporan ditemukan`,
     viscosityTrend: 'Tren Viskositas',
     waterContent: 'Kandungan Air',
     tanTrend: 'Total Acid Number (TAN)',
-    noMachineActions: 'Belum ada action mesin yang tersedia.',
-    maintenanceQueue: 'Antrian Prioritas Maintenance',
+    noMachineActions: 'Belum ada daftar tindakan untuk mesin ini.',
+    maintenanceQueue: 'Antrean Prioritas Perawatan',
     samplingOverdue: (days: number) => `Sampling terlambat ${days} hari`,
     nextSamplingIn: (days: number) => `Sampling berikutnya dalam ${days} hari`,
-    onSchedule: (days: number) => `Sesuai jadwal, berikutnya ${days} hari lagi`,
-    samplingInitialRequired: 'Sampling terlambat - test awal diperlukan',
+    onSchedule: (days: number) => `Sesuai jadwal, sampling lagi dalam ${days} hari`,
+    samplingInitialRequired: 'Sampling terlambat - diperlukan pengujian awal',
     completeAnalysis: 'Analisis Lengkap',
-    evaluationBasedOnIndustryStandard: 'Evaluasi berdasarkan praktik standar industri oli',
+    evaluationBasedOnIndustryStandard: 'Evaluasi berdasarkan praktik standar industri pelumas',
     machineLabel: 'Mesin',
     productLabel: 'Produk',
     viscosityLabel: 'Viskositas',
     waterContentLabel: 'Kandungan Air',
     tanValueLabel: 'Nilai TAN',
     actionTemplates: {
-      critical: ['Uji ulang oil', 'Periksa kebocoran seal', 'Inspeksi kondisi filter'],
-      warning: ['Uji ulang oil', 'Periksa breather / sumber kontaminasi', 'Verifikasi kebersihan sampel'],
-      normal: ['Jadwalkan sampling rutin', 'Inspeksi kondisi filter', 'Catat follow-up'],
+      critical: ['Lakukan uji ulang oli', 'Periksa kebocoran seal', 'Inspeksi kondisi filter'],
+      warning: ['Lakukan uji ulang oli', 'Periksa breather / sumber kontaminasi', 'Verifikasi kebersihan sampel'],
+      normal: ['Jadwalkan pengambilan sampel rutin', 'Inspeksi kondisi filter', 'Catat tindak lanjut'],
     },
     trend: {
-      viscosityTitle: 'Viscosity menunjukkan tren yang bergerak dari band normal',
-      viscosityAction: 'Periksa temperatur operasi, risiko dilution, dan stabilitas kondisi oil.',
-      waterTitle: 'Water content menunjukkan kenaikan yang konsisten',
-      waterAction: 'Periksa seal, breather, dan sumber kontaminasi. Lakukan retest setelah tindakan korektif.',
-      tanTitle: 'TAN naik lebih cepat dari laju normal',
-      tanAction: 'Tinjau faktor oksidasi dan jadwalkan sampling verifikasi.',
+      viscosityTitle: 'Viskositas menunjukkan tren di luar batas normal',
+      viscosityAction: 'Periksa temperatur operasi, risiko pengenceran (dilution), dan stabilitas kondisi oli.',
+      waterTitle: 'Kandungan air menunjukkan kenaikan yang konsisten',
+      waterAction: 'Periksa seal, breather, dan sumber kontaminasi. Uji ulang setelah tindakan korektif.',
+      tanTitle: 'Nilai TAN naik lebih cepat dari laju normal',
+      tanAction: 'Tinjau faktor oksidasi dan jadwalkan pengambilan sampel verifikasi.',
       increasingTrend: 'menunjukkan kenaikan konsisten',
-      abnormalChange: 'berubah secara abnormal',
+      abnormalChange: 'berubah secara anomali',
       approachingCritical: 'mendekati batas kritis',
-      recommendedAction: 'Tindakan yang disarankan',
+      recommendedAction: 'Tindakan yang Disarankan',
       severityLow: 'Rendah',
       severityMedium: 'Sedang',
       severityHigh: 'Tinggi',
@@ -322,6 +331,7 @@ const dashboardCopy = {
     languageShort: 'EN',
     languageSelector: 'Language',
     welcomeBack: 'Welcome back',
+    welcomeSubtitle: "Monitor and analyze your fleet's oil health index in real-time.",
     status: 'Status',
     machines: 'Machines',
     user: 'User',
@@ -341,7 +351,7 @@ const dashboardCopy = {
     dashboardAlerts: 'Dashboard alerts',
     signOut: 'Sign Out',
     alertManagementTitle: 'Alert Management',
-    alertManagementDesc: 'Alert management helps the team monitor important oil condition changes and act before issues become critical.',
+    alertManagementDesc: 'Monitor critical changes in oil condition and take proactive measures before issues escalate.',
     alertEmpty: 'No active alerts. Monitoring status is currently stable.',
     resetInbox: 'Reset Inbox',
     alertSeverity: 'alert level',
@@ -349,26 +359,54 @@ const dashboardCopy = {
     alertNextAction: 'Next action',
     exportPdfTitle: 'Export Fleet Report (PDF)',
     exportPdfDesc: 'Download the executive summary and machine priority queue in a premium layout.',
-    purchaseHistoryTitle: 'Purchase History',
-    purchaseHistoryDesc: 'View detailed purchase records and transaction history.',
+    analysisAndReports: 'Analysis & Reports',
+    oilTrend: 'Oil Trend',
+    labResults: 'Lab Results',
+    smartAlertTitle: 'Trend-Based Smart Alerts',
+    smartAlertDesc: 'Detect increasing patterns, abnormal changes, and values approaching critical limits.',
+    activeAlerts: 'active trend alerts',
+    actionCenter: 'Follow up in Action Center',
+    exportFleetPdf: 'Export Fleet Report (PDF)',
+    exportFleetDesc: 'Download executive summary and machine priority list in a professional report format.',
+    exportRoiPdf: 'Export Trust & ROI Snapshot',
+    exportRoiDesc: 'Download enterprise trust summary, audit logs, and ROI estimates.',
     teamManagementTitle: 'Company User Management',
-    teamManagementDesc: 'Add team members for the same company so they can access the dashboard and monitoring data.',
+    teamManagementDesc: 'Manage team members so they can collaborate on the dashboard and monitoring data.',
     teamMembersTitle: 'Company Users',
-    teamMembersEmpty: 'There are no additional users for this company yet.',
+    teamMembersEmpty: 'No other users have been added to this company yet.',
     teamRoleCustomer: 'Customer User',
     teamAddFormTitle: 'Add New User',
-    teamAddFormDesc: 'The new user will automatically be linked to the same company as this account.',
+    teamAddFormDesc: 'The new user will be automatically linked to this company profile.',
     teamFullName: 'Full Name',
     teamEmail: 'Email',
     teamPhone: 'Phone Number',
     teamPin: 'Authorization PIN',
-    teamPinHint: 'Only users with the PIN can add new users.',
+    teamPinHint: 'Only users with PIN authorization can add new members.',
     teamPassword: 'Password',
-    teamPasswordHint: 'At least 8 characters with uppercase, lowercase, and a number.',
+    teamPasswordHint: 'At least 8 characters with a mix of uppercase, lowercase, and numbers.',
     teamCreateButton: 'Add User',
     teamCreatingButton: 'Adding...',
     teamCreateSuccess: 'Company user added successfully.',
     teamCreateError: 'Failed to add company user',
+    requestLab: {
+      openButton: 'Request Test Lab',
+      title: 'Lab Test Request',
+      subtitle: 'Schedule oil sampling pickup by our field sales team at your location.',
+      machineInfo: 'Machine Information',
+      unregisteredMachine: 'Unregistered machine?',
+      registeredMachinePlaceholder: 'Select Registered Machine',
+      noLocation: 'No Location',
+      newMachineNamePlaceholder: 'New Machine Name (Example: Hydraulic Pump A)',
+      modelPlaceholder: 'Model / Type',
+      locationPlaceholder: 'Location / Area',
+      priorityLabel: 'Priority',
+      preferredDateLabel: 'Preferred Sampling Date (Optional)',
+      preferredDateHint: 'This date will be saved as the request due date target.',
+      notesLabel: 'Additional Notes',
+      notesPlaceholder: 'Example: Machine makes rough noise, oil appears foamy, etc.',
+      sending: 'Sending...',
+      submit: 'Submit Request',
+    },
     insightTitle: 'Machine Priority & Operational Insights',
     insightDesc: 'Early-stage intelligence for health scoring, priority ranking, and maintenance actions.',
     refreshInsights: 'Refresh Insights',
@@ -376,8 +414,8 @@ const dashboardCopy = {
     warningMachines: 'Warning Machines',
     healthyMachines: 'Healthy Machines',
     averageHealth: 'Average Health',
-    focusCritical: (count: number) => `Immediate attention required: ${count} machine${count > 1 ? 's are' : ' is'} in critical condition. Prioritize contamination checks and repeat sampling within 72 hours.`,
-    focusWarning: (count: number) => `The system is stable but caution is needed: ${count} machine${count > 1 ? 's need' : ' needs'} closer monitoring. Schedule verification sampling within the next 14 days.`,
+    focusCritical: (count: number) => `Immediate attention required: ${count} machine${count === 1 ? ' is' : 's are'} in critical condition. Prioritize contamination checks and repeat sampling within 72 hours.`,
+    focusWarning: (count: number) => `The system is stable but caution is needed: ${count} machine${count === 1 ? ' needs' : 's need'} closer monitoring. Schedule verification sampling within the next 14 days.`,
     focusHealthy: 'System condition is healthy overall. Continue routine monthly sampling and keep contamination prevention controls active.',
     maintenanceTitle: 'Maintenance Action Tracker',
     maintenanceDesc: 'Turn dashboard insights into assignable work items that engineers and maintenance teams can track.',
@@ -480,14 +518,10 @@ export default function DashboardClient({
   initialTeamMembers,
   initialMaintenanceActions,
   initialMaintenanceActionLogs,
-  initialPurchaseHistory,
   initialLabTests,
-  initialDismissedAlertIds,
 }: DashboardClientProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
-  const detailsRef = useRef<HTMLDivElement>(null)
   const [language, setLanguage] = useState<Language>('id')
   const copy = dashboardCopy[language]
   
@@ -508,7 +542,6 @@ export default function DashboardClient({
   }, [initialLabTests])
 
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(() => preferredMachine)
-  const debugMode = searchParams.get('debug') === '1'
   const chartMachine = useMemo(() => {
     if (selectedMachine && normalizedLabTests.some((test) => test.machine_id === selectedMachine.id)) {
       return selectedMachine
@@ -526,10 +559,6 @@ export default function DashboardClient({
   }, [chartMachine, normalizedLabTests]) as OilSample[]
 
   const labReports = oilSamples as LabReport[]
-  const debugLabMachineIds = useMemo(
-    () => Array.from(new Set((normalizedLabTests || []).map((test) => test.machine_id))).slice(0, 12),
-    [normalizedLabTests]
-  )
 
   const activeBaselines = useMemo(() => {
     if (!chartMachine || oilSamples.length === 0) return null
@@ -576,16 +605,81 @@ export default function DashboardClient({
     })
   }, [latestTestByMachineId, machines, normalizedLabTests])
 
-  // Use server-prefetched dismissed alerts
-  const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>(initialDismissedAlertIds)
   const [teamMembers] = useState<TeamMember[]>(initialTeamMembers)
   const [teamForm, setTeamForm] = useState({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
   const [teamSaving, setTeamSaving] = useState(false)
   const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
   const [maintenanceActionLogs] = useState<MaintenanceActionLog[]>(initialMaintenanceActionLogs)
-  const [purchaseHistory] = useState<PurchaseHistoryRecord[]>(initialPurchaseHistory)
   const [actionSaving, setActionSaving] = useState(false)
-  const [activeShortcut, setActiveShortcut] = useState('section-snapshot')
+  const [activeShortcut, setActiveShortcut] = useState<string>('trend')
+  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab'>('trend')
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
+  const [requestForm, setRequestForm] = useState({
+    machine_id: '',
+    is_new_machine: false,
+    new_machine_name: '',
+    new_machine_model: '',
+    new_machine_location: '',
+    requested_date: '',
+    priority: 'medium',
+    notes: ''
+  })
+  const [requestSaving, setRequestSaving] = useState(false)
+
+  const handleOpenRequestModal = (machineId?: string) => {
+    setRequestForm({
+      machine_id: machineId || selectedMachine?.id || '',
+      is_new_machine: false,
+      new_machine_name: '',
+      new_machine_model: '',
+      new_machine_location: '',
+      requested_date: '',
+      priority: 'medium',
+      notes: ''
+    })
+    setIsRequestModalOpen(true)
+  }
+
+  const handleSendRequest = async () => {
+    if (!requestForm.is_new_machine && !requestForm.machine_id) {
+      alert('Silakan pilih mesin atau centang mesin baru.')
+      return
+    }
+    if (requestForm.is_new_machine && !requestForm.new_machine_name) {
+      alert('Silakan masukkan nama mesin baru.')
+      return
+    }
+
+    setRequestSaving(true)
+    try {
+      const machineName = requestForm.is_new_machine 
+        ? requestForm.new_machine_name 
+        : machines.find(m => m.id === requestForm.machine_id)?.machine_name || 'Unknown'
+
+      await requestLabTest({
+        machine_id: requestForm.is_new_machine ? undefined : requestForm.machine_id,
+        title: `Lab Test Request: ${machineName}`,
+        description: requestForm.notes,
+        due_date: requestForm.requested_date || undefined,
+        priority: requestForm.priority,
+        is_new_machine: requestForm.is_new_machine,
+        new_machine_data: requestForm.is_new_machine ? {
+          machine_name: requestForm.new_machine_name,
+          model: requestForm.new_machine_model,
+          location: requestForm.new_machine_location
+        } : undefined
+      })
+      
+      setIsRequestModalOpen(false)
+      alert('Permintaan uji lab berhasil dikirim!')
+    } catch (error) {
+      console.error('Request failed:', error)
+      alert('Gagal mengirim permintaan.')
+    } finally {
+      setRequestSaving(false)
+    }
+  }
+
   const showAdvancedSections = false
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
@@ -604,88 +698,22 @@ export default function DashboardClient({
     setActionForm((prev) => ({ ...prev, ...patch }))
   }, [])
 
-  const scrollToSection = useCallback((sectionId: string) => {
-    const section = document.getElementById(sectionId)
-    if (!section) return
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    setActiveShortcut(sectionId)
-  }, [])
-
   const dashboardShortcutItems = useMemo(
     () => [
-      {
-        id: 'section-snapshot',
-        label: language === 'id' ? 'Ringkasan Mesin' : 'Machine Snapshot',
-        type: 'section' as const,
-      },
-      {
-        id: 'section-trend',
-        label: language === 'id' ? 'Tren Oli' : 'Oil Trends',
-        type: 'section' as const,
-      },
-      {
-        id: 'section-lab-reports',
-        label: language === 'id' ? 'Laporan Lab' : 'Lab Reports',
-        type: 'section' as const,
-      },
-      {
-        id: 'section-purchases',
-        label: language === 'id' ? 'Pembelian Oli' : 'Oil Purchases',
-        type: 'section' as const,
-      },
+      { id: 'trend', label: copy.oilTrend, type: 'section' as const },
+      { id: 'analysis', label: copy.analysisAndReports, type: 'section' as const },
+      { id: 'lab', label: copy.labResults, type: 'section' as const },
     ],
-    [language]
+    [copy]
   )
 
   const handleShortcutClick = useCallback(
-    (shortcutId: string) => {
-      const selected = dashboardShortcutItems.find((item) => item.id === shortcutId)
-      if (!selected) return
-
-      scrollToSection(shortcutId)
+    (id: string) => {
+      setActiveShortcut(id)
+      setActiveTab(id as any)
     },
-    [dashboardShortcutItems, scrollToSection]
+    []
   )
-
-  useEffect(() => {
-    const savedLanguage = window.localStorage.getItem('dashboard-language') as Language | null
-    if (savedLanguage === 'id' || savedLanguage === 'en') {
-      setLanguage(savedLanguage)
-    }
-  }, [])
-
-  useEffect(() => {
-    window.localStorage.setItem('dashboard-language', language)
-  }, [language])
-
-  useEffect(() => {
-    const sectionIds = ['section-snapshot', 'section-trend', 'section-lab-reports', 'section-purchases']
-    const observedSections = sectionIds
-      .map((id) => document.getElementById(id))
-      .filter((section): section is HTMLElement => Boolean(section))
-
-    if (observedSections.length === 0) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-
-        if (visible[0]?.target?.id) {
-          setActiveShortcut(visible[0].target.id)
-        }
-      },
-      {
-        root: null,
-        rootMargin: '-30% 0px -55% 0px',
-        threshold: [0.1, 0.2, 0.4, 0.6],
-      }
-    )
-
-    observedSections.forEach((section) => observer.observe(section))
-    return () => observer.disconnect()
-  }, [machines.length])
 
   useEffect(() => {
     // Initial maintenance actions are loaded from the server so the board stays persistent.
@@ -966,22 +994,6 @@ export default function DashboardClient({
     // ============================================================
     return { level: 'normal', color: 'green', text: 'Normal' }
   }
-
-  const getMachineHealth = (machineId: string) => {
-    const latestTest = latestTestByMachineId[machineId]
-    if (!latestTest) {
-      return { score: '-', status: 'Unknown', color: 'gray' }
-    }
-    const score = calculateHealthScore(latestTest)
-    const statusInfo = getStatus(
-      latestTest.viscosity_40c || 0,
-      latestTest.water_content || 0,
-      latestTest.tan_value || 0,
-      latestTest.product
-    )
-    return { score, status: statusInfo.text, color: statusInfo.color }
-  }
-
 
   // Calculate trend compared to previous test
   const getTrend = (currentValue: number, previousValue: number | null) => {
@@ -1299,29 +1311,6 @@ export default function DashboardClient({
     }
   }
 
-  const handleCreateActionFromAlert = async (alertItem: DashboardAlert) => {
-    const dueDate = alertItem.severity === 'critical'
-      ? formatLocalDateInput(addDays(new Date(), 3))
-      : alertItem.severity === 'warning'
-      ? formatLocalDateInput(addDays(new Date(), 7))
-      : formatLocalDateInput(addDays(new Date(), 14))
-
-    await handleCreateMaintenanceAction({
-      machine_id: alertItem.machineId,
-      title: alertItem.title,
-      description: `${alertItem.message}\n\n${alertItem.recommendedAction}`,
-      priority: alertItem.severity === 'critical' ? 'high' : 'medium',
-      due_date: dueDate,
-      alert_key: alertItem.id,
-      source_payload: {
-        alert_id: alertItem.id,
-        severity: alertItem.severity,
-        machine_name: alertItem.machineName,
-        next_action: alertItem.recommendedAction,
-      },
-    })
-  }
-
   const buildTrendAlerts = (tests: LabReport[]): TrendAlertItem[] => {
     if (tests.length < 3) return []
 
@@ -1391,7 +1380,6 @@ export default function DashboardClient({
 
 
   useEffect(() => {
-    router.prefetch('/purchases')
     router.prefetch('/login')
   }, [router])
 
@@ -1515,24 +1503,6 @@ export default function DashboardClient({
     healthScore: item.healthScore,
     nextAction: item.nextAction,
   }))
-
-  const dashboardAlerts = buildDashboardAlerts(
-    machineInsights.map((item) => ({
-      machineId: item.machine.id,
-      customerId: profile?.customer?.id || null,
-      machineName: item.machine.machine_name,
-      customerName: profile?.customer?.company_name || 'Customer',
-      customerEmail: profile?.email || user.email || '-',
-      statusLevel: item.status.level,
-      statusText: item.status.text,
-      nextAction: item.nextAction,
-      testDate: item.latestTest?.test_date || null,
-      daysSinceTest: item.daysSinceTest,
-      healthScore: item.healthScore,
-    }))
-  )
-
-  const visibleAlerts = dashboardAlerts.filter((alertItem) => !dismissedAlertIds.includes(alertItem.id))
 
   const teamMemberCount = teamMembers.length
   const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
@@ -1667,11 +1637,7 @@ export default function DashboardClient({
     .sort((a, b) => a.reliabilityScore - b.reliabilityScore)
     .slice(0, 5)
 
-  const completedPurchases = purchaseHistory.filter((item) => item.status === 'completed')
-  const totalSpend = completedPurchases.reduce(
-    (sum, item) => sum + (item.total_price ?? ((item.quantity || 0) * (item.unit_price || 0))),
-    0
-  )
+  const totalSpend = 0
 
   const assignedActionsCount = maintenanceActions.filter((action) => Boolean(action.owner_profile_id)).length
   const actionsWithDueDateCount = maintenanceActions.filter((action) => Boolean(action.due_date)).length
@@ -1777,53 +1743,6 @@ export default function DashboardClient({
     )
   }
 
-  const dismissAlert = (alertId: string) => {
-    const found = dashboardAlerts.find((item) => item.id === alertId)
-    if (!found) return
-
-    void (async () => {
-      const { error } = await supabase.from('oil_alert_actions').upsert(
-        {
-          alert_key: found.id,
-          action_type: 'customer_read',
-          actor_id: profile?.id || user.id,
-          customer_id: found.customerId,
-          machine_id: found.machineId,
-          payload: {
-            machine_name: found.machineName,
-            severity: found.severity,
-          },
-        },
-        { onConflict: 'alert_key,action_type' }
-      )
-
-      if (error) {
-        alert(`Failed to save alert read status: ${error.message}`)
-        return
-      }
-
-      setDismissedAlertIds((prev) => (prev.includes(alertId) ? prev : [...prev, alertId]))
-    })()
-  }
-
-  const resetAlertInbox = () => {
-    void (async () => {
-      const { error } = await supabase
-        .from('oil_alert_actions')
-        .delete()
-        .eq('action_type', 'customer_read')
-        .eq('actor_id', profile?.id || user.id)
-
-      if (error) {
-        alert(`Failed to reset inbox: ${error.message}`)
-        return
-      }
-
-      setDismissedAlertIds([])
-    })()
-  }
-
-
   const chartData = filteredSamples.map((sample) => {
     const parsedDate = new Date(sample.test_date)
     const safeDate = Number.isNaN(parsedDate.getTime()) ? sample.test_date : parsedDate.toLocaleDateString()
@@ -1841,28 +1760,28 @@ export default function DashboardClient({
 
   return (
     <div className="clean-ui customer-panel min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
-      {/* Header */}
-      <header className="bg-white shadow-lg sticky top-0 z-50 border-b-2 border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Paten Header (Sticky) */}
+      <div className="sticky top-0 z-[60] bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-100">
+        <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex justify-between items-center gap-4">
             {/* Left: NSG Logo + Brand */}
             <div className="flex items-center gap-3 min-w-0">
               <Image
                 src="https://i.imgur.com/8nqsjFz.png"
                 alt="Nabel Sakha Gemilang"
-                width={100}
-                height={30}
-                className="h-8 w-auto object-contain flex-shrink-0"
+                width={90}
+                height={28}
+                className="h-7 w-auto object-contain flex-shrink-0"
                 unoptimized
               />
               <div className="hidden md:block border-l-2 border-gray-100 pl-3">
-                <h1 className="text-lg font-black text-gray-900 tracking-tighter">OilTrack™</h1>
+                <h1 className="text-base font-black text-gray-900 tracking-tighter">OilTrack™</h1>
               </div>
             </div>
 
-            {/* Middle: Customer Logo (Minimalist) */}
+            {/* Middle: Customer Logo */}
             <div className="hidden lg:flex flex-1 justify-center min-w-0">
-              <div className="bg-gray-50/80 px-4 py-1.5 rounded-2xl border border-gray-100 flex items-center gap-3">
+              <div className="bg-gray-50/50 px-4 py-1.5 rounded-2xl border border-gray-100 flex items-center gap-3">
                 {profile?.customer?.logo_url && (
                   <Image
                     src={profile.customer.logo_url}
@@ -1873,315 +1792,115 @@ export default function DashboardClient({
                     unoptimized
                   />
                 )}
-                <span className="text-xs font-black text-gray-900 uppercase tracking-wider truncate max-w-[200px]">
+                <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest truncate max-w-[200px]">
                   {profile?.customer?.company_name}
                 </span>
               </div>
             </div>
             
-            {/* Right: User Info + Stats + Language */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Machine Count Badge */}
-              <div className="hidden sm:flex items-center gap-2 bg-gray-900 text-white px-3 py-1.5 rounded-xl shadow-sm">
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-70">Fleet</span>
-                <span className="text-sm font-black">{machines.length}</span>
-              </div>
-
-              <div className="text-right hidden xl:block">
-                <p className="text-gray-800 font-bold text-xs">{profile?.email || user.email}</p>
-              </div>
-
-              <div className="flex items-center rounded-xl bg-gray-100 border border-gray-200 p-0.5 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setLanguage('id')}
-                  className={`px-2 py-1 rounded-lg transition-all ${language === 'id' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  ID
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLanguage('en')}
-                  className={`px-2 py-1 rounded-lg transition-all ${language === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  EN
-                </button>
-              </div>
-
-              <div className="sm:hidden">
-                <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">
-                  {copy.languageSelector}
-                  <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value as Language)}
-                    className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800"
-                  >
-                    <option value="id">🇮🇩 {copy.languageLabel}</option>
-                    <option value="en">🇬🇧 English</option>
-                  </select>
-                </label>
-              </div>
-
-
+            {/* Right: User Info + Actions */}
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+              {/* Desktop Request Button */}
               <button
-                onClick={handleSignOut}
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                title={copy.signOut}
+                onClick={() => setIsRequestModalOpen(true)}
+                className="hidden xl:flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md hover:shadow-lg active:scale-95"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                {copy.requestLab.openButton}
               </button>
+
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-xl">
+                  <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Fleet</span>
+                  <span className="text-xs font-black">{machines.length}</span>
+                </div>
+
+                <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-[10px] font-bold">
+                  <button onClick={() => setLanguage('id')} className={`px-2 py-1 rounded-lg transition-all ${language === 'id' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>ID</button>
+                  <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-lg transition-all ${language === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>EN</button>
+                </div>
+
+                <button onClick={handleSignOut} className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-xl transition-all">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Paten Navigator */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3">
+          <div className="bg-gray-50/30 backdrop-blur-md rounded-2xl border border-gray-100/50 shadow-sm overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center">
+              <div className="flex-1 p-1.5">
+                <ShortcutNavigator
+                  ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
+                  items={[
+                    { id: 'trend', label: copy.oilTrend },
+                    { id: 'analysis', label: copy.analysisAndReports },
+                    { id: 'lab', label: copy.labResults },
+                  ].map((shortcut) => ({
+                    id: shortcut.id,
+                    label: shortcut.label,
+                    isActive: activeTab === shortcut.id,
+                  }))}
+                  onItemClick={handleShortcutClick}
+                />
+              </div>
+              <div className="hidden md:block w-px h-6 bg-gray-200 mx-1"></div>
+              <div className="flex items-center gap-1.5 p-1.5 overflow-x-auto">
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mx-2 whitespace-nowrap">{copy.timeRangeTitle}</span>
+                {['7d', '30d', '90d', '6m', 'all'].map((range) => (
+                  <button 
+                    key={range}
+                    onClick={() => setTimeRange(range as any)} 
+                    className={`px-3 py-1.5 rounded-lg font-black text-[9px] tracking-wide transition-all ${timeRange === range ? 'bg-slate-900 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                  >
+                    {range.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </header>
-
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col">
-        {/* Welcome Text (Minimalist) */}
-        <div style={{ order: 1 }} className="mb-4">
-          <h2 className="text-xl font-black text-gray-900 tracking-tight">
+      </div>
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col relative gap-8" style={{ scrollbarGutter: 'stable' }}>
+        {/* Welcome Section */}
+        <div className="animate-in fade-in slide-in-from-left-4 duration-700">
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
             {copy.welcomeBack}, <span className="text-primary-600">{profile?.full_name?.split(' ')[0] || 'User'}</span>
           </h2>
+          <p className="text-slate-500 font-medium mt-2 text-sm">{copy.welcomeSubtitle}</p>
         </div>
 
-        {/* Unified Control Bar (Navigator + Time Range) */}
-        <div style={{ order: 2 }} className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex flex-col xl:flex-row xl:items-center">
-            {/* Shortcut Navigator */}
-            <div className="flex-1 p-2 overflow-x-auto">
-              <ShortcutNavigator
-                ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
-                items={dashboardShortcutItems.map((shortcut) => ({
-                  id: shortcut.id,
-                  label: shortcut.label,
-                  isActive: shortcut.type === 'section' && activeShortcut === shortcut.id,
-                }))}
-                onItemClick={handleShortcutClick}
-              />
-            </div>
-            
-            {/* Vertical Separator */}
-            <div className="hidden xl:block w-px h-8 bg-gray-200 mx-2"></div>
-            
-            {/* Horizontal Separator (Mobile) */}
-            <div className="xl:hidden h-px w-full bg-gray-100"></div>
-            
-            {/* Time Range Filter */}
-            <div className="flex items-center gap-1.5 p-2 overflow-x-auto bg-gray-50/50 xl:bg-transparent">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-2 ml-2">{copy.timeRangeTitle}</span>
-              {['7d', '30d', '90d', '6m', 'all'].map((range) => (
-                <button 
-                  key={range}
-                  onClick={() => setTimeRange(range as any)} 
-                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] tracking-wide transition-all whitespace-nowrap ${timeRange === range ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                >
-                  {range === '7d' ? (language === 'id' ? '7H' : '7D') : 
-                   range === '30d' ? (language === 'id' ? '30H' : '30D') : 
-                   range === '90d' ? (language === 'id' ? '90H' : '90D') : 
-                   range === '6m' ? (language === 'id' ? '6B' : '6M') : 
-                   (language === 'id' ? 'SEMUA' : 'ALL')}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-          {timeRange === 'custom' && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
-              <label className="block"><span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.startDate}</span><input type="date" value={customDateRange.start} onChange={(e) => setCustomDateRange((prev) => ({ ...prev, start: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500" /></label>
-              <label className="block"><span className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.endDate}</span><input type="date" value={customDateRange.end} onChange={(e) => setCustomDateRange((prev) => ({ ...prev, end: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-500" /></label>
-            </div>
-          )}
-
-        {showAdvancedSections && (
-          <>
-            <ReliabilitySection
-              language={language}
-              fleetReliabilityScore={fleetReliabilityScore}
-              fragileReliabilityCount={fragileReliabilityCount}
-              watchlistReliabilityCount={watchlistReliabilityCount}
-              deteriorationCount={deteriorationCount}
-              reliabilityInsightsCount={reliabilityInsights.length}
-              topReliabilityRisks={topReliabilityRisks}
-              onOpenCompare={() => router.push('/dashboard/compare')}
-            />
-
-
-
-            <MaintenanceActionBoardSection
-              language={language}
-              maintenanceActionStats={maintenanceActionStats}
-              actionFilter={actionFilter}
-              visibleMaintenanceActions={visibleMaintenanceActions}
-              actionForm={actionForm}
-              machines={machines.map((machine) => ({ id: machine.id, machine_name: machine.machine_name }))}
-              teamMembers={teamMembers.map((member) => ({ id: member.id, full_name: member.full_name }))}
-              todayIso={todayIso}
-              actionSaving={actionSaving}
-              onOpenCompare={() => router.push('/dashboard/compare')}
-              onActionFilterChange={setActionFilter}
-              onActionFormChange={updateActionForm}
-              onCreateMaintenanceAction={handleCreateMaintenanceAction}
-              onUpdateMaintenanceAction={handleUpdateMaintenanceAction}
-            />
-
-            <section style={{ order: 10 }} className="mb-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        {/* Global Machine Health Overview */}
+        <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
+          <div className="mb-4 flex items-end justify-between px-2">
             <div>
-              <h2 className="text-3xl font-black text-gray-900">{copy.teamManagementTitle}</h2>
-              <p className="text-gray-600 font-medium mt-1">{copy.teamManagementDesc}</p>
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard/profile')}
-                className="mt-3 px-3 py-2 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors"
-              >
-                {language === 'id' ? 'Kelola Profil' : 'Manage Profile'}
-              </button>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Machine Health Overview</h2>
+              <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.2em] mt-0.5 opacity-60">Real-time condition monitoring</p>
             </div>
-            <div className="flex flex-wrap gap-2 text-sm font-semibold">
-              <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">{teamMemberCount} {copy.user}</span>
-              <span className="px-3 py-1.5 rounded-full bg-primary-100 text-primary-700">{profile?.customer?.company_name}</span>
+            <div className="hidden sm:flex items-center gap-4 text-[7px] font-black uppercase tracking-[0.2em] text-slate-400">
+              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-emerald-500"></div> Normal</div>
+              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-amber-500"></div> Warning</div>
+              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-red-500"></div> Critical</div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-            <div className="xl:col-span-3">
-              <h3 className="text-lg font-black text-gray-900 mb-3">{copy.teamMembersTitle}</h3>
-              {teamMembers.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center text-gray-600">
-                  {copy.teamMembersEmpty}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {teamMembers.map((member) => (
-                    <div key={member.id} className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-bold text-gray-900">{member.full_name}</p>
-                          <span className="px-2.5 py-1 rounded-full bg-primary-50 text-primary-700 text-[11px] font-bold uppercase tracking-wide">{copy.teamRoleCustomer}</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">{member.email || '-'}</p>
-                        <p className="text-xs text-gray-500 mt-1">{member.phone_number || '-'}</p>
-                      </div>
-                      <div className="text-sm text-gray-500 md:text-right">
-                        <p className="font-semibold text-gray-700">
-                          {new Intl.DateTimeFormat(language === 'id' ? 'id-ID' : 'en-US', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          }).format(new Date(member.created_at))}
-                        </p>
-                        <p>{copy.user}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="xl:col-span-2 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5 shadow-sm">
-              <h3 className="text-lg font-black text-gray-900">{copy.teamAddFormTitle}</h3>
-              <p className="text-sm text-gray-600 mt-1">{copy.teamAddFormDesc}</p>
-
-              <div className="mt-5 space-y-4">
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamFullName}</span>
-                  <input
-                    type="text"
-                    value={teamForm.full_name}
-                    onChange={(e) => setTeamForm((prev) => ({ ...prev, full_name: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamEmail}</span>
-                  <input
-                    type="email"
-                    value={teamForm.email}
-                    onChange={(e) => setTeamForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamPhone}</span>
-                  <input
-                    type="tel"
-                    value={teamForm.phone_number}
-                    onChange={(e) => setTeamForm((prev) => ({ ...prev, phone_number: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamPin}</span>
-                  <input
-                    type="password"
-                    value={teamForm.admin_pin}
-                    onChange={(e) => setTeamForm((prev) => ({ ...prev, admin_pin: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{copy.teamPinHint}</p>
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">{copy.teamPassword}</span>
-                  <input
-                    type="password"
-                    value={teamForm.password}
-                    onChange={(e) => setTeamForm((prev) => ({ ...prev, password: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{copy.teamPasswordHint}</p>
-                </label>
-
-                <button
-                  type="button"
-                  onClick={handleCreateTeamUser}
-                  disabled={teamSaving}
-                  className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-secondary-500 px-4 py-3 text-white font-bold shadow-lg hover:from-primary-600 hover:to-secondary-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {teamSaving ? copy.teamCreatingButton : copy.teamCreateButton}
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </>
-    )}
-
-
-
-        <div id="section-snapshot" style={{ order: 3 }} className="mb-8">
-          <div className="mb-4">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">{copy.machineHealthTitle}</h2>
-            <p className="text-gray-500 text-sm font-medium mt-0.5">{copy.machineHealthDesc}</p>
-          </div>
-
-          <div className="relative bg-white rounded-[2rem] shadow-xl border-4 border-gray-50 overflow-hidden min-h-[280px]">
-            <div className="flex flex-col lg:flex-row items-stretch">
+          <div className="bg-white rounded-[2rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+            <div className="flex flex-col lg:flex-row items-stretch min-h-[290px]">
               
-              {/* LEFT SIDE: Machine Carousel (Master List) */}
-              <div className="flex-1 p-5 flex flex-col justify-center min-w-0 border-r border-gray-100">
-                <div className="flex items-center justify-between mb-6 px-2">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Equipment Fleet</h3>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => document.getElementById('machine-master-list')?.scrollBy({ left: -260, behavior: 'smooth' })}
-                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                    <button 
-                      onClick={() => document.getElementById('machine-master-list')?.scrollBy({ left: 260, behavior: 'smooth' })}
-                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    </button>
+              {/* LEFT SIDE: Equipment Fleet */}
+              <div className="flex-1 p-5 sm:p-8 flex flex-col justify-center min-w-0 border-b lg:border-b-0 lg:border-r border-slate-50 bg-slate-50/20">
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">Equipment Fleet</h3>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => document.getElementById('machine-list')?.scrollBy({ left: -180, behavior: 'smooth' })} className="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all active:scale-90"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg></button>
+                    <button onClick={() => document.getElementById('machine-list')?.scrollBy({ left: 180, behavior: 'smooth' })} className="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all active:scale-90"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg></button>
                   </div>
                 </div>
                 
-                <div 
-                  id="machine-master-list"
-                  className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide px-2 snap-x scroll-smooth"
-                >
+                <div id="machine-list" className="flex gap-4 overflow-x-auto pt-3 pb-6 scrollbar-hide snap-x scroll-smooth px-1">
                   {machines.map((machine) => {
                     const isActive = selectedMachine?.id === machine.id
                     const latestTest = latestTestByMachineId[machine.id] || null
@@ -2192,22 +1911,22 @@ export default function DashboardClient({
                       <div
                         key={machine.id}
                         onClick={() => setSelectedMachine(machine)}
-                        className={`
-                          flex-shrink-0 w-[200px] snap-start cursor-pointer transition-all duration-300 rounded-2xl p-4 border-2
-                          ${isActive 
-                            ? 'bg-gray-900 border-gray-900 shadow-lg scale-105' 
-                            : 'bg-white border-gray-50 hover:border-gray-200 shadow-sm'
-                          }
-                        `}
+                        className={`flex-shrink-0 w-[190px] snap-start cursor-pointer transition-all duration-700 rounded-[1.5rem] p-5 border relative ${
+                          isActive 
+                          ? 'bg-slate-900 border-slate-900 shadow-xl scale-[1.05] -translate-y-1.5 z-10' 
+                          : 'bg-white border-slate-100 hover:border-slate-300 shadow-sm'
+                        }`}
                       >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className={`w-2.5 h-2.5 rounded-full ${statusInfo.text === 'Critical' ? 'bg-red-500 animate-pulse' : statusInfo.text === 'Warning' ? 'bg-amber-500' : statusInfo.text === 'Normal' ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
-                          <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">{machine.location || 'Area A'}</span>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.text === 'Critical' ? 'bg-red-500' : statusInfo.text === 'Warning' ? 'bg-amber-500' : statusInfo.text === 'Normal' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                          <span className={`text-[7px] font-black uppercase tracking-[0.15em] truncate ${isActive ? 'text-slate-400' : 'text-slate-300'}`}>{machine.location || 'AREA 01'}</span>
                         </div>
-                        <p className={`font-black text-base truncate mb-0.5 ${isActive ? 'text-white' : 'text-gray-900'}`}>{machine.machine_name}</p>
-                        <div className="mt-3 flex items-baseline gap-1">
-                          <span className={`text-xl font-black ${isActive ? 'text-white' : 'text-gray-900'}`}>{healthScore || '-'}</span>
-                          <span className="text-[9px] font-bold text-gray-500">/100</span>
+                        
+                        <p className={`font-black text-[13px] tracking-tight leading-tight mb-0.5 whitespace-normal break-words ${isActive ? 'text-white' : 'text-slate-900'}`}>{machine.machine_name}</p>
+                        
+                        <div className="mt-5 flex items-baseline gap-1">
+                          <span className={`text-xl font-black tracking-tighter ${isActive ? 'text-white' : 'text-slate-900'}`}>{healthScore || '--'}</span>
+                          <span className={`text-[8px] font-bold opacity-30 ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>/100</span>
                         </div>
                       </div>
                     )
@@ -2215,65 +1934,68 @@ export default function DashboardClient({
                 </div>
               </div>
 
-              {/* MIDDLE: VERTICAL SEPARATOR */}
-              <div className="hidden lg:flex items-center">
-                <div className="w-[4px] h-[180px] bg-gradient-to-b from-transparent via-gray-200 to-transparent rounded-full -ml-[2px] z-10"></div>
-              </div>
-
-              {/* RIGHT SIDE: Detail Card */}
-              <div className="w-full lg:w-[420px] bg-gray-50/50 p-6 relative overflow-hidden flex items-center">
+              {/* RIGHT SIDE: Detail Panel */}
+              <div className="w-full lg:w-[340px] bg-white p-5 sm:p-8 flex items-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-slate-50 rounded-full blur-[60px] -mr-24 -mt-24 opacity-60"></div>
+                
                 {selectedMachine ? (
-                  <div key={selectedMachine.id} className="w-full animate-in slide-in-from-left fade-in duration-500">
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="max-w-[75%]">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider
-                            ${(latestTestByMachineId[selectedMachine.id] ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text : 'Unknown') === 'Critical' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}
-                          `}>
-                            SAMPLING OVERDUE
-                          </span>
+                  <div key={selectedMachine.id} className="w-full relative z-10 animate-in fade-in slide-in-from-right-6 duration-700">
+                    <div className="flex flex-col mb-6">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.15em] mb-3 w-fit ${
+                        latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical'
+                        ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                      }`}>
+                        <div className={`w-1 h-1 rounded-full ${latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                        {latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical' 
+                          ? 'Critical' : 'Stable'}
+                      </span>
+                      
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-lg font-black text-slate-900 tracking-tighter leading-tight break-words">{selectedMachine.machine_name}</h4>
+                          <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em]">{selectedMachine.location || 'Factory Floor'}</p>
                         </div>
-                        <h4 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">{selectedMachine.machine_name}</h4>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Health</p>
-                        <div className="flex items-baseline justify-end gap-1">
-                          <span className="text-4xl font-black text-gray-900 tracking-tighter">
-                            {latestTestByMachineId[selectedMachine.id] ? calculateHealthScore(latestTestByMachineId[selectedMachine.id]) : '-'}
-                          </span>
-                          <span className="text-xs font-bold text-gray-400">/100</span>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-0.5">Health</p>
+                          <div className="flex items-baseline justify-end gap-0.5">
+                            <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
+                              {latestTestByMachineId[selectedMachine.id] ? calculateHealthScore(latestTestByMachineId[selectedMachine.id]) : '--'}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-300">/100</span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">{copy.lastTest}</p>
-                        <p className="text-lg font-black text-gray-900">
-                          {latestTestByMachineId[selectedMachine.id] ? 
-                            Math.floor((Date.now() - new Date(latestTestByMachineId[selectedMachine.id].test_date).getTime()) / (1000 * 60 * 60 * 24)) + 'd ago'
-                            : 'No data'}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Last Analysis</p>
+                        <p className="text-xl font-black text-slate-900 tracking-tight">
+                          {latestTestByMachineId[selectedMachine.id]
+                            ? `${Math.floor((Date.now() - new Date(latestTestByMachineId[selectedMachine.id].test_date).getTime()) / (1000 * 60 * 60 * 24))}d`
+                            : '--'}
+                          <span className="text-[8px] font-bold text-slate-400 ml-0.5">ago</span>
                         </p>
                       </div>
-                      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-transform hover:scale-[1.02]">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">Status</p>
-                        <p className={`text-lg font-black ${
-                          (latestTestByMachineId[selectedMachine.id] ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text : 'Unknown') === 'Critical' 
+                      <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Overall Status</p>
+                        <p className={`text-xl font-black tracking-tight ${
+                          latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical' 
                             ? 'text-red-600' : 'text-emerald-600'
                         }`}>
-                          {latestTestByMachineId[selectedMachine.id] ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text : 'Unknown'}
+                          {latestTestByMachineId[selectedMachine.id] 
+                            ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text 
+                            : 'N/A'}
                         </p>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full text-center py-16">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                  <div className="w-full text-center py-12">
+                    <div className="w-12 h-12 bg-slate-50 rounded-[1.25rem] flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                      <svg className="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </div>
-                    <p className="text-sm font-bold text-gray-400 italic">Select a machine from the fleet list to view detailed health analytics</p>
+                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] italic">Select equipment</p>
                   </div>
                 )}
               </div>
@@ -2281,141 +2003,187 @@ export default function DashboardClient({
           </div>
         </div>
 
-        {/* Charts & Data Section */}
-        <div id="section-trend" style={{ order: 5 }}>
-        <div id="section-lab-reports" />
-        {/* Loading State */}
-        {loading && (
-          <div className="flex justify-center items-center py-20">
-            <OilDropLoader label="Calibrating oil insights..." />
-          </div>
-        )}
-
-        {/* No Machine Selected State */}
-        {!loading && !selectedMachine && !hasVisibleLabData && (
-          <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <div className="text-gray-400 mb-4">
-              <svg className="mx-auto h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
+        {/* Tabbed Content Section */}
+        <div className="flex-1 relative animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 min-h-[600px]">
+          {activeTab === 'trend' && (
+            <div key="trend" className="w-full space-y-8">
+              <TrendSection
+                language={language}
+                chartData={chartData}
+                selectedMachineTrendAlerts={selectedMachineTrendAlerts}
+                chartHeight={chartHeight}
+                performanceTitle={copy.performanceTitle}
+                performanceDesc={copy.performanceDesc}
+                noSampleData={copy.noSampleData}
+                checkConsole={copy.checkConsole}
+                noDataAvailable={copy.noDataAvailable}
+                trendAlertsTitle={copy.trendAlertsTitle}
+                trendAlertsDesc={copy.trendAlertsDesc}
+                activeTrendAlertsLabel={copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}
+                noTrendAlerts={copy.noTrendAlerts}
+                severityLowLabel={copy.trend.severityLow}
+                severityMediumLabel={copy.trend.severityMedium}
+                severityHighLabel={copy.trend.severityHigh}
+                recommendedActionLabel={copy.trend.recommendedAction}
+                totalAnalysisCount={filteredReports.length}
+                fleetHealthIndex={avgHealthScore}
+                baselineViscosity40={activeBaselines?.viscosity40}
+                baselineViscosity100={activeBaselines?.viscosity100}
+                baselineTan={activeBaselines?.tan}
+                onOpenLabDetails={() => setActiveTab('lab')}
+                onOpenActionCenter={() => {}}
+              />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">{copy.noMachineSelectedTitle}</h3>
-            <p className="text-gray-600">{copy.noMachineSelectedDesc}</p>
-          </div>
-        )}
+          )}
 
-        {/* Dashboard Content */}
-        {!loading && (selectedMachine || hasVisibleLabData) && (
-          <div className="space-y-8 motion-soft-enter">
-            <TrendSection
-              language={language}
-              chartData={chartData}
-              chartHeight={chartHeight}
-              selectedMachineTrendAlerts={selectedMachineTrendAlerts}
-              performanceTitle={copy.performanceTitle}
-              performanceDesc={copy.performanceDesc}
-              noSampleData={copy.noSampleData}
-              checkConsole={copy.checkConsole}
-              noDataAvailable={copy.noDataAvailable}
-              trendAlertsTitle={copy.trendAlertsTitle}
-              trendAlertsDesc={copy.trendAlertsDesc}
-              activeTrendAlertsLabel={copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}
-              noTrendAlerts={copy.noTrendAlerts}
-              severityLowLabel={copy.trend.severityLow}
-              severityMediumLabel={copy.trend.severityMedium}
-              severityHighLabel={copy.trend.severityHigh}
-              recommendedActionLabel={copy.trend.recommendedAction}
-              totalAnalysisCount={filteredReports.length}
-              fleetHealthIndex={avgHealthScore}
-              baselineViscosity40={activeBaselines?.viscosity40}
-              baselineViscosity100={activeBaselines?.viscosity100}
-              baselineTan={activeBaselines?.tan}
-              onOpenLabDetails={() => scrollToSection('section-lab-reports')}
-              onOpenActionCenter={() => scrollToSection('section-actions')}
-            />
-          </div>
-        )}
+          {activeTab === 'analysis' && (
+            <div key="analysis" className="w-full animate-in fade-in slide-in-from-right-4 duration-700 space-y-8">
+              <div className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 p-8 sm:p-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">{copy.smartAlertTitle}</h2>
+                    <p className="text-gray-500 font-medium mt-1">{copy.smartAlertDesc}</p>
+                  </div>
+                  <span className="bg-gray-100 text-gray-600 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider">
+                    {selectedMachineTrendAlerts.length} {language === 'id' ? 'alert tren aktif' : 'active trend alerts'}
+                  </span>
+                </div>
 
-        {/* Purchases Section - Always visible & inserted between Trends and Lab Reports */}
-        <div className="my-8 w-full">
-          <PurchasesSection
-            language={language}
-            exportPdfTitle={copy.exportPdfTitle}
-            exportPdfDesc={copy.exportPdfDesc}
-            purchaseHistoryTitle={copy.purchaseHistoryTitle}
-            purchaseHistoryDesc={copy.purchaseHistoryDesc}
-            onExportFleetReport={handleExportFleetReport}
-            onExportTrustRoiSnapshot={handleExportTrustRoiSnapshot}
-            onOpenPurchases={() => router.push('/purchases')}
-          />
+                {selectedMachineTrendAlerts.length === 0 ? (
+                  <div className="rounded-2xl border-2 border-emerald-100 bg-emerald-50/50 p-6 text-emerald-800 font-bold flex items-center gap-3">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                    {copy.noTrendAlerts}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
+                    {selectedMachineTrendAlerts.map((alert) => (
+                      <div key={alert.id} className={`rounded-3xl border-2 p-6 transition-all hover:shadow-lg ${alert.severity === 'High' ? 'border-red-100 bg-red-50/30' : alert.severity === 'Medium' ? 'border-amber-100 bg-amber-50/30' : 'border-blue-100 bg-blue-50/30'}`}>
+                        <div className="flex items-center justify-between mb-4">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${alert.severity === 'High' ? 'bg-red-500 text-white' : alert.severity === 'Medium' ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'}`}>
+                            {alert.severity}
+                          </span>
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{alert.parameter}</span>
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 leading-tight mb-3">{alert.title}</h3>
+                        <p className="text-sm text-slate-600 font-medium leading-relaxed">{alert.message}</p>
+                        <div className="mt-6 pt-6 border-t border-gray-100">
+                          <p className="text-xs text-slate-400 font-black uppercase tracking-widest mb-2">{copy.trend.recommendedAction}</p>
+                          <p className="text-sm font-bold text-slate-800 leading-relaxed">{alert.recommendedAction}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+                <button onClick={handleExportFleetReport} className="group w-full min-h-[150px] rounded-[2rem] bg-[#10172A] px-6 py-5 text-left text-white shadow-[0_18px_40px_-18px_rgba(16,23,42,0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-18px_rgba(16,23,42,0.7)]">
+                  <div className="flex h-full items-center gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <h3 className="text-[1.25rem] sm:text-[1.5rem] font-black leading-tight tracking-tight text-white">{language === 'id' ? 'Ekspor Laporan Armada (PDF)' : 'Export Fleet Report (PDF)'}</h3>
+                        <span className="text-white/80 text-lg leading-none transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+                      </div>
+                      <p className="max-w-[28ch] text-sm leading-relaxed text-white/70 font-medium">Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format premium.</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button onClick={handleExportTrustRoiSnapshot} className="group w-full min-h-[150px] rounded-[2rem] bg-[#12A37A] px-6 py-5 text-left text-white shadow-[0_18px_40px_-18px_rgba(18,163,122,0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-18px_rgba(18,163,122,0.7)]">
+                  <div className="flex h-full items-center gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <h3 className="text-[1.25rem] sm:text-[1.5rem] font-black leading-tight tracking-tight text-white">Export Trust & ROI Snapshot</h3>
+                        <span className="text-white/80 text-lg leading-none transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+                      </div>
+                      <p className="max-w-[28ch] text-sm leading-relaxed text-white/75 font-medium">Unduh ringkasan trust enterprise, audit event, dan estimasi ROI.</p>
+                    </div>
+                  </div>
+                </button>
+
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'lab' && (
+            <div key="lab" className="animate-in fade-in slide-in-from-right-4 duration-700">
+              <LabReportsSection
+                language={language}
+                title={copy.labReportsTitle}
+                description={copy.reportCountSuffix(filteredReports.length)}
+                reports={filteredReports}
+                expandedReports={expandedReports}
+                selectedMachineName={selectedMachine?.machine_name || (language === 'id' ? 'Semua Mesin' : 'All Machines')}
+                criticalLabel={copy.criticalLabel}
+                warningLabel={copy.warningLabel}
+                normalLabel={copy.normalLabel}
+                unknownLabel={copy.unknownLabel}
+                viscosityLabel={copy.viscosityLabel}
+                waterContentLabel={copy.waterContentLabel}
+                tanValueLabel={copy.tanValueLabel}
+                notAvailableLabel={copy.notAvailable}
+                emptyLabel={copy.labReportsEmpty}
+                completeAnalysisLabel={copy.completeAnalysis}
+                evaluationLabel={copy.evaluationBasedOnIndustryStandard}
+                machineLabel={copy.machineLabel}
+                productLabel={copy.productLabel}
+                viewReportLabel={copy.viewReport}
+                onToggleReport={toggleReport}
+                onOpenReportPdf={(pdfPath) => {
+                  const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
+                  if (data?.publicUrl) {
+                    setCurrentPdfUrl(data.publicUrl)
+                    setPdfViewerOpen(true)
+                  }
+                }}
+                onDownloadReportPdf={handleDownloadPDF}
+                getStatus={getStatus}
+                getTrend={getTrend}
+                getRecommendations={getRecommendations}
+              />
+            </div>
+          )}
+
         </div>
+      </main>
 
-
-
-        {!loading && (selectedMachine || hasVisibleLabData) && (
-          <div className="space-y-8 motion-soft-enter">
-            <LabReportsSection
-              language={language}
-              title={copy.labReportsTitle}
-              description={copy.reportCountSuffix(filteredReports.length)}
-              reports={filteredReports}
-              expandedReports={expandedReports}
-              selectedMachineName={selectedMachine?.machine_name || (language === 'id' ? 'Semua Mesin' : 'All Machines')}
-              criticalLabel={copy.criticalLabel}
-              warningLabel={copy.warningLabel}
-              normalLabel={copy.normalLabel}
-              unknownLabel={copy.unknownLabel}
-              viscosityLabel={copy.viscosityLabel}
-              waterContentLabel={copy.waterContentLabel}
-              tanValueLabel={copy.tanValueLabel}
-              notAvailableLabel={copy.notAvailable}
-              emptyLabel={copy.labReportsEmpty}
-              completeAnalysisLabel={copy.completeAnalysis}
-              evaluationLabel={copy.evaluationBasedOnIndustryStandard}
-              machineLabel={copy.machineLabel}
-              productLabel={copy.productLabel}
-              viewReportLabel={copy.viewReport}
-              onOpenPurchaseAnalytics={() => router.push('/purchases')}
-              onToggleReport={toggleReport}
-              onOpenReportPdf={(pdfPath) => {
-                const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
-                if (data?.publicUrl) {
-                  setCurrentPdfUrl(data.publicUrl)
-                  setPdfViewerOpen(true)
-                }
-              }}
-              onDownloadReportPdf={handleDownloadPDF}
-              getStatus={getStatus}
-              getTrend={getTrend}
-              getRecommendations={getRecommendations}
-            />
+      {/* Floating Action Button (FAB) - Premium Glassmorphism */}
+      <div className="fixed bottom-8 right-8 z-[100] group">
+        <button
+          onClick={() => setIsRequestModalOpen(true)}
+          className="flex items-center gap-3 bg-primary-600/90 hover:bg-primary-600 backdrop-blur-md text-white px-6 py-4 rounded-[2rem] shadow-2xl shadow-primary-500/40 transition-all hover:scale-105 active:scale-95 group"
+        >
+          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
           </div>
-        )}
+          <span className="font-black uppercase tracking-widest text-xs pr-2">{copy.requestLab.openButton}</span>
+        </button>
       </div>
-    </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t-2 border-gray-200 sticky bottom-0 z-40" style={{ boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-            {/* Left: Copyright */}
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <svg className="w-3.5 h-3.5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">© 2026 <span className="font-bold text-gray-800">PT Nabel Sakha Gemilang</span></span>
+      <footer className="bg-white border-t border-gray-100 py-6 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center"><svg className="w-5 h-5 text-primary-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg></div>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Authenticated</p>
+                <p className="text-xs font-bold text-gray-900">© 2026 PT Nabel Sakha Gemilang</p>
+              </div>
             </div>
             
-            {/* Right: TotalEnergies Logo with Label */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-500">Authorized Distributor</span>
-              <Image
-                src="/logos/total-energies.png"
-                alt="TotalEnergies"
-                width={150}
-                height={44}
-                className="h-11 w-auto object-contain"
-              />
+            <div className="flex items-center gap-6">
+              <div className="text-right hidden sm:block">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Authorized Distributor</p>
+                <p className="text-xs font-bold text-gray-900">TotalEnergies Indonesia</p>
+              </div>
+              <Image src="/logos/total-energies.png" alt="TotalEnergies" width={100} height={30} className="h-10 w-auto object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all" />
             </div>
           </div>
         </div>
@@ -2423,50 +2191,139 @@ export default function DashboardClient({
 
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && currentPdfUrl && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setPdfViewerOpen(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b-2 border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-lg font-black text-gray-900">Lab Test Report</h2>
-                  <p className="text-xs text-gray-500">Oil Analysis Results</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={currentPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Open in New Tab
-                </a>
-                <button
-                  onClick={() => setPdfViewerOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setPdfViewerOpen(false)}>
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm">PDF Report Viewer</h3>
+              <button onClick={() => setPdfViewerOpen(false)} className="p-2 hover:bg-gray-200 rounded-xl transition-all"><svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            {/* PDF Content */}
-            <div className="flex-1 overflow-hidden">
-              <iframe
-                src={currentPdfUrl}
-                className="w-full h-full border-0"
-                title="PDF Viewer"
-              />
+            <iframe src={currentPdfUrl} className="w-full h-full" />
+          </div>
+        </div>
+      )}
+
+      {/* Request Lab Modal */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setIsRequestModalOpen(false)}>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-8 sm:p-10">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">{copy.requestLab.title}</h3>
+                  <p className="text-gray-500 font-medium mt-1">{copy.requestLab.subtitle}</p>
+                </div>
+                <button onClick={() => setIsRequestModalOpen(false)} className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all"><svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+
+              <div className="space-y-6 mb-10">
+                <div className="space-y-4 rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.machineInfo}</span>
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={requestForm.is_new_machine}
+                        onChange={(e) => setRequestForm(prev => ({ ...prev, is_new_machine: e.target.checked }))}
+                        className="w-4 h-4 rounded-lg border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="text-xs font-bold text-gray-600 group-hover:text-primary-600 transition-colors">{copy.requestLab.unregisteredMachine}</span>
+                    </label>
+                  </div>
+
+                  {!requestForm.is_new_machine ? (
+                    <select
+                      value={requestForm.machine_id}
+                      onChange={(e) => setRequestForm(prev => ({ ...prev, machine_id: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                    >
+                      <option value="">{copy.requestLab.registeredMachinePlaceholder}</option>
+                      {machines.map(m => (
+                        <option key={m.id} value={m.id}>{m.machine_name} - {m.location || copy.requestLab.noLocation}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="space-y-3 animate-in fade-in duration-300">
+                      <input
+                        type="text"
+                        placeholder={copy.requestLab.newMachineNamePlaceholder}
+                        value={requestForm.new_machine_name}
+                        onChange={(e) => setRequestForm(prev => ({ ...prev, new_machine_name: e.target.value }))}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder={copy.requestLab.modelPlaceholder}
+                          value={requestForm.new_machine_model}
+                          onChange={(e) => setRequestForm(prev => ({ ...prev, new_machine_model: e.target.value }))}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                        />
+                        <input
+                          type="text"
+                          placeholder={copy.requestLab.locationPlaceholder}
+                          value={requestForm.new_machine_location}
+                          onChange={(e) => setRequestForm(prev => ({ ...prev, new_machine_location: e.target.value }))}
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.priorityLabel}</span>
+                  <div className="flex gap-3">
+                    {['low', 'medium', 'high'].map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setRequestForm(prev => ({ ...prev, priority: p }))}
+                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
+                          requestForm.priority === p 
+                            ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm'
+                            : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.preferredDateLabel}</span>
+                    <input
+                      type="date"
+                      value={requestForm.requested_date}
+                      onChange={(e) => setRequestForm(prev => ({ ...prev, requested_date: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.notesLabel}</span>
+                    <textarea
+                      placeholder={copy.requestLab.notesPlaceholder}
+                      value={requestForm.notes}
+                      onChange={(e) => setRequestForm(prev => ({ ...prev, notes: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 h-[46px] resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSendRequest}
+                disabled={requestSaving}
+                className="w-full rounded-2xl bg-slate-900 hover:bg-slate-800 text-white py-5 text-sm font-black uppercase tracking-widest transition-all shadow-xl hover:shadow-2xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                {requestSaving ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                )}
+                {requestSaving ? copy.requestLab.sending : copy.requestLab.submit}
+              </button>
             </div>
           </div>
         </div>
