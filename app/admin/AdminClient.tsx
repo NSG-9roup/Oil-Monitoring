@@ -8,7 +8,7 @@ import imageCompression from 'browser-image-compression'
 import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
 import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, UserRole } from '@/lib/types'
-import { buildDashboardAlerts, type DashboardAlert } from '@/lib/alerts/engine'
+import { buildDashboardAlerts, type DashboardAlert, type AlertInput } from '@/lib/alerts/engine'
 import { logger } from '@/lib/logger'
 import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest } from '@/app/actions/adminActions'
 import AdminRequestsTab from './components/AdminRequestsTab'
@@ -103,6 +103,35 @@ const buildUpdateUserPayload = (data: FormDataState) => ({
   customer_id: toOptionalString(data.customer_id),
   contact_email: toOptionalString(data.contact_email),
 })
+
+const transformTestsToAlertInputs = (
+  tests: AdminLabTest[],
+  customers: Customer[]
+): AlertInput[] => {
+  const customerMap = new Map(customers.map((c) => [c.id, c]))
+
+  return tests.map((test) => {
+    const customer = test.machine?.customer_id
+      ? customerMap.get(test.machine.customer_id)
+      : undefined
+
+    return {
+      machineId: test.machine_id,
+      customerId: test.machine?.customer_id || null,
+      machineName: test.machine?.machine_name || 'Unknown Machine',
+      customerName: customer?.company_name || 'Unknown Customer',
+      customerEmail: '', // TODO: Get from customer contact email
+      statusLevel: 'normal' as const,
+      statusText: 'Status OK',
+      nextAction: 'No action required',
+      testDate: test.test_date,
+      daysSinceTest: test.test_date
+        ? Math.floor((new Date().getTime() - new Date(test.test_date).getTime()) / (1000 * 60 * 60 * 24))
+        : null,
+      healthScore: null,
+    }
+  })
+}
 
 type LatestMachineTestRow = {
   machine_id: string
