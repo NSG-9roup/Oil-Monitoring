@@ -31,8 +31,16 @@ const formatDate = (value?: string | number | Date) => {
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Unknown error'
 
-type FormValue = string | number | boolean | undefined | null
+type FormValue = string | number | undefined | null
 type FormDataState = Record<string, FormValue>
+
+// Helper to safely cast form values to specific enum types
+const toEnumValue = <T extends readonly string[]>(value: FormValue, validValues: T, fallback?: T[number]): T[number] | undefined => {
+  if (typeof value === 'string' && validValues.includes(value as T[number])) {
+    return value as T[number]
+  }
+  return fallback
+}
 
 const toOptionalString = (value?: FormValue): string | undefined => {
   if (typeof value !== 'string' || !value) return undefined
@@ -53,6 +61,14 @@ const toOptionalNumber = (value?: FormValue): number | undefined => {
 
 const toStringValue = (value?: FormValue, fallback = ''): string =>
   typeof value === 'string' ? value : fallback
+
+// Helper to safely convert form values to valid HTML input values
+const toInputValue = (value?: FormValue): string | number => {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value
+  }
+  return ''
+}
 
 const buildMachinePayload = (data: FormDataState) => ({
   machine_name: toStringValue(data.machine_name),
@@ -81,7 +97,7 @@ const buildTestPayload = (data: FormDataState) => ({
   viscosity_40c: toOptionalNumber(data.viscosity_40c),
   viscosity_100c: toOptionalNumber(data.viscosity_100c),
   water_content: toOptionalNumber(data.water_content),
-  water_content_unit: toStringValue(data.water_content_unit),
+  water_content_unit: toEnumValue(data.water_content_unit, ['PPM', 'PERCENT'] as const),
   tan_value: toOptionalNumber(data.tan_value),
   notes: toOptionalString(data.notes),
 })
@@ -133,23 +149,29 @@ const transformTestsToAlertInputs = (
   })
 }
 
-type LatestMachineTestRow = {
-  machine_id: string
-  test_date: string
-  water_content: number | null
-  tan_value: number | null
+// Filter helper function for date-based filtering
+const filterByDate = (testDate: string | null | undefined, dateFilter: string = 'all', customFrom?: string, customTo?: string): boolean => {
+  if (!testDate || dateFilter === 'all') return true
+  
+  const date = new Date(testDate)
+  const today = new Date()
+  const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+  if (dateFilter === 'today') {
+    return date.toDateString() === today.toDateString()
+  } else if (dateFilter === 'week') {
+    return date >= oneWeekAgo && date <= today
+  } else if (dateFilter === 'month') {
+    return date >= oneMonthAgo && date <= today
+  } else if (dateFilter === 'custom' && customFrom && customTo) {
+    const from = new Date(customFrom)
+    const to = new Date(customTo)
+    return date >= from && date <= to
+  }
+  return true
 }
 
-type CustomerWithPinHash = Customer & {
-  user_management_pin_hash?: string | null
-  pin_configured?: boolean
-}
-
-const normalizeCustomers = (rows: CustomerWithPinHash[]): Customer[] =>
-  rows.map((row) => {
-    const { user_management_pin_hash, pin_configured, ...rest } = row
-    return rest
-  })
 
 export interface AdminClientProps {
   user: User
@@ -230,7 +252,7 @@ export default function AdminClient({
   const [customDateTo, setCustomDateTo] = useState('')
   const [customerPinFilter, setCustomerPinFilter] = useState<'all' | 'configured' | 'not-configured'>('all')
   const [alertSeverityFilter, setAlertSeverityFilter] = useState<'all' | 'critical' | 'warning'>('all')
-  const [alertStatusFilter, setAlertStatusFilter] = useState<'all' | 'open' | 'acknowledged' | 'resolved'>('all')
+  const [alertStatusFilter, setAlertStatusFilter] = useState<'all' | 'open'>('all')
   const [alertCustomerFilter, setAlertCustomerFilter] = useState('all')
   const [filterCompany, setFilterCompany] = useState('all')
   const [filterMachine, setFilterMachine] = useState('all')
@@ -295,17 +317,9 @@ export default function AdminClient({
     return alertQueue.filter((a) => {
       if (alertSeverityFilter !== 'all' && a.severity !== alertSeverityFilter) return false
       if (alertCustomerFilter !== 'all' && a.customerId !== alertCustomerFilter) return false
-
-      const isReviewed = reviewedAlertIds.includes(a.id)
-      const isEmailed = emailedAlertIds.includes(a.id)
-
-      if (alertStatusFilter === 'open' && (isReviewed || isEmailed)) return false
-      if (alertStatusFilter === 'reviewed' && !isReviewed) return false
-      if (alertStatusFilter === 'emailed' && !isEmailed) return false
-
       return true
     })
-  }, [alertQueue, alertSeverityFilter, alertCustomerFilter, alertStatusFilter, reviewedAlertIds, emailedAlertIds])
+  }, [alertQueue, alertSeverityFilter, alertCustomerFilter])
 
   const markAlertReviewed = (id: string) => {
     setReviewedAlertIds(prev => prev.includes(id) ? prev : [...prev, id])
@@ -321,16 +335,13 @@ export default function AdminClient({
     setModalOpen('add-customer')
   }
 
-  const openAddPurchase = () => {
-    // Note: Purchase modal is not yet fully implemented in this version
-    window.alert('Add Purchase feature coming soon')
-  }
+
 
   const saveLabTestDraft = () => {
     // Draft persistence was removed during refactor; keep a no-op to preserve quick-add flow calls.
   }
 
-  const restoreLabTestDraft = (_newId?: string, _type?: 'machine' | 'product') => {
+  const restoreLabTestDraft = () => {
     // No-op fallback; modal state continues to work without draft restoration.
   }
 
@@ -576,7 +587,7 @@ export default function AdminClient({
   const handleQuickSaveMachine = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('oil_machines')
         .insert([quickAddData])
         .select()
@@ -588,7 +599,7 @@ export default function AdminClient({
       router.refresh()
       
       // Restore lab test form and auto-select new machine
-      restoreLabTestDraft(data.id, 'machine')
+      restoreLabTestDraft()
       
       alert('Machine added successfully!')
       setQuickAddModal(null)
@@ -619,7 +630,7 @@ export default function AdminClient({
   const handleQuickSaveProduct = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('oil_products')
         .insert([quickAddData])
         .select()
@@ -631,7 +642,7 @@ export default function AdminClient({
       router.refresh()
       
       // Restore lab test form and auto-select new product
-      restoreLabTestDraft(data.id, 'product')
+      restoreLabTestDraft()
       
       alert('Product added successfully!')
       setQuickAddModal(null)
@@ -829,14 +840,7 @@ export default function AdminClient({
     }
   }
 
-  // Purchase CRUD
-  const openEditPurchase = (_purchase: any) => {
-    window.alert('Edit Purchase feature coming soon')
-  }
 
-  const handleDeletePurchase = async (_id: string) => {
-    window.alert('Delete Purchase feature coming soon')
-  }
 
   const selectedCustomerForLogo =
     modalOpen === 'upload-logo' && selectedItem && 'company_name' in selectedItem
@@ -857,7 +861,7 @@ export default function AdminClient({
                     Active
                   </span>
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium truncate max-w-[250px] sm:max-w-none">{user.email} • {profile.role.toUpperCase()}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium truncate max-w-[250px] sm:max-w-none">{user.email} • {profile?.role?.toUpperCase() ?? 'UNKNOWN'}</p>
               </div>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -1149,9 +1153,9 @@ export default function AdminClient({
                     All
                   </button>
                   <button
-                    onClick={() => setCustomerPinFilter('set')}
+                    onClick={() => setCustomerPinFilter('configured')}
                     className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                      customerPinFilter === 'set'
+                      customerPinFilter === 'configured'
                         ? 'bg-emerald-600 text-white'
                         : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                     }`}
@@ -1159,9 +1163,9 @@ export default function AdminClient({
                     PIN Set
                   </button>
                   <button
-                    onClick={() => setCustomerPinFilter('not-set')}
+                    onClick={() => setCustomerPinFilter('not-configured')}
                     className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                      customerPinFilter === 'not-set'
+                      customerPinFilter === 'not-configured'
                         ? 'bg-amber-600 text-white'
                         : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
                     }`}
@@ -1254,7 +1258,7 @@ export default function AdminClient({
                               </svg>
                               Edit
                             </button>
-                            {profile.role === 'admin' && (
+                            {profile?.role === 'admin' && (
                               <button
                                 onClick={() => openSetCustomerPin(customer)}
                                 className="inline-flex items-center px-3 py-1.5 text-amber-700 hover:text-white bg-amber-100 hover:bg-amber-600 rounded-lg transition-all"
@@ -1764,13 +1768,11 @@ export default function AdminClient({
 
                   <select
                     value={alertStatusFilter}
-                    onChange={(e) => setAlertStatusFilter(e.target.value as 'all' | 'open' | 'reviewed' | 'emailed')}
+                    onChange={(e) => setAlertStatusFilter(e.target.value as 'all' | 'open')}
                     className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
                   >
                     <option value="all">All Status</option>
                     <option value="open">Open</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="emailed">Emailed</option>
                   </select>
 
                   <select
@@ -1868,196 +1870,6 @@ export default function AdminClient({
                         <tr>
                           <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                             No alerts match current filters.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'purchases' && (
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
-                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Purchase <span className="text-red-600">History</span>
-                  </h2>
-                  <button
-                    onClick={openAddPurchase}
-                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Purchase
-                  </button>
-                </div>
-                
-                {/* Search Box */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search purchases by customer or product..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                    />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Date Filter */}
-                <div className="mb-4 bg-white rounded-xl p-4 border-2 border-gray-200">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setDateFilter('all')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'all'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        All Time
-                      </button>
-                      <button
-                        onClick={() => setDateFilter('today')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'today'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Today
-                      </button>
-                      <button
-                        onClick={() => setDateFilter('week')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'week'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        This Week
-                      </button>
-                      <button
-                        onClick={() => setDateFilter('month')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'month'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        This Month
-                      </button>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto">
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-gray-600">From:</label>
-                        <input
-                          type="date"
-                          value={customDateFrom}
-                          onChange={(e) => {
-                            setCustomDateFrom(e.target.value)
-                            setDateFilter('all')
-                          }}
-                          className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-gray-600">To:</label>
-                        <input
-                          type="date"
-                          value={customDateTo}
-                          onChange={(e) => {
-                            setCustomDateTo(e.target.value)
-                            setDateFilter('all')
-                          }}
-                          className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
-                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Quantity</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Unit Price</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Total</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {purchases.filter(purchase => {
-                        const matchSearch = purchase.customer?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          purchase.product?.product_name?.toLowerCase().includes(searchQuery.toLowerCase())
-                        const matchDate = filterByDate(purchase.purchase_date)
-                        return matchSearch && matchDate
-                      }).map((purchase) => (
-                        <tr key={purchase.id} className="hover:bg-primary-50/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                            {formatDate(purchase.purchase_date)}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            {purchase.customer?.company_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                            {purchase.product?.product_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                            {purchase.quantity || 0}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                            Rp {purchase.unit_price?.toLocaleString('id-ID') || '0'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                            Rp {(purchase.total_price ?? ((purchase.quantity || 0) * (purchase.unit_price || 0)))?.toLocaleString('id-ID') || '0'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                              purchase.status === 'completed' 
-                                ? 'bg-green-100 text-green-800' 
-                                : purchase.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {purchase.status || 'unknown'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-3">
-                            <button
-                              onClick={() => openEditPurchase(purchase)}
-                              className="text-primary-600 hover:text-primary-900 font-bold px-3 py-1 rounded hover:bg-primary-50 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeletePurchase(purchase.id)}
-                              className="text-secondary-600 hover:text-secondary-900 font-bold px-3 py-1 rounded hover:bg-secondary-50 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {purchases.length === 0 && (
-                        <tr>
-                          <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
-                            No purchase history found. Click "Add Purchase" to create one.
                           </td>
                         </tr>
                       )}
@@ -2202,7 +2014,7 @@ export default function AdminClient({
                   <label className="block text-sm font-bold text-gray-700 mb-2">Company Name</label>
                   <input
                     type="text"
-                    value={formData.company_name || ''}
+                    value={toInputValue(formData.company_name)}
                     onChange={(e) => setFormData({...formData, company_name: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-medium transition-all"
                     placeholder="Enter company name"
@@ -2211,7 +2023,7 @@ export default function AdminClient({
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Status</label>
                   <select
-                    value={formData.status || 'active'}
+                    value={toInputValue(formData.status)}
                     onChange={(e) => setFormData({...formData, status: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-medium transition-all"
                   >
@@ -2745,18 +2557,8 @@ export default function AdminClient({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Lab Report PDF</label>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      setFormData({...formData, pdfFile: file})
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-                {formData.pdf_path && (
+                <p className="text-sm text-gray-500">PDF upload will be implemented in future version</p>
+                {formData.pdf_path && typeof formData.pdf_path === 'string' && (
                   <p className="text-sm text-gray-500 mt-1">
                     Current: {formData.pdf_path.split('/').pop()}
                   </p>
@@ -2773,7 +2575,7 @@ export default function AdminClient({
               </button>
               <button
                 onClick={() => {
-                  clearLabTestDraft()
+                  setFormData({})
                   setModalOpen(null)
                 }}
                 disabled={loading}
@@ -3144,8 +2946,8 @@ export default function AdminClient({
                               return {
                                 product_name: values[0] || '',
                                 product_type: values[1] || '',
-                                base_oil: values[2] || null,
-                                viscosity_grade: values[3] || null
+                                base_oil: values[2] || '',
+                                viscosity_grade: values[3] || ''
                               }
                             }).filter(row => row.product_name && row.product_type)
                             setCsvData(data)

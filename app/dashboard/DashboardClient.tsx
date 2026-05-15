@@ -1,21 +1,18 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
-import OilDropLoader from '@/app/components/OilDropLoader'
 import { exportFleetReportPdf, exportTrustRoiSnapshotPdf, type FleetReportRow, type TrustRoiAuditRow } from '@/lib/pdf/exportFleetReport'
-import type { MaintenanceAction, MaintenanceActionLog, MaintenanceActionPriority, MaintenanceActionStatus, MaintenanceVerificationStatus } from '@/lib/types'
+import type { MaintenanceAction, MaintenanceActionLog } from '@/lib/types'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
-import { ReliabilitySection } from '@/app/dashboard/components/ReliabilitySection'
-import { MaintenanceActionBoardSection } from '@/app/dashboard/components/MaintenanceActionBoardSection'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
-import { createTeamUser, createMaintenanceAction, updateMaintenanceAction, requestLabTest } from '@/app/actions/dashboardActions'
+import { requestLabTest } from '@/app/actions/dashboardActions'
 
 interface Machine {
   id: string
@@ -58,14 +55,6 @@ interface DashboardProfile {
   } | null
 }
 
-interface TeamMember {
-  id: string
-  full_name: string
-  email: string | null
-  phone_number: string | null
-  created_at: string
-}
-
 interface LabReport {
   id: string
   test_date: string
@@ -91,9 +80,7 @@ interface DashboardClientProps {
   user: { id: string; email?: string }
   profile: DashboardProfile
   initialMachines: Machine[]
-  initialTeamMembers: TeamMember[]
   initialMaintenanceActions: MaintenanceAction[]
-  initialMaintenanceActionLogs: MaintenanceActionLog[]
   initialLabTests: any[]
 }
 
@@ -125,15 +112,6 @@ interface ReliabilityInsight {
   recommendation: string
 }
 
-interface ActionBoardFormState {
-  machine_id: string
-  title: string
-  description: string
-  priority: MaintenanceActionPriority
-  due_date: string
-  owner_profile_id: string
-  alert_key: string
-}
 
 const formatLocalDateInput = (date: Date) => {
   const year = date.getFullYear()
@@ -515,18 +493,13 @@ export default function DashboardClient({
   user,
   profile,
   initialMachines,
-  initialTeamMembers,
   initialMaintenanceActions,
-  initialMaintenanceActionLogs,
   initialLabTests,
 }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
   const [language, setLanguage] = useState<Language>('id')
   const copy = dashboardCopy[language]
-  
-  const [loading] = useState(false)
-  const [machines] = useState<Machine[]>(initialMachines)
   const preferredMachine = useMemo(() => {
     const machineWithData = initialMachines.find((machine) =>
       (initialLabTests || []).some((test) => test.machine_id === machine.id)
@@ -574,7 +547,8 @@ export default function DashboardClient({
 
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
-  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [customDateRange, setCustomDateRange] = useState<{ start: string | null; end: string | null }>({ start: null, end: null })
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
 
@@ -591,29 +565,20 @@ export default function DashboardClient({
   }, [normalizedLabTests])
 
   useEffect(() => {
-    if (machines.length === 0) {
+    if (initialMachines.length === 0) {
       setSelectedMachine(null)
       return
     }
 
     setSelectedMachine((prev) => {
-      if (prev && machines.some((machine) => machine.id === prev.id) && normalizedLabTests.some((test) => test.machine_id === prev.id)) {
+      if (prev && initialMachines.some((machine) => machine.id === prev.id) && normalizedLabTests.some((test) => test.machine_id === prev.id)) {
         return prev
       }
-      const machineWithData = machines.find((machine) => Boolean(latestTestByMachineId[machine.id]))
-      return machineWithData || machines[0]
+      const machineWithData = initialMachines.find((machine) => Boolean(latestTestByMachineId[machine.id]))
+      return machineWithData || initialMachines[0]
     })
-  }, [latestTestByMachineId, machines, normalizedLabTests])
+  }, [latestTestByMachineId, initialMachines, normalizedLabTests])
 
-  const [teamMembers] = useState<TeamMember[]>(initialTeamMembers)
-  const [teamForm, setTeamForm] = useState({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
-  const [teamSaving, setTeamSaving] = useState(false)
-  const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
-  const [maintenanceActionLogs] = useState<MaintenanceActionLog[]>(initialMaintenanceActionLogs)
-  const [actionSaving, setActionSaving] = useState(false)
-  const [activeShortcut, setActiveShortcut] = useState<string>('trend')
-  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab'>('trend')
-  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
   const [requestForm, setRequestForm] = useState({
     machine_id: '',
     is_new_machine: false,
@@ -625,19 +590,16 @@ export default function DashboardClient({
     notes: ''
   })
   const [requestSaving, setRequestSaving] = useState(false)
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
+  const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [maintenanceActionLogs, setMaintenanceActionLogs] = useState<MaintenanceActionLog[]>([])
+  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab'>('trend')
 
-  const handleOpenRequestModal = (machineId?: string) => {
-    setRequestForm({
-      machine_id: machineId || selectedMachine?.id || '',
-      is_new_machine: false,
-      new_machine_name: '',
-      new_machine_model: '',
-      new_machine_location: '',
-      requested_date: '',
-      priority: 'medium',
-      notes: ''
-    })
-    setIsRequestModalOpen(true)
+  const handleShortcutClick = (shortcutId: string) => {
+    if (shortcutId.startsWith('trend') || shortcutId === 'trend') setActiveTab('trend')
+    else if (shortcutId === 'analysis') setActiveTab('analysis')
+    else if (shortcutId === 'lab') setActiveTab('lab')
   }
 
   const handleSendRequest = async () => {
@@ -654,7 +616,7 @@ export default function DashboardClient({
     try {
       const machineName = requestForm.is_new_machine 
         ? requestForm.new_machine_name 
-        : machines.find(m => m.id === requestForm.machine_id)?.machine_name || 'Unknown'
+        : initialMachines.find(m => m.id === requestForm.machine_id)?.machine_name || 'Unknown'
 
       await requestLabTest({
         machine_id: requestForm.is_new_machine ? undefined : requestForm.machine_id,
@@ -680,40 +642,8 @@ export default function DashboardClient({
     }
   }
 
-  const showAdvancedSections = false
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
-  const [actionFilter, setActionFilter] = useState<'all' | MaintenanceActionStatus>('open')
-  const [actionForm, setActionForm] = useState<ActionBoardFormState>({
-    machine_id: initialMachines[0]?.id || '',
-    title: '',
-    description: '',
-    priority: 'medium' as MaintenanceActionPriority,
-    due_date: '',
-    owner_profile_id: '',
-    alert_key: '',
-  })
-
-  const updateActionForm = useCallback((patch: Partial<ActionBoardFormState>) => {
-    setActionForm((prev) => ({ ...prev, ...patch }))
-  }, [])
-
-  const dashboardShortcutItems = useMemo(
-    () => [
-      { id: 'trend', label: copy.oilTrend, type: 'section' as const },
-      { id: 'analysis', label: copy.analysisAndReports, type: 'section' as const },
-      { id: 'lab', label: copy.labResults, type: 'section' as const },
-    ],
-    [copy]
-  )
-
-  const handleShortcutClick = useCallback(
-    (id: string) => {
-      setActiveShortcut(id)
-      setActiveTab(id as any)
-    },
-    []
-  )
 
   useEffect(() => {
     // Initial maintenance actions are loaded from the server so the board stays persistent.
@@ -1218,98 +1148,11 @@ export default function DashboardClient({
     return recommendations
   }
 
-  const handleCreateTeamUser = async () => {
-    if (!teamForm.full_name.trim() || !teamForm.email.trim() || !teamForm.password.trim() || !teamForm.admin_pin.trim()) {
-      alert(language === 'id' ? 'Nama, email, PIN, dan password wajib diisi.' : 'Name, email, PIN, and password are required.')
-      return
-    }
 
-    setTeamSaving(true)
-    try {
-      await createTeamUser({
-        full_name: teamForm.full_name.trim(),
-        email: teamForm.email.trim(),
-        phone_number: teamForm.phone_number.trim() || null,
-        admin_pin: teamForm.admin_pin.trim(),
-        password: teamForm.password,
-      })
 
-      setTeamForm({ full_name: '', email: '', phone_number: '', admin_pin: '', password: '' })
-      alert(copy.teamCreateSuccess)
-      router.refresh()
-    } catch (error: unknown) {
-      alert(`${copy.teamCreateError}: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setTeamSaving(false)
-    }
-  }
 
-  const handleUpdateMaintenanceAction = async (
-    actionId: string,
-    payload: {
-      status?: MaintenanceActionStatus
-      owner_profile_id?: string | null
-      verification_status?: MaintenanceVerificationStatus
-      due_date?: string | null
-      evidence_notes?: string | null
-    }
-  ) => {
-    setActionSaving(true)
-    try {
-      await updateMaintenanceAction(actionId, payload)
-      router.refresh()
-    } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Failed to update maintenance action')
-    } finally {
-      setActionSaving(false)
-    }
-  }
 
-  const handleCreateMaintenanceAction = async (overrides?: Partial<typeof actionForm> & { source_payload?: Record<string, unknown> }) => {
-    const machineId = overrides?.machine_id || actionForm.machine_id
-    const title = (overrides?.title || actionForm.title).trim()
-    const description = (overrides?.description ?? actionForm.description).trim()
-    const priority = overrides?.priority || actionForm.priority
-    const dueDate = overrides?.due_date || actionForm.due_date || null
-    const ownerProfileId = overrides?.owner_profile_id || actionForm.owner_profile_id || null
-    const alertKey = overrides?.alert_key || actionForm.alert_key || null
 
-    if (!machineId || !title) {
-      alert(language === 'id' ? 'Pilih machine dan isi judul action.' : 'Select a machine and enter an action title.')
-      return
-    }
-
-    setActionSaving(true)
-    try {
-      await createMaintenanceAction({
-        machine_id: machineId,
-        title,
-        description: description || null,
-        priority,
-        due_date: dueDate,
-        owner_profile_id: ownerProfileId,
-        alert_key: alertKey,
-        source_payload: overrides?.source_payload || {
-          created_from: 'dashboard_action_board',
-        },
-      })
-
-      setActionForm({
-        machine_id: initialMachines[0]?.id || '',
-        title: '',
-        description: '',
-        priority: 'medium',
-        due_date: '',
-        owner_profile_id: '',
-        alert_key: '',
-      })
-      router.refresh()
-    } catch (error: unknown) {
-      alert(error instanceof Error ? error.message : 'Failed to create maintenance action')
-    } finally {
-      setActionSaving(false)
-    }
-  }
 
   const buildTrendAlerts = (tests: LabReport[]): TrendAlertItem[] => {
     if (tests.length < 3) return []
@@ -1430,9 +1273,8 @@ export default function DashboardClient({
 
   const filteredSamples = filterByTimeRange(oilSamples)
   const filteredReports = filterByTimeRange(labReports)
-  const hasVisibleLabData = filteredReports.length > 0 || filteredSamples.length > 0
 
-  const machineInsights = machines
+  const machineInsights = initialMachines
     .map((machine) => {
       const latestTest = latestTestByMachineId[machine.id]
       if (!latestTest) {
@@ -1504,29 +1346,8 @@ export default function DashboardClient({
     nextAction: item.nextAction,
   }))
 
-  const teamMemberCount = teamMembers.length
   const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
   const todayIso = formatLocalDateInput(new Date())
-  const maintenanceActionStats = maintenanceActions.reduce(
-    (accumulator, action) => {
-      const isOverdue = Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
-      if (isOverdue) accumulator.overdue += 1
-      if (action.status === 'completed' || action.status === 'verified') accumulator.completed += 1
-      if (action.status === 'in_progress') accumulator.inProgress += 1
-      if (action.status === 'open' || action.status === 'assigned') accumulator.open += 1
-      return accumulator
-    },
-    { open: 0, inProgress: 0, completed: 0, overdue: 0 }
-  )
-
-  const visibleMaintenanceActions = maintenanceActions.filter((action) => {
-    if (actionFilter === 'all') return true
-    if (actionFilter === 'open') return action.status === 'open' || action.status === 'assigned'
-    if (actionFilter === 'overdue') {
-      return Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
-    }
-    return action.status === actionFilter
-  })
 
   const reliabilityInsights: ReliabilityInsight[] = machineInsights.map((item) => {
     const history = (fleetHistoryByMachineId[item.machine.id] || []).slice().sort((a, b) =>
@@ -1629,14 +1450,6 @@ export default function DashboardClient({
   const fleetReliabilityScore = reliabilityInsights.length > 0
     ? Math.round(reliabilityInsights.reduce((acc, item) => acc + item.reliabilityScore, 0) / reliabilityInsights.length)
     : 0
-  const fragileReliabilityCount = reliabilityInsights.filter((item) => item.riskBand === 'fragile').length
-  const watchlistReliabilityCount = reliabilityInsights.filter((item) => item.riskBand === 'watchlist').length
-  const deteriorationCount = reliabilityInsights.filter((item) => item.deteriorationSignal).length
-  const topReliabilityRisks = reliabilityInsights
-    .slice()
-    .sort((a, b) => a.reliabilityScore - b.reliabilityScore)
-    .slice(0, 5)
-
   const totalSpend = 0
 
   const assignedActionsCount = maintenanceActions.filter((action) => Boolean(action.owner_profile_id)).length
@@ -1812,7 +1625,7 @@ export default function DashboardClient({
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-xl">
                   <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Fleet</span>
-                  <span className="text-xs font-black">{machines.length}</span>
+                  <span className="text-xs font-black">{initialMachines.length}</span>
                 </div>
 
                 <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-[10px] font-bold">
@@ -1901,7 +1714,7 @@ export default function DashboardClient({
                 </div>
                 
                 <div id="machine-list" className="flex gap-4 overflow-x-auto pt-3 pb-6 scrollbar-hide snap-x scroll-smooth px-1">
-                  {machines.map((machine) => {
+                  {initialMachines.map((machine) => {
                     const isActive = selectedMachine?.id === machine.id
                     const latestTest = latestTestByMachineId[machine.id] || null
                     const healthScore = latestTest ? calculateHealthScore(latestTest) : null
@@ -2114,7 +1927,6 @@ export default function DashboardClient({
           {activeTab === 'lab' && (
             <div key="lab" className="animate-in fade-in slide-in-from-right-4 duration-700">
               <LabReportsSection
-                language={language}
                 title={copy.labReportsTitle}
                 description={copy.reportCountSuffix(filteredReports.length)}
                 reports={filteredReports}
@@ -2237,7 +2049,7 @@ export default function DashboardClient({
                       className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
                     >
                       <option value="">{copy.requestLab.registeredMachinePlaceholder}</option>
-                      {machines.map(m => (
+                      {initialMachines.map(m => (
                         <option key={m.id} value={m.id}>{m.machine_name} - {m.location || copy.requestLab.noLocation}</option>
                       ))}
                     </select>

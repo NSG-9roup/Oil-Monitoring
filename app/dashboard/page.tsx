@@ -55,6 +55,7 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
 
   const { data: machines } = await machinesPromise
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: teamMembers } = await teamMembersPromise
 
   // Initialize service client for fallback (RLS issues)
@@ -66,7 +67,11 @@ export default async function DashboardPage() {
   )
 
   // Fetch Maintenance Actions with fallback
-  const { data: maintenanceActions, error: actionsError } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let maintenanceActions: any = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let actionsError: any = null
+  const result = await supabase
     .from('oil_maintenance_actions')
     .select(`
       *,
@@ -75,6 +80,12 @@ export default async function DashboardPage() {
     `)
     .eq('customer_id', profile.customer_id)
     .order('created_at', { ascending: false })
+  
+  if (result.error) {
+    actionsError = result.error
+  } else {
+    maintenanceActions = result.data
+  }
 
   if ((!maintenanceActions || maintenanceActions.length === 0) && !actionsError) {
     const fallback = await supabaseService
@@ -90,10 +101,20 @@ export default async function DashboardPage() {
   }
 
   // Fetch Logs with fallback
-  const { data: maintenanceActionLogs, error: logsError } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let maintenanceActionLogs: any = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let logsError: any = null
+  const logsResult = await supabase
     .from('oil_maintenance_action_logs')
     .select('id, action_id, actor_id, event_type, from_status, to_status, metadata, created_at')
     .order('created_at', { ascending: false })
+  
+  if (logsResult.error) {
+    logsError = logsResult.error
+  } else {
+    maintenanceActionLogs = logsResult.data
+  }
 
   if ((!maintenanceActionLogs || maintenanceActionLogs.length === 0) && !logsError) {
     const fallback = await supabaseService
@@ -158,9 +179,7 @@ export default async function DashboardPage() {
       user={{ id: user.id, email: user.email }}
       profile={sanitizedProfile}
       initialMachines={machines || []}
-      initialTeamMembers={teamMembers || []}
       initialMaintenanceActions={maintenanceActions || []}
-      initialMaintenanceActionLogs={maintenanceActionLogs || []}
       initialLabTests={initialLabTests}
     />
   )

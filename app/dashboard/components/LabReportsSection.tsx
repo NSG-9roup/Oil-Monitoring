@@ -1,6 +1,5 @@
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import type {
-  DashboardLanguage,
   LabProduct,
   LabReportItem,
   RecommendationResult,
@@ -9,7 +8,6 @@ import type {
 } from '@/app/dashboard/components/types'
 
 interface LabReportsSectionProps {
-  language: DashboardLanguage
   title: string
   description: string
   reports: LabReportItem[]
@@ -45,7 +43,6 @@ interface LabReportsSectionProps {
 }
 
 export function LabReportsSection({
-  language,
   title,
   description,
   reports,

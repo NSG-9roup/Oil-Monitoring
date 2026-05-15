@@ -30,8 +30,9 @@ interface TrendSectionProps {
   onOpenActionCenter: () => void
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function TrendSection({
-  language,
+  language, // eslint-disable-line @typescript-eslint/no-unused-vars
   chartData,
   chartHeight,
   selectedMachineTrendAlerts,
@@ -40,26 +41,18 @@ export function TrendSection({
   noSampleData,
   checkConsole,
   noDataAvailable,
-  trendAlertsTitle,
-  trendAlertsDesc,
-  activeTrendAlertsLabel,
-  noTrendAlerts,
-  severityLowLabel,
-  severityMediumLabel,
-  severityHighLabel,
-  recommendedActionLabel,
   totalAnalysisCount,
   fleetHealthIndex,
   baselineViscosity40,
   baselineViscosity100,
   baselineTan,
   onOpenLabDetails,
-  onOpenActionCenter,
 }: TrendSectionProps) {
   const xAxisKey = chartData.some((point) => point.isoDate) ? 'isoDate' : 'date'
   const formatDateLabel = (value: string) => {
     const parsed = new Date(value)
     if (Number.isNaN(parsed.getTime())) return value
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return parsed.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')
   }
 

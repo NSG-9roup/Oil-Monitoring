@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from '@/app/components/SessionProvider'
+import { ErrorBoundary } from '@/app/components/ErrorBoundary'
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -29,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <SessionProvider>{children}</SessionProvider>
+        <ErrorBoundary>
+          <SessionProvider>{children}</SessionProvider>
+        </ErrorBoundary>
         <Toaster position="top-right" />
       </body>
     </html>
