@@ -5,6 +5,10 @@ interface FetcherOptions {
   body?: unknown
 }
 
+interface APIResponse<T> {
+  data: T
+}
+
 // Generic fetcher for SWR
 const fetcher = async (url: string, options?: FetcherOptions): Promise<unknown> => {
   const res = await fetch(url, {
@@ -49,7 +53,7 @@ export function useLabTests(machineId?: string) {
   )
 
   return {
-    tests: data?.data || [],
+    tests: (data as APIResponse<unknown[]>)?.data || [],
     isLoading,
     error,
     refresh: mutate,
@@ -68,7 +72,7 @@ export function useMachines() {
   )
 
   return {
-    machines: data?.data || [],
+    machines: (data as APIResponse<unknown[]>)?.data || [],
     isLoading,
     error,
     refresh: mutate,
@@ -90,7 +94,7 @@ export function useMaintenanceActions(machineId?: string) {
   )
 
   return {
-    actions: data?.data || [],
+    actions: (data as APIResponse<unknown[]>)?.data || [],
     isLoading,
     error,
     refresh: mutate,
@@ -115,7 +119,7 @@ export function useMaintenanceActionLogs(actionId?: string) {
   )
 
   return {
-    logs: data?.data || [],
+    logs: (data as APIResponse<unknown[]>)?.data || [],
     isLoading,
     error,
     refresh: mutate,

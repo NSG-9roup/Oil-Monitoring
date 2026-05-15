@@ -453,7 +453,7 @@ export async function exportTrustRoiSnapshotPdf(
     ['Evidence Coverage', `${meta.evidenceCoverageRate}%`, meta.evidenceCoverageRate],
     ['Data Traceability Rate', `${meta.traceabilityRate}%`, meta.traceabilityRate],
     ['Overdue Risk Rate', `${meta.overdueRate}%`, meta.overdueRate],
-  ].filter(row => row[2] !== 0 || row[0].includes('Risk') || row[0].includes('Compliance'))
+  ].filter(row => row[2] !== 0 || (typeof row[0] === 'string' && (row[0].includes('Risk') || row[0].includes('Compliance'))))
 
   autoTable(doc, {
     startY: cardY + 105,

@@ -9,7 +9,6 @@ describe('LabReportsSection', () => {
     const onToggleReport = vi.fn()
     const onOpenReportPdf = vi.fn()
     const onDownloadReportPdf = vi.fn()
-    const onOpenPurchaseAnalytics = vi.fn()
 
     const getStatus = vi.fn(() => ({ level: 'warning' as const, text: 'warning' }))
     const getTrend = vi.fn(() => ({ direction: 'stable', icon: '→' }))
@@ -24,7 +23,6 @@ describe('LabReportsSection', () => {
 
     render(
       <LabReportsSection
-        language="en"
         title="Lab Reports"
         description="1 report"
         reports={[
@@ -61,7 +59,6 @@ describe('LabReportsSection', () => {
         machineLabel="Machine"
         productLabel="Product"
         viewReportLabel="View Report"
-        onOpenPurchaseAnalytics={onOpenPurchaseAnalytics}
         onToggleReport={onToggleReport}
         onOpenReportPdf={onOpenReportPdf}
         onDownloadReportPdf={onDownloadReportPdf}
@@ -74,9 +71,6 @@ describe('LabReportsSection', () => {
     expect(getStatus).toHaveBeenCalledTimes(1)
     expect(getTrend).toHaveBeenCalledTimes(4)
     expect(getRecommendations).toHaveBeenCalledTimes(1)
-
-    await user.click(screen.getByRole('button', { name: 'Open Purchase Analytics' }))
-    expect(onOpenPurchaseAnalytics).toHaveBeenCalledTimes(1)
 
     await user.click(screen.getByText(/2026/))
     expect(onToggleReport).toHaveBeenCalledWith('r1')

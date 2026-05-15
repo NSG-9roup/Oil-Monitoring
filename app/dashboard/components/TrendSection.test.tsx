@@ -28,6 +28,8 @@ describe('TrendSection', () => {
         severityMediumLabel="Medium"
         severityHighLabel="High"
         recommendedActionLabel="Action"
+        totalAnalysisCount={1}
+        fleetHealthIndex={85}
         onOpenLabDetails={onOpenLabDetails}
         onOpenActionCenter={onOpenActionCenter}
       />

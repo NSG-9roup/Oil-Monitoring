@@ -21,10 +21,13 @@ export class SupabaseLabTestRepository implements ILabTestRepository {
     const supabase = createClient()
     const query = '*, machine:oil_machines(machine_name, customer_id, customer:oil_customers(company_name)), product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)'
     
-    const { data, error } = await supabase
+    const result = await supabase
       .from('oil_lab_tests')
       .select(query)
       .order('test_date', { ascending: false })
+    
+    let data = result.data
+    const error = result.error
     
     // Fallback to service role if no data found (common with RLS issues in this project)
     if ((!data || data.length === 0) && !error) {
@@ -44,11 +47,14 @@ export class SupabaseLabTestRepository implements ILabTestRepository {
     const supabase = createClient()
     const query = '*, product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)'
     
-    const { data, error } = await supabase
+    const result = await supabase
       .from('oil_lab_tests')
       .select(query)
       .eq('machine_id', machineId)
       .order('test_date', { ascending: false })
+      
+    let data = result.data
+    const error = result.error
 
     if ((!data || data.length === 0) && !error) {
       const supabaseService = await this.getServiceClient()

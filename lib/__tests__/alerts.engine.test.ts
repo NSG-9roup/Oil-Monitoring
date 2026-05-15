@@ -1,71 +1,66 @@
 import { describe, it, expect } from 'vitest'
-import { generateAlerts, filterAlertsByStatus } from '../alerts/engine'
+import { buildDashboardAlerts, AlertInput } from '../alerts/engine'
 
 describe('Alerts Engine', () => {
-  describe('generateAlerts', () => {
-    it('should generate critical alert for high viscosity deviation', () => {
-      const testData = {
-        viscosity_40c: 150,
-        baseline_viscosity_40c: 100,
-        water_content: 0.02,
-        tan_value: 0.5,
-      }
+  describe('buildDashboardAlerts', () => {
+    it('should generate critical alert for critical status level', () => {
+      const testData: AlertInput[] = [{
+        machineId: 'm1',
+        customerId: 'c1',
+        machineName: 'Machine 1',
+        customerName: 'Customer 1',
+        customerEmail: 'c1@example.com',
+        statusLevel: 'critical',
+        statusText: 'Viscosity high',
+        nextAction: 'Change oil',
+        testDate: '2026-05-01',
+        daysSinceTest: 5,
+        healthScore: 40,
+      }]
 
-      const alerts = generateAlerts(testData)
-      const criticalAlert = alerts.find(a => a.severity === 'critical' && a.parameter === 'viscosity')
-
-      expect(criticalAlert).toBeDefined()
-      expect(criticalAlert?.message).toContain('Viscosity')
+      const alerts = buildDashboardAlerts(testData)
+      expect(alerts).toHaveLength(1)
+      expect(alerts[0].severity).toBe('critical')
+      expect(alerts[0].title).toContain('Critical')
     })
 
-    it('should generate warning alert for moderate water content', () => {
-      const testData = {
-        viscosity_40c: 100,
-        baseline_viscosity_40c: 100,
-        water_content: 0.08,
-        tan_value: 0.3,
-      }
+    it('should generate warning alert for warning status level', () => {
+      const testData: AlertInput[] = [{
+        machineId: 'm2',
+        customerId: 'c1',
+        machineName: 'Machine 2',
+        customerName: 'Customer 1',
+        customerEmail: 'c1@example.com',
+        statusLevel: 'warning',
+        statusText: 'Water content rising',
+        nextAction: 'Monitor',
+        testDate: '2026-05-01',
+        daysSinceTest: 10,
+        healthScore: 70,
+      }]
 
-      const alerts = generateAlerts(testData)
-      const waterAlert = alerts.find(a => a.parameter === 'water_content')
-
-      expect(waterAlert?.severity).toMatch(/critical|warning/)
+      const alerts = buildDashboardAlerts(testData)
+      expect(alerts).toHaveLength(1)
+      expect(alerts[0].severity).toBe('warning')
     })
 
-    it('should not generate alerts for normal parameters', () => {
-      const testData = {
-        viscosity_40c: 100,
-        baseline_viscosity_40c: 100,
-        water_content: 0.02,
-        tan_value: 0.3,
-      }
+    it('should not generate alerts for normal status level', () => {
+      const testData: AlertInput[] = [{
+        machineId: 'm3',
+        customerId: 'c1',
+        machineName: 'Machine 3',
+        customerName: 'Customer 1',
+        customerEmail: 'c1@example.com',
+        statusLevel: 'normal',
+        statusText: 'All normal',
+        nextAction: 'Continue sampling',
+        testDate: '2026-05-01',
+        daysSinceTest: 30,
+        healthScore: 95,
+      }]
 
-      const alerts = generateAlerts(testData)
-      expect(alerts.length).toBe(0)
-    })
-  })
-
-  describe('filterAlertsByStatus', () => {
-    it('should filter alerts by severity', () => {
-      const allAlerts = [
-        { id: '1', severity: 'critical', status: 'open' },
-        { id: '2', severity: 'warning', status: 'open' },
-        { id: '3', severity: 'critical', status: 'open' },
-      ]
-
-      const criticalOnly = filterAlertsByStatus(allAlerts, 'critical')
-      expect(criticalOnly).toHaveLength(2)
-      expect(criticalOnly.every(a => a.severity === 'critical')).toBe(true)
-    })
-
-    it('should return all alerts when filter is "all"', () => {
-      const allAlerts = [
-        { id: '1', severity: 'critical' },
-        { id: '2', severity: 'warning' },
-      ]
-
-      const filtered = filterAlertsByStatus(allAlerts, 'all')
-      expect(filtered).toHaveLength(2)
+      const alerts = buildDashboardAlerts(testData)
+      expect(alerts).toHaveLength(0)
     })
   })
 })
