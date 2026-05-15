@@ -1663,17 +1663,46 @@ export default function DashboardClient({
               <div className="hidden md:block w-px h-6 bg-gray-200 mx-1"></div>
               <div className="flex items-center gap-1.5 p-1.5 overflow-x-auto">
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mx-2 whitespace-nowrap">{copy.timeRangeTitle}</span>
-                {['7d', '30d', '90d', '6m', 'all'].map((range) => (
+                {['7d', '30d', '90d', '6m', 'custom', 'all'].map((range) => (
                   <button 
                     key={range}
                     onClick={() => setTimeRange(range as any)} 
                     className={`px-3 py-1.5 rounded-lg font-black text-[9px] tracking-wide transition-all ${timeRange === range ? 'bg-slate-900 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                   >
-                    {range.toUpperCase()}
+                    {range === 'custom' ? copy.customRange.toUpperCase() : range.toUpperCase()}
                   </button>
                 ))}
               </div>
             </div>
+            
+            {/* Custom Date Range Picker UI */}
+            {timeRange === 'custom' && (
+              <div className="bg-white/50 border-t border-gray-100 px-4 py-3 flex flex-wrap items-center gap-4 animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{copy.startDate}</span>
+                  <input 
+                    type="date" 
+                    value={customDateRange.start || ''} 
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{copy.endDate}</span>
+                  <input 
+                    type="date" 
+                    value={customDateRange.end || ''} 
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                  />
+                </div>
+                {(!customDateRange.start || !customDateRange.end) && (
+                  <p className="text-[10px] font-bold text-amber-600 animate-pulse">
+                    {language === 'id' ? 'Silakan pilih rentang tanggal' : 'Please select a date range'}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1817,9 +1846,9 @@ export default function DashboardClient({
         </div>
 
         {/* Tabbed Content Section */}
-        <div className="flex-1 relative animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 min-h-[600px]">
+        <div className="flex-1 relative animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 min-h-[600px] space-y-8">
           {activeTab === 'trend' && (
-            <div key="trend" className="w-full space-y-8">
+            <div key="trend" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
               <TrendSection
                 language={language}
                 chartData={chartData}
@@ -1851,7 +1880,7 @@ export default function DashboardClient({
 
           {activeTab === 'analysis' && (
             <div key="analysis" className="w-full animate-in fade-in slide-in-from-right-4 duration-700 space-y-8">
-              <div className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 p-8 sm:p-10">
+              <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                   <div>
                     <h2 className="text-3xl font-black text-gray-900 tracking-tight">{copy.smartAlertTitle}</h2>
@@ -1919,13 +1948,12 @@ export default function DashboardClient({
                     </div>
                   </div>
                 </button>
-
               </div>
             </div>
           )}
 
           {activeTab === 'lab' && (
-            <div key="lab" className="animate-in fade-in slide-in-from-right-4 duration-700">
+            <div key="lab" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
               <LabReportsSection
                 title={copy.labReportsTitle}
                 description={copy.reportCountSuffix(filteredReports.length)}
@@ -1961,7 +1989,6 @@ export default function DashboardClient({
               />
             </div>
           )}
-
         </div>
       </main>
 

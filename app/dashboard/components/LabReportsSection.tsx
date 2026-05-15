@@ -70,7 +70,7 @@ export function LabReportsSection({
   getRecommendations,
 }: LabReportsSectionProps) {
   return (
-    <div className="bg-gray-50 rounded-3xl p-8 -mx-4 sm:mx-0">
+    <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
       <SectionHeader
         title={title}
         description={description}

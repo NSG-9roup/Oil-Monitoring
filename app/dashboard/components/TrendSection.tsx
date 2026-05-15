@@ -64,7 +64,7 @@ export function TrendSection({
 
   return (
     <>
-      <div className="bg-white rounded-[32px] shadow-xl border border-gray-100 p-8 sm:p-10 mb-8">
+      <div className="bg-white rounded-[32px] shadow-xl border border-gray-100 p-8 sm:p-10">
         <SectionHeader
           title={performanceTitle}
           description={performanceDesc}
