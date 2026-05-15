@@ -229,7 +229,7 @@ export default function AdminClient({
   const [customDateFrom, setCustomDateFrom] = useState('')
   const [customDateTo, setCustomDateTo] = useState('')
   const [customerPinFilter, setCustomerPinFilter] = useState<'all' | 'configured' | 'not-configured'>('all')
-  const [alertSeverityFilter, setAlertSeverityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all')
+  const [alertSeverityFilter, setAlertSeverityFilter] = useState<'all' | 'critical' | 'warning'>('all')
   const [alertStatusFilter, setAlertStatusFilter] = useState<'all' | 'open' | 'acknowledged' | 'resolved'>('all')
   const [alertCustomerFilter, setAlertCustomerFilter] = useState('all')
   const [filterCompany, setFilterCompany] = useState('all')
