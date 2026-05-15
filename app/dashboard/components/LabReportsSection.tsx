@@ -70,11 +70,11 @@ export function LabReportsSection({
   getRecommendations,
 }: LabReportsSectionProps) {
   return (
-    <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
+    <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
       <SectionHeader
         title={title}
         description={description}
-        titleClassName="text-3xl"
+        titleClassName="text-3xl lg:text-4xl"
       />
 
       {reports.length === 0 ? (

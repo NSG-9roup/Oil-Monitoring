@@ -1846,7 +1846,7 @@ export default function DashboardClient({
         </div>
 
         {/* Tabbed Content Section */}
-        <div className="flex-1 relative animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 min-h-[600px] space-y-8">
+        <div className="flex-1 w-full relative animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 min-h-[600px] space-y-8">
           {activeTab === 'trend' && (
             <div key="trend" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
               <TrendSection
@@ -1880,7 +1880,7 @@ export default function DashboardClient({
 
           {activeTab === 'analysis' && (
             <div key="analysis" className="w-full animate-in fade-in slide-in-from-right-4 duration-700 space-y-8">
-              <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
+              <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                   <div>
                     <h2 className="text-3xl font-black text-gray-900 tracking-tight">{copy.smartAlertTitle}</h2>
