@@ -250,12 +250,13 @@ export default function AdminClient({
     try {
       // TODO: This is a temporary fix to get the build passing.
       // The customers data needs to be merged into recentTests for a complete fix.
-      const alerts = buildDashboardAlerts(recentTests)
+      const alertInputs = transformTestsToAlertInputs(recentTests, customers)
+      const alerts = buildDashboardAlerts(alertInputs)
       setAlertQueue(alerts as DashboardAlert[])
     } catch (error) {
       logger.error('Error loading alert queue:', error)
     }
-  }, [recentTests])
+  }, [recentTests, customers])
 
   useEffect(() => {
     loadAlertQueue()
@@ -2011,13 +2012,13 @@ export default function AdminClient({
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-3">
                             <button
                               onClick={() => openEditPurchase(purchase)}
-                              className="text-primary-600 hover:text-primary-800 transition-colors"
+                              className="text-primary-600 hover:text-primary-900 font-bold px-3 py-1 rounded hover:bg-primary-50 transition-colors"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDeletePurchase(purchase.id)}
-                              className="text-secondary-600 hover:text-secondary-800 transition-colors"
+                              className="text-secondary-600 hover:text-secondary-900 font-bold px-3 py-1 rounded hover:bg-secondary-50 transition-colors"
                             >
                               Delete
                             </button>
@@ -2121,7 +2122,7 @@ export default function AdminClient({
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
                             {user.customer?.company_name || 'N/A'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-2">
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-3">
                             <button
                               onClick={() => openEditUser(user)}
                               className="text-primary-600 hover:text-primary-900 font-bold px-3 py-1 rounded hover:bg-primary-50 transition-colors"
@@ -2257,7 +2258,7 @@ export default function AdminClient({
                 <button
                   onClick={handleSetCustomerPin}
                   disabled={loading}
-                  className="flex-1 px-5 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 font-bold shadow-lg transition-all flex items-center justify-center"
+                  className="flex-1 px-5 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg transition-all flex items-center justify-center"
                 >
                   {loading ? (
                     <OilDropLoader compact label="Saving..." className="text-white" />
@@ -2457,7 +2458,7 @@ export default function AdminClient({
                   type="text"
                   value={formData.product_name || ''}
                   onChange={(e) => setFormData({...formData, product_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                   placeholder="e.g., Mobil DTE 25"
                 />
               </div>
@@ -2468,7 +2469,7 @@ export default function AdminClient({
                   list="product-types-list"
                   value={formData.product_type || ''}
                   onChange={(e) => setFormData({...formData, product_type: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                   placeholder="e.g., Hydraulic Oil, Engine Oil, Compressor Oil"
                 />
                 <datalist id="product-types-list">
@@ -2482,7 +2483,7 @@ export default function AdminClient({
                 <select
                   value={formData.base_oil || ''}
                   onChange={(e) => setFormData({...formData, base_oil: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">Select Base Oil</option>
                   <option value="Mineral">Mineral</option>
@@ -2502,7 +2503,7 @@ export default function AdminClient({
                         setFormData({...formData, viscosity_grade: e.target.value})
                       }
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Select Viscosity Grade</option>
                     <optgroup label="ISO VG (Industrial)">
@@ -2536,15 +2537,15 @@ export default function AdminClient({
                       <option value="SAE 50">SAE 50</option>
                     </optgroup>
                     <optgroup label="NLGI (Grease)">
-                      <option value="NLGI 000">NLGI 000</option>
-                      <option value="NLGI 00">NLGI 00</option>
-                      <option value="NLGI 0">NLGI 0</option>
-                      <option value="NLGI 1">NLGI 1</option>
-                      <option value="NLGI 2">NLGI 2</option>
-                      <option value="NLGI 3">NLGI 3</option>
-                      <option value="NLGI 4">NLGI 4</option>
-                      <option value="NLGI 5">NLGI 5</option>
-                      <option value="NLGI 6">NLGI 6</option>
+                      <option value="NLGI 000">NLGI 000 (Semi-fluid)</option>
+                      <option value="NLGI 00">NLGI 00 (Very Soft)</option>
+                      <option value="NLGI 0">NLGI 0 (Soft)</option>
+                      <option value="NLGI 1">NLGI 1 (Soft - Low Temp)</option>
+                      <option value="NLGI 2">NLGI 2 (Medium - Most Common)</option>
+                      <option value="NLGI 3">NLGI 3 (Firm)</option>
+                      <option value="NLGI 4">NLGI 4 (Hard)</option>
+                      <option value="NLGI 5">NLGI 5 (Very Hard)</option>
+                      <option value="NLGI 6">NLGI 6 (Block)</option>
                     </optgroup>
                     <option value="OTHER">🔧 Other (Type Manually)</option>
                   </select>
@@ -2554,7 +2555,7 @@ export default function AdminClient({
                       type="text"
                       value={formData.viscosity_grade || ''}
                       onChange={(e) => setFormData({...formData, viscosity_grade: e.target.value})}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                       placeholder="e.g., Custom HD 50"
                       autoFocus
                     />
@@ -3557,7 +3558,7 @@ export default function AdminClient({
                   className="px-3 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                   Open in New Tab
                 </a>
