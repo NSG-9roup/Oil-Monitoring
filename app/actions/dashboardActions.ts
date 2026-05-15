@@ -162,6 +162,7 @@ export async function requestLabTest(data: {
   
   revalidatePath('/dashboard')
   revalidatePath('/sales')
+  revalidatePath('/admin')
   return { success: true }
 }
 
