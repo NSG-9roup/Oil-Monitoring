@@ -755,7 +755,7 @@ export default function AdminClient({
                     alt="OilTrack"
                     width={3186}
                     height={881}
-                    className="h-5.5 w-auto object-contain inline-block"
+                    className="h-5 w-auto object-contain inline-block"
                   />
                   <span className="text-slate-800 font-extrabold text-sm sm:text-base">Admin</span>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">

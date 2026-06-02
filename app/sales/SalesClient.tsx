@@ -275,7 +275,7 @@ export default function SalesClient({ user, profile, initialLabRequests }: Sales
                   alt="OilTrack"
                   width={3186}
                   height={881}
-                  className="h-4.5 w-auto object-contain inline-block shrink-0"
+                  className="h-5 w-auto object-contain inline-block shrink-0"
                 />
                 <span className="text-slate-800 font-extrabold text-[10px] lowercase tracking-normal bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-md border border-orange-100">sales</span>
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
