@@ -116,7 +116,7 @@ export function LabReportsSection({
             const isExpanded = expandedReports.has(report.id)
 
             return (
-              <div key={report.id} className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+              <div key={report.id} className="bg-white rounded-2xl shadow-md border border-industrial-100 overflow-hidden hover:shadow-xl transition-all duration-300">
                 <div onClick={() => onToggleReport(report.id)} className="cursor-pointer hover:bg-primary-50 transition-colors duration-200">
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex-1">
@@ -165,7 +165,7 @@ export function LabReportsSection({
                             if (!report.pdf_path) return
                             onOpenReportPdf(report.pdf_path)
                           }}
-                          className="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all duration-300 flex items-center gap-1"
+                          className="px-3 py-1.5 bg-industrial-100 text-industrial-800 text-xs font-bold rounded-xl hover:bg-industrial-200 transition-all duration-300 flex items-center gap-1"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -182,10 +182,10 @@ export function LabReportsSection({
                 </div>
 
                 <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                  <div className="px-6 py-4 bg-slate-50 border-t border-b border-slate-100 flex items-center justify-between">
+                  <div className="px-6 py-4 bg-industrial-50 border-t border-b border-industrial-100 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-3">
-                        <h4 className="text-base font-black text-slate-800">{completeAnalysisLabel}</h4>
+                        <h4 className="text-base font-black text-industrial-800">{completeAnalysisLabel}</h4>
                         <span
                           className={`px-3 py-1 text-xs font-bold rounded-full uppercase ${
                             status.level === 'critical'
@@ -198,7 +198,7 @@ export function LabReportsSection({
                           {status.text.toUpperCase()}
                         </span>
                       </div>
-                      <p className="text-slate-500 text-xs mt-1 font-medium">{evaluationLabel}</p>
+                      <p className="text-industrial-500 text-xs mt-1 font-medium">{evaluationLabel}</p>
                     </div>
                   </div>
 
@@ -230,54 +230,54 @@ export function LabReportsSection({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{viscosityLabel} 40°C</p>
-                          <span className={`text-base font-bold ${viscosity40Trend.direction === 'up' ? 'text-red-500' : viscosity40Trend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{viscosityLabel} 40°C</p>
+                          <span className={`text-base font-bold ${viscosity40Trend.direction === 'up' ? 'text-red-500' : viscosity40Trend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
                             {viscosity40Trend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.viscosity_40c?.toFixed(1) || notAvailableLabel}</p>
-                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">cSt</p>
+                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_40c?.toFixed(1) || notAvailableLabel}</p>
+                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
                       </div>
 
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{viscosityLabel} 100°C</p>
-                          <span className={`text-base font-bold ${viscosity100Trend.direction === 'up' ? 'text-red-500' : viscosity100Trend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{viscosityLabel} 100°C</p>
+                          <span className={`text-base font-bold ${viscosity100Trend.direction === 'up' ? 'text-red-500' : viscosity100Trend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
                             {viscosity100Trend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.viscosity_100c?.toFixed(1) || notAvailableLabel}</p>
-                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">cSt</p>
+                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_100c?.toFixed(1) || notAvailableLabel}</p>
+                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
                       </div>
 
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{waterContentLabel}</p>
-                          <span className={`text-base font-bold ${waterTrend.direction === 'up' ? 'text-red-500' : waterTrend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{waterContentLabel}</p>
+                          <span className={`text-base font-bold ${waterTrend.direction === 'up' ? 'text-red-500' : waterTrend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
                             {waterTrend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%</p>
-                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">by volume</p>
-                        <p className="text-[10px] text-slate-400 font-medium mt-1">≈ {report.water_content ? (report.water_content * 10000).toFixed(0) : '0'} ppm</p>
+                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%</p>
+                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">by volume</p>
+                        <p className="text-[10px] text-industrial-400 font-medium mt-1">≈ {report.water_content ? (report.water_content * 10000).toFixed(0) : '0'} ppm</p>
                       </div>
 
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{tanValueLabel}</p>
-                          <span className={`text-base font-bold ${tanTrend.direction === 'up' ? 'text-red-500' : tanTrend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{tanValueLabel}</p>
+                          <span className={`text-base font-bold ${tanTrend.direction === 'up' ? 'text-red-500' : tanTrend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
                             {tanTrend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.tan_value?.toFixed(2) || notAvailableLabel}</p>
-                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">mg KOH/g</p>
+                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.tan_value?.toFixed(2) || notAvailableLabel}</p>
+                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">mg KOH/g</p>
                       </div>
                     </div>
 
                     <div
-                      className={`rounded-2xl p-5 border border-slate-100 border-l-4 mb-6 ${
+                      className={`rounded-2xl p-5 border border-industrial-100 border-l-4 mb-6 ${
                         status.level === 'critical'
                           ? 'border-l-red-500'
                           : status.level === 'warning'
@@ -285,8 +285,8 @@ export function LabReportsSection({
                           : 'border-l-emerald-500'
                       } bg-white shadow-sm`}
                     >
-                      <h5 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-4 flex items-center">
-                        <svg className="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <h5 className="text-xs font-black uppercase tracking-wider text-industrial-400 mb-4 flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-industrial-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
                         Recommendations
@@ -382,7 +382,7 @@ export function LabReportsSection({
                             if (!report.pdf_path) return
                             onOpenReportPdf(report.pdf_path)
                           }}
-                          className="flex-1 bg-slate-900 text-white px-4 py-3 rounded-xl hover:bg-slate-800 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
+                          className="flex-1 bg-industrial-100 text-industrial-800 px-4 py-3 rounded-xl hover:bg-industrial-200 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -396,7 +396,7 @@ export function LabReportsSection({
                             if (!report.pdf_path) return
                             onDownloadReportPdf(report.pdf_path, report.test_date)
                           }}
-                          className="flex-1 bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-4 py-3 rounded-xl hover:from-primary-600 hover:to-secondary-600 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
+                          className="flex-1 bg-primary-600 text-white px-4 py-3 rounded-xl hover:bg-primary-700 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

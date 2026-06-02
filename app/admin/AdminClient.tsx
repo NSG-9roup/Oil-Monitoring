@@ -8,7 +8,7 @@ import imageCompression from 'browser-image-compression'
 import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
 import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, UserRole, LabRequest } from '@/lib/types'
-import { logger } from '@/lib/logger'
+
 import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, uploadAdminFile } from '@/app/actions/adminActions'
 
 // Modular components
@@ -1057,12 +1057,13 @@ export default function AdminClient({
             </div>
             <div className="p-6">
               <div className="mb-6 flex justify-center">
-                <div className="w-64 h-48 rounded-[1.5rem] overflow-hidden bg-white border border-slate-200 flex items-center justify-center p-6 shadow-md">
+                <div className="relative w-64 h-48 rounded-[1.5rem] overflow-hidden bg-white border border-slate-200 flex items-center justify-center shadow-md">
                   {logoPreview ? (
-                    <img
+                    <Image
                       src={logoPreview}
                       alt="Logo preview"
-                      className="max-w-full max-h-full object-contain"
+                      fill
+                      className="object-contain p-6"
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-center">
@@ -1563,10 +1564,11 @@ export default function AdminClient({
                       </a>
                     </div>
                     <div className="relative w-full h-40 rounded-xl overflow-hidden border border-orange-100/60 shadow-sm bg-white">
-                      <img 
+                      <Image 
                         src={url} 
                         alt="Bukti Botol Sampel" 
-                        className="w-full h-full object-cover" 
+                        fill
+                        className="object-cover" 
                       />
                     </div>
                   </div>

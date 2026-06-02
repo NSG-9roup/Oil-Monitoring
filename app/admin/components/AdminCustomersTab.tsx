@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
+import Image from 'next/image'
 import type { Customer, AdminProfile } from '@/lib/types'
 
 interface AdminCustomersTabProps {
   customers: Customer[]
-  profile: AdminProfile | null
   searchQuery: string
   setSearchQuery: (query: string) => void
   onOpenImport: () => void
@@ -18,7 +18,6 @@ interface AdminCustomersTabProps {
 
 export default function AdminCustomersTab({
   customers,
-  profile,
   searchQuery,
   setSearchQuery,
   onOpenImport,
@@ -110,12 +109,13 @@ export default function AdminCustomersTab({
                 <tr key={customer.id} className="hover:bg-indigo-50/10 transition-colors duration-200">
                   {/* Logo Column */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="w-14 h-11 rounded-xl overflow-hidden bg-white border border-slate-150 flex items-center justify-center p-1.5 shadow-sm">
+                    <div className="relative w-14 h-11 rounded-xl overflow-hidden bg-white border border-slate-150 flex items-center justify-center shadow-sm">
                       {customer.logo_url ? (
-                        <img
+                        <Image
                           src={customer.logo_url}
                           alt={customer.company_name}
-                          className="max-w-full max-h-full object-contain"
+                          fill
+                          className="object-contain p-1.5"
                         />
                       ) : (
                         <div className="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center">

@@ -830,11 +830,6 @@ export default function DashboardClient({
     }
   }
 
-  // Normalisasi kandungan air dari PPM ke PERCENT
-  const getNormalizedWaterContent = (water: number, unit?: string): number => {
-    const isPPM = unit === 'PPM' || (!unit && water > 5);
-    return isPPM ? water / 10000 : water;
-  }
 
   /**
    * Get water content thresholds based on oil type
@@ -1491,7 +1486,7 @@ export default function DashboardClient({
   }))
 
   const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
-  const todayIso = formatLocalDateInput(new Date())
+
 
   const reliabilityInsights: ReliabilityInsight[] = machineInsights.map((item) => {
     const history = (fleetHistoryByMachineId[item.machine.id] || []).slice().sort((a, b) =>
@@ -1591,9 +1586,6 @@ export default function DashboardClient({
     }
   })
 
-  const fleetReliabilityScore = reliabilityInsights.length > 0
-    ? Math.round(reliabilityInsights.reduce((acc, item) => acc + item.reliabilityScore, 0) / reliabilityInsights.length)
-    : 0
 
   const handleExportFleetReport = async () => {
     await exportFleetReportPdf(
