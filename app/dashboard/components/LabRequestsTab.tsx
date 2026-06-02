@@ -94,7 +94,7 @@ export function LabRequestsTab({ requests, language }: LabRequestsTabProps) {
         const stageIndex = getStageIndex(req.status)
         const isCancelled = req.status === 'cancelled'
         const machineName = req.is_new_machine 
-          ? (req.new_machine_data as any)?.machine_name || 'New Machine' 
+          ? req.new_machine_data?.machine_name || 'New Machine' 
           : req.machine?.machine_name || 'Machine'
 
         return (

@@ -72,7 +72,11 @@ export interface LabRequest {
   priority: string
   status: string
   is_new_machine: boolean
-  new_machine_data: any
+  new_machine_data: {
+    machine_name?: string
+    model?: string
+    location?: string
+  } | null
   request_date: string
   created_at: string
   updated_at: string

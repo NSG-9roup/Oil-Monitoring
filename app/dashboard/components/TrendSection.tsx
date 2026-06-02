@@ -253,13 +253,13 @@ export function TrendSection({
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
                     labelFormatter={(value) => formatDateLabel(String(value))}
-                    formatter={(value: any, name: string) => {
+                    formatter={(value: unknown, name: string) => {
                       if (name.includes('Kandungan Air') || name.includes('Water Content')) {
                         const pct = Number(value)
                         const ppm = Math.round(pct * 10000)
                         return [`${pct.toFixed(4)}% (≈ ${ppm} ppm)`, name]
                       }
-                      return [value, name]
+                      return [value as string | number, name]
                     }}
                     contentStyle={{
                       backgroundColor: 'white',

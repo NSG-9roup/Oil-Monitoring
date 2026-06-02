@@ -69,7 +69,7 @@ export default function AdminUsersTab({
 
       {users.length === 0 ? (
         <div className="text-center py-12 text-slate-400 font-bold italic text-sm">
-          No users registered in the system. Click "Add User" to create one.
+          No users registered in the system. Click &quot;Add User&quot; to create one.
         </div>
       ) : (
         /* Spacious Premium Table Layout */

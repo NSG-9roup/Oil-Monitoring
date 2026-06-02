@@ -44,7 +44,10 @@ export default function AdminOverviewTab({
     const customerId = test.machine?.customer_id
     
     let companyName = 'Unknown'
-    const machine = test.machine as any
+    const machine = test.machine as {
+      customer?: { company_name: string } | Array<{ company_name: string }>
+      oil_customers?: { company_name: string } | Array<{ company_name: string }>
+    } | undefined
     if (machine) {
       const cust = machine.customer || machine.oil_customers
       if (cust) {
@@ -276,7 +279,11 @@ export default function AdminOverviewTab({
                       <p className="text-[10px] font-semibold text-slate-400 truncate -mt-0.5">
                         {/* Dynamic Safe Nested company name resolver */}
                         {(() => {
-                          const cust = (test.machine as any)?.customer || (test.machine as any)?.oil_customers;
+                          const machine = test.machine as {
+                            customer?: { company_name: string } | Array<{ company_name: string }>;
+                            oil_customers?: { company_name: string } | Array<{ company_name: string }>;
+                          } | undefined;
+                          const cust = machine?.customer || machine?.oil_customers;
                           if (Array.isArray(cust)) {
                             return cust[0]?.company_name || 'Unknown Company';
                           }
