@@ -5,13 +5,17 @@ import type {
   RecommendationResult,
   StatusResult,
   TrendResult,
+  LabRequest,
 } from '@/app/dashboard/components/types'
 
 interface LabReportsSectionProps {
   title: string
   description: string
   reports: LabReportItem[]
+  requests: LabRequest[]
+  language: 'id' | 'en'
   expandedReports: Set<string>
+  onQuickRequest?: (machineId: string, notes: string, priority: 'High' | 'Medium' | 'Low') => void
   selectedMachineName: string
   criticalLabel: string
   warningLabel: string
@@ -46,6 +50,9 @@ export function LabReportsSection({
   title,
   description,
   reports,
+  requests = [],
+  language = 'id',
+  onQuickRequest,
   expandedReports,
   selectedMachineName,
   criticalLabel,
@@ -308,6 +315,37 @@ export function LabReportsSection({
                                   <p className={`text-xs mt-2 ${rec.severity === 'critical' ? 'text-red-600' : rec.severity === 'warning' ? 'text-yellow-600' : 'text-green-600'}`}>
                                     → {rec.action}
                                   </p>
+                                  {onQuickRequest && (() => {
+                                    const hasActiveRequest = requests.some(
+                                      (req) => req.machine_id === report.machine_id && ['pending', 'assigned', 'sampling'].includes(req.status)
+                                    )
+                                    
+                                    if (hasActiveRequest) {
+                                      return (
+                                        <div className="text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 inline-flex items-center gap-1.5 shrink-0 mt-3 w-fit select-none">
+                                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                          {language === 'id' ? 'Progres Lab Aktif' : 'Lab Test Active'}
+                                        </div>
+                                      )
+                                    }
+
+                                    return (
+                                      <button
+                                        onClick={() => {
+                                          onQuickRequest(
+                                            report.machine_id || '',
+                                            language === 'id'
+                                              ? `Memicu permintaan uji sampel secara otomatis akibat rekomendasi lab: ${rec.text}.\nTindakan: ${rec.action}`
+                                              : `Automatically triggered lab request due to recommendation: ${rec.text}.\nAction: ${rec.action}`,
+                                            rec.severity === 'critical' ? 'High' : 'Medium'
+                                          )
+                                        }}
+                                        className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-0.5 mt-3 shrink-0 transform active:scale-95"
+                                      >
+                                        {language === 'id' ? 'Minta Uji Ulang →' : 'Request Re-Test →'}
+                                      </button>
+                                    )
+                                  })()}
                                 </div>
                               </div>
                             </li>

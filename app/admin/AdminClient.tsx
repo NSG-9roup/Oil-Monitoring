@@ -1,18 +1,24 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import imageCompression from 'browser-image-compression'
 import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
-import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, UserRole } from '@/lib/types'
-import { buildDashboardAlerts, type DashboardAlert, type AlertInput } from '@/lib/alerts/engine'
+import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, UserRole, LabRequest } from '@/lib/types'
 import { logger } from '@/lib/logger'
-import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest } from '@/app/actions/adminActions'
-import AdminRequestsTab from './components/AdminRequestsTab'
+import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, uploadAdminFile } from '@/app/actions/adminActions'
 
+// Modular components
+import AdminOverviewTab from './components/AdminOverviewTab'
+import AdminCustomersTab from './components/AdminCustomersTab'
+import AdminMachinesTab from './components/AdminMachinesTab'
+import AdminProductsTab from './components/AdminProductsTab'
+import AdminTestsTab from './components/AdminTestsTab'
+import AdminUsersTab from './components/AdminUsersTab'
+import AdminRequestsTab from './components/AdminRequestsTab'
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -28,13 +34,15 @@ const formatDate = (value?: string | number | Date) => {
   return dateFormatter.format(date)
 }
 
-const getErrorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : 'Unknown error'
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) return String((error as any).message)
+  return 'Unknown error'
+}
 
 type FormValue = string | number | undefined | null
 type FormDataState = Record<string, FormValue>
 
-// Helper to safely cast form values to specific enum types
 const toEnumValue = <T extends readonly string[]>(value: FormValue, validValues: T, fallback?: T[number]): T[number] | undefined => {
   if (typeof value === 'string' && validValues.includes(value as T[number])) {
     return value as T[number]
@@ -62,7 +70,6 @@ const toOptionalNumber = (value?: FormValue): number | undefined => {
 const toStringValue = (value?: FormValue, fallback = ''): string =>
   typeof value === 'string' ? value : fallback
 
-// Helper to safely convert form values to valid HTML input values
 const toInputValue = (value?: FormValue): string | number => {
   if (typeof value === 'string' || typeof value === 'number') {
     return value
@@ -100,6 +107,7 @@ const buildTestPayload = (data: FormDataState) => ({
   water_content_unit: toEnumValue(data.water_content_unit, ['PPM', 'PERCENT'] as const),
   tan_value: toOptionalNumber(data.tan_value),
   notes: toOptionalString(data.notes),
+  pdf_path: toOptionalString(data.pdf_path),
 })
 
 const buildCreateUserPayload = (data: FormDataState) => ({
@@ -120,36 +128,6 @@ const buildUpdateUserPayload = (data: FormDataState) => ({
   contact_email: toOptionalString(data.contact_email),
 })
 
-const transformTestsToAlertInputs = (
-  tests: AdminLabTest[],
-  customers: Customer[]
-): AlertInput[] => {
-  const customerMap = new Map(customers.map((c) => [c.id, c]))
-
-  return tests.map((test) => {
-    const customer = test.machine?.customer_id
-      ? customerMap.get(test.machine.customer_id)
-      : undefined
-
-    return {
-      machineId: test.machine_id,
-      customerId: test.machine?.customer_id || null,
-      machineName: test.machine?.machine_name || 'Unknown Machine',
-      customerName: customer?.company_name || 'Unknown Customer',
-      customerEmail: '', // TODO: Get from customer contact email
-      statusLevel: 'normal' as const,
-      statusText: 'Status OK',
-      nextAction: 'No action required',
-      testDate: test.test_date,
-      daysSinceTest: test.test_date
-        ? Math.floor((new Date().getTime() - new Date(test.test_date).getTime()) / (1000 * 60 * 60 * 24))
-        : null,
-      healthScore: null,
-    }
-  })
-}
-
-// Filter helper function for date-based filtering
 const filterByDate = (testDate: string | null | undefined, dateFilter: string = 'all', customFrom?: string, customTo?: string): boolean => {
   if (!testDate || dateFilter === 'all') return true
   
@@ -172,7 +150,6 @@ const filterByDate = (testDate: string | null | undefined, dateFilter: string = 
   return true
 }
 
-
 export interface AdminClientProps {
   user: User
   profile: AdminProfile | null
@@ -181,13 +158,12 @@ export interface AdminClientProps {
   recentTests: AdminLabTest[]
   initialProducts: AdminProduct[]
   initialUsers: AdminUser[]
-  initialMaintenanceActions: any[]
+  initialLabRequests: LabRequest[]
 }
 
 type ModalType =
   | 'add-customer'
   | 'edit-customer'
-  | 'set-customer-pin'
   | 'import-customers'
   | 'add-machine'
   | 'edit-machine'
@@ -209,7 +185,6 @@ type TabKey =
   | 'machines'
   | 'products'
   | 'tests'
-  | 'alerts'
   | 'users'
   | 'requests'
 
@@ -221,7 +196,7 @@ export default function AdminClient({
   recentTests: initialRecentTests,
   initialProducts,
   initialUsers,
-  initialMaintenanceActions,
+  initialLabRequests,
 }: AdminClientProps) {
   const supabase = createClient()
   const router = useRouter()
@@ -234,9 +209,7 @@ export default function AdminClient({
   const customers = initialCustomers
   const machines = initialMachines
   const recentTests = initialRecentTests
-  const labTests = initialRecentTests
-  const users = initialUsers
-  const maintenanceActions = initialMaintenanceActions
+  const labRequests = initialLabRequests
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [modalOpen, setModalOpen] = useState<ModalType>(null)
@@ -250,10 +223,7 @@ export default function AdminClient({
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [customDateFrom, setCustomDateFrom] = useState('')
   const [customDateTo, setCustomDateTo] = useState('')
-  const [customerPinFilter, setCustomerPinFilter] = useState<'all' | 'configured' | 'not-configured'>('all')
-  const [alertSeverityFilter, setAlertSeverityFilter] = useState<'all' | 'critical' | 'warning'>('all')
-  const [alertStatusFilter, setAlertStatusFilter] = useState<'all' | 'open'>('all')
-  const [alertCustomerFilter, setAlertCustomerFilter] = useState('all')
+  
   const [filterCompany, setFilterCompany] = useState('all')
   const [filterMachine, setFilterMachine] = useState('all')
   const [csvData, setCsvData] = useState<Array<Record<string, string>>>([])
@@ -261,88 +231,28 @@ export default function AdminClient({
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null)
-  const [emailLanguage, setEmailLanguage] = useState<'id' | 'en'>('id')
   const [products, setProducts] = useState<AdminProduct[]>(initialProducts)
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
   
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-
-  // --- Missing State Variables ---
-  const [reviewedAlertIds, setReviewedAlertIds] = useState<string[]>([])
-  const [emailedAlertIds, setEmailedAlertIds] = useState<string[]>([])
-  const [alertQueue, setAlertQueue] = useState<DashboardAlert[]>([])
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
 
   // --- Computed Variables ---
   const totalCustomers = customers.length
   const activeCustomers = customers.filter(c => c.status === 'active').length
   const totalMachines = machines.length
   const totalTests = recentTests.length
-
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(c => {
-      const matchesSearch = c.company_name.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesPin = customerPinFilter === 'all' 
-        ? true 
-        : customerPinFilter === 'configured' 
-        ? c.pin_configured 
-        : !c.pin_configured
-      return matchesSearch && matchesPin
-    })
-  }, [customers, searchQuery, customerPinFilter])
+  const users = initialUsers
 
   const uniqueProductTypes = useMemo(() => {
     return Array.from(new Set(products.map(p => p.product_type))).filter(Boolean).sort()
   }, [products])
 
-  // --- Missing Handlers ---
-  const loadAlertQueue = useCallback(async () => {
-    try {
-      // TODO: This is a temporary fix to get the build passing.
-      // The customers data needs to be merged into recentTests for a complete fix.
-      const alertInputs = transformTestsToAlertInputs(recentTests, customers)
-      const alerts = buildDashboardAlerts(alertInputs)
-      setAlertQueue(alerts as DashboardAlert[])
-    } catch (error) {
-      logger.error('Error loading alert queue:', error)
-    }
-  }, [recentTests, customers])
-
-  useEffect(() => {
-    loadAlertQueue()
-  }, [loadAlertQueue])
-
-  const filteredAlertQueue = useMemo(() => {
-    return alertQueue.filter((a) => {
-      if (alertSeverityFilter !== 'all' && a.severity !== alertSeverityFilter) return false
-      if (alertCustomerFilter !== 'all' && a.customerId !== alertCustomerFilter) return false
-      return true
-    })
-  }, [alertQueue, alertSeverityFilter, alertCustomerFilter])
-
-  const markAlertReviewed = (id: string) => {
-    setReviewedAlertIds(prev => prev.includes(id) ? prev : [...prev, id])
-  }
-
-  const sendManualEmail = (alert: DashboardAlert) => {
-    setEmailedAlertIds(prev => prev.includes(alert.id) ? prev : [...prev, alert.id])
-    window.alert(`Manual email triggered for ${alert.customerName}`)
-  }
-
   const openAddCustomer = () => {
     setFormData({ company_name: '', status: 'active' })
     setModalOpen('add-customer')
-  }
-
-
-
-  const saveLabTestDraft = () => {
-    // Draft persistence was removed during refactor; keep a no-op to preserve quick-add flow calls.
-  }
-
-  const restoreLabTestDraft = () => {
-    // No-op fallback; modal state continues to work without draft restoration.
   }
 
   const handleDeleteLogo = async () => {
@@ -353,13 +263,11 @@ export default function AdminClient({
     
     setUploadingLogo(true)
     try {
-      // Delete from storage
       const oldPath = selectedCustomer.logo_url.split('/').slice(-2).join('/')
       await supabase.storage
         .from('customer-logos')
         .remove([oldPath])
       
-      // Update customer record
       const { error } = await supabase
         .from('oil_customers')
         .update({ logo_url: null, logo_updated_at: new Date().toISOString() })
@@ -426,32 +334,6 @@ export default function AdminClient({
     }
   }
 
-  const openSetCustomerPin = (customer: Customer) => {
-    setSelectedItem(customer)
-    setFormData({ pin: '' })
-    setModalOpen('set-customer-pin')
-  }
-
-  const handleSetCustomerPin = async () => {
-    if (!selectedItem?.id) return
-    setLoading(true)
-    try {
-      const { error } = await supabase
-        .from('oil_customers')
-        .update({ user_management_pin_hash: String(formData.pin) })
-        .eq('id', selectedItem.id)
-      
-      if (error) throw error
-      alert('PIN updated successfully!')
-      setModalOpen(null)
-      router.refresh()
-    } catch (error) {
-      alert('Error: ' + getErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const openLogoUpload = (customer: Customer) => {
     setSelectedItem(customer)
     setLogoFile(null)
@@ -486,21 +368,22 @@ export default function AdminClient({
       const fileExt = compressedFile.name.split('.').pop()
       const fileName = `${customer.id}-${Date.now()}.${fileExt}`
       
-      const { data, error: uploadError } = await supabase.storage
-        .from('customer-logos')
-        .upload(fileName, compressedFile)
-      
-      if (uploadError) throw uploadError
+      const formDataPayload = new FormData()
+      formDataPayload.append('bucket', 'customer-logos')
+      formDataPayload.append('path', fileName)
+      formDataPayload.append('file', compressedFile)
+
+      const uploadResult = await uploadAdminFile(formDataPayload)
       
       const { data: { publicUrl } } = supabase.storage
         .from('customer-logos')
-        .getPublicUrl(data.path)
+        .getPublicUrl(uploadResult.path)
       
       const { error: updateError } = await supabase
         .from('oil_customers')
         .update({ 
           logo_url: publicUrl, 
-          logo_updated_at: new Date().toISOString() 
+          updated_at: new Date().toISOString() 
         })
         .eq('id', customer.id)
       
@@ -515,6 +398,7 @@ export default function AdminClient({
       setUploadingLogo(false)
     }
   }
+
 
   // Machine CRUD
   const openAddMachine = () => {
@@ -533,7 +417,9 @@ export default function AdminClient({
       machine_name: machine.machine_name,
       customer_id: machine.customer_id,
       location: machine.location,
-      status: machine.status
+      status: machine.status,
+      serial_number: machine.serial_number || '',
+      model: machine.model || ''
     })
     setModalOpen('edit-machine')
   }
@@ -550,6 +436,7 @@ export default function AdminClient({
         alert('Machine updated successfully!')
       }
       setModalOpen(null)
+      router.refresh()
     } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
@@ -562,7 +449,7 @@ export default function AdminClient({
     setLoading(true)
     try {
       await deleteMachine(id)
-      if (selectedItem?.id === id) setSelectedItem(null)
+      router.refresh()
     } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
@@ -572,7 +459,6 @@ export default function AdminClient({
 
   // Quick Add Machine (from Lab Test modal)
   const openQuickAddMachine = () => {
-    saveLabTestDraft() // Save current lab test form
     setQuickAddData({
       machine_name: '',
       serial_number: '',
@@ -595,12 +481,7 @@ export default function AdminClient({
       
       if (error) throw error
       
-      // Refresh machines list
       router.refresh()
-      
-      // Restore lab test form and auto-select new machine
-      restoreLabTestDraft()
-      
       alert('Machine added successfully!')
       setQuickAddModal(null)
     } catch (error: unknown) {
@@ -611,13 +492,11 @@ export default function AdminClient({
   }
 
   const cancelQuickAddMachine = () => {
-    restoreLabTestDraft() // Restore without new item
     setQuickAddModal(null)
   }
 
   // Quick Add Product (from Lab Test modal)
   const openQuickAddProduct = () => {
-    saveLabTestDraft() // Save current lab test form
     setQuickAddData({
       product_name: '',
       product_type: '',
@@ -638,12 +517,7 @@ export default function AdminClient({
       
       if (error) throw error
       
-      // Refresh products list
       router.refresh()
-      
-      // Restore lab test form and auto-select new product
-      restoreLabTestDraft()
-      
       alert('Product added successfully!')
       setQuickAddModal(null)
     } catch (error: unknown) {
@@ -654,7 +528,6 @@ export default function AdminClient({
   }
 
   const cancelQuickAddProduct = () => {
-    restoreLabTestDraft() // Restore without new item
     setQuickAddModal(null)
   }
 
@@ -692,6 +565,7 @@ export default function AdminClient({
         alert('Product updated successfully!')
       }
       setModalOpen(null)
+      router.refresh()
     } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
@@ -704,7 +578,7 @@ export default function AdminClient({
     setLoading(true)
     try {
       await deleteProduct(id)
-      if (selectedItem?.id === id) setSelectedItem(null)
+      router.refresh()
     } catch (error: any) {
       alert('Error: ' + getErrorMessage(error))
     } finally {
@@ -714,7 +588,6 @@ export default function AdminClient({
 
   // Lab Test CRUD
   const openAddTest = async () => {
-    // Load products from database
     const { data: productsData } = await supabase
       .from('oil_products')
       .select('*')
@@ -730,8 +603,10 @@ export default function AdminClient({
       viscosity_100c: '',
       water_content: '',
       water_content_unit: 'PPM',
-      tan_value: ''
+      tan_value: '',
+      pdf_path: ''
     })
+    setPdfFile(null)
     setModalOpen('add-test')
   }
 
@@ -745,22 +620,42 @@ export default function AdminClient({
       viscosity_100c: test.viscosity_100c,
       water_content: test.water_content,
       water_content_unit: test.water_content_unit || 'PPM',
-      tan_value: test.tan_value
+      tan_value: test.tan_value,
+      pdf_path: test.pdf_path || ''
     })
+    setPdfFile(null)
     setModalOpen('edit-test')
   }
 
   const handleSaveTest = async () => {
     setLoading(true)
     try {
+      let currentPdfPath = formData.pdf_path
+
+      if (pdfFile) {
+        const fileExt = pdfFile.name.split('.').pop()
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+        
+        const uploadData = new FormData()
+        uploadData.append('bucket', 'lab-reports')
+        uploadData.append('path', fileName)
+        uploadData.append('file', pdfFile)
+        
+        const uploadResult = await uploadAdminFile(uploadData)
+        currentPdfPath = uploadResult.path
+      }
+
+      const payload = buildTestPayload({ ...formData, pdf_path: currentPdfPath })
+
       if (modalOpen === 'add-test') {
-        await createTest(buildTestPayload(formData))
+        await createTest(payload)
         alert('Lab test recorded successfully!')
       } else if (modalOpen === 'edit-test') {
         if (!selectedItem?.id) throw new Error('No test selected')
-        await updateTest(selectedItem.id, buildTestPayload(formData))
+        await updateTest(selectedItem.id, payload)
         alert('Lab test updated successfully!')
       }
+      setPdfFile(null)
       setModalOpen(null)
       router.refresh()
     } catch (error: any) {
@@ -840,45 +735,55 @@ export default function AdminClient({
     }
   }
 
-
-
   const selectedCustomerForLogo =
     modalOpen === 'upload-logo' && selectedItem && 'company_name' in selectedItem
       ? (selectedItem as Customer)
       : null
 
   return (
-    <div className="clean-ui admin-orange-icons admin-panel min-h-screen bg-gray-50 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
-      <header className="bg-white shadow-lg backdrop-blur-sm sticky top-0 z-50 border-b-2 border-gray-200">
+    <div className="clean-ui customer-panel min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col relative" style={{ backgroundSize: '40px 40px' }}>
+      
+      {/* Premium Header */}
+      <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.015)] border-b border-slate-100 select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="flex items-center select-none">
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center">
-                  OilTrack™ Admin
-                  <span className="ml-2 sm:ml-3 inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                    <span className="w-2 h-2 bg-green-400 rounded-full mr-1.5 sm:mr-2 animate-pulse"></span>
+                <h1 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight flex items-center gap-2 select-none">
+                  <Image
+                    src="/teks logo.webp"
+                    alt="OilTrack"
+                    width={3186}
+                    height={881}
+                    className="h-5.5 w-auto object-contain inline-block"
+                  />
+                  <span className="text-slate-800 font-extrabold text-sm sm:text-base">Admin</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse"></span>
                     Active
                   </span>
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium truncate max-w-[250px] sm:max-w-none">{user.email} • {profile?.role?.toUpperCase() ?? 'UNKNOWN'}</p>
+                <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 font-bold uppercase tracking-wider truncate max-w-[250px] sm:max-w-none">
+                  {user.email} • {profile?.role?.toUpperCase() ?? 'ADMIN'}
+                </p>
               </div>
             </div>
+            
             <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={() => router.push('/dashboard/profile')}
-                className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-all shadow-sm flex items-center w-full sm:w-auto justify-center"
+                className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm flex items-center w-full sm:w-auto justify-center gap-1.5 active:scale-95"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 Profile
               </button>
               <button
                 onClick={handleSignOut}
-                className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center w-full sm:w-auto justify-center"
+                className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center w-full sm:w-auto justify-center gap-1.5 active:scale-95"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 Sign Out
@@ -888,67 +793,21 @@ export default function AdminClient({
         </div>
       </header>
 
+      {/* Main Workspace */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
-        <div className="w-full max-w-full grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-primary-100 hover:border-primary-300 transition-all transform hover:scale-105">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs sm:text-sm font-black text-gray-800 uppercase tracking-wider">Total Customers</div>
-              <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <div className="text-4xl font-black text-gray-900 mb-2">{totalCustomers}</div>
-            <div className="flex items-center text-xs font-black text-green-600">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {activeCustomers} active
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-secondary-100 hover:border-secondary-300 transition-all transform hover:scale-105">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs sm:text-sm font-black text-gray-800 uppercase tracking-wider">Total Machines</div>
-              <svg className="w-8 h-8 text-secondary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-              </svg>
-            </div>
-            <div className="text-4xl font-black text-gray-900">{totalMachines}</div>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-primary-100 hover:border-primary-300 transition-all transform hover:scale-105">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs sm:text-sm font-black text-gray-800 uppercase tracking-wider">Recent Tests</div>
-              <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
-            <div className="text-4xl font-black text-gray-900">{totalTests}</div>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-green-100 hover:border-green-300 transition-all transform hover:scale-105">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs sm:text-sm font-black text-gray-800 uppercase tracking-wider">System Status</div>
-              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-            <div className="text-2xl font-black text-green-600 flex items-center">
-              <span className="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-              Operational
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full min-w-0 bg-white rounded-2xl shadow-lg mb-6 border-2 border-primary-100 overflow-hidden">
-          <div className="bg-gray-100 border-b-2 border-primary-200 overflow-x-auto sm:overflow-visible">
+        
+        {/* Tab Selection */}
+        <div className="w-full bg-white rounded-[2rem] border border-slate-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.03)] mb-6 overflow-hidden select-none">
+          <div className="bg-slate-50/50 border-b border-slate-100 overflow-x-auto sm:overflow-visible">
             <nav className="flex min-w-max sm:min-w-0 sm:w-full sm:justify-center">
               {[
-                { key: 'overview', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l3-3 3 2 5-6" /></svg>, label: 'Overview' },
-                { key: 'customers', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, label: 'Customers' },
-                { key: 'machines', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Machines' },
-                { key: 'products', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>, label: 'Products' },
-                { key: 'tests', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>, label: 'Tests' },
-                { key: 'alerts', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>, label: 'Alerts' },
-                { key: 'users', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A4 4 0 018 16h8a4 4 0 012.879 1.804M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Users' },
-                { key: 'requests', icon: <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>, label: 'Requests' }
+                { key: 'overview', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 3v18h18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 14l3-3 3 2 5-6" /></svg>, label: 'Overview' },
+                { key: 'customers', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, label: 'Customers' },
+                { key: 'machines', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Machines' },
+                { key: 'products', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>, label: 'Products' },
+                { key: 'tests', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>, label: 'Tests' },
+                { key: 'users', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5.121 17.804A4 4 0 018 16h8a4 4 0 012.879 1.804M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Users' },
+                { key: 'requests', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>, label: 'Requests' }
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -960,1072 +819,192 @@ export default function AdminClient({
                     setCustomDateTo('')
                     setFilterCompany('all')
                     setFilterMachine('all')
-                    setCustomerPinFilter('all')
-                  }}
-                  className={`px-6 sm:px-8 py-3 sm:py-4 text-xs sm:text-sm font-black border-b-4 transition-all whitespace-nowrap uppercase tracking-wide ${
+                  }}                  className={`px-6 py-4.5 text-[10px] font-black border-b-2 transition-all whitespace-nowrap uppercase tracking-widest flex items-center justify-center gap-1 ${
                     activeTab === tab.key
-                      ? 'border-primary-600 text-primary-700 bg-white/50'
-                      : 'border-transparent text-gray-600 hover:text-primary-600 hover:bg-white/30'
+                      ? 'border-orange-500 text-orange-600 bg-white/70 shadow-sm'
+                      : 'border-transparent text-slate-400 hover:text-orange-500 hover:bg-white/30'
                   }`}
                 >
-                  <span className="mr-2">{tab.icon}</span>
-                  <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.icon}
+                  <span>{tab.label}</span>
                 </button>
               ))}
             </nav>
           </div>
 
-          <div className="p-4 sm:p-6 lg:p-8 motion-soft-enter">
+          {/* Tab Workspaces */}
+          <div className="p-6 sm:p-8">
+            
             {activeTab === 'overview' && (
-              <div>
-                <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-3 flex items-center gap-3">
-                  <svg className="w-8 h-8 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <span className="tracking-tight">System</span>
-                  <span className="tracking-tight text-red-600">Overview</span>
-                </h2>
-                <p className="mb-6 text-sm font-medium text-gray-500">Live summary of customers, machines, tests, and products.</p>
-
-                {/* Stats Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-                  {/* Total Customers */}
-                  <div className="rounded-3xl border border-orange-100/80 bg-white p-6 shadow-lg ring-1 ring-orange-50 transition-all hover:-translate-y-1 hover:shadow-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-wide text-orange-500">Customers</p>
-                        <p className="mt-2 text-4xl font-black text-gray-900">{totalCustomers}</p>
-                        <p className="mt-2 text-xs text-gray-500">{activeCustomers} active</p>
-                      </div>
-                      <svg className="w-12 h-12 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Total Machines */}
-                  <div className="rounded-3xl border border-blue-100/80 bg-white p-6 shadow-lg ring-1 ring-blue-50 transition-all hover:-translate-y-1 hover:shadow-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-wide text-blue-500">Machines</p>
-                        <p className="mt-2 text-4xl font-black text-gray-900">{machines.length}</p>
-                        <p className="mt-2 text-xs text-gray-500">{machines.filter(m => m.status === 'active').length} active</p>
-                      </div>
-                      <svg className="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 012 2h2a2 2 0 002-2m0-10V7a2 2 0 012-2h2a2 2 0 012 2v10m0 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Total Tests */}
-                  <div className="rounded-3xl border border-green-100/80 bg-white p-6 shadow-lg ring-1 ring-green-50 transition-all hover:-translate-y-1 hover:shadow-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-wide text-green-500">Lab Tests</p>
-                        <p className="mt-2 text-4xl font-black text-gray-900">{labTests.length}</p>
-                        <p className="mt-2 text-xs text-gray-500">Total recorded</p>
-                      </div>
-                      <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Total Products */}
-                  <div className="rounded-3xl border border-purple-100/80 bg-white p-6 shadow-lg ring-1 ring-purple-50 transition-all hover:-translate-y-1 hover:shadow-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-wide text-purple-500">Products</p>
-                        <p className="mt-2 text-4xl font-black text-gray-900">{products.length}</p>
-                        <p className="mt-2 text-xs text-gray-500">Oil products</p>
-                      </div>
-                      <svg className="w-12 h-12 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Machine Status Breakdown */}
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Machine Status</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-green-700 text-sm font-bold uppercase">Active</p>
-                          <p className="text-green-900 text-3xl font-black mt-1">
-                            {machines.filter(m => m.status === 'active').length}
-                          </p>
-                        </div>
-                        <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-yellow-700 text-sm font-bold uppercase">Maintenance</p>
-                          <p className="text-yellow-900 text-3xl font-black mt-1">
-                            {machines.filter(m => m.status === 'maintenance').length}
-                          </p>
-                        </div>
-                        <svg className="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="bg-orange-100 border-2 border-orange-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-gray-700 text-sm font-bold uppercase">Inactive</p>
-                          <p className="text-gray-900 text-3xl font-black mt-1">
-                            {machines.filter(m => m.status === 'inactive').length}
-                          </p>
-                        </div>
-                        <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <AdminOverviewTab
+                totalCustomers={totalCustomers}
+                activeCustomers={activeCustomers}
+                totalMachines={totalMachines}
+                machines={machines}
+                totalTests={totalTests}
+                products={products}
+                recentTests={recentTests}
+                setActiveTab={(tab) => setActiveTab(tab)}
+                formatDate={formatDate}
+              />
             )}
 
             {activeTab === 'customers' && (
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
-                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    All <span className="text-red-600">Customers</span>
-                  </h2>
-                  <div className="flex gap-3 w-full sm:w-auto">
-                    <button
-                      onClick={() => setModalOpen('import-customers')}
-                      className="flex-1 sm:flex-none px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      Import CSV
-                    </button>
-                    <button
-                      onClick={openAddCustomer}
-                      className="flex-1 sm:flex-none px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Add Customer
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Search Box */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search customers by company name..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                    />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="mb-4 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setCustomerPinFilter('all')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                      customerPinFilter === 'all'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setCustomerPinFilter('configured')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                      customerPinFilter === 'configured'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                    }`}
-                  >
-                    PIN Set
-                  </button>
-                  <button
-                    onClick={() => setCustomerPinFilter('not-configured')}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                      customerPinFilter === 'not-configured'
-                        ? 'bg-amber-600 text-white'
-                        : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                    }`}
-                  >
-                    PIN Not Set
-                  </button>
-                </div>
-
-                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
-                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Logo</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Company</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">PIN</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Created</th>
-                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {filteredCustomers.map((customer) => (
-                        <tr key={customer.id} className="hover:bg-primary-50/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="w-16 h-12 rounded-lg overflow-hidden bg-white border-2 border-gray-200 flex items-center justify-center p-2">
-                              {customer.logo_url ? (
-                                <Image
-                                  src={customer.logo_url}
-                                  alt={customer.company_name}
-                                  width={64}
-                                  height={48}
-                                  className="max-w-full max-h-full object-contain"
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-red-600 rounded flex items-center justify-center">
-                                  <span className="text-white font-black text-xs">
-                                    {customer.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-900">
-                              {customer.company_name}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border-2 ${
-                              customer.status === 'active' 
-                                ? 'bg-green-50 text-green-700 border-green-200' 
-                                : 'bg-gray-100 text-gray-700 border-gray-200'
-                            }`}>
-                              {customer.status === 'active' && (
-                                <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                              )}
-                              {customer.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
-                              customer.pin_configured
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}>
-                              PIN: {customer.pin_configured ? 'Set' : 'Not Set'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                            {formatDate(customer.created_at)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-2">
-                            <button
-                              onClick={() => openLogoUpload(customer)}
-                              className="inline-flex items-center px-3 py-1.5 text-blue-700 hover:text-white bg-blue-100 hover:bg-blue-600 rounded-lg transition-all"
-                              title="Upload Logo"
-                            >
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              Logo
-                            </button>
-                            <button
-                              onClick={() => openEditCustomer(customer)}
-                              className="inline-flex items-center px-3 py-1.5 text-primary-700 hover:text-white bg-primary-100 hover:bg-primary-600 rounded-lg transition-all"
-                            >
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Edit
-                            </button>
-                            {profile?.role === 'admin' && (
-                              <button
-                                onClick={() => openSetCustomerPin(customer)}
-                                className="inline-flex items-center px-3 py-1.5 text-amber-700 hover:text-white bg-amber-100 hover:bg-amber-600 rounded-lg transition-all"
-                                title="Set User Management PIN"
-                              >
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.105 0 2 .895 2 2v3a2 2 0 11-4 0v-3c0-1.105.895-2 2-2zm0 0V8a4 4 0 118 0v3M5 12h2m-1-1v2" />
-                                </svg>
-                                Set PIN
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteCustomer(customer.id)}
-                              className="inline-flex items-center px-3 py-1.5 text-secondary-700 hover:text-white bg-secondary-100 hover:bg-secondary-600 rounded-lg transition-all"
-                            >
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <AdminCustomersTab
+                customers={customers}
+                profile={profile}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onOpenImport={() => setModalOpen('import-customers')}
+                onOpenAdd={openAddCustomer}
+                onOpenEdit={openEditCustomer}
+                onOpenLogo={openLogoUpload}
+                onDelete={handleDeleteCustomer}
+                formatDate={formatDate}
+              />
             )}
 
             {activeTab === 'machines' && (
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
-                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                    </svg>
-                    All <span className="text-orange-600">Machines</span>
-                  </h2>
-                  <button
-                    onClick={openAddMachine}
-                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Machine
-                  </button>
-                </div>
-                
-                {/* Search Box */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search machines by name, serial number, or model..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                    />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
-                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine Name</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Location</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {machines.filter(machine => 
-                        machine.machine_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        machine.serial_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        machine.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        machine.customer?.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
-                      ).map((machine) => (
-                        <tr key={machine.id} className="hover:bg-primary-50/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-900">{machine.machine_name}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {machine.customer?.company_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {machine.location || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                              machine.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {machine.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-3">
-                            <button
-                              onClick={() => openEditMachine(machine)}
-                              className="text-primary-600 hover:text-primary-800 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteMachine(machine.id)}
-                              className="text-secondary-600 hover:text-secondary-800 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {machines.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                            No machines found. Click "Add Machine" to create one.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <AdminMachinesTab
+                machines={machines}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onOpenAdd={openAddMachine}
+                onOpenEdit={openEditMachine}
+                onDelete={handleDeleteMachine}
+              />
             )}
 
             {activeTab === 'products' && (
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
-                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    All <span className="text-red-600">Products</span>
-                  </h2>
-                  <div className="flex gap-3 w-full sm:w-auto">
-                    <button
-                      onClick={() => setModalOpen('import-products')}
-                      className="flex-1 sm:flex-none px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      Import CSV
-                    </button>
-                    <button
-                      onClick={openAddProduct}
-                      className="flex-1 sm:flex-none px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Add Product
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Search Box */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search products by name or type..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                    />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
-                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product Name</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product Type</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Base Oil</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Viscosity Grade</th>
-                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {products.filter(product => 
-                        product.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        product.product_type?.toLowerCase().includes(searchQuery.toLowerCase())
-                      ).map((product) => (
-                        <tr key={product.id} className="hover:bg-primary-50/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-900">{product.product_name}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-3 py-1 text-xs font-bold rounded-full bg-primary-100 text-primary-800">
-                              {product.product_type}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {product.base_oil || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {product.viscosity_grade || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-3">
-                            <button
-                              onClick={() => openEditProduct(product)}
-                              className="text-primary-600 hover:text-primary-800 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteProduct(product.id)}
-                              className="text-secondary-600 hover:text-secondary-800 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {products.length === 0 && (
-                        <tr>
-                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                            No products found. Click "Add Product" to create one.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <AdminProductsTab
+                products={products}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onOpenImport={() => setModalOpen('import-products')}
+                onOpenAdd={openAddProduct}
+                onOpenEdit={openEditProduct}
+                onDelete={handleDeleteProduct}
+              />
             )}
 
             {activeTab === 'tests' && (
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
-                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                    Lab <span className="text-orange-600">Tests</span>
-                  </h2>
-                  <button
-                    onClick={openAddTest}
-                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Lab Test
-                  </button>
-                </div>
-                
-                {/* Search Box */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search tests by machine name or test type..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                    />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Company and Machine Filter */}
-                <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-2">Filter by Company</label>
-                    <select
-                      value={filterCompany}
-                      onChange={(e) => setFilterCompany(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                    >
-                      <option value="all">All Companies</option>
-                      {customers.map(customer => (
-                        <option key={customer.id} value={customer.id}>{customer.company_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-2">Filter by Machine</label>
-                    <select
-                      value={filterMachine}
-                      onChange={(e) => setFilterMachine(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                    >
-                      <option value="all">All Machines</option>
-                      {machines
-                        .filter(machine => filterCompany === 'all' || machine.customer_id === filterCompany)
-                        .map(machine => (
-                        <option key={machine.id} value={machine.id}>{machine.machine_name} - {machine.customer?.company_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Date Filter */}
-                <div className="mb-4 bg-white rounded-xl p-4 border-2 border-gray-200">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setDateFilter('all')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'all'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        All Time
-                      </button>
-                      <button
-                        onClick={() => setDateFilter('today')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'today'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        Today
-                      </button>
-                      <button
-                        onClick={() => setDateFilter('week')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'week'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        This Week
-                      </button>
-                      <button
-                        onClick={() => setDateFilter('month')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          dateFilter === 'month'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        This Month
-                      </button>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto">
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-gray-600">From:</label>
-                        <input
-                          type="date"
-                          value={customDateFrom}
-                          onChange={(e) => {
-                            setCustomDateFrom(e.target.value)
-                            setDateFilter('all')
-                          }}
-                          className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-gray-600">To:</label>
-                        <input
-                          type="date"
-                          value={customDateTo}
-                          onChange={(e) => {
-                            setCustomDateTo(e.target.value)
-                            setDateFilter('all')
-                          }}
-                          className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
-                  <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Test Date</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Company</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Product</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">PDF</th>
-                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {recentTests.filter(test => {
-                        const matchSearch = test.machine?.machine_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          test.test_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          test.product?.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          test.machine?.customer?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          test.machine?.serial_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          test.machine?.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          test.machine?.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          String(test.viscosity_40c || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          String(test.viscosity_100c || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          String(test.water_content || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          String(test.tan_value || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          test.test_date?.toLowerCase().includes(searchQuery.toLowerCase())
-                        const matchDate = filterByDate(test.test_date)
-                        const matchCompany = filterCompany === 'all' || String(test.machine?.customer_id) === filterCompany
-                        const matchMachine = filterMachine === 'all' || String(test.machine_id) === filterMachine
-                        return matchSearch && matchDate && matchCompany && matchMachine
-                      }).map((test) => (
-                        <tr key={test.id} className="hover:bg-primary-50/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                            {formatDate(test.test_date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {test.machine?.machine_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {test.machine?.customer?.company_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {test.product?.product_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {test.pdf_path ? (
-                              <button
-                                onClick={() => {
-                                  // Generate public URL from Supabase Storage
-                                  const pdfPath = test.pdf_path
-                                  if (!pdfPath) return
-                                  const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
-                                  if (data?.publicUrl) {
-                                    setCurrentPdfUrl(data.publicUrl)
-                                    setPdfViewerOpen(true)
-                                  }
-                                }}
-                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                View PDF
-                              </button>
-                            ) : (
-                              <span className="text-xs text-gray-400">-</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-3">
-                            <button
-                              onClick={() => openEditTest(test)}
-                              className="text-primary-600 hover:text-primary-800 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTest(test.id)}
-                              className="text-secondary-600 hover:text-secondary-800 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {recentTests.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                            No lab tests found. Click "Add Lab Test" to create one.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'alerts' && (
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
-                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    Alert <span className="text-red-600">Queue</span>
-                  </h2>
-                  <button
-                    onClick={loadAlertQueue}
-                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh Alerts
-                  </button>
-                </div>
-
-                <div className="mb-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
-                  <select
-                    value={alertSeverityFilter}
-                    onChange={(e) => setAlertSeverityFilter(e.target.value as 'all' | 'critical' | 'warning')}
-                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
-                  >
-                    <option value="all">All Severity</option>
-                    <option value="critical">Critical</option>
-                    <option value="warning">Warning</option>
-                  </select>
-
-                  <select
-                    value={alertStatusFilter}
-                    onChange={(e) => setAlertStatusFilter(e.target.value as 'all' | 'open')}
-                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="open">Open</option>
-                  </select>
-
-                  <select
-                    value={alertCustomerFilter}
-                    onChange={(e) => setAlertCustomerFilter(e.target.value)}
-                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
-                  >
-                    <option value="all">All Customers</option>
-                    {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>{customer.company_name}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={emailLanguage}
-                    onChange={(e) => setEmailLanguage(e.target.value as 'id' | 'en')}
-                    className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
-                  >
-                    <option value="id">Email Template: Bahasa Indonesia</option>
-                    <option value="en">Email Template: English</option>
-                  </select>
-
-                  <button
-                    onClick={() => {
-                      setAlertSeverityFilter('all')
-                      setAlertStatusFilter('all')
-                      setAlertCustomerFilter('all')
-                    }}
-                    className="px-4 py-3 border-2 border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100"
-                  >
-                    Reset Filters
-                  </button>
-                </div>
-
-                <div className="mb-5 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
-                  In-app alert only. Admin can review and send manual email notification when needed.
-                </div>
-
-                <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
-                  <table className="w-full min-w-[1080px] divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Severity</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Customer</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Machine</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Summary</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Next Action</th>
-                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {filteredAlertQueue.map((alertItem) => (
-                        <tr key={alertItem.id} className="hover:bg-primary-50/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border-2 ${
-                              alertItem.severity === 'critical'
-                                ? 'bg-red-100 text-red-800 border-red-300'
-                                : 'bg-yellow-100 text-yellow-800 border-yellow-300'
-                            }`}>
-                              {alertItem.severity.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-800 font-medium">
-                            <div>{alertItem.customerName}</div>
-                            <div className="text-xs text-gray-500">{alertItem.customerEmail || '-'}</div>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-800 font-bold">{alertItem.machineName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{alertItem.message}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{alertItem.recommendedAction}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-2">
-                            <button
-                              onClick={() => markAlertReviewed(alertItem.id)}
-                              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors ${
-                                reviewedAlertIds.includes(alertItem.id)
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                              }`}
-                            >
-                              {reviewedAlertIds.includes(alertItem.id) ? 'Reviewed' : 'Mark Reviewed'}
-                            </button>
-                            <button
-                              onClick={() => sendManualEmail(alertItem)}
-                              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors ${
-                                emailedAlertIds.includes(alertItem.id)
-                                  ? 'bg-blue-50 text-blue-700 border-blue-300'
-                                  : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                              }`}
-                            >
-                              {emailedAlertIds.includes(alertItem.id) ? 'Email Sent' : 'Send Email Manual'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredAlertQueue.length === 0 && (
-                        <tr>
-                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                            No alerts match current filters.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <AdminTestsTab
+                recentTests={recentTests}
+                customers={customers}
+                machines={machines}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filterCompany={filterCompany}
+                setFilterCompany={setFilterCompany}
+                filterMachine={filterMachine}
+                setFilterMachine={setFilterMachine}
+                dateFilter={dateFilter}
+                setDateFilter={(val) => setDateFilter(val as 'all' | 'today' | 'week' | 'month')}
+                customDateFrom={customDateFrom}
+                setCustomDateFrom={setCustomDateFrom}
+                customDateTo={customDateTo}
+                setCustomDateTo={setCustomDateTo}
+                filterByDate={(testDate) => filterByDate(testDate, dateFilter, customDateFrom, customDateTo)}
+                onOpenAdd={openAddTest}
+                onOpenEdit={openEditTest}
+                onDelete={handleDeleteTest}
+                onOpenPdf={(pdfPath) => {
+                  if (!pdfPath) return
+                  const { data } = supabase.storage.from('lab-reports').getPublicUrl(pdfPath)
+                  if (data?.publicUrl) {
+                    setCurrentPdfUrl(data.publicUrl)
+                    setPdfViewerOpen(true)
+                  }
+                }}
+                formatDate={formatDate}
+              />
             )}
 
             {activeTab === 'users' && (
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <h2 className="text-2xl sm:text-4xl font-black text-gray-900 flex items-center">
-                    <svg className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    All <span className="text-red-600">Users</span> <span className="text-xl text-gray-500 font-medium">({users.length})</span>
-                  </h2>
-                  <button
-                    onClick={openAddUser}
-                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add User
-                  </button>
-                </div>
-                
-                {/* Search Box */}
-                {users.length > 0 && (
-                  <div className="mb-4">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Search users by name or company..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 font-medium"
-                      />
-                      <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
-                {users.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No users found. Click "🔄 Reload" or "+ Add User" to create one.
-                  </div>
-                )}
-                {users.length > 0 && (
-                  <div className="w-full overflow-auto rounded-xl border-2 border-primary-100 max-h-[62vh]">
-                    <table className="w-full min-w-[980px] divide-y-2 divide-primary-200">
-                    <thead className="bg-orange-50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Phone</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Role</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-primary-900 uppercase tracking-wider">Company</th>
-                        <th className="px-6 py-4 text-right text-xs font-black text-primary-900 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y-2 divide-gray-100">
-                      {users.filter(user => 
-                        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        user.customer?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        user.role?.toLowerCase().includes(searchQuery.toLowerCase())
-                      ).map((user) => (
-                        <tr key={user.id} className="hover:bg-primary-50/30 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-900">{user.full_name || 'No name'}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{user.email || '-'}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{user.phone_number || '-'}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border-2 ${
-                              user.role === 'admin' ? 'bg-purple-100 text-purple-800 border-purple-300' :
-                              user.role === 'sales' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                              'bg-green-100 text-green-800 border-green-300'
-                            }`}>
-                              {user.role.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                            {user.customer?.company_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold space-x-3">
-                            <button
-                              onClick={() => openEditUser(user)}
-                              className="text-primary-600 hover:text-primary-900 font-bold px-3 py-1 rounded hover:bg-primary-50 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-secondary-600 hover:text-secondary-900 font-bold px-3 py-1 rounded hover:bg-secondary-50 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                )}
-              </div>
+              <AdminUsersTab
+                users={users}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onOpenAdd={openAddUser}
+                onOpenEdit={openEditUser}
+                onDelete={handleDeleteUser}
+              />
             )}
 
             {activeTab === 'requests' && (
               <AdminRequestsTab 
-                actions={maintenanceActions} 
+                labRequests={labRequests} 
                 onRefresh={() => router.refresh()} 
               />
             )}
+
           </div>
         </div>
       </main>
 
-      {/* Modals - Continued in next section due to length */}
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-100 select-none py-4 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase tracking-widest font-black">
+            <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+            </svg>
+            <span>© 2026 PT Nabel Sakha Gemilang</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Authorized Distributor</span>
+            <Image
+              src="/logos/total-energies.png"
+              alt="TotalEnergies"
+              width={100}
+              height={26}
+              className="h-6 w-auto object-contain brightness-95 hover:brightness-100 transition-all"
+            />
+          </div>
+        </div>
+      </footer>
+
+      {/* --- Premium Modals --- */}
+      
+      {/* Customer Add/Edit Modal */}
       {(modalOpen === 'add-customer' || modalOpen === 'edit-customer') && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border-2 border-primary-200 overflow-hidden">
-            <div className="bg-red-600 px-6 py-4">
-              <h3 className="text-xl font-black text-white flex items-center">
-                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                {modalOpen === 'add-customer' ? 'Add New Customer' : 'Edit Customer'}
-              </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    {modalOpen === 'add-customer' ? 'Add New Customer' : 'Edit Customer'}
+                  </h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Corporate Client Configuration</p>
+                </div>
+              </div>
+              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Company Name</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Company Name</label>
                   <input
                     type="text"
                     value={toInputValue(formData.company_name)}
                     onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-medium transition-all"
-                    placeholder="Enter company name"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="PT Contoh Indonesia"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Status</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
                   <select
                     value={toInputValue(formData.status)}
                     onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-medium transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -2036,18 +1015,18 @@ export default function AdminClient({
                 <button
                   onClick={handleSaveCustomer}
                   disabled={loading}
-                  className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 font-bold shadow-lg transition-all flex items-center justify-center"
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
                 >
                   {loading ? (
                     <OilDropLoader compact label="Saving..." className="text-white" />
                   ) : (
-                    <><svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Save</>
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
                   )}
                 </button>
                 <button
                   onClick={() => setModalOpen(null)}
                   disabled={loading}
-                  className="flex-1 px-5 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-bold transition-all"
+                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
                 >
                   Cancel
                 </button>
@@ -2057,98 +1036,37 @@ export default function AdminClient({
         </div>
       )}
 
-      {modalOpen === 'set-customer-pin' && selectedItem && 'company_name' in selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border-2 border-amber-200 overflow-hidden">
-            <div className="bg-amber-600 px-6 py-4">
-              <h3 className="text-xl font-black text-white flex items-center">
-                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.105 0 2 .895 2 2v3a2 2 0 11-4 0v-3c0-1.105.895-2 2-2zm0 0V8a4 4 0 118 0v3" />
-                </svg>
-                Set Customer PIN
-              </h3>
-              <p className="text-amber-100 text-sm mt-1">{selectedItem.company_name}</p>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">New PIN</label>
-                  <input
-                    type="password"
-                    value={String(formData.pin || '')}
-                    onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-medium transition-all"
-                    placeholder="At least 6 characters"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Confirm PIN</label>
-                  <input
-                    type="password"
-                    value={String(formData.confirm_pin || '')}
-                    onChange={(e) => setFormData({ ...formData, confirm_pin: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 font-medium transition-all"
-                    placeholder="Re-enter PIN"
-                  />
-                </div>
-              </div>
-              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
-                PIN is stored as a secure hash in database and cannot be viewed after saving.
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleSetCustomerPin}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg transition-all flex items-center justify-center"
-                >
-                  {loading ? (
-                    <OilDropLoader compact label="Saving..." className="text-white" />
-                  ) : (
-                    'Save PIN'
-                  )}
-                </button>
-                <button
-                  onClick={() => setModalOpen(null)}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-bold transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Logo Upload Modal */}
       {selectedCustomerForLogo && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border-2 border-primary-200 overflow-hidden">
-            <div className="bg-orange-600 px-6 py-4">
-              <h3 className="text-xl font-black text-white flex items-center">
-                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Upload Company Logo
-              </h3>
-              <p className="text-blue-100 text-sm mt-1">{selectedCustomerForLogo.company_name}</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Upload Company Logo</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{selectedCustomerForLogo.company_name}</p>
+                </div>
+              </div>
+              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div className="p-6">
-              {/* Preview */}
               <div className="mb-6 flex justify-center">
-                <div className="w-64 h-48 rounded-xl overflow-hidden bg-white border-4 border-gray-300 flex items-center justify-center p-6 shadow-lg">
+                <div className="w-64 h-48 rounded-[1.5rem] overflow-hidden bg-white border border-slate-200 flex items-center justify-center p-6 shadow-md">
                   {logoPreview ? (
-                    <Image
+                    <img
                       src={logoPreview}
                       alt="Logo preview"
-                      width={220}
-                      height={150}
                       className="max-w-full max-h-full object-contain"
-                      unoptimized
                     />
                   ) : (
-                    <div className="w-full h-full bg-red-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white font-black text-6xl">
+                    <div className="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-center">
+                      <span className="text-white font-black text-4xl">
                         {selectedCustomerForLogo.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
                       </span>
                     </div>
@@ -2156,37 +1074,35 @@ export default function AdminClient({
                 </div>
               </div>
 
-              {/* File Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+              <div className="mb-6">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                   Select Image
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleLogoFileChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
                 />
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-[10px] font-medium text-slate-400 mt-2">
                   Max 5MB • PNG, JPG, WebP • Auto-compressed to 400x400px
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={handleUploadLogo}
                   disabled={!logoFile || uploadingLogo}
-                  className="flex-1 px-5 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg transition-all flex items-center justify-center"
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
                 >
                   {uploadingLogo ? (
                     <OilDropLoader compact label="Uploading..." className="text-white" />
                   ) : (
                     <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      Upload Logo
+                      Upload
                     </>
                   )}
                 </button>
@@ -2195,11 +1111,11 @@ export default function AdminClient({
                   <button
                     onClick={handleDeleteLogo}
                     disabled={uploadingLogo}
-                    className="px-5 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-600 hover:text-white disabled:opacity-50 font-bold transition-all"
+                    className="px-4 py-3 bg-slate-100 hover:bg-red-500 hover:text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-250 flex items-center justify-center active:scale-95 shadow-sm text-slate-700"
                     title="Delete Logo"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 )}
@@ -2207,7 +1123,7 @@ export default function AdminClient({
                 <button
                   onClick={() => setModalOpen(null)}
                   disabled={uploadingLogo}
-                  className="px-5 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-bold transition-all"
+                  className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
                 >
                   Close
                 </button>
@@ -2217,101 +1133,138 @@ export default function AdminClient({
         </div>
       )}
 
+      {/* Machine Add/Edit Modal */}
       {(modalOpen === 'add-machine' || modalOpen === 'edit-machine') && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">
-              {modalOpen === 'add-machine' ? 'Add New Machine' : 'Edit Machine'}
-            </h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    {modalOpen === 'add-machine' ? 'Add New Machine' : 'Edit Machine'}
+                  </h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Mechanical Asset Profile</p>
+                </div>
+              </div>
+              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Machine Name</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine Name *</label>
                 <input
                   type="text"
-                  value={formData.machine_name || ''}
+                  value={String(formData.machine_name ?? '')}
                   onChange={(e) => setFormData({...formData, machine_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., Compressor BCU 12"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer *</label>
                 <select
-                  value={formData.customer_id || ''}
+                  value={toInputValue(formData.customer_id)}
                   onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                 >
                   {customers.map(c => (
                     <option key={c.id} value={c.id}>{c.company_name}</option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</label>
                 <input
                   type="text"
-                  value={formData.location || ''}
+                  value={String(formData.location ?? '')}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., Plant B"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
                 <select
-                  value={formData.status || 'active'}
+                  value={toInputValue(formData.status)}
                   onChange={(e) => setFormData({...formData, status: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                 >
                   <option value="active">Active</option>
+                  <option value="maintenance">Maintenance</option>
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={handleSaveMachine}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => setModalOpen(null)}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSaveMachine}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                >
+                  {loading ? (
+                    <OilDropLoader compact label="Saving..." className="text-white" />
+                  ) : (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setModalOpen(null)}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Product Add/Edit Modal */}
       {(modalOpen === 'add-product' || modalOpen === 'edit-product') && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">
-              {modalOpen === 'add-product' ? 'Add New Product' : 'Edit Product'}
-            </h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    {modalOpen === 'add-product' ? 'Add New Product' : 'Edit Product'}
+                  </h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Lubricant Product Catalog</p>
+                </div>
+              </div>
+              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
                 <input
                   type="text"
-                  value={formData.product_name || ''}
+                  value={String(formData.product_name ?? '')}
                   onChange={(e) => setFormData({...formData, product_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   placeholder="e.g., Mobil DTE 25"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Type *</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Type *</label>
                 <input
                   type="text"
                   list="product-types-list"
-                  value={formData.product_type || ''}
+                  value={String(formData.product_type ?? '')}
                   onChange={(e) => setFormData({...formData, product_type: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="e.g., Hydraulic Oil, Engine Oil, Compressor Oil"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., Hydraulic Oil, Engine Oil"
                 />
                 <datalist id="product-types-list">
                   {uniqueProductTypes.map(type => (
@@ -2320,11 +1273,11 @@ export default function AdminClient({
                 </datalist>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Base Oil</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Base Oil</label>
                 <select
-                  value={formData.base_oil || ''}
+                  value={toInputValue(formData.base_oil)}
                   onChange={(e) => setFormData({...formData, base_oil: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                 >
                   <option value="">Select Base Oil</option>
                   <option value="Mineral">Mineral</option>
@@ -2332,10 +1285,10 @@ export default function AdminClient({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Viscosity Grade</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity Grade</label>
                 {!useCustomViscosity ? (
                   <select
-                    value={formData.viscosity_grade || ''}
+                    value={toInputValue(formData.viscosity_grade)}
                     onChange={(e) => {
                       if (e.target.value === 'OTHER') {
                         setUseCustomViscosity(true)
@@ -2344,7 +1297,7 @@ export default function AdminClient({
                         setFormData({...formData, viscosity_grade: e.target.value})
                       }
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-in fade-in duration-200"
                   >
                     <option value="">Select Viscosity Grade</option>
                     <optgroup label="ISO VG (Industrial)">
@@ -2391,12 +1344,12 @@ export default function AdminClient({
                     <option value="OTHER">🔧 Other (Type Manually)</option>
                   </select>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 animate-in fade-in duration-200">
                     <input
                       type="text"
-                      value={formData.viscosity_grade || ''}
+                      value={String(formData.viscosity_grade ?? '')}
                       onChange={(e) => setFormData({...formData, viscosity_grade: e.target.value})}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                       placeholder="e.g., Custom HD 50"
                       autoFocus
                     />
@@ -2406,71 +1359,90 @@ export default function AdminClient({
                         setUseCustomViscosity(false)
                         setFormData({...formData, viscosity_grade: ''})
                       }}
-                      className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                      className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
                     >
                       Back
                     </button>
                   </div>
                 )}
               </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={handleSaveProduct}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => setModalOpen(null)}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSaveProduct}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                >
+                  {loading ? (
+                    <OilDropLoader compact label="Saving..." className="text-white" />
+                  ) : (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setModalOpen(null)}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Lab Test Add/Edit Modal */}
       {(modalOpen === 'add-test' || modalOpen === 'edit-test') && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">
-              {modalOpen === 'add-test' ? 'Add New Lab Test' : 'Edit Lab Test'}
-            </h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    {modalOpen === 'add-test' ? 'Add New Lab Test' : 'Edit Lab Test'}
+                  </h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Oil Analysis Report Configuration</p>
+                </div>
+              </div>
+              <button onClick={() => { setFormData({}); setModalOpen(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Machine</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine</label>
                 <div className="flex gap-2">
                   <select
-                    value={formData.machine_id || ''}
+                    value={toInputValue(formData.machine_id)}
                     onChange={(e) => setFormData({...formData, machine_id: e.target.value})}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   >
                     {machines.map(m => (
-                      <option key={m.id} value={m.id}>{m.machine_name}</option>
+                      <option key={m.id} value={m.id}>{m.machine_name} ({m.customer?.company_name})</option>
                     ))}
                   </select>
                   <button
                     type="button"
                     onClick={openQuickAddMachine}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-1 whitespace-nowrap"
+                    className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center gap-1 active:scale-95 shadow-md shadow-orange-500/10"
                     title="Quick Add Machine"
                   >
-                    <span className="text-lg">+</span>
-                    <span className="text-sm">Add</span>
+                    <span>+</span>
+                    <span>Add</span>
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product</label>
                 <div className="flex gap-2">
                   <select
-                    value={formData.product_id || ''}
+                    value={toInputValue(formData.product_id)}
                     onChange={(e) => setFormData({...formData, product_id: e.target.value})}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   >
                     {products.map(p => (
                       <option key={p.id} value={p.id}>{p.product_name}</option>
@@ -2479,182 +1451,261 @@ export default function AdminClient({
                   <button
                     type="button"
                     onClick={openQuickAddProduct}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-1 whitespace-nowrap"
+                    className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center gap-1 active:scale-95 shadow-md shadow-orange-500/10"
                     title="Quick Add Product"
                   >
-                    <span className="text-lg">+</span>
-                    <span className="text-sm">Add</span>
+                    <span>+</span>
+                    <span>Add</span>
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Test Date</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Test Date</label>
                 <input
                   type="date"
-                  value={formData.test_date || ''}
+                  value={String(formData.test_date ?? '')}
                   onChange={(e) => setFormData({...formData, test_date: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Viscosity (cSt @40°C)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={formData.viscosity_40c || ''}
-                  onChange={(e) => setFormData({...formData, viscosity_40c: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 46.5"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity 40°C</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={toInputValue(formData.viscosity_40c)}
+                    onChange={(e) => setFormData({...formData, viscosity_40c: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., 46.5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity 100°C</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={toInputValue(formData.viscosity_100c)}
+                    onChange={(e) => setFormData({...formData, viscosity_100c: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., 6.8"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Viscosity (cSt @100°C)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={formData.viscosity_100c || ''}
-                  onChange={(e) => setFormData({...formData, viscosity_100c: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 6.8"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Water Content</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Water Content</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     step="1"
-                    value={formData.water_content || ''}
+                    value={toInputValue(formData.water_content)}
                     onChange={(e) => setFormData({...formData, water_content: e.target.value})}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                     placeholder="e.g., 198"
                   />
                   <select
-                    value={formData.water_content_unit || 'PPM'}
-                    onChange={(e) => setFormData({...formData, water_content_unit: e.target.value as 'PPM' | 'PERCENT'})}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    value={toInputValue(formData.water_content_unit)}
+                    onChange={(e) => setFormData({...formData, water_content_unit: e.target.value})}
+                    className="bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-xl px-3 py-3 text-xs font-bold text-slate-800 outline-none"
                   >
                     <option value="PPM">PPM</option>
                     <option value="PERCENT">%</option>
                   </select>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.water_content_unit === 'PPM' 
-                    ? `${formData.water_content || 0} PPM = ${((parseFloat(String(formData.water_content ?? '0')) / 10000) || 0).toFixed(4)}%`
-                    : `${formData.water_content || 0}%`
-                  }
-                </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">TAN Value</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">TAN Value</label>
                 <input
                   type="number"
                   step="0.01"
-                  value={formData.tan_value || ''}
+                  value={toInputValue(formData.tan_value)}
                   onChange={(e) => setFormData({...formData, tan_value: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., 0.85"
                 />
               </div>
+
+              {/* Bukti Foto Sampel Fisik (jika ada) */}
+              {(() => {
+                const selectedMachineId = formData.machine_id
+                if (!selectedMachineId) return null
+                
+                // Cari data permintaan lab untuk mesin ini yang memiliki path foto sampel
+                const reqWithPhoto = labRequests.find(r => 
+                  r.machine_id === selectedMachineId && 
+                  r.sample_photo_path && 
+                  (r.status === 'sampling' || r.status === 'assigned' || r.status === 'pending' || r.status === 'completed')
+                )
+                
+                if (!reqWithPhoto || !reqWithPhoto.sample_photo_path) return null
+                
+                const url = supabase.storage.from('sample-photos').getPublicUrl(reqWithPhoto.sample_photo_path).data.publicUrl
+                
+                return (
+                  <div className="bg-orange-50/50 border border-orange-100 p-4 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-center select-none">
+                      <div>
+                        <h4 className="text-[10px] font-black text-orange-700 uppercase tracking-widest flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                          Foto Bukti Sampel Fisik
+                        </h4>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                          Diambil oleh: {reqWithPhoto.requested_by?.full_name || 'Sales Representative'}
+                        </p>
+                      </div>
+                      <a 
+                        href={url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-[9px] font-black text-orange-600 hover:text-orange-700 uppercase tracking-wider transition-colors"
+                      >
+                        Buka Penuh ↗
+                      </a>
+                    </div>
+                    <div className="relative w-full h-40 rounded-xl overflow-hidden border border-orange-100/60 shadow-sm bg-white">
+                      <img 
+                        src={url} 
+                        alt="Bukti Botol Sampel" 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                  </div>
+                )
+              })()}
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lab Report PDF</label>
-                <p className="text-sm text-gray-500">PDF upload will be implemented in future version</p>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lab Report PDF</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null
+                    if (file && file.size > 2 * 1024 * 1024) {
+                      alert('Berkas PDF terlalu besar! Batas maksimal adalah 2MB agar hemat ruang penyimpanan. Silakan gunakan PDF yang sudah dikompresi.')
+                      e.target.value = ''
+                      setPdfFile(null)
+                    } else {
+                      setPdfFile(file)
+                    }
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                />
                 {formData.pdf_path && typeof formData.pdf_path === 'string' && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-[10px] text-slate-500 mt-2 font-bold font-mono truncate">
                     Current: {formData.pdf_path.split('/').pop()}
                   </p>
                 )}
               </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={handleSaveTest}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => {
-                  setFormData({})
-                  setModalOpen(null)
-                }}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSaveTest}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                >
+                  {loading ? (
+                    <OilDropLoader compact label="Saving..." className="text-white" />
+                  ) : (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setFormData({})
+                    setModalOpen(null)
+                  }}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* User Add/Edit Modal */}
       {(modalOpen === 'add-user' || modalOpen === 'edit-user') && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">
-              {modalOpen === 'add-user' ? 'Add New User' : 'Edit User'}
-            </h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    {modalOpen === 'add-user' ? 'Add New User' : 'Edit User'}
+                  </h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Access Control Profile</p>
+                </div>
+              </div>
+              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-6 space-y-4">
               {modalOpen === 'add-user' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
                     <input
                       type="email"
-                      value={formData.email || ''}
+                      value={String(formData.email ?? '')}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                       placeholder="user@example.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
                     <input
                       type="password"
-                      value={formData.password || ''}
+                      value={String(formData.password ?? '')}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                       placeholder="Minimum 6 characters"
                     />
                   </div>
                 </>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
                 <input
                   type="text"
                   value={String(formData.full_name ?? '')}
                   onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="John Doe"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="Nama Lengkap"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email (Optional)</label>
                 <input
                   type="email"
-                  value={formData.contact_email || ''}
+                  value={String(formData.contact_email ?? '')}
                   onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   placeholder="john@company.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Phone Number (Optional)</label>
                 <input
                   type="tel"
-                  value={formData.phone_number || ''}
+                  value={String(formData.phone_number ?? '')}
                   onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="+62 812-3456-7890"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="+62 812-xxxx-xxxx"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</label>
                 <select
-                  value={formData.role || 'customer'}
+                  value={toInputValue(formData.role)}
                   onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                 >
                   <option value="customer">Customer</option>
                   <option value="sales">Sales</option>
@@ -2663,11 +1714,11 @@ export default function AdminClient({
               </div>
               {formData.role === 'customer' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Company</label>
                   <select
-                    value={formData.customer_id || ''}
+                    value={toInputValue(formData.customer_id)}
                     onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   >
                     {customers.map(c => (
                       <option key={c.id} value={c.id}>{c.company_name}</option>
@@ -2675,132 +1726,117 @@ export default function AdminClient({
                   </select>
                 </div>
               )}
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={handleSaveUser}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => setModalOpen(null)}
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSaveUser}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                >
+                  {loading ? (
+                    <OilDropLoader compact label="Saving..." className="text-white" />
+                  ) : (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setModalOpen(null)}
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="bg-white border-t-2 border-gray-200 sticky bottom-0 z-40" style={{ boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-            {/* Left: Copyright */}
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <svg className="w-3.5 h-3.5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">© 2026 <span className="font-bold text-gray-800">PT Nabel Sakha Gemilang</span></span>
-            </div>
-            
-            {/* Right: TotalEnergies Logo with Label */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-500">Authorized Distributor</span>
-              <Image
-                src="/logos/total-energies.png"
-                alt="TotalEnergies"
-                width={120}
-                height={32}
-                className="h-8 w-auto object-contain"
-              />
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Import CSV Modal */}
+      {/* Import Customers CSV Modal */}
       {modalOpen === 'import-customers' && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b-2 border-primary-100">
-              <h2 className="text-2xl font-black text-gray-900">Import Customers from CSV</h2>
-              <p className="text-sm text-gray-600 mt-1">Upload a CSV file with company names (one per line or comma-separated)</p>
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Import Customers</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Upload corporate client CSV file</p>
+                </div>
+              </div>
+              <button onClick={() => { setModalOpen(null); setCsvData([]); setImportResult(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div className="p-6">
               {!importResult ? (
                 <>
                   <div className="mb-6">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">CSV File Format</label>
-                    <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 text-xs font-mono">
-                      <div className="font-bold text-gray-800 mb-2">Option 1 - One company per line:</div>
-                      <div className="text-gray-600">PT Example Corp</div>
-                      <div className="text-gray-600">PT Another Company</div>
-                      <div className="text-gray-600">CV Multi Jaya</div>
-                      <div className="font-bold text-gray-800 mt-3 mb-2">Option 2 - Comma separated with header:</div>
-                      <div className="text-gray-600">company_name</div>
-                      <div className="text-gray-600">PT Example Corp</div>
-                      <div className="text-gray-600">PT Another Company</div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CSV File Format Guidance</label>
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-mono select-all">
+                      <div className="font-black text-slate-700 mb-1">Option 1 - Plain (One company name per line):</div>
+                      <div className="text-slate-500">PT Nabel Sakha Gemilang</div>
+                      <div className="text-slate-500">PT Astra Agro Lestari</div>
+                      <div className="text-slate-500">PT United Tractors</div>
+                      <div className="font-black text-slate-700 mt-3 mb-1">Option 2 - Column structure with header:</div>
+                      <div className="text-slate-650 font-bold">company_name</div>
+                      <div className="text-slate-500">PT Nabel Sakha Gemilang</div>
+                      <div className="text-slate-500">PT Astra Agro Lestari</div>
                     </div>
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Select CSV File</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Select CSV File</label>
                     <input
                       type="file"
                       accept=".csv,.txt"
                       onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
-                          // Parse CSV
                           const reader = new FileReader()
                           reader.onload = (event) => {
                             const text = event.target?.result as string
                             const lines = text.split('\n').filter(line => line.trim())
                             if (lines.length === 0) return
                             
-                            // Skip header if it's exactly "company_name"
                             const startIdx = lines[0].toLowerCase().trim() === 'company_name' ? 1 : 0
                             
                             const data = lines.slice(startIdx).map(line => {
-                              // Handle both comma-separated and single value per line
                               const companyName = line.split(',')[0].trim()
                               return {
                                 company_name: companyName,
                                 status: 'active'
                               }
-                            }).filter(row => row.company_name) // Remove empty rows
+                            }).filter(row => row.company_name)
                             setCsvData(data)
                           }
                           reader.readAsText(file)
                         }
                       }}
-                      className="block w-full text-sm text-gray-900 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none hover:bg-gray-100 p-3"
+                      className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
                     />
                   </div>
 
                   {csvData.length > 0 && (
                     <div className="mb-6">
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Preview ({csvData.length} customers)</label>
-                      <div className="overflow-x-auto border-2 border-gray-200 rounded-lg max-h-60">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Import Preview ({csvData.length} records)</label>
+                      <div className="overflow-x-auto border border-slate-100 rounded-2xl max-h-60 shadow-inner bg-slate-50/50">
+                        <table className="min-w-full divide-y divide-slate-100">
+                          <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0">
                             <tr>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">#</th>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Company Name</th>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Status</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">#</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Company Name</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Default Status</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className="bg-white divide-y divide-slate-100 text-xs font-bold">
                             {csvData.map((row, idx) => (
-                              <tr key={idx}>
-                                <td className="px-3 py-2 text-xs text-gray-500">{idx + 1}</td>
-                                <td className="px-3 py-2 text-xs text-gray-900 font-medium">{row.company_name}</td>
-                                <td className="px-3 py-2 text-xs text-green-600 font-semibold">{row.status}</td>
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
+                                <td className="px-3 py-2 text-slate-800">{row.company_name}</td>
+                                <td className="px-3 py-2 text-emerald-600">{row.status}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -2816,7 +1852,7 @@ export default function AdminClient({
                         setCsvData([])
                         setImportResult(null)
                       }}
-                      className="px-6 py-3 text-gray-700 bg-gray-200 rounded-xl hover:bg-gray-300 font-bold transition-colors"
+                      className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
                       disabled={importLoading}
                     >
                       Cancel
@@ -2852,7 +1888,7 @@ export default function AdminClient({
                         if (results.success > 0) router.refresh()
                       }}
                       disabled={csvData.length === 0 || importLoading}
-                      className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                     >
                       {importLoading ? 'Importing...' : `Import ${csvData.length} Customers`}
                     </button>
@@ -2861,20 +1897,20 @@ export default function AdminClient({
               ) : (
                 <>
                   <div className="mb-6">
-                    <div className={`p-4 rounded-lg ${importResult.failed === 0 ? 'bg-green-50 border-2 border-green-200' : 'bg-yellow-50 border-2 border-yellow-200'}`}>
-                      <h3 className="font-bold text-lg mb-2">Import Complete</h3>
-                      <p className="text-sm mb-2">
-                        <span className="font-bold text-green-600">{importResult.success} customers</span> imported successfully
+                    <div className={`p-4.5 rounded-2xl ${importResult.failed === 0 ? 'bg-emerald-50/50 border border-emerald-100' : 'bg-amber-50/50 border border-amber-100'}`}>
+                      <h3 className="font-black text-slate-800 text-sm mb-2">Import completed successfully</h3>
+                      <p className="text-xs font-bold text-slate-600 mb-1">
+                        🟢 <span className="text-emerald-700">{importResult.success} customers</span> successfully imported.
                       </p>
                       {importResult.failed > 0 && (
                         <>
-                          <p className="text-sm mb-2">
-                            <span className="font-bold text-red-600">{importResult.failed} customers</span> failed to import
+                          <p className="text-xs font-bold text-slate-600 mb-3">
+                            🔴 <span className="text-red-600">{importResult.failed} customers</span> failed to process.
                           </p>
-                          <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded border">
-                            <p className="text-xs font-bold text-red-600 mb-2">Errors:</p>
+                          <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
+                            <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
                             {importResult.errors.map((err, idx) => (
-                              <p key={idx} className="text-xs text-gray-700 mb-1">• {err}</p>
+                              <p key={idx} className="text-slate-500">• {err}</p>
                             ))}
                           </div>
                         </>
@@ -2888,9 +1924,9 @@ export default function AdminClient({
                         setCsvData([])
                         setImportResult(null)
                       }}
-                      className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold transition-all"
+                      className="px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
                     >
-                      Close
+                      Close Window
                     </button>
                   </div>
                 </>
@@ -2903,29 +1939,38 @@ export default function AdminClient({
       {/* Import Products CSV Modal */}
       {modalOpen === 'import-products' && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b-2 border-primary-100">
-              <h2 className="text-2xl font-black text-gray-900">Import Products from CSV</h2>
-              <p className="text-sm text-gray-600 mt-1">Upload CSV with columns: product_name, product_type, base_oil, viscosity_grade</p>
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Import Products</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Upload lubricant product CSV file</p>
+                </div>
+              </div>
+              <button onClick={() => { setModalOpen(null); setCsvData([]); setImportResult(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div className="p-6">
               {!importResult ? (
                 <>
                   <div className="mb-6">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">CSV File Format</label>
-                    <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 text-xs font-mono">
-                      <div className="font-bold text-gray-800 mb-2">Required format with header:</div>
-                      <div className="text-gray-600">product_name,product_type,base_oil,viscosity_grade</div>
-                      <div className="font-bold text-gray-800 mt-3 mb-2">Example data:</div>
-                      <div className="text-gray-600">Mobil DTE 25,Industrial Oil,Mineral,ISO VG 46</div>
-                      <div className="text-gray-600">Shell Tellus S2 M 46,Hydraulic Oil,Mineral,ISO VG 46</div>
-                      <div className="text-gray-600">Castrol Hyspin AWH-M 68,Hydraulic Oil,Mineral,ISO VG 68</div>
-                      <div className="text-yellow-700 mt-3 font-bold">Note: product_name and product_type are required</div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CSV File Format Guidance</label>
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-mono select-all">
+                      <div className="font-black text-slate-700 mb-1">Required format with column headers:</div>
+                      <div className="text-slate-650 font-bold">product_name,product_type,base_oil,viscosity_grade</div>
+                      <div className="font-black text-slate-750 mt-3 mb-1">Example Rows:</div>
+                      <div className="text-slate-500">Mobil DTE 25,Industrial Oil,Mineral,ISO VG 46</div>
+                      <div className="text-slate-500">Shell Tellus S2 M 46,Hydraulic Oil,Mineral,ISO VG 46</div>
+                      <div className="text-[10px] text-amber-700 font-bold mt-3">⚠️ Note: product_name and product_type columns must be filled for every row.</div>
                     </div>
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Select CSV File</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Select CSV File</label>
                     <input
                       type="file"
                       accept=".csv,.txt"
@@ -2938,7 +1983,6 @@ export default function AdminClient({
                             const lines = text.split('\n').filter(line => line.trim())
                             if (lines.length < 2) return
                             
-                            // Skip header row
                             const startIdx = lines[0].toLowerCase().includes('product_name') ? 1 : 0
                             
                             const data = lines.slice(startIdx).map(line => {
@@ -2955,32 +1999,32 @@ export default function AdminClient({
                           reader.readAsText(file)
                         }
                       }}
-                      className="block w-full text-sm text-gray-900 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none hover:bg-gray-100 p-3"
+                      className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
                     />
                   </div>
 
                   {csvData.length > 0 && (
                     <div className="mb-6">
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Preview ({csvData.length} products)</label>
-                      <div className="overflow-x-auto border-2 border-gray-200 rounded-lg max-h-60">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Import Preview ({csvData.length} records)</label>
+                      <div className="overflow-x-auto border border-slate-100 rounded-2xl max-h-60 shadow-inner bg-slate-50/50">
+                        <table className="min-w-full divide-y divide-slate-100">
+                          <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0">
                             <tr>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">#</th>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Product Name</th>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Product Type</th>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Base Oil</th>
-                              <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Viscosity Grade</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">#</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product Name</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product Type</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Base Oil</th>
+                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Viscosity</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className="bg-white divide-y divide-slate-100 text-xs font-bold">
                             {csvData.map((row, idx) => (
-                              <tr key={idx}>
-                                <td className="px-3 py-2 text-xs text-gray-500">{idx + 1}</td>
-                                <td className="px-3 py-2 text-xs text-gray-900 font-medium">{row.product_name}</td>
-                                <td className="px-3 py-2 text-xs text-primary-600 font-semibold">{row.product_type}</td>
-                                <td className="px-3 py-2 text-xs text-gray-600">{row.base_oil || '-'}</td>
-                                <td className="px-3 py-2 text-xs text-gray-600">{row.viscosity_grade || '-'}</td>
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
+                                <td className="px-3 py-2 text-slate-800">{row.product_name}</td>
+                                <td className="px-3 py-2 text-orange-600">{row.product_type}</td>
+                                <td className="px-3 py-2 text-slate-500">{row.base_oil || '-'}</td>
+                                <td className="px-3 py-2 text-slate-500">{row.viscosity_grade || '-'}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -2996,7 +2040,7 @@ export default function AdminClient({
                         setCsvData([])
                         setImportResult(null)
                       }}
-                      className="px-6 py-3 text-gray-700 bg-gray-200 rounded-xl hover:bg-gray-300 font-bold transition-colors"
+                      className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
                       disabled={importLoading}
                     >
                       Cancel
@@ -3011,7 +2055,7 @@ export default function AdminClient({
                         for (const row of csvData) {
                           if (!row.product_name || !row.product_type) {
                             results.failed++
-                            results.errors.push(`Row missing required fields (product_name or product_type)`)
+                            results.errors.push(`Row missing required fields`)
                             continue
                           }
                           
@@ -3038,7 +2082,7 @@ export default function AdminClient({
                         }
                       }}
                       disabled={csvData.length === 0 || importLoading}
-                      className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
                     >
                       {importLoading ? 'Importing...' : `Import ${csvData.length} Products`}
                     </button>
@@ -3047,20 +2091,20 @@ export default function AdminClient({
               ) : (
                 <>
                   <div className="mb-6">
-                    <div className={`p-4 rounded-lg ${importResult.failed === 0 ? 'bg-green-50 border-2 border-green-200' : 'bg-yellow-50 border-2 border-yellow-200'}`}>
-                      <h3 className="font-bold text-lg mb-2">Import Complete</h3>
-                      <p className="text-sm mb-2">
-                        <span className="font-bold text-green-600">{importResult.success} products</span> imported successfully
+                    <div className={`p-4.5 rounded-2xl ${importResult.failed === 0 ? 'bg-emerald-50/50 border border-emerald-100' : 'bg-amber-50/50 border border-amber-100'}`}>
+                      <h3 className="font-black text-slate-800 text-sm mb-2">Import completed successfully</h3>
+                      <p className="text-xs font-bold text-slate-600 mb-1">
+                        🟢 <span className="text-emerald-700">{importResult.success} products</span> successfully imported.
                       </p>
                       {importResult.failed > 0 && (
                         <>
-                          <p className="text-sm mb-2">
-                            <span className="font-bold text-red-600">{importResult.failed} products</span> failed to import
+                          <p className="text-xs font-bold text-slate-600 mb-3">
+                            🔴 <span className="text-red-600">{importResult.failed} products</span> failed to process.
                           </p>
-                          <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded border">
-                            <p className="text-xs font-bold text-red-600 mb-2">Errors:</p>
+                          <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
+                            <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
                             {importResult.errors.map((err, idx) => (
-                              <p key={idx} className="text-xs text-gray-700 mb-1">• {err}</p>
+                              <p key={idx} className="text-slate-500">• {err}</p>
                             ))}
                           </div>
                         </>
@@ -3074,9 +2118,9 @@ export default function AdminClient({
                         setCsvData([])
                         setImportResult(null)
                       }}
-                      className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-bold transition-all"
+                      className="px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
                     >
-                      Close
+                      Close Window
                     </button>
                   </div>
                 </>
@@ -3088,109 +2132,86 @@ export default function AdminClient({
 
       {/* Quick Add Machine Modal */}
       {quickAddModal === 'machine' && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-black text-gray-900">Quick Add Machine</h3>
-                  <p className="text-sm text-gray-500 mt-1">Add new machine without leaving form</p>
-                </div>
-                <button
-                  onClick={cancelQuickAddMachine}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                   </svg>
-                </button>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Quick Add Machine</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Configure assets directly from lab form</p>
+                </div>
+              </div>
+              <button onClick={cancelQuickAddMachine} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine Name *</label>
+                <input
+                  type="text"
+                  value={String(quickAddData.machine_name ?? '')}
+                  onChange={(e) => setQuickAddData({...quickAddData, machine_name: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., Compressor BCU 12"
+                />
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Machine Name *</label>
-                  <input
-                    type="text"
-                    value={quickAddData.machine_name || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, machine_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="e.g., Compressor BCU 12"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
-                  <select
-                    value={quickAddData.customer_id || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, customer_id: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  >
-                    {customers.map(c => (
-                      <option key={c.id} value={c.id}>{c.company_name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number</label>
-                  <input
-                    type="text"
-                    value={quickAddData.serial_number || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, serial_number: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="e.g., SN123456"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                  <input
-                    type="text"
-                    value={quickAddData.model || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, model: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="e.g., Atlas Copco GA 200"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input
-                    type="text"
-                    value={quickAddData.location || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, location: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="e.g., Plant B"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={quickAddData.status || 'active'}
-                    onChange={(e) => setQuickAddData({...quickAddData, status: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer *</label>
+                <select
+                  value={toInputValue(quickAddData.customer_id)}
+                  onChange={(e) => setQuickAddData({...quickAddData, customer_id: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                >
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.company_name}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={cancelQuickAddMachine}
-                  className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition-colors"
+              
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</label>
+                <input
+                  type="text"
+                  value={String(quickAddData.location ?? '')}
+                  onChange={(e) => setQuickAddData({...quickAddData, location: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., Plant B"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                <select
+                  value={toInputValue(quickAddData.status)}
+                  onChange={(e) => setQuickAddData({...quickAddData, status: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                 >
-                  Cancel
-                </button>
+                  <option value="active">Active</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleQuickSaveMachine}
                   disabled={loading || !quickAddData.machine_name || !quickAddData.customer_id}
-                  className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg font-bold transition-colors"
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
                 >
                   {loading ? 'Saving...' : 'Save & Select'}
+                </button>
+                <button
+                  onClick={cancelQuickAddMachine}
+                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
@@ -3200,165 +2221,163 @@ export default function AdminClient({
 
       {/* Quick Add Product Modal */}
       {quickAddModal === 'product' && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-black text-gray-900">Quick Add Product</h3>
-                  <p className="text-sm text-gray-500 mt-1">Add new product without leaving form</p>
-                </div>
-                <button
-                  onClick={cancelQuickAddProduct}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
-                </button>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Quick Add Product</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Configure products directly from lab form</p>
+                </div>
+              </div>
+              <button onClick={cancelQuickAddProduct} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
+                <input
+                  type="text"
+                  value={String(quickAddData.product_name ?? '')}
+                  onChange={(e) => setQuickAddData({...quickAddData, product_name: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., Azolla ZS 46"
+                />
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-                  <input
-                    type="text"
-                    value={quickAddData.product_name || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, product_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="e.g., Azolla ZS 46"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Type *</label>
-                  <input
-                    type="text"
-                    list="quick-product-types-list"
-                    value={quickAddData.product_type || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, product_type: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="e.g., Hydraulic Oil, Engine Oil, Compressor Oil"
-                  />
-                  <datalist id="quick-product-types-list">
-                    {uniqueProductTypes.map(type => (
-                      <option key={type} value={type} />
-                    ))}
-                  </datalist>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Oil</label>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Type *</label>
+                <input
+                  type="text"
+                  list="quick-product-types-list"
+                  value={String(quickAddData.product_type ?? '')}
+                  onChange={(e) => setQuickAddData({...quickAddData, product_type: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  placeholder="e.g., Hydraulic Oil, Compressor Oil"
+                />
+                <datalist id="quick-product-types-list">
+                  {uniqueProductTypes.map(type => (
+                    <option key={type} value={type} />
+                  ))}
+                </datalist>
+              </div>
+              
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Base Oil</label>
+                <select
+                  value={toInputValue(quickAddData.base_oil)}
+                  onChange={(e) => setQuickAddData({...quickAddData, base_oil: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                >
+                  <option value="">Select Base Oil</option>
+                  <option value="Mineral">Mineral</option>
+                  <option value="Synthetic">Synthetic</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity Grade</label>
+                {!useCustomViscosityQuick ? (
                   <select
-                    value={quickAddData.base_oil || ''}
-                    onChange={(e) => setQuickAddData({...quickAddData, base_oil: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    value={toInputValue(quickAddData.viscosity_grade)}
+                    onChange={(e) => {
+                      if (e.target.value === 'OTHER') {
+                        setUseCustomViscosityQuick(true)
+                        setQuickAddData({...quickAddData, viscosity_grade: ''})
+                      } else {
+                        setQuickAddData({...quickAddData, viscosity_grade: e.target.value})
+                      }
+                    }}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-in fade-in duration-200"
                   >
-                    <option value="">Select Base Oil</option>
-                    <option value="Mineral">Mineral</option>
-                    <option value="Synthetic">Synthetic</option>
+                    <option value="">Select Viscosity Grade</option>
+                    <optgroup label="ISO VG (Industrial)">
+                      <option value="ISO VG 10">ISO VG 10</option>
+                      <option value="ISO VG 15">ISO VG 15</option>
+                      <option value="ISO VG 22">ISO VG 22</option>
+                      <option value="ISO VG 32">ISO VG 32</option>
+                      <option value="ISO VG 46">ISO VG 46</option>
+                      <option value="ISO VG 68">ISO VG 68</option>
+                      <option value="ISO VG 100">ISO VG 100</option>
+                      <option value="ISO VG 150">ISO VG 150</option>
+                      <option value="ISO VG 220">ISO VG 220</option>
+                      <option value="ISO VG 320">ISO VG 320</option>
+                      <option value="ISO VG 460">ISO VG 460</option>
+                      <option value="ISO VG 680">ISO VG 680</option>
+                      <option value="ISO VG 1000">ISO VG 1000</option>
+                      <option value="ISO VG 1500">ISO VG 1500</option>
+                    </optgroup>
+                    <optgroup label="SAE (Engine)">
+                      <option value="SAE 0W-20">SAE 0W-20</option>
+                      <option value="SAE 5W-20">SAE 5W-25</option>
+                      <option value="SAE 5W-30">SAE 5W-30</option>
+                      <option value="SAE 10W-30">SAE 10W-30</option>
+                      <option value="SAE 10W-40">SAE 10W-40</option>
+                      <option value="SAE 15W-40">SAE 15W-40</option>
+                      <option value="SAE 20W-50">SAE 20W-50</option>
+                      <option value="SAE 10">SAE 10</option>
+                      <option value="SAE 20">SAE 20</option>
+                      <option value="SAE 30">SAE 30</option>
+                      <option value="SAE 40">SAE 40</option>
+                      <option value="SAE 50">SAE 50</option>
+                    </optgroup>
+                    <optgroup label="NLGI (Grease)">
+                      <option value="NLGI 000">NLGI 000 (Semi-fluid)</option>
+                      <option value="NLGI 00">NLGI 00 (Very Soft)</option>
+                      <option value="NLGI 0">NLGI 0 (Soft)</option>
+                      <option value="NLGI 1">NLGI 1 (Soft - Low Temp)</option>
+                      <option value="NLGI 2">NLGI 2 (Medium - Most Common)</option>
+                      <option value="NLGI 3">NLGI 3 (Firm)</option>
+                      <option value="NLGI 4">NLGI 4 (Hard)</option>
+                      <option value="NLGI 5">NLGI 5 (Very Hard)</option>
+                      <option value="NLGI 6">NLGI 6 (Block)</option>
+                    </optgroup>
+                    <option value="OTHER">🔧 Other (Type Manually)</option>
                   </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Viscosity Grade</label>
-                  {!useCustomViscosityQuick ? (
-                    <select
-                      value={quickAddData.viscosity_grade || ''}
-                      onChange={(e) => {
-                        if (e.target.value === 'OTHER') {
-                          setUseCustomViscosityQuick(true)
-                          setQuickAddData({...quickAddData, viscosity_grade: ''})
-                        } else {
-                          setQuickAddData({...quickAddData, viscosity_grade: e.target.value})
-                        }
+                ) : (
+                  <div className="flex gap-2 animate-in fade-in duration-200">
+                    <input
+                      type="text"
+                      value={String(quickAddData.viscosity_grade ?? '')}
+                      onChange={(e) => setQuickAddData({...quickAddData, viscosity_grade: e.target.value})}
+                      className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                      placeholder="e.g., Custom HD 50"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUseCustomViscosityQuick(false)
+                        setQuickAddData({...quickAddData, viscosity_grade: ''})
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
                     >
-                      <option value="">Select Viscosity Grade</option>
-                      <optgroup label="ISO VG (Industrial)">
-                        <option value="ISO VG 10">ISO VG 10</option>
-                        <option value="ISO VG 15">ISO VG 15</option>
-                        <option value="ISO VG 22">ISO VG 22</option>
-                        <option value="ISO VG 32">ISO VG 32</option>
-                        <option value="ISO VG 46">ISO VG 46</option>
-                        <option value="ISO VG 68">ISO VG 68</option>
-                        <option value="ISO VG 100">ISO VG 100</option>
-                        <option value="ISO VG 150">ISO VG 150</option>
-                        <option value="ISO VG 220">ISO VG 220</option>
-                        <option value="ISO VG 320">ISO VG 320</option>
-                        <option value="ISO VG 460">ISO VG 460</option>
-                        <option value="ISO VG 680">ISO VG 680</option>
-                        <option value="ISO VG 1000">ISO VG 1000</option>
-                        <option value="ISO VG 1500">ISO VG 1500</option>
-                      </optgroup>
-                      <optgroup label="SAE (Engine)">
-                        <option value="SAE 0W-20">SAE 0W-20</option>
-                        <option value="SAE 5W-20">SAE 5W-20</option>
-                        <option value="SAE 5W-30">SAE 5W-30</option>
-                        <option value="SAE 10W-30">SAE 10W-30</option>
-                        <option value="SAE 10W-40">SAE 10W-40</option>
-                        <option value="SAE 15W-40">SAE 15W-40</option>
-                        <option value="SAE 20W-50">SAE 20W-50</option>
-                        <option value="SAE 10">SAE 10</option>
-                        <option value="SAE 20">SAE 20</option>
-                        <option value="SAE 30">SAE 30</option>
-                        <option value="SAE 40">SAE 40</option>
-                        <option value="SAE 50">SAE 50</option>
-                      </optgroup>
-                      <optgroup label="NLGI (Grease)">
-                        <option value="NLGI 000">NLGI 000 (Semi-fluid)</option>
-                        <option value="NLGI 00">NLGI 00 (Very Soft)</option>
-                        <option value="NLGI 0">NLGI 0 (Soft)</option>
-                        <option value="NLGI 1">NLGI 1 (Soft - Low Temp)</option>
-                        <option value="NLGI 2">NLGI 2 (Medium - Most Common)</option>
-                        <option value="NLGI 3">NLGI 3 (Firm)</option>
-                        <option value="NLGI 4">NLGI 4 (Hard)</option>
-                        <option value="NLGI 5">NLGI 5 (Very Hard)</option>
-                        <option value="NLGI 6">NLGI 6 (Block)</option>
-                      </optgroup>
-                      <option value="OTHER">🔧 Other (Type Manually)</option>
-                    </select>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={quickAddData.viscosity_grade || ''}
-                        onChange={(e) => setQuickAddData({...quickAddData, viscosity_grade: e.target.value})}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                        placeholder="e.g., Custom HD 50"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUseCustomViscosityQuick(false)
-                          setQuickAddData({...quickAddData, viscosity_grade: ''})
-                        }}
-                        className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                      >
-                        Back
-                      </button>
-                    </div>
-                  )}
-                </div>
+                      Back
+                    </button>
+                  </div>
+                )}
               </div>
+            </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={cancelQuickAddProduct}
-                  className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleQuickSaveProduct}
-                  disabled={loading || !quickAddData.product_name || !quickAddData.product_type}
-                  className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg font-bold transition-colors"
-                >
-                  {loading ? 'Saving...' : 'Save & Select'}
-                </button>
-              </div>
+            <div className="flex gap-3 p-6 pt-0">
+              <button
+                onClick={handleQuickSaveProduct}
+                disabled={loading || !quickAddData.product_name || !quickAddData.product_type}
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+              >
+                {loading ? 'Saving...' : 'Save & Select'}
+              </button>
+              <button
+                onClick={cancelQuickAddProduct}
+                className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -3366,45 +2385,43 @@ export default function AdminClient({
 
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && currentPdfUrl && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setPdfViewerOpen(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b-2 border-gray-200">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100]" onClick={() => setPdfViewerOpen(false)}>
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-in fade-in duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-gray-900">PDF Viewer</h2>
-                  <p className="text-xs text-gray-500">Lab Test Report</p>
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">PDF Viewer</h2>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Lab Test Report Analysis</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <a
                   href={currentPdfUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  Open in New Tab
+                  Open In New Tab
                 </a>
                 <button
                   onClick={() => setPdfViewerOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
             </div>
-            {/* PDF Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden bg-slate-900">
               <iframe
                 src={currentPdfUrl}
                 className="w-full h-full border-0"
@@ -3417,4 +2434,3 @@ export default function AdminClient({
     </div>
   )
 }
-

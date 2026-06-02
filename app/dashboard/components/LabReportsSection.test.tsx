@@ -43,6 +43,8 @@ describe('LabReportsSection', () => {
             },
           },
         ]}
+        requests={[]}
+        language="en"
         expandedReports={new Set(['r1'])}
         selectedMachineName="Machine A"
         criticalLabel="Critical"

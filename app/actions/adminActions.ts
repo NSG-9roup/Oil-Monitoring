@@ -9,7 +9,8 @@ import type { CustomerFormData, MachineFormData, ProductFormData, LabTestFormDat
  */
 async function verifyAdmin() {
   const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const { data: { session }, error: authError } = await supabase.auth.getSession()
+  const user = session?.user
   
   if (authError || !user) {
     throw new Error('Unauthorized: Please log in')
@@ -21,7 +22,7 @@ async function verifyAdmin() {
     .eq('id', user.id)
     .single()
     
-  if (profileError || !profile || !['admin', 'sales'].includes(profile.role)) {
+  if (profileError || !profile || profile.role !== 'admin') {
     throw new Error('Forbidden: Admin access required')
   }
   
@@ -224,4 +225,32 @@ export async function deleteUser(id: string) {
 
   revalidatePath('/admin')
   return { success: true }
+}
+
+export async function uploadAdminFile(formData: FormData) {
+  await verifyAdmin()
+  
+  const bucket = formData.get('bucket') as string
+  const path = formData.get('path') as string
+  const file = formData.get('file') as File
+
+  if (!bucket || !path || !file) throw new Error('Missing upload parameters')
+
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+  const supabaseService = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  const { data, error } = await supabaseService.storage
+    .from(bucket)
+    .upload(path, file, { 
+      upsert: true, 
+      contentType: file.type 
+    })
+
+  if (error) throw new Error(error.message)
+  
+  return { path: data.path }
 }

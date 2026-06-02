@@ -28,7 +28,7 @@ describe('Admin API Routes', () => {
     it('should require authentication', async () => {
       mockSupabaseClient.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
       
-      expect(mockSupabaseClient.auth.getSession()).resolves.toEqual({ 
+      await expect(mockSupabaseClient.auth.getSession()).resolves.toEqual({ 
         data: { session: null } 
       })
     })

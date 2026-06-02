@@ -20,7 +20,6 @@ const createUserSchema = z.object({
   full_name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(254),
   phone_number: z.union([z.string().trim().min(8).max(20), z.null(), z.undefined()]).optional(),
-  admin_pin: z.string().trim().min(4).max(32),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -108,45 +107,6 @@ export async function POST(request: NextRequest) {
     const parsed = createUserSchema.safeParse(body)
     if (!parsed.success) {
       return jsonError(parsed.error.issues[0]?.message || 'Invalid request payload', 400)
-    }
-
-    const requiredPin = process.env.CUSTOMER_USER_MANAGEMENT_PIN
-    const inputPin = parsed.data.admin_pin.trim()
-
-    // C6: Perkuat PIN Security (Rate limiting per attempt) - Max 5 attempts per minute
-    const pinRateKey = `customer-pin-attempt:${authResult.profile.customer_id}:${ip}`
-    const pinRate = await checkRateLimitDistributed(pinRateKey, 5, 60_000)
-    if (!pinRate.allowed) {
-      return jsonError('Too many failed PIN attempts. Please try again later.', 429)
-    }
-
-    const { data: customerPinData, error: customerPinError } = await supabaseAdmin
-      .from('oil_customers')
-      .select('id, user_management_pin_hash')
-      .eq('id', authResult.profile.customer_id)
-      .single()
-
-    if (customerPinError || !customerPinData) {
-      return jsonError('Customer profile not found', 404)
-    }
-
-    const hasCustomerPin = Boolean(customerPinData.user_management_pin_hash)
-    if (hasCustomerPin) {
-      const { data: verifiedWithCustomerPin, error: verifyError } = await supabaseAdmin.rpc('verify_customer_user_management_pin', {
-        p_customer_id: authResult.profile.customer_id,
-        p_pin: inputPin,
-      })
-
-      if (verifyError || !verifiedWithCustomerPin) {
-        return jsonError('Invalid PIN', 403)
-      }
-    } else {
-      if (!requiredPin) {
-        return jsonError('User creation PIN is not configured', 500)
-      }
-      if (!secureStringEqual(requiredPin, inputPin)) {
-        return jsonError('Invalid PIN', 403)
-      }
     }
 
     const email = parsed.data.email.toLowerCase()

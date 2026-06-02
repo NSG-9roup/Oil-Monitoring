@@ -4,9 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 export default async function Home() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { session }, error } = await supabase.auth.getSession()
+  const user = session?.user
+  if (error) {
+    console.error('SUPABASE GETSESSION ERROR IN ROOT PAGE:', error)
+  }
 
   if (!user) {
     redirect('/login')
@@ -18,8 +20,12 @@ export default async function Home() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role === 'admin' || profile?.role === 'sales') {
+  if (profile?.role === 'admin') {
     redirect('/admin')
+  }
+
+  if (profile?.role === 'sales') {
+    redirect('/sales')
   }
 
   if (profile?.role === 'customer') {

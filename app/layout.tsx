@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { SessionProvider } from '@/app/components/SessionProvider'
-import { ErrorBoundary } from '@/app/components/ErrorBoundary'
+import { ClientProviders } from '@/app/components/ClientProviders'
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -11,9 +10,9 @@ export const metadata: Metadata = {
   title: 'Oil Condition Monitoring',
   description: 'Industrial oil condition monitoring system',
   icons: {
-    icon: 'https://i.imgur.com/jzDDCv1.png',
-    shortcut: 'https://i.imgur.com/jzDDCv1.png',
-    apple: 'https://i.imgur.com/jzDDCv1.png',
+    icon: '/nav logo.webp',
+    shortcut: '/nav logo.webp',
+    apple: '/nav logo.webp',
   },
 }
 
@@ -22,17 +21,22 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({
+import { cookies } from 'next/headers'
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = await cookies()
+  const lang = cookieStore.get('language')?.value || 'en'
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <ErrorBoundary>
-          <SessionProvider>{children}</SessionProvider>
-        </ErrorBoundary>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
         <Toaster position="top-right" />
       </body>
     </html>

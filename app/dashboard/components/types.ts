@@ -35,6 +35,7 @@ export interface LabReportItem {
   viscosity_40c: number
   viscosity_100c: number
   water_content: number
+  water_content_unit?: 'PPM' | 'PERCENT'
   tan_value: number
   notes: string
   machine_id?: string
@@ -58,4 +59,25 @@ export interface RecommendationResult {
   text: string
   action: string
   severity: 'critical' | 'warning' | 'normal'
+}
+
+export interface LabRequest {
+  id: string
+  customer_id: string
+  requested_by_profile_id: string
+  machine_id: string | null
+  title: string
+  description: string | null
+  due_date: string | null
+  priority: string
+  status: string
+  is_new_machine: boolean
+  new_machine_data: any
+  request_date: string
+  created_at: string
+  updated_at: string
+  machine?: {
+    machine_name: string
+    location?: string | null
+  } | null
 }

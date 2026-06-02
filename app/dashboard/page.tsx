@@ -6,8 +6,10 @@ export default async function DashboardPage() {
   const supabase = await createClient()
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const user = session?.user
 
   if (!user) {
     redirect('/login')
@@ -21,9 +23,7 @@ export default async function DashboardPage() {
       customer:customer_id (
         id,
         company_name,
-        status,
-        logo_url,
-        logo_updated_at
+        status
       )
     `)
     .eq('id', user.id)
@@ -55,23 +55,12 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
 
   const { data: machines } = await machinesPromise
+  // Note: teamMembers query kept for future UI expansion
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: teamMembers } = await teamMembersPromise
 
-  // Initialize service client for fallback (RLS issues)
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
-  const supabaseService = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-
-  // Fetch Maintenance Actions with fallback
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let maintenanceActions: any = null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let actionsError: any = null
-  const result = await supabase
+  // Fetch Maintenance Actions (securely scoped by RLS)
+  const { data: maintenanceActions } = await supabase
     .from('oil_maintenance_actions')
     .select(`
       *,
@@ -80,57 +69,20 @@ export default async function DashboardPage() {
     `)
     .eq('customer_id', profile.customer_id)
     .order('created_at', { ascending: false })
-  
-  if (result.error) {
-    actionsError = result.error
-  } else {
-    maintenanceActions = result.data
-  }
 
-  if ((!maintenanceActions || maintenanceActions.length === 0) && !actionsError) {
-    const fallback = await supabaseService
-      .from('oil_maintenance_actions')
-      .select(`
-        *,
-        machine:oil_machines(machine_name, location),
-        owner:oil_profiles!oil_maintenance_actions_owner_profile_id_fkey(full_name, email)
-      `)
-      .eq('customer_id', profile.customer_id)
-      .order('created_at', { ascending: false })
-    maintenanceActions = fallback.data
-  }
-
-  // Fetch Logs with fallback
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let maintenanceActionLogs: any = null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let logsError: any = null
-  const logsResult = await supabase
+  // Fetch Logs (securely scoped by RLS)
+  const { data: maintenanceActionLogs } = await supabase
     .from('oil_maintenance_action_logs')
     .select('id, action_id, actor_id, event_type, from_status, to_status, metadata, created_at')
     .order('created_at', { ascending: false })
-  
-  if (logsResult.error) {
-    logsError = logsResult.error
-  } else {
-    maintenanceActionLogs = logsResult.data
-  }
 
-  if ((!maintenanceActionLogs || maintenanceActionLogs.length === 0) && !logsError) {
-    const fallback = await supabaseService
-      .from('oil_maintenance_action_logs')
-      .select('id, action_id, actor_id, event_type, from_status, to_status, metadata, created_at')
-      .order('created_at', { ascending: false })
-    maintenanceActionLogs = fallback.data
-  }
-
-  // Fetch lab tests for this customer's machines
+  // Fetch lab tests for this customer's machines (securely scoped by RLS)
   const machineIds = (machines || []).map(m => m.id)
   const labTestsPromise = machineIds.length > 0
     ? supabase
         .from('oil_lab_tests')
         .select(`
-          id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content,
+          id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, water_content_unit,
           tan_value, pdf_path, created_at,
           product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)
         `)
@@ -138,26 +90,25 @@ export default async function DashboardPage() {
         .order('test_date', { ascending: false })
     : Promise.resolve({ data: [], error: null })
 
-  const [labTestsResult] = await Promise.all([labTestsPromise])
+  // Fetch lab requests (securely scoped by RLS)
+  const labRequestsPromise = profile.customer_id
+    ? supabase
+        .from('oil_lab_requests')
+        .select(`
+          *,
+          machine:oil_machines(machine_name, location)
+        `)
+        .eq('customer_id', profile.customer_id)
+        .order('created_at', { ascending: false })
+    : Promise.resolve({ data: [], error: null })
 
-  let initialLabTests = labTestsResult.data || []
+  const [labTestsResult, labRequestsResult] = await Promise.all([
+    labTestsPromise,
+    labRequestsPromise
+  ])
 
-  // Fallback for lab tests
-  if (initialLabTests.length === 0 && profile.customer_id && machineIds.length > 0) {
-    const fallbackLabTestsResult = await supabaseService
-      .from('oil_lab_tests')
-      .select(`
-        id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content,
-        tan_value, pdf_path, created_at,
-        product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)
-      `)
-      .in('machine_id', machineIds)
-      .order('test_date', { ascending: false })
-
-    if (!fallbackLabTestsResult.error) {
-      initialLabTests = fallbackLabTestsResult.data || []
-    }
-  }
+  const initialLabTests = labTestsResult.data || []
+  const initialLabRequests = labRequestsResult.data || []
 
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
@@ -181,6 +132,7 @@ export default async function DashboardPage() {
       initialMachines={machines || []}
       initialMaintenanceActions={maintenanceActions || []}
       initialLabTests={initialLabTests}
+      initialLabRequests={initialLabRequests}
     />
   )
 }

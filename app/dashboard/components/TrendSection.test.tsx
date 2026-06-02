@@ -7,7 +7,6 @@ describe('TrendSection', () => {
   it('uses callbacks from props for quick actions', async () => {
     const user = userEvent.setup()
     const onOpenLabDetails = vi.fn()
-    const onOpenActionCenter = vi.fn()
 
     render(
       <TrendSection
@@ -20,26 +19,20 @@ describe('TrendSection', () => {
         noSampleData="No sample data"
         checkConsole="Check console"
         noDataAvailable="No data available"
-        trendAlertsTitle="Trend Alerts"
-        trendAlertsDesc="Trend alerts description"
-        activeTrendAlertsLabel="0 active"
-        noTrendAlerts="No active trend alerts"
-        severityLowLabel="Low"
-        severityMediumLabel="Medium"
-        severityHighLabel="High"
-        recommendedActionLabel="Action"
         totalAnalysisCount={1}
         fleetHealthIndex={85}
         onOpenLabDetails={onOpenLabDetails}
-        onOpenActionCenter={onOpenActionCenter}
       />
     )
 
-    await user.click(screen.getByRole('button', { name: 'VIEW DETAILS' }))
-    await user.click(screen.getByRole('button', { name: 'Follow Up in Action Center' }))
-
+    // Component renders "VIEW DETAILS" button which calls onOpenLabDetails
+    const viewDetailsButton = screen.getByRole('button', { name: 'VIEW DETAILS' })
+    await user.click(viewDetailsButton)
     expect(onOpenLabDetails).toHaveBeenCalledTimes(1)
-    expect(onOpenActionCenter).toHaveBeenCalledTimes(1)
-    expect(screen.getByText('No sample data')).toBeTruthy()
+
+    // Verify other props are rendered
+    expect(screen.getByText('Performance')).toBeTruthy()
+    expect(screen.getByText('Viscosity @40°C')).toBeTruthy()
+    expect(screen.getAllByText('No sample data').length).toBe(4)
   })
 })

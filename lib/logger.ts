@@ -12,14 +12,21 @@ export const logger = {
     if (isDev) {
       // eslint-disable-next-line no-console
       console.error(`[ERROR] ${message}`, data ?? '')
+    } else if (typeof window === 'undefined') {
+      // Server-side production logging for Cloud Observability (Temuan #7)
+      // eslint-disable-next-line no-console
+      console.error(`[PRODUCTION_ERROR] ${message}`, data ?? '')
     }
-    // Production: bisa connect ke Sentry/LogRocket di sini nanti (gratis tier tersedia)
   },
 
   warn: (message: string, data?: LogData) => {
     if (isDev) {
       // eslint-disable-next-line no-console
       console.warn(`[WARN] ${message}`, data ?? '')
+    } else if (typeof window === 'undefined') {
+      // Server-side production logging for Cloud Observability (Temuan #7)
+      // eslint-disable-next-line no-console
+      console.warn(`[PRODUCTION_WARN] ${message}`, data ?? '')
     }
   },
 

@@ -13,26 +13,16 @@ interface TrendSectionProps {
   noSampleData: string
   checkConsole: string
   noDataAvailable: string
-  trendAlertsTitle: string
-  trendAlertsDesc: string
-  activeTrendAlertsLabel: string
-  noTrendAlerts: string
-  severityLowLabel: string
-  severityMediumLabel: string
-  severityHighLabel: string
-  recommendedActionLabel: string
   totalAnalysisCount: number
   fleetHealthIndex: number | null
   baselineViscosity40?: number | null
   baselineViscosity100?: number | null
   baselineTan?: number | null
   onOpenLabDetails: () => void
-  onOpenActionCenter: () => void
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function TrendSection({
-  language, // eslint-disable-line @typescript-eslint/no-unused-vars
+  language, // Language parameter reserved for future i18n expansion
   chartData,
   chartHeight,
   selectedMachineTrendAlerts,
@@ -61,6 +51,9 @@ export function TrendSection({
     if (Number.isNaN(parsed.getTime())) return alertDate
     return xAxisKey === 'isoDate' ? parsed.toISOString().slice(0, 10) : parsed.toLocaleDateString()
   }
+
+  const maxTan = chartData.length > 0 ? Math.max(...chartData.map((d) => d.tan || 0)) : 0
+  const tanDomain: [number, number | 'auto'] = maxTan > 0.5 ? [0, 'auto'] : [0, 0.5]
 
   return (
     <>
@@ -120,15 +113,16 @@ export function TrendSection({
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
+          {/* Card 1: Viscosity @ 40°C */}
           <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-              <span className="w-3 h-3 bg-primary-500 rounded-full mr-3"></span>
-              <GlossaryTooltip termKey="viscosity40c" language={language} label="Viscosity Trend" />
+              <span className="w-3 h-3 bg-orange-500 rounded-full mr-3 animate-pulse"></span>
+              <GlossaryTooltip termKey="viscosity40c" language={language} label={language === 'id' ? 'Viskositas @40°C' : 'Viscosity @40°C'} />
             </h3>
             {chartData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[200px] sm:h-[250px] lg:h-[300px] text-gray-400">
                 <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <p className="font-semibold">{noSampleData}</p>
                 <p className="text-sm text-gray-400 mt-1">{checkConsole}</p>
@@ -141,7 +135,7 @@ export function TrendSection({
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
                     labelFormatter={(value) => formatDateLabel(String(value))}
-                    contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px' }}
+                    contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}
                   />
                   <Legend verticalAlign="top" height={36}/>
                   
@@ -151,7 +145,7 @@ export function TrendSection({
                       y1={baselineViscosity40 * 0.9} 
                       y2={baselineViscosity40 * 1.1} 
                       fill="#10b981" 
-                      fillOpacity={0.1} 
+                      fillOpacity={0.08} 
                     />
                   )}
                   
@@ -159,24 +153,17 @@ export function TrendSection({
                   {baselineViscosity40 && (
                     <>
                       <ReferenceLine y={baselineViscosity40 * 1.2} stroke="#ef4444" strokeDasharray="3 3">
-                        <Label value="Max (+20%)" position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                        <Label value={language === 'id' ? 'Batas Maks (+20%)' : 'Max (+20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
                       <ReferenceLine y={baselineViscosity40 * 0.8} stroke="#ef4444" strokeDasharray="3 3">
-                        <Label value="Min (-20%)" position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                        <Label value={language === 'id' ? 'Batas Min (-20%)' : 'Min (-20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
                     </>
                   )}
 
-                  {baselineViscosity100 && (
-                    <ReferenceLine y={baselineViscosity100} stroke="#6366f1" strokeDasharray="4 2">
-                      <Label value="Baseline @100°C" position="insideTopLeft" style={{ fontSize: '10px', fill: '#6366f1', fontWeight: 'bold' }} />
-                    </ReferenceLine>
-                  )}
-
-                  <Line type="monotone" dataKey="viscosity_40c" name="Viscosity @40°C" stroke="#ea580c" strokeWidth={4} dot={{ fill: '#ea580c', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
-                  <Line type="monotone" dataKey="viscosity_100c" name="Viscosity @100°C" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 4 }} />
+                  <Line type="monotone" dataKey="viscosity_40c" name={language === 'id' ? 'Viskositas @40°C' : 'Viscosity @40°C'} stroke="#ea580c" strokeWidth={4} dot={{ fill: '#ea580c', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   {selectedMachineTrendAlerts
-                    .filter((alert) => alert.parameter === 'Viscosity')
+                    .filter((alert) => alert.parameter === 'Viscosity' && alert.chartValue >= 20)
                     .map((alert) => (
                       <ReferenceDot key={alert.id} x={resolveAlertX(alert.chartDate)} y={alert.chartValue} r={7} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
                     ))}
@@ -185,28 +172,100 @@ export function TrendSection({
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          {/* Card 2: Viscosity @ 100°C */}
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-              <span className="w-3 h-3 bg-secondary-500 rounded-full mr-3"></span>
-              <GlossaryTooltip termKey="waterContent" language={language} label={language === 'id' ? 'Kandungan Air' : 'Water Content'} />
+              <span className="w-3 h-3 bg-indigo-500 rounded-full mr-3 animate-pulse"></span>
+              <GlossaryTooltip termKey="viscosity100c" language={language} label={language === 'id' ? 'Viskositas @100°C' : 'Viscosity @100°C'} />
             </h3>
             {chartData.length === 0 ? (
-              <div className="flex items-center justify-center h-[300px] text-gray-400">
-                <p>{noDataAvailable}</p>
+              <div className="flex flex-col items-center justify-center h-[200px] sm:h-[250px] lg:h-[300px] text-gray-400">
+                <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <p className="font-semibold">{noSampleData}</p>
+                <p className="text-sm text-gray-400 mt-1">{checkConsole}</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
                     labelFormatter={(value) => formatDateLabel(String(value))}
+                    contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}
+                  />
+                  <Legend verticalAlign="top" height={36}/>
+                  
+                  {/* Healthy Band (±10%) */}
+                  {baselineViscosity100 && (
+                    <ReferenceArea 
+                      y1={baselineViscosity100 * 0.9} 
+                      y2={baselineViscosity100 * 1.1} 
+                      fill="#10b981" 
+                      fillOpacity={0.08} 
+                    />
+                  )}
+                  
+                  {/* Warning Limits (±20%) */}
+                  {baselineViscosity100 && (
+                    <>
+                      <ReferenceLine y={baselineViscosity100 * 1.2} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value={language === 'id' ? 'Batas Maks (+20%)' : 'Max (+20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                      <ReferenceLine y={baselineViscosity100 * 0.8} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value={language === 'id' ? 'Batas Min (-20%)' : 'Min (-20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                    </>
+                  )}
+
+                  <Line type="monotone" dataKey="viscosity_100c" name={language === 'id' ? 'Viskositas @100°C' : 'Viscosity @100°C'} stroke="#6366f1" strokeWidth={4} dot={{ fill: '#6366f1', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                  {selectedMachineTrendAlerts
+                    .filter((alert) => alert.parameter === 'Viscosity' && alert.chartValue < 20)
+                    .map((alert) => (
+                      <ReferenceDot key={alert.id} x={resolveAlertX(alert.chartDate)} y={alert.chartValue} r={7} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
+                    ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Card 3: Water Content */}
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="w-3 h-3 bg-sky-500 rounded-full mr-3 animate-pulse"></span>
+              <GlossaryTooltip termKey="waterContent" language={language} label={language === 'id' ? 'Kandungan Air' : 'Water Content'} />
+            </h3>
+            {chartData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[200px] sm:h-[250px] lg:h-[300px] text-gray-400">
+                <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <p className="font-semibold">{noSampleData}</p>
+                <p className="text-sm text-gray-400 mt-1">{checkConsole}</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <Tooltip
+                    labelFormatter={(value) => formatDateLabel(String(value))}
+                    formatter={(value: any, name: string) => {
+                      if (name.includes('Kandungan Air') || name.includes('Water Content')) {
+                        const pct = Number(value)
+                        const ppm = Math.round(pct * 10000)
+                        return [`${pct.toFixed(4)}% (≈ ${ppm} ppm)`, name]
+                      }
+                      return [value, name]
+                    }}
                     contentStyle={{
                       backgroundColor: 'white',
                       border: '0',
                       borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
                     }}
                   />
                   <Legend verticalAlign="top" height={36} />
@@ -230,28 +289,33 @@ export function TrendSection({
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
+          {/* Card 4: Total Acid Number (TAN) */}
+          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-              <span className="w-3 h-3 bg-industrial-500 rounded-full mr-3"></span>
+              <span className="w-3 h-3 bg-red-700 rounded-full mr-3 animate-pulse"></span>
               <GlossaryTooltip termKey="tan" language={language} label="Total Acid Number (TAN)" />
             </h3>
             {chartData.length === 0 ? (
-              <div className="flex items-center justify-center h-[300px] text-gray-400">
-                <p>{noDataAvailable}</p>
+              <div className="flex flex-col items-center justify-center h-[200px] sm:h-[250px] lg:h-[300px] text-gray-400">
+                <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <p className="font-semibold">{noSampleData}</p>
+                <p className="text-sm text-gray-400 mt-1">{checkConsole}</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} domain={tanDomain} />
                   <Tooltip
                     labelFormatter={(value) => formatDateLabel(String(value))}
                     contentStyle={{
                       backgroundColor: 'white',
                       border: '0',
                       borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
                     }}
                   />
                   <Legend verticalAlign="top" height={36} />

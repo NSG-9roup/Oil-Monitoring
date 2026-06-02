@@ -1,17 +1,14 @@
 // Role type
 export type UserRole = 'customer' | 'admin' | 'sales'
 
-// Base Customer interface
 export interface Customer {
   id: string
   company_name: string
   logo_url?: string | null
   status: string
-  pin_configured?: boolean
   created_at: string
   updated_at: string
 }
-
 // Base Profile interface
 export interface Profile {
   id: string
@@ -68,17 +65,6 @@ export interface Machine {
 // Admin Machine with nested customer info
 export interface AdminMachine extends Machine {
   customer?: { company_name: string } | null
-}
-
-export interface MachineProduct {
-  id: string
-  machine_id: string
-  product_id: string
-  start_date: string
-  end_date: string | null
-  created_at: string
-  updated_at: string
-  product?: Product
 }
 
 // Base LabTest interface
@@ -211,4 +197,34 @@ export interface ApiError {
   message: string
   code?: string
   details?: unknown
+}
+
+// Lab Request (from customer to admin/sales)
+export type LabRequestStatus = 'pending' | 'assigned' | 'sampling' | 'completed' | 'cancelled'
+export type LabRequestPriority = 'low' | 'medium' | 'high'
+
+export interface LabRequest {
+  id: string
+  customer_id: string
+  machine_id?: string | null
+  requested_by_profile_id: string
+  assigned_to_profile_id?: string | null
+  title: string
+  description?: string | null
+  priority: LabRequestPriority
+  status: LabRequestStatus
+  request_date: string
+  due_date?: string | null
+  is_new_machine: boolean
+  new_machine_data?: {
+    machine_name?: string
+    model?: string
+    location?: string
+  } | null
+  created_at: string
+  updated_at: string
+  machine?: { machine_name: string; location?: string | null; serial_number?: string | null; model?: string | null } | null
+  customer?: { company_name: string; logo_url?: string | null } | null
+  requested_by?: { full_name: string; email: string } | null
+  sample_photo_path?: string | null
 }

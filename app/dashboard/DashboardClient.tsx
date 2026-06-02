@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
-import { exportFleetReportPdf, exportTrustRoiSnapshotPdf, type FleetReportRow, type TrustRoiAuditRow } from '@/lib/pdf/exportFleetReport'
+import { exportFleetReportPdf, type FleetReportRow } from '@/lib/pdf/exportFleetReport'
 import type { MaintenanceAction, MaintenanceActionLog } from '@/lib/types'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
-import { requestLabTest } from '@/app/actions/dashboardActions'
+import { createLabRequest } from '@/app/actions/dashboardActions'
+import type { LabRequest } from '@/app/dashboard/components/types'
 
 interface Machine {
   id: string
@@ -30,6 +31,7 @@ interface OilSample {
   viscosity_40c: number
   viscosity_100c: number
   water_content: number
+  water_content_unit?: 'PPM' | 'PERCENT'
   tan_value: number
   evaluation_mode?: 'oil_type_based' | 'product_specific' | 'new_oil_verification'
   product?: {
@@ -82,6 +84,7 @@ interface DashboardClientProps {
   initialMachines: Machine[]
   initialMaintenanceActions: MaintenanceAction[]
   initialLabTests: any[]
+  initialLabRequests: LabRequest[]
 }
 
 type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
@@ -163,8 +166,6 @@ const dashboardCopy = {
     actionCenter: 'Tindak Lanjuti di Action Center',
     exportFleetPdf: 'Ekspor Laporan Armada (PDF)',
     exportFleetDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format laporan resmi.',
-    exportRoiPdf: 'Ekspor Trust & ROI Snapshot',
-    exportRoiDesc: 'Unduh ringkasan kepercayaan perusahaan, catatan audit, dan estimasi ROI.',
     teamManagementTitle: 'Manajemen Pengguna Perusahaan',
     teamManagementDesc: 'Kelola anggota tim perusahaan agar mereka dapat mengakses dashboard dan data pemantauan secara bersamaan.',
     teamMembersTitle: 'Daftar Pengguna Perusahaan',
@@ -175,8 +176,6 @@ const dashboardCopy = {
     teamFullName: 'Nama Lengkap',
     teamEmail: 'Email',
     teamPhone: 'No. Telepon',
-    teamPin: 'PIN Otorisasi',
-    teamPinHint: 'Hanya pengguna dengan hak akses PIN yang dapat menambahkan anggota baru.',
     teamPassword: 'Kata Sandi',
     teamPasswordHint: 'Minimal 8 karakter, gunakan kombinasi huruf besar, kecil, dan angka.',
     teamCreateButton: 'Tambah Pengguna',
@@ -346,8 +345,6 @@ const dashboardCopy = {
     actionCenter: 'Follow up in Action Center',
     exportFleetPdf: 'Export Fleet Report (PDF)',
     exportFleetDesc: 'Download executive summary and machine priority list in a professional report format.',
-    exportRoiPdf: 'Export Trust & ROI Snapshot',
-    exportRoiDesc: 'Download enterprise trust summary, audit logs, and ROI estimates.',
     teamManagementTitle: 'Company User Management',
     teamManagementDesc: 'Manage team members so they can collaborate on the dashboard and monitoring data.',
     teamMembersTitle: 'Company Users',
@@ -358,8 +355,6 @@ const dashboardCopy = {
     teamFullName: 'Full Name',
     teamEmail: 'Email',
     teamPhone: 'Phone Number',
-    teamPin: 'Authorization PIN',
-    teamPinHint: 'Only users with PIN authorization can add new members.',
     teamPassword: 'Password',
     teamPasswordHint: 'At least 8 characters with a mix of uppercase, lowercase, and numbers.',
     teamCreateButton: 'Add User',
@@ -495,10 +490,12 @@ export default function DashboardClient({
   initialMachines,
   initialMaintenanceActions,
   initialLabTests,
+  initialLabRequests = [],
 }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
   const [language, setLanguage] = useState<Language>('id')
+  const [labRequests, setLabRequests] = useState<LabRequest[]>(initialLabRequests)
   const copy = dashboardCopy[language]
   const preferredMachine = useMemo(() => {
     const machineWithData = initialMachines.find((machine) =>
@@ -510,7 +507,20 @@ export default function DashboardClient({
   const normalizedLabTests = useMemo(() => {
     return (initialLabTests || []).map((test) => {
       const product = Array.isArray(test.product) ? test.product[0] : test.product
-      return { ...test, product }
+      
+      // Normalisasi Kandungan Air ke Persen (%)
+      let water_content = test.water_content || 0;
+      const isPPM = test.water_content_unit === 'PPM' || (!test.water_content_unit && test.water_content > 5);
+      if (isPPM) {
+        water_content = test.water_content / 10000; // 198 PPM -> 0.0198%
+      }
+
+      return { 
+        ...test, 
+        product, 
+        water_content,
+        water_content_unit: 'PERCENT' as const
+      }
     }) as Array<OilSample & { machine_id: string }>
   }, [initialLabTests])
 
@@ -547,7 +557,6 @@ export default function DashboardClient({
 
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [customDateRange, setCustomDateRange] = useState<{ start: string | null; end: string | null }>({ start: null, end: null })
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
@@ -592,6 +601,7 @@ export default function DashboardClient({
   const [requestSaving, setRequestSaving] = useState(false)
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
   const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
+  // Logs state reserved for future audit trail feature
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [maintenanceActionLogs, setMaintenanceActionLogs] = useState<MaintenanceActionLog[]>([])
   const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab'>('trend')
@@ -618,7 +628,7 @@ export default function DashboardClient({
         ? requestForm.new_machine_name 
         : initialMachines.find(m => m.id === requestForm.machine_id)?.machine_name || 'Unknown'
 
-      await requestLabTest({
+      await createLabRequest({
         machine_id: requestForm.is_new_machine ? undefined : requestForm.machine_id,
         title: `Lab Test Request: ${machineName}`,
         description: requestForm.notes,
@@ -631,6 +641,52 @@ export default function DashboardClient({
           location: requestForm.new_machine_location
         } : undefined
       })
+
+      // Fetch the latest request from the database to ensure we get the full database record
+      try {
+        const { data: newRequests, error: fetchErr } = await supabase
+          .from('oil_lab_requests')
+          .select(`
+            *,
+            machine:oil_machines(machine_name, location)
+          `)
+          .eq('customer_id', profile.customer_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (!fetchErr && newRequests && newRequests.length > 0) {
+          setLabRequests(prev => [newRequests[0], ...prev])
+        } else {
+          throw new Error('Database fetch delayed')
+        }
+      } catch {
+        // Fallback: manually construct a mock item to prepend
+        const mockRequest: LabRequest = {
+          id: Math.random().toString(),
+          customer_id: profile.customer_id || '',
+          requested_by_profile_id: profile.id,
+          machine_id: requestForm.is_new_machine ? null : requestForm.machine_id,
+          title: `Lab Test Request: ${machineName}`,
+          description: requestForm.notes,
+          due_date: requestForm.requested_date || null,
+          priority: requestForm.priority,
+          status: 'pending',
+          is_new_machine: requestForm.is_new_machine,
+          new_machine_data: requestForm.is_new_machine ? {
+            machine_name: requestForm.new_machine_name,
+            model: requestForm.new_machine_model,
+            location: requestForm.new_machine_location
+          } : null,
+          request_date: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          machine: requestForm.is_new_machine ? null : {
+            machine_name: machineName,
+            location: initialMachines.find(m => m.id === requestForm.machine_id)?.location || null
+          }
+        }
+        setLabRequests(prev => [mockRequest, ...prev])
+      }
       
       setIsRequestModalOpen(false)
       alert('Permintaan uji lab berhasil dikirim!')
@@ -642,6 +698,24 @@ export default function DashboardClient({
     }
   }
 
+  const handleQuickLabRequest = (
+    machineId: string,
+    notes: string,
+    priority: 'High' | 'Medium' | 'Low' = 'Medium'
+  ) => {
+    setRequestForm({
+      machine_id: machineId,
+      is_new_machine: false,
+      new_machine_name: '',
+      new_machine_model: '',
+      new_machine_location: '',
+      priority: priority,
+      requested_date: formatLocalDateInput(new Date()),
+      notes: notes,
+    })
+    setIsRequestModalOpen(true)
+  }
+
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
 
@@ -649,6 +723,10 @@ export default function DashboardClient({
     // Initial maintenance actions are loaded from the server so the board stays persistent.
     setMaintenanceActions(initialMaintenanceActions)
   }, [initialMaintenanceActions])
+
+  useEffect(() => {
+    setLabRequests(initialLabRequests)
+  }, [initialLabRequests])
 
   const toggleReport = (reportId: string) => {
     setExpandedReports(prev => {
@@ -693,14 +771,69 @@ export default function DashboardClient({
   // Calculate Viscosity Index (VI) from ASTM D2270
   const calculateVI = (visc40: number, visc100: number) => {
     if (!visc40 || !visc100 || visc40 <= 0 || visc100 <= 0) return null
-    
-    // Simplified VI calculation (actual standard uses lookup tables)
-    // This is approximate formula for VI 0-100 range
-    const L = 0.8353 * Math.pow(visc40, 2) + 14.67 * visc40 - 216
-    const H = 0.1684 * Math.pow(visc40, 2) + 11.85 * visc40 - 97
-    const VI = ((L - visc100) / (L - H)) * 100
-    
-    return Math.round(Math.max(0, Math.min(200, VI))) // Clamp between 0-200
+
+    const Y = visc100; // Kinematic viscosity at 100°C
+    const U = visc40;  // Kinematic viscosity at 40°C
+
+    if (Y < 2.0) return null; // Below ASTM D2270 range
+
+    let a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
+
+    // ASTM D2270 Table X2.1 Coefficients of Quadratic Equations
+    if (Y >= 2.0 && Y < 3.8) {
+      a = 1.14673; b = 1.7576; c = -0.109; d = 0.84155; e = 1.5521; f = -0.077;
+    } else if (Y >= 3.8 && Y < 4.4) {
+      a = 3.38095; b = -15.4952; c = 33.196; d = 0.78571; e = 1.7929; f = -0.183;
+    } else if (Y >= 4.4 && Y < 5.0) {
+      a = 2.5000; b = -7.2143; c = 13.812; d = 0.82143; e = 1.5679; f = 0.119;
+    } else if (Y >= 5.0 && Y < 6.4) {
+      a = 0.10100; b = 16.6350; c = -45.469; d = 0.04985; e = 9.1613; f = -18.557;
+    } else if (Y >= 6.4 && Y < 7.0) {
+      a = 3.35714; b = -23.5643; c = 78.466; d = 0.22619; e = 7.7369; f = -16.656;
+    } else if (Y >= 7.0 && Y < 7.7) {
+      a = 0.01191; b = 21.4750; c = -72.870; d = 0.79762; e = -0.7321; f = 14.610;
+    } else if (Y >= 7.7 && Y < 9.0) {
+      a = 0.41858; b = 16.1558; c = -56.040; d = 0.05794; e = 10.5156; f = -28.240;
+    } else if (Y >= 9.0 && Y < 12.0) {
+      a = 0.88779; b = 7.5527; c = -16.600; d = 0.26665; e = 6.7015; f = -12.564;
+    } else if (Y >= 12.0 && Y < 15.0) {
+      a = 0.76720; b = 10.7972; c = -38.180; d = 0.20073; e = 8.4658; f = -22.490;
+    } else if (Y >= 15.0 && Y < 18.0) {
+      a = 0.97305; b = 5.3135; c = -2.200; d = 0.28889; e = 5.9741; f = -4.930;
+    } else if (Y >= 18.0 && Y < 22.0) {
+      a = 0.97256; b = 5.2500; c = -0.980; d = 0.24504; e = 7.4160; f = -16.730;
+    } else if (Y >= 22.0 && Y < 28.0) {
+      a = 0.91413; b = 7.4759; c = -21.820; d = 0.20323; e = 9.1267; f = -34.230;
+    } else if (Y >= 28.0 && Y < 40.0) {
+      a = 0.87031; b = 9.7157; c = -50.770; d = 0.18411; e = 10.1015; f = -46.750;
+    } else if (Y >= 40.0 && Y < 55.0) {
+      a = 0.84703; b = 12.6752; c = -133.310; d = 0.17029; e = 11.4866; f = -80.620;
+    } else if (Y >= 55.0 && Y <= 70.0) {
+      a = 0.85921; b = 11.1009; c = -83.19; d = 0.17130; e = 11.3680; f = -76.940;
+    } else {
+      // Y > 70.0
+      a = 0.8353; b = 14.67; c = -216; d = 0.1684; e = 11.85; f = -97;
+    }
+
+    const L = a * Math.pow(Y, 2) + b * Y + c;
+    const H = d * Math.pow(Y, 2) + e * Y + f;
+
+    if (U >= H) {
+      // Linear formula for VI <= 100
+      const VI = ((L - U) / (L - H)) * 100;
+      return Math.round(Math.max(0, Math.min(200, VI)));
+    } else {
+      // Logarithmic formula for VI > 100
+      const N = (Math.log10(H) - Math.log10(U)) / Math.log10(Y);
+      const VI = ((Math.pow(10, N) - 1) / 0.00715) + 100;
+      return Math.round(Math.max(0, Math.min(200, VI)));
+    }
+  }
+
+  // Normalisasi kandungan air dari PPM ke PERCENT
+  const getNormalizedWaterContent = (water: number, unit?: string): number => {
+    const isPPM = unit === 'PPM' || (!unit && water > 5);
+    return isPPM ? water / 10000 : water;
   }
 
   /**
@@ -1161,7 +1294,7 @@ export default function DashboardClient({
     const parameterSeries = [
       {
         key: 'Water content' as const,
-        values: recentTests.map((test) => (test.water_content || 0) * 100),
+        values: recentTests.map((test) => (test.water_content || 0)),
         title: copy.trend.waterTitle,
         recommendedAction: copy.trend.waterAction,
       },
@@ -1192,18 +1325,29 @@ export default function DashboardClient({
       const percentChange = baseline !== 0 ? ((latest - baseline) / Math.abs(baseline)) * 100 : 0
       const abnormalChange = Math.abs(percentChange) >= 10
       const nearCritical = series.key === 'Water content'
-        ? latest >= 75
+        ? latest >= 0.05
         : series.key === 'TAN'
         ? latest >= 0.7
         : latest <= previous * 0.9 || latest >= previous * 1.1
 
       if (increasing || abnormalChange || nearCritical) {
         const severity: TrendSeverity = abnormalChange && nearCritical ? 'High' : increasing && abnormalChange ? 'Medium' : 'Low'
-        const message = increasing
-          ? `${series.key} ${copy.trend.increasingTrend} over the last ${values.length} tests.`
-          : abnormalChange
-          ? `${series.key} ${copy.trend.abnormalChange} by ${percentChange.toFixed(1)}% compared with the earliest sample in this window.`
-          : `${series.key} ${copy.trend.approachingCritical} for this machine.`
+        
+        const paramName = language === 'id'
+          ? (series.key === 'Water content' ? 'Kandungan air' : series.key === 'Viscosity' ? 'Viskositas' : 'Total Acid Number (TAN)')
+          : (series.key === 'Water content' ? 'Water content' : series.key === 'Viscosity' ? 'Viscosity' : 'Total Acid Number (TAN)')
+
+        const message = language === 'id'
+          ? (increasing
+            ? `${paramName} menunjukkan kenaikan konsisten dalam ${values.length} pengujian terakhir.`
+            : abnormalChange
+            ? `${paramName} berubah secara anomali sebesar ${percentChange.toFixed(1)}% dibandingkan dengan sampel paling awal dalam periode ini.`
+            : `${paramName} mendekati batas kritis untuk mesin ini.`)
+          : (increasing
+            ? `${paramName} shows a consistent increase over the last ${values.length} tests.`
+            : abnormalChange
+            ? `${paramName} changed abnormally by ${percentChange.toFixed(1)}% compared with the earliest sample in this window.`
+            : `${paramName} is approaching the critical limit for this machine.`)
 
         alerts.push({
           id: `${series.key}-${tests[tests.length - 1].id}`,
@@ -1396,7 +1540,7 @@ export default function DashboardClient({
           )
         )
 
-    const waterSeries = recentHistory.map((entry) => (entry.water_content || 0) * 100)
+    const waterSeries = recentHistory.map((entry) => (entry.water_content || 0) * 10000)
     const tanSeries = recentHistory.map((entry) => entry.tan_value || 0)
     const viscSeries = recentHistory.map((entry) => entry.viscosity_40c || 0)
 
@@ -1450,58 +1594,6 @@ export default function DashboardClient({
   const fleetReliabilityScore = reliabilityInsights.length > 0
     ? Math.round(reliabilityInsights.reduce((acc, item) => acc + item.reliabilityScore, 0) / reliabilityInsights.length)
     : 0
-  const totalSpend = 0
-
-  const assignedActionsCount = maintenanceActions.filter((action) => Boolean(action.owner_profile_id)).length
-  const actionsWithDueDateCount = maintenanceActions.filter((action) => Boolean(action.due_date)).length
-  const verifiedPassedCount = maintenanceActions.filter((action) => action.verification_status === 'passed').length
-  const evidenceCoverageCount = maintenanceActions.filter((action) => Boolean(action.evidence_notes && action.evidence_notes.trim().length > 0)).length
-  const overdueOpenCount = maintenanceActions.filter(
-    (action) => Boolean(action.due_date && action.due_date < todayIso && action.status !== 'completed' && action.status !== 'verified')
-  ).length
-
-  const logEventBreakdown = maintenanceActionLogs.reduce(
-    (accumulator, item) => {
-      accumulator[item.event_type] = (accumulator[item.event_type] || 0) + 1
-      return accumulator
-    },
-    {} as Record<MaintenanceActionLog['event_type'], number>
-  )
-
-  const actionCount = Math.max(1, maintenanceActions.length)
-  const assignmentCoverageRate = Math.round((assignedActionsCount / actionCount) * 100)
-  const dueDateCoverageRate = Math.round((actionsWithDueDateCount / actionCount) * 100)
-  const verificationPassRate = Math.round((verifiedPassedCount / actionCount) * 100)
-  const evidenceCoverageRate = Math.round((evidenceCoverageCount / actionCount) * 100)
-  const traceabilityRate = Math.round(Math.min(100, (maintenanceActionLogs.length / (actionCount * 2)) * 100))
-  const overdueRate = Math.round((overdueOpenCount / actionCount) * 100)
-
-  const enterpriseTrustScore = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        assignmentCoverageRate * 0.2 +
-          dueDateCoverageRate * 0.15 +
-          verificationPassRate * 0.25 +
-          evidenceCoverageRate * 0.15 +
-          traceabilityRate * 0.25 -
-          overdueRate * 0.2
-      )
-    )
-  )
-
-  const criticalActionsClosed = maintenanceActions.filter(
-    (action) => (action.status === 'completed' || action.status === 'verified') && action.source_payload && (action.source_payload as Record<string, unknown>).severity === 'critical'
-  ).length
-  const warningActionsClosed = maintenanceActions.filter(
-    (action) => (action.status === 'completed' || action.status === 'verified') && action.source_payload && (action.source_payload as Record<string, unknown>).severity === 'warning'
-  ).length
-  const avoidedDowntimeHours = criticalActionsClosed * 8 + warningActionsClosed * 4 + verifiedPassedCount * 2
-  const reliabilityProgramCost = maintenanceActions.length * 250000
-  const estimatedSavings = Math.round(totalSpend * 0.03 + avoidedDowntimeHours * 350000)
-  const netImpact = estimatedSavings - reliabilityProgramCost
-  const roiPercent = reliabilityProgramCost > 0 ? Math.round((netImpact / reliabilityProgramCost) * 100) : 0
 
   const handleExportFleetReport = async () => {
     await exportFleetReportPdf(
@@ -1520,42 +1612,6 @@ export default function DashboardClient({
     )
   }
 
-  const handleExportTrustRoiSnapshot = async () => {
-    const auditRows: TrustRoiAuditRow[] = [
-      { eventType: 'created', count: logEventBreakdown.created || 0 },
-      { eventType: 'updated', count: logEventBreakdown.updated || 0 },
-      { eventType: 'status_changed', count: logEventBreakdown.status_changed || 0 },
-      { eventType: 'assigned', count: logEventBreakdown.assigned || 0 },
-      { eventType: 'completed', count: logEventBreakdown.completed || 0 },
-      { eventType: 'verified', count: logEventBreakdown.verified || 0 },
-      { eventType: 'reopened', count: logEventBreakdown.reopened || 0 },
-    ]
-
-    await exportTrustRoiSnapshotPdf(
-      {
-        companyName: profile?.customer?.company_name || 'Customer',
-        customerEmail: profile?.email || user.email || '-',
-        generatedBy: profile?.full_name || profile?.email || 'Customer User',
-        generatedAt: new Date(),
-        trustScore: enterpriseTrustScore,
-        reliabilityScore: fleetReliabilityScore,
-        roiPercent,
-        totalSpend,
-        estimatedSavings,
-        netImpact,
-        assignmentCoverageRate,
-        dueDateCoverageRate,
-        verificationPassRate,
-        evidenceCoverageRate,
-        traceabilityRate,
-        overdueRate,
-        avoidedDowntimeHours,
-      },
-      auditRows,
-      language
-    )
-  }
-
   const chartData = filteredSamples.map((sample) => {
     const parsedDate = new Date(sample.test_date)
     const safeDate = Number.isNaN(parsedDate.getTime()) ? sample.test_date : parsedDate.toLocaleDateString()
@@ -1566,7 +1622,7 @@ export default function DashboardClient({
       isoDate: safeIsoDate,
       viscosity_40c: Number(sample.viscosity_40c ?? 0),
       viscosity_100c: Number(sample.viscosity_100c ?? 0),
-      water: Number(sample.water_content ?? 0) * 100,
+      water: Number(sample.water_content ?? 0),
       tan: Number(sample.tan_value ?? 0),
     }
   })
@@ -1578,7 +1634,7 @@ export default function DashboardClient({
         <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex justify-between items-center gap-4">
             {/* Left: NSG Logo + Brand */}
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 select-none">
               <Image
                 src="https://i.imgur.com/8nqsjFz.png"
                 alt="Nabel Sakha Gemilang"
@@ -1587,13 +1643,19 @@ export default function DashboardClient({
                 className="h-7 w-auto object-contain flex-shrink-0"
                 unoptimized
               />
-              <div className="hidden md:block border-l-2 border-gray-100 pl-3">
-                <h1 className="text-base font-black text-gray-900 tracking-tighter">OilTrack™</h1>
+              <div className="hidden md:flex items-center border-l border-gray-200 pl-3 shrink-0">
+                <Image
+                  src="/teks logo.webp"
+                  alt="OilTrack"
+                  width={3186}
+                  height={881}
+                  className="h-5 w-auto object-contain shrink-0"
+                />
               </div>
             </div>
 
             {/* Middle: Customer Logo */}
-            <div className="hidden lg:flex flex-1 justify-center min-w-0">
+            <div className="hidden md:flex flex-1 justify-center min-w-0">
               <div className="bg-gray-50/50 px-4 py-1.5 rounded-2xl border border-gray-100 flex items-center gap-3">
                 {profile?.customer?.logo_url && (
                   <Image
@@ -1616,7 +1678,7 @@ export default function DashboardClient({
               {/* Desktop Request Button */}
               <button
                 onClick={() => setIsRequestModalOpen(true)}
-                className="hidden xl:flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md hover:shadow-lg active:scale-95"
+                className="hidden xl:flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all shadow-lg shadow-orange-500/10 hover:shadow-xl hover:shadow-orange-500/20 active:scale-95"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
                 {copy.requestLab.openButton}
@@ -1633,7 +1695,17 @@ export default function DashboardClient({
                   <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-lg transition-all ${language === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>EN</button>
                 </div>
 
-                <button onClick={handleSignOut} className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-xl transition-all">
+                <button 
+                  onClick={() => router.push('/dashboard/profile')}
+                  className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 p-2 rounded-xl transition-all shadow-sm flex items-center justify-center active:scale-95"
+                  title={language === 'id' ? 'Profil Saya' : 'My Profile'}
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </button>
+
+                <button onClick={handleSignOut} className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-xl transition-all" title={language === 'id' ? 'Keluar' : 'Sign Out'}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>
               </div>
@@ -1684,7 +1756,7 @@ export default function DashboardClient({
                     type="date" 
                     value={customDateRange.start || ''} 
                     onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -1693,7 +1765,7 @@ export default function DashboardClient({
                     type="date" 
                     value={customDateRange.end || ''} 
                     onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
                   />
                 </div>
                 {(!customDateRange.start || !customDateRange.end) && (
@@ -1706,17 +1778,71 @@ export default function DashboardClient({
           </div>
         </div>
       </div>
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col relative gap-8" style={{ scrollbarGutter: 'stable' }}>
-        {/* Welcome Section */}
-        <div className="animate-in fade-in slide-in-from-left-4 duration-700">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
-            {copy.welcomeBack}, <span className="text-primary-600">{profile?.full_name?.split(' ')[0] || 'User'}</span>
-          </h2>
-          <p className="text-slate-500 font-medium mt-2 text-sm">{copy.welcomeSubtitle}</p>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col relative gap-8" style={{ scrollbarGutter: 'stable' }}>
+        {/* Welcome Section with Dynamic Time-Aware Greeting Banner */}
+        <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full">
+          <div className="bg-white rounded-[2rem] border border-slate-105 p-6 sm:p-8 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden group">
+            {/* Soft accent background glow */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-gradient-to-br from-orange-400 to-red-500 opacity-5 blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
+            
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {language === 'id' ? 'KONTROL PANEL ARMADA' : 'FLEET CONTROL BOARD'}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight mt-1">
+                  {(() => {
+                    const hour = new Date().getHours();
+                    let timeGreeting = '';
+                    if (hour < 11) {
+                      timeGreeting = language === 'id' ? 'Selamat Pagi' : 'Good Morning';
+                    } else if (hour < 15) {
+                      timeGreeting = language === 'id' ? 'Selamat Siang' : 'Good Afternoon';
+                    } else if (hour < 19) {
+                      timeGreeting = language === 'id' ? 'Selamat Sore' : 'Good Evening';
+                    } else {
+                      timeGreeting = language === 'id' ? 'Selamat Malam' : 'Good Night';
+                    }
+                    return `${timeGreeting}, ${profile?.full_name?.split(' ')[0] || 'User'}`;
+                  })()} 🌟
+                </h2>
+                <p className="text-slate-500 font-semibold text-xs sm:text-sm mt-2.5">
+                  {language === 'id' 
+                    ? `Sistem monitoring oli pelumas untuk ${profile?.customer?.company_name || 'perusahaan Anda'} terpantau stabil hari ini.` 
+                    : `Lubricant oil monitoring system for ${profile?.customer?.company_name || 'your company'} is running stable today.`}
+                </p>
+              </div>
+
+              {/* Action Quick Status badge + Company Logo */}
+              <div className="flex sm:flex-col items-start sm:items-end gap-3 shrink-0">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50/80 to-red-50/80 border border-orange-100/50 rounded-2xl shrink-0 select-none">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-orange-850">
+                    {language === 'id' ? 'SISTEM AKTIF' : 'SYSTEM LIVE'}
+                  </span>
+                </div>
+                {profile?.customer?.logo_url && (
+                  <div className="bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-center max-h-[38px]">
+                    <Image
+                      src={profile.customer.logo_url}
+                      alt="Company logo"
+                      width={90}
+                      height={24}
+                      className="h-5 w-auto object-contain"
+                      unoptimized
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Global Machine Health Overview */}
-        <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
+        <div className="w-full animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
           <div className="mb-4 flex items-end justify-between px-2">
             <div>
               <h2 className="text-lg font-black text-slate-900 tracking-tight">Machine Health Overview</h2>
@@ -1859,98 +1985,435 @@ export default function DashboardClient({
                 noSampleData={copy.noSampleData}
                 checkConsole={copy.checkConsole}
                 noDataAvailable={copy.noDataAvailable}
-                trendAlertsTitle={copy.trendAlertsTitle}
-                trendAlertsDesc={copy.trendAlertsDesc}
-                activeTrendAlertsLabel={copy.activeTrendAlerts(selectedMachineTrendAlerts.length)}
-                noTrendAlerts={copy.noTrendAlerts}
-                severityLowLabel={copy.trend.severityLow}
-                severityMediumLabel={copy.trend.severityMedium}
-                severityHighLabel={copy.trend.severityHigh}
-                recommendedActionLabel={copy.trend.recommendedAction}
                 totalAnalysisCount={filteredReports.length}
                 fleetHealthIndex={avgHealthScore}
                 baselineViscosity40={activeBaselines?.viscosity40}
                 baselineViscosity100={activeBaselines?.viscosity100}
                 baselineTan={activeBaselines?.tan}
                 onOpenLabDetails={() => setActiveTab('lab')}
-                onOpenActionCenter={() => {}}
               />
             </div>
           )}
 
-          {activeTab === 'analysis' && (
-            <div key="analysis" className="w-full animate-in fade-in slide-in-from-right-4 duration-700 space-y-8">
-              <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                  <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">{copy.smartAlertTitle}</h2>
-                    <p className="text-gray-500 font-medium mt-1">{copy.smartAlertDesc}</p>
+          {activeTab === 'analysis' && (() => {
+            const selectedMachineInsight = selectedMachine
+              ? machineInsights.find((item) => item.machine.id === selectedMachine.id)
+              : null
+            const selectedMachineHealth = selectedMachineInsight?.healthScore ?? null
+            const selectedMachineStatus = selectedMachineInsight?.status
+
+            const snapshotTitles = {
+              executiveSummary: language === 'id' ? 'Ringkasan Eksekutif' : 'Executive Summary',
+              executiveDesc: language === 'id' ? 'Status kesehatan real-time armada.' : 'Real-time fleet health metrics.',
+              activeMachine: language === 'id' ? 'Mesin Terpilih' : 'Active Machine',
+              model: language === 'id' ? 'Model' : 'Model',
+              serialNumber: language === 'id' ? 'S/N' : 'S/N',
+              location: language === 'id' ? 'Lokasi' : 'Location',
+              healthStatus: language === 'id' ? 'Status Kesehatan' : 'Health Status',
+              fleetOverview: language === 'id' ? 'Kesehatan Armada' : 'Fleet Overview',
+              fleetDesc: language === 'id' ? 'Analisis kondisi pelumas seluruh mesin.' : 'Lubricant conditions across all assets.',
+              avgHealth: language === 'id' ? 'Skor Rata-Rata Kesehatan' : 'Average Health Score',
+              statusBreakdown: language === 'id' ? 'Distribusi Kondisi' : 'Status Distribution',
+              normal: language === 'id' ? 'Normal' : 'Normal',
+              warning: language === 'id' ? 'Warning' : 'Warning',
+              critical: language === 'id' ? 'Critical' : 'Critical',
+              quickUtilities: language === 'id' ? 'Aksi & Utilitas' : 'Quick Actions Hub',
+              goToLabHub: language === 'id' ? 'Buka Hub & Tracker Lab' : 'Open Lab Hub & Tracker',
+              goToLabHubDesc: language === 'id' ? 'Lihat dokumen PDF & progres sampel.' : 'View PDF reports & sample tracking.',
+            }
+
+            const getParameterIcon = (parameter: 'Viscosity' | 'Water content' | 'TAN' | string) => {
+              switch (parameter) {
+                case 'Water content':
+                  return (
+                    <div className="p-2.5 rounded-2xl bg-blue-50 border border-blue-100 text-blue-500 shadow-sm flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 2a1 1 0 00-.7.3L4.6 7.5A6.5 6.5 0 1010 19a6.5 6.5 0 005.4-11.5L10.7 2.3A1 1 0 0010 2zm0 2.4l4.2 4.4a4.5 4.5 0 11-8.4 0L10 4.4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )
+                case 'TAN':
+                  return (
+                    <div className="p-2.5 rounded-2xl bg-rose-50 border border-rose-100 text-rose-500 shadow-sm flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3h6m-3 0v11.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 14.172V3z" />
+                      </svg>
+                    </div>
+                  )
+                case 'Viscosity':
+                default:
+                  return (
+                    <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-100 text-amber-500 shadow-sm flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" strokeWidth={2.5} />
+                        <path d="M12 12l3-3" strokeWidth="3" strokeLinecap="round" />
+                        <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                      </svg>
+                    </div>
+                  )
+              }
+            }
+
+            const getSeverityBadge = (severity: 'High' | 'Medium' | 'Low' | string) => {
+              switch (severity) {
+                case 'High':
+                  return (
+                    <div className="flex items-center gap-1.5 bg-red-50 border border-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                      </span>
+                      CRITICAL
+                    </div>
+                  )
+                case 'Medium':
+                  return (
+                    <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 text-amber-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                      </span>
+                      WARNING
+                    </div>
+                  )
+                case 'Low':
+                default:
+                  return (
+                    <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                      </span>
+                      MONITOR
+                    </div>
+                  )
+              }
+            }
+
+            return (
+              <div key="analysis" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+                  
+                  {/* Left Column: Smart Trend Alerts (2/3 width) */}
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="w-full bg-white rounded-[2.5rem] shadow-[0_15px_50px_-20px_rgba(0,0,0,0.05)] border border-slate-100 p-6 sm:p-8 relative overflow-hidden">
+                      {/* Decorative top accent line */}
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 via-rose-500 to-red-600 rounded-t-[2.5rem]"></div>
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                        <div>
+                          <div className="flex items-center gap-2.5">
+                            {selectedMachineTrendAlerts.length > 0 ? (
+                              <span className="relative flex h-3 w-3 shrink-0">
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                  selectedMachineTrendAlerts.some(a => a.severity === 'High') 
+                                    ? 'bg-red-400' 
+                                    : 'bg-amber-400'
+                                }`}></span>
+                                <span className={`relative inline-flex rounded-full h-3 w-3 ${
+                                  selectedMachineTrendAlerts.some(a => a.severity === 'High') 
+                                    ? 'bg-red-500 animate-pulse' 
+                                    : 'bg-amber-500 animate-pulse'
+                                }`}></span>
+                              </span>
+                            ) : (
+                              <span className="relative flex h-3 w-3 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                              </span>
+                            )}
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{copy.smartAlertTitle}</h2>
+                          </div>
+                          <p className="text-slate-400 font-medium text-sm mt-1">{copy.smartAlertDesc}</p>
+                        </div>
+                        <span className="self-start sm:self-center bg-slate-50 border border-slate-100 text-slate-600 px-4.5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shrink-0">
+                          {selectedMachineTrendAlerts.length} {language === 'id' ? 'alert tren aktif' : 'active trend alerts'}
+                        </span>
+                      </div>
+
+                      {selectedMachineTrendAlerts.length === 0 ? (
+                        <div className="rounded-[2rem] border border-emerald-100 bg-emerald-50/20 p-8 text-emerald-850 flex items-center gap-4 shadow-sm">
+                          <div className="h-12 w-12 rounded-2xl bg-emerald-100/50 flex items-center justify-center text-emerald-600 shrink-0">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="text-base font-black text-emerald-950 mb-0.5">{language === 'id' ? 'Kondisi Pelumas Optimal' : 'Lubricant Condition Optimal'}</h4>
+                            <p className="text-sm font-medium text-emerald-700/90 leading-relaxed">{copy.noTrendAlerts}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                          {selectedMachineTrendAlerts.map((alert) => (
+                            <div
+                              key={alert.id}
+                              className={`group rounded-[2rem] border border-slate-100 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.08)] flex flex-col justify-between relative overflow-hidden bg-gradient-to-b from-white to-slate-50/10 ${
+                                alert.severity === 'High'
+                                  ? 'border-l-4 border-l-red-500'
+                                  : alert.severity === 'Medium'
+                                  ? 'border-l-4 border-l-amber-500'
+                                  : 'border-l-4 border-l-blue-500'
+                              }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-5">
+                                  {getSeverityBadge(alert.severity)}
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                      {alert.parameter === 'Water content' ? (language === 'id' ? 'Kandungan Air' : 'Water Content') : alert.parameter}
+                                    </span>
+                                    {getParameterIcon(alert.parameter)}
+                                  </div>
+                                </div>
+                                <h3 className="text-lg font-black text-slate-900 leading-snug mb-3 tracking-tight group-hover:text-indigo-950 transition-colors">
+                                  {alert.title}
+                                </h3>
+                                <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">
+                                  {alert.message}
+                                </p>
+                              </div>
+
+                              <div className="space-y-4 pt-4 border-t border-slate-100">
+                                <div className="bg-slate-50 border border-slate-100/75 rounded-2xl p-4">
+                                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1.5">
+                                    {copy.trend.recommendedAction}
+                                  </p>
+                                  <p className="text-xs font-bold text-slate-800 leading-relaxed flex items-start gap-1.5">
+                                    <svg className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {alert.recommendedAction}
+                                  </p>
+                                </div>
+
+                                {(() => {
+                                  const hasActiveRequest = labRequests.some(
+                                    (req) => req.machine_id === selectedMachine?.id && ['pending', 'assigned', 'sampling'].includes(req.status)
+                                  )
+
+                                  if (hasActiveRequest) {
+                                    return (
+                                      <div className="text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-1.5 inline-flex items-center gap-1.5 mt-4 w-fit select-none">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                        {language === 'id' ? 'Sampel Sedang Diproses di Lab' : 'Sample Currently in Lab'}
+                                      </div>
+                                    )
+                                  }
+
+                                  return (
+                                    <button
+                                      onClick={() => {
+                                        handleQuickLabRequest(
+                                          selectedMachine?.id || '',
+                                          language === 'id'
+                                            ? `Memicu permintaan uji sampel secara otomatis akibat alarm tren: ${alert.title}.\nTindakan: ${alert.recommendedAction}`
+                                            : `Automatically triggered lab request due to trend alert: ${alert.title}.\nAction: ${alert.recommendedAction}`,
+                                          alert.severity === 'High' ? 'High' : 'Medium'
+                                        )
+                                      }}
+                                      className="text-[10px] font-black text-indigo-600 hover:text-indigo-850 transition-colors flex items-center gap-0.5 mt-4 w-fit transform active:scale-95"
+                                    >
+                                      {language === 'id' ? 'Butuh verifikasi? Minta Uji Ulang →' : 'Need verification? Request Re-Test →'}
+                                    </button>
+                                  )
+                                })()}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <span className="bg-gray-100 text-gray-600 px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider">
-                    {selectedMachineTrendAlerts.length} {language === 'id' ? 'alert tren aktif' : 'active trend alerts'}
-                  </span>
+
+                  {/* Right Column: Executive Snapshot & Actions (1/3 width) */}
+                  <div className="lg:col-span-1 space-y-6">
+                    {/* Card 1: Snapshot Kesehatan */}
+                    <div className="bg-gradient-to-b from-slate-900 to-slate-950 rounded-[2.5rem] p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden">
+                      {/* High-end glow design lines */}
+                      <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl"></div>
+                      <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl"></div>
+
+                      <div className="flex items-center justify-between pb-6 border-b border-white/10 mb-6">
+                        <div>
+                          <h3 className="text-xl font-black tracking-tight">{snapshotTitles.executiveSummary}</h3>
+                          <p className="text-white/50 text-xs font-semibold mt-0.5">{snapshotTitles.executiveDesc}</p>
+                        </div>
+                        <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white/80 shrink-0">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {selectedMachine ? (
+                        /* Selected Machine View */
+                        <div className="space-y-6">
+                          <div>
+                            <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase">
+                              {snapshotTitles.activeMachine}
+                            </span>
+                            <h4 className="text-2xl font-black tracking-tight mt-1 truncate">
+                              {selectedMachine.machine_name}
+                            </h4>
+                          </div>
+
+                          {/* Selected Machine Metadata (Temuan UI/UX refinement) */}
+                          {(selectedMachine.model || selectedMachine.serial_number || selectedMachine.location) && (
+                            <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3.5 text-sm">
+                              {selectedMachine.model && (
+                                <div className="flex justify-between">
+                                  <span className="text-white/60 font-semibold">{snapshotTitles.model}</span>
+                                  <span className="font-bold text-white/95">{selectedMachine.model}</span>
+                                </div>
+                              )}
+                              {selectedMachine.serial_number && (
+                                <div className={`flex justify-between ${selectedMachine.model ? 'border-t border-white/5 pt-3' : ''}`}>
+                                  <span className="text-white/60 font-semibold">{snapshotTitles.serialNumber}</span>
+                                  <span className="font-mono font-bold text-white/95">{selectedMachine.serial_number}</span>
+                                </div>
+                              )}
+                              {selectedMachine.location && (
+                                <div className={`flex justify-between ${(selectedMachine.model || selectedMachine.serial_number) ? 'border-t border-white/5 pt-3' : ''}`}>
+                                  <span className="text-white/60 font-semibold">{snapshotTitles.location}</span>
+                                  <span className="font-bold text-white/95 truncate max-w-[15ch]">{selectedMachine.location}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Selected Machine Health Gauge */}
+                          <div className="pt-4 border-t border-white/10">
+                            <div className="flex justify-between items-center mb-2.5">
+                              <span className="text-xs text-white/60 font-black uppercase tracking-wider">{snapshotTitles.healthStatus}</span>
+                              <span className={`text-base font-black ${selectedMachineHealth !== null && selectedMachineHealth >= 80 ? 'text-emerald-400' : selectedMachineHealth !== null && selectedMachineHealth >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                                {selectedMachineHealth !== null ? `${selectedMachineHealth}%` : '-'}
+                              </span>
+                            </div>
+                            {selectedMachineHealth !== null ? (
+                              <div>
+                                <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-1000 ${
+                                      selectedMachineHealth >= 80 ? 'bg-emerald-500' : selectedMachineHealth >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                                    }`}
+                                    style={{ width: `${selectedMachineHealth}%` }}
+                                  ></div>
+                                </div>
+                                <p className="text-[11px] text-white/40 font-semibold leading-relaxed mt-2.5 flex items-center gap-1.5">
+                                  <span className={`h-1.5 w-1.5 rounded-full ${selectedMachineHealth >= 80 ? 'bg-emerald-400' : selectedMachineHealth >= 60 ? 'bg-amber-400' : 'bg-red-400'}`}></span>
+                                  {language === 'id' ? selectedMachineStatus?.text || 'Kondisi Normal' : selectedMachineStatus?.text || 'Stable Condition'}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-white/40 font-bold">{language === 'id' ? 'Data pengujian belum tersedia.' : 'No sample metrics available.'}</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        /* Fleet Overview View */
+                        <div className="space-y-6">
+                          <div>
+                            <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">
+                              {snapshotTitles.fleetOverview}
+                            </span>
+                            <p className="text-white/60 text-xs font-semibold mt-1 leading-relaxed">{snapshotTitles.fleetDesc}</p>
+                          </div>
+
+                          <div className="flex items-center gap-4 bg-white/5 border border-white/5 rounded-3xl p-4.5">
+                            <div className={`relative flex items-center justify-center h-16 w-16 rounded-full border-4 shrink-0 font-black text-xl shadow-md ${avgHealthScore !== null && avgHealthScore >= 80 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : avgHealthScore !== null && avgHealthScore >= 60 ? 'border-amber-500 bg-amber-500/10 text-amber-400' : 'border-red-500 bg-red-500/10 text-red-400'}`}>
+                              {avgHealthScore ?? '-'}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-black text-white/95 uppercase tracking-wide truncate">{snapshotTitles.avgHealth}</h4>
+                              <p className="text-[10px] text-white/50 leading-relaxed mt-0.5">{language === 'id' ? 'Rata-rata kesehatan oli armada.' : 'Average health across all fleet.'}</p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-white/10">
+                            <span className="text-[10px] text-white/60 font-black uppercase tracking-wider block mb-3.5">{snapshotTitles.statusBreakdown}</span>
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                              <div className="bg-white/5 border border-white/5 rounded-2xl p-2.5">
+                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-wider">{snapshotTitles.normal}</span>
+                                <span className="text-base font-black text-emerald-400 block mt-0.5">{healthyCount}</span>
+                              </div>
+                              <div className="bg-white/5 border border-white/5 rounded-2xl p-2.5">
+                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-wider">{snapshotTitles.warning}</span>
+                                <span className="text-base font-black text-amber-400 block mt-0.5">{warningCount}</span>
+                              </div>
+                              <div className="bg-white/5 border border-white/5 rounded-2xl p-2.5">
+                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-wider">{snapshotTitles.critical}</span>
+                                <span className="text-base font-black text-red-400 block mt-0.5">{criticalCount}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card 2: Aksi & Utilitas Laporan */}
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 p-6 sm:p-8 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.04)] space-y-5">
+                      <div className="flex items-center gap-2 pb-4.5 border-b border-slate-100">
+                        <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                          </svg>
+                        </div>
+                        <h4 className="text-base font-black text-slate-900 tracking-tight">{snapshotTitles.quickUtilities}</h4>
+                      </div>
+
+                      {/* PDF Export Button */}
+                      <button
+                        onClick={handleExportFleetReport}
+                        className="group w-full rounded-2xl bg-slate-900 hover:bg-slate-800 px-5 py-4 text-left text-white shadow-md shadow-slate-900/10 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-4"
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-xs font-black leading-tight uppercase tracking-wider text-white truncate">
+                              {copy.exportFleetPdf}
+                            </h3>
+                            <span className="text-white/60 text-sm leading-none transition-transform duration-300 group-hover:translate-x-0.5 shrink-0">→</span>
+                          </div>
+                          <p className="text-[10px] text-white/50 font-medium truncate mt-0.5">
+                            {copy.exportFleetDesc}
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Quick Navigation Button to Lab Tab */}
+                      <button
+                        onClick={() => setActiveTab('lab')}
+                        className="group w-full rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100/70 px-5 py-4 text-left text-slate-800 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-4"
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-200/50 text-slate-600">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                          </svg>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-xs font-black leading-tight uppercase tracking-wider text-slate-800 truncate">
+                              {snapshotTitles.goToLabHub}
+                            </h3>
+                            <span className="text-slate-500 text-sm leading-none transition-transform duration-300 group-hover:translate-x-0.5 shrink-0">→</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium truncate mt-0.5">
+                            {snapshotTitles.goToLabHubDesc}
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
-
-                {selectedMachineTrendAlerts.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-emerald-100 bg-emerald-50/50 p-6 text-emerald-800 font-bold flex items-center gap-3">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                    {copy.noTrendAlerts}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
-                    {selectedMachineTrendAlerts.map((alert) => (
-                      <div key={alert.id} className={`rounded-3xl border-2 p-6 transition-all hover:shadow-lg ${alert.severity === 'High' ? 'border-red-100 bg-red-50/30' : alert.severity === 'Medium' ? 'border-amber-100 bg-amber-50/30' : 'border-blue-100 bg-blue-50/30'}`}>
-                        <div className="flex items-center justify-between mb-4">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${alert.severity === 'High' ? 'bg-red-500 text-white' : alert.severity === 'Medium' ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'}`}>
-                            {alert.severity}
-                          </span>
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{alert.parameter}</span>
-                        </div>
-                        <h3 className="text-xl font-black text-slate-900 leading-tight mb-3">{alert.title}</h3>
-                        <p className="text-sm text-slate-600 font-medium leading-relaxed">{alert.message}</p>
-                        <div className="mt-6 pt-6 border-t border-gray-100">
-                          <p className="text-xs text-slate-400 font-black uppercase tracking-widest mb-2">{copy.trend.recommendedAction}</p>
-                          <p className="text-sm font-bold text-slate-800 leading-relaxed">{alert.recommendedAction}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
-                <button onClick={handleExportFleetReport} className="group w-full min-h-[150px] rounded-[2rem] bg-[#10172A] px-6 py-5 text-left text-white shadow-[0_18px_40px_-18px_rgba(16,23,42,0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-18px_rgba(16,23,42,0.7)]">
-                  <div className="flex h-full items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <h3 className="text-[1.25rem] sm:text-[1.5rem] font-black leading-tight tracking-tight text-white">{language === 'id' ? 'Ekspor Laporan Armada (PDF)' : 'Export Fleet Report (PDF)'}</h3>
-                        <span className="text-white/80 text-lg leading-none transition-transform duration-300 group-hover:translate-x-0.5">→</span>
-                      </div>
-                      <p className="max-w-[28ch] text-sm leading-relaxed text-white/70 font-medium">Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format premium.</p>
-                    </div>
-                  </div>
-                </button>
-
-                <button onClick={handleExportTrustRoiSnapshot} className="group w-full min-h-[150px] rounded-[2rem] bg-[#12A37A] px-6 py-5 text-left text-white shadow-[0_18px_40px_-18px_rgba(18,163,122,0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-18px_rgba(18,163,122,0.7)]">
-                  <div className="flex h-full items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <h3 className="text-[1.25rem] sm:text-[1.5rem] font-black leading-tight tracking-tight text-white">Export Trust & ROI Snapshot</h3>
-                        <span className="text-white/80 text-lg leading-none transition-transform duration-300 group-hover:translate-x-0.5">→</span>
-                      </div>
-                      <p className="max-w-[28ch] text-sm leading-relaxed text-white/75 font-medium">Unduh ringkasan trust enterprise, audit event, dan estimasi ROI.</p>
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {activeTab === 'lab' && (
             <div key="lab" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
@@ -1958,7 +2421,10 @@ export default function DashboardClient({
                 title={copy.labReportsTitle}
                 description={copy.reportCountSuffix(filteredReports.length)}
                 reports={filteredReports}
+                requests={labRequests}
+                language={language}
                 expandedReports={expandedReports}
+                onQuickRequest={handleQuickLabRequest}
                 selectedMachineName={selectedMachine?.machine_name || (language === 'id' ? 'Semua Mesin' : 'All Machines')}
                 criticalLabel={copy.criticalLabel}
                 warningLabel={copy.warningLabel}
@@ -1992,11 +2458,11 @@ export default function DashboardClient({
         </div>
       </main>
 
-      {/* Floating Action Button (FAB) - Premium Glassmorphism */}
+      {/* Floating Action Button (FAB) - Premium Glassmorphism & Orange-Red Gradient */}
       <div className="fixed bottom-8 right-8 z-[100] group">
         <button
           onClick={() => setIsRequestModalOpen(true)}
-          className="flex items-center gap-3 bg-primary-600/90 hover:bg-primary-600 backdrop-blur-md text-white px-6 py-4 rounded-[2rem] shadow-2xl shadow-primary-500/40 transition-all hover:scale-105 active:scale-95 group"
+          className="flex items-center gap-3 bg-gradient-to-r from-orange-500/95 to-red-600/95 hover:from-orange-500 hover:to-red-600 backdrop-blur-md text-white px-7 py-4.5 rounded-[2rem] shadow-[0_20px_50px_rgba(234,88,12,0.35)] transition-all hover:scale-105 hover:-translate-y-0.5 active:scale-95 group"
         >
           <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
@@ -2030,42 +2496,93 @@ export default function DashboardClient({
 
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && currentPdfUrl && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setPdfViewerOpen(false)}>
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm">PDF Report Viewer</h3>
-              <button onClick={() => setPdfViewerOpen(false)} className="p-2 hover:bg-gray-200 rounded-xl transition-all"><svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setPdfViewerOpen(false)}>
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-in fade-in duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">{language === 'id' ? 'Penampil PDF' : 'PDF Viewer'}</h2>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{language === 'id' ? 'Analisis Laporan Uji Lab' : 'Lab Test Report Analysis'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <a
+                  href={currentPdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  {language === 'id' ? 'Buka Di Tab Baru' : 'Open In New Tab'}
+                </a>
+                <button
+                  onClick={() => setPdfViewerOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
+                >
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <iframe src={currentPdfUrl} className="w-full h-full" />
+            <div className="flex-1 overflow-hidden bg-slate-900">
+              <iframe
+                src={currentPdfUrl}
+                className="w-full h-full border-0"
+                title="PDF Viewer"
+              />
+            </div>
           </div>
         </div>
       )}
 
       {/* Request Lab Modal */}
       {isRequestModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setIsRequestModalOpen(false)}>
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-8 sm:p-10">
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">{copy.requestLab.title}</h3>
-                  <p className="text-gray-500 font-medium mt-1">{copy.requestLab.subtitle}</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setIsRequestModalOpen(false)}>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white px-8 py-6 border-b border-slate-100 flex justify-between items-center text-slate-900 select-none">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
                 </div>
-                <button onClick={() => setIsRequestModalOpen(false)} className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all"><svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">{copy.requestLab.title}</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">{copy.requestLab.subtitle}</p>
+                </div>
               </div>
+              <button 
+                onClick={() => setIsRequestModalOpen(false)} 
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
+              >
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-              <div className="space-y-6 mb-10">
-                <div className="space-y-4 rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-6">
+            <div className="p-8 sm:p-10">
+              <div className="space-y-6 mb-8">
+                {/* Machine Selection Section */}
+                <div className="space-y-4 rounded-[1.5rem] border border-slate-150 bg-slate-50/50 p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.machineInfo}</span>
-                    <label className="flex items-center gap-2 cursor-pointer group">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{copy.requestLab.machineInfo}</span>
+                    <label className="flex items-center gap-2 cursor-pointer group select-none">
                       <input
                         type="checkbox"
                         checked={requestForm.is_new_machine}
                         onChange={(e) => setRequestForm(prev => ({ ...prev, is_new_machine: e.target.checked }))}
-                        className="w-4 h-4 rounded-lg border-gray-300 text-primary-600 focus:ring-primary-500"
+                        className="w-4 h-4 rounded border-slate-350 text-orange-500 focus:ring-orange-200 outline-none"
                       />
-                      <span className="text-xs font-bold text-gray-600 group-hover:text-primary-600 transition-colors">{copy.requestLab.unregisteredMachine}</span>
+                      <span className="text-xs font-bold text-slate-600 group-hover:text-orange-600 transition-colors">{copy.requestLab.unregisteredMachine}</span>
                     </label>
                   </div>
 
@@ -2073,7 +2590,7 @@ export default function DashboardClient({
                     <select
                       value={requestForm.machine_id}
                       onChange={(e) => setRequestForm(prev => ({ ...prev, machine_id: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                      className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
                     >
                       <option value="">{copy.requestLab.registeredMachinePlaceholder}</option>
                       {initialMachines.map(m => (
@@ -2087,7 +2604,7 @@ export default function DashboardClient({
                         placeholder={copy.requestLab.newMachineNamePlaceholder}
                         value={requestForm.new_machine_name}
                         onChange={(e) => setRequestForm(prev => ({ ...prev, new_machine_name: e.target.value }))}
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                        className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
                       />
                       <div className="grid grid-cols-2 gap-3">
                         <input
@@ -2095,32 +2612,33 @@ export default function DashboardClient({
                           placeholder={copy.requestLab.modelPlaceholder}
                           value={requestForm.new_machine_model}
                           onChange={(e) => setRequestForm(prev => ({ ...prev, new_machine_model: e.target.value }))}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                          className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
                         />
                         <input
                           type="text"
                           placeholder={copy.requestLab.locationPlaceholder}
                           value={requestForm.new_machine_location}
                           onChange={(e) => setRequestForm(prev => ({ ...prev, new_machine_location: e.target.value }))}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                          className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.priorityLabel}</span>
+                {/* Priority Selection Section */}
+                <div className="space-y-3 select-none">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{copy.requestLab.priorityLabel}</span>
                   <div className="flex gap-3">
                     {['low', 'medium', 'high'].map(p => (
                       <button
                         key={p}
                         type="button"
                         onClick={() => setRequestForm(prev => ({ ...prev, priority: p }))}
-                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
+                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all duration-200 active:scale-95 ${
                           requestForm.priority === p 
-                            ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm'
-                            : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'
+                            ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
                         }`}
                       >
                         {p}
@@ -2129,40 +2647,53 @@ export default function DashboardClient({
                   </div>
                 </div>
 
+                {/* Date & Notes Input Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.preferredDateLabel}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{copy.requestLab.preferredDateLabel}</span>
                     <input
                       type="date"
                       value={requestForm.requested_date}
                       onChange={(e) => setRequestForm(prev => ({ ...prev, requested_date: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                      className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                     />
                   </div>
                   <div className="space-y-3">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{copy.requestLab.notesLabel}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{copy.requestLab.notesLabel}</span>
                     <textarea
                       placeholder={copy.requestLab.notesPlaceholder}
                       value={requestForm.notes}
                       onChange={(e) => setRequestForm(prev => ({ ...prev, notes: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 h-[46px] resize-none"
+                      className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 placeholder:text-gray-400 transition-all outline-none h-[46px] resize-none"
                     />
                   </div>
                 </div>
               </div>
 
-              <button
-                onClick={handleSendRequest}
-                disabled={requestSaving}
-                className="w-full rounded-2xl bg-slate-900 hover:bg-slate-800 text-white py-5 text-sm font-black uppercase tracking-widest transition-all shadow-xl hover:shadow-2xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-              >
-                {requestSaving ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                )}
-                {requestSaving ? copy.requestLab.sending : copy.requestLab.submit}
-              </button>
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsRequestModalOpen(false)}
+                  disabled={requestSaving}
+                  className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+                >
+                  {language === 'id' ? 'Batal' : 'Cancel'}
+                </button>
+                <button
+                  onClick={handleSendRequest}
+                  disabled={requestSaving}
+                  className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-black uppercase tracking-widest transition-all shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {requestSaving ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  )}
+                  {requestSaving ? copy.requestLab.sending : copy.requestLab.submit}
+                </button>
+              </div>
             </div>
           </div>
         </div>
