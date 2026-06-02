@@ -92,17 +92,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
     }
   }
 
-  const handlePasswordReset = async () => {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
-        redirectTo: `${window.location.origin}/dashboard/profile/update-password`,
-      })
-      if (error) throw error
-      toast.success('Password reset link sent to your email')
-    } catch (err: unknown) {
-      toast.error((err as Error).message || 'Failed to send reset link')
-    }
-  }
+
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

@@ -12,7 +12,7 @@ interface TrendSectionProps {
   performanceDesc: string
   noSampleData: string
   checkConsole: string
-  noDataAvailable: string
+
   totalAnalysisCount: number
   fleetHealthIndex: number | null
   baselineViscosity40?: number | null
@@ -30,7 +30,7 @@ export function TrendSection({
   performanceDesc,
   noSampleData,
   checkConsole,
-  noDataAvailable,
+
   totalAnalysisCount,
   fleetHealthIndex,
   baselineViscosity40,

@@ -102,18 +102,6 @@ interface TrendAlertItem {
   chartDate: string
 }
 
-interface ReliabilityInsight {
-  machineId: string
-  machineName: string
-  reliabilityScore: number
-  riskBand: 'stable' | 'watchlist' | 'fragile'
-  dataCompleteness: number
-  samplingDiscipline: number
-  executionReliability: number
-  trendStability: number
-  deteriorationSignal: boolean
-  recommendation: string
-}
 
 
 const formatLocalDateInput = (date: Date) => {
@@ -562,15 +550,12 @@ export default function DashboardClient({
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
 
   // Derive fleet maps from server-prefetched lab tests (no client fetch needed)
-  const { latestTestByMachineId, fleetHistoryByMachineId } = useMemo(() => {
+  const { latestTestByMachineId } = useMemo(() => {
     const latestMap: Record<string, OilSample> = {}
-    const historyMap: Record<string, OilSample[]> = {}
     normalizedLabTests.forEach((t) => {
-      if (!historyMap[t.machine_id]) historyMap[t.machine_id] = []
-      historyMap[t.machine_id].push(t)
       if (!latestMap[t.machine_id]) latestMap[t.machine_id] = t
     })
-    return { latestTestByMachineId: latestMap, fleetHistoryByMachineId: historyMap }
+    return { latestTestByMachineId: latestMap }
   }, [normalizedLabTests])
 
   useEffect(() => {
@@ -600,7 +585,7 @@ export default function DashboardClient({
   })
   const [requestSaving, setRequestSaving] = useState(false)
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
-  const [maintenanceActions, setMaintenanceActions] = useState<MaintenanceAction[]>(initialMaintenanceActions)
+
   // Logs state reserved for future audit trail feature
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [maintenanceActionLogs, setMaintenanceActionLogs] = useState<MaintenanceActionLog[]>([])
@@ -719,10 +704,7 @@ export default function DashboardClient({
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
 
-  useEffect(() => {
-    // Initial maintenance actions are loaded from the server so the board stays persistent.
-    setMaintenanceActions(initialMaintenanceActions)
-  }, [initialMaintenanceActions])
+
 
   useEffect(() => {
     setLabRequests(initialLabRequests)
@@ -1488,103 +1470,7 @@ export default function DashboardClient({
   const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
 
 
-  const reliabilityInsights: ReliabilityInsight[] = machineInsights.map((item) => {
-    const history = (fleetHistoryByMachineId[item.machine.id] || []).slice().sort((a, b) =>
-      new Date(a.test_date).getTime() - new Date(b.test_date).getTime()
-    )
-    const recentHistory = history.slice(-4)
-    const actionsForMachine = maintenanceActions.filter((action) => action.machine_id === item.machine.id)
 
-    const completenessChecks = history.flatMap((entry) => [entry.viscosity_40c, entry.viscosity_100c, entry.water_content, entry.tan_value])
-    const filledFields = completenessChecks.filter((value) => value !== null && value !== undefined).length
-    const dataCompleteness = Math.round(
-      Math.min(100, (history.length >= 4 ? 100 : history.length * 25) * 0.6 + (completenessChecks.length > 0 ? (filledFields / completenessChecks.length) * 100 : 0) * 0.4)
-    )
-
-    const daysSinceTest = item.daysSinceTest
-    let samplingDiscipline = 0
-    if (daysSinceTest === null) samplingDiscipline = 10
-    else if (daysSinceTest <= 30) samplingDiscipline = 100
-    else if (daysSinceTest <= 45) samplingDiscipline = 75
-    else if (daysSinceTest <= 60) samplingDiscipline = 45
-    else samplingDiscipline = 15
-
-    if (recentHistory.length >= 3) {
-      const intervals: number[] = []
-      for (let index = 1; index < recentHistory.length; index += 1) {
-        const prevDate = new Date(recentHistory[index - 1].test_date).getTime()
-        const nextDate = new Date(recentHistory[index].test_date).getTime()
-        intervals.push(Math.max(1, Math.round((nextDate - prevDate) / (1000 * 60 * 60 * 24))))
-      }
-      const minInterval = Math.min(...intervals)
-      const maxInterval = Math.max(...intervals)
-      const spreadPenalty = Math.min(35, (maxInterval - minInterval) * 1.2)
-      samplingDiscipline = Math.max(0, Math.round(samplingDiscipline - spreadPenalty))
-    }
-
-    const completedActions = actionsForMachine.filter((action) => action.status === 'completed' || action.status === 'verified').length
-    const verifiedActions = actionsForMachine.filter((action) => action.verification_status === 'passed').length
-    const failedVerificationActions = actionsForMachine.filter((action) => action.verification_status === 'failed').length
-    const executionReliability = actionsForMachine.length === 0
-      ? 55
-      : Math.max(
-          0,
-          Math.min(
-            100,
-            Math.round((completedActions / actionsForMachine.length) * 65 + (verifiedActions / actionsForMachine.length) * 35 - failedVerificationActions * 8)
-          )
-        )
-
-    const waterSeries = recentHistory.map((entry) => (entry.water_content || 0) * 10000)
-    const tanSeries = recentHistory.map((entry) => entry.tan_value || 0)
-    const viscSeries = recentHistory.map((entry) => entry.viscosity_40c || 0)
-
-    const isStrictlyIncreasing = (series: number[]) => series.length >= 3 && series[0] < series[1] && series[1] < series[2]
-    const waterIncreasing = isStrictlyIncreasing(waterSeries.slice(-3))
-    const tanIncreasing = isStrictlyIncreasing(tanSeries.slice(-3))
-
-    const viscChange = viscSeries.length >= 2 ? Math.abs(((viscSeries[viscSeries.length - 1] - viscSeries[0]) / Math.max(1, viscSeries[0])) * 100) : 0
-    const waterChange = waterSeries.length >= 2 ? waterSeries[waterSeries.length - 1] - waterSeries[0] : 0
-    const tanChange = tanSeries.length >= 2 ? tanSeries[tanSeries.length - 1] - tanSeries[0] : 0
-    const deteriorationSignal = waterIncreasing || tanIncreasing || waterChange > 20 || tanChange > 0.4 || viscChange > 15
-
-    const trendPenalty = Math.min(60, Math.max(0, Math.round(Math.abs(waterChange) * 0.8 + Math.abs(tanChange) * 30 + viscChange * 0.9)))
-    const trendStability = Math.max(0, 100 - trendPenalty)
-
-    const reliabilityScore = Math.max(
-      0,
-      Math.min(
-        100,
-        Math.round(dataCompleteness * 0.25 + samplingDiscipline * 0.25 + executionReliability * 0.25 + trendStability * 0.25 - (deteriorationSignal ? 8 : 0))
-      )
-    )
-
-    const riskBand: ReliabilityInsight['riskBand'] = reliabilityScore >= 80 ? 'stable' : reliabilityScore >= 60 ? 'watchlist' : 'fragile'
-    const recommendation = riskBand === 'stable'
-      ? language === 'id'
-        ? 'Pertahankan ritme sampling saat ini dan lanjutkan verifikasi rutin.'
-        : 'Maintain current sampling rhythm and keep routine verification.'
-      : riskBand === 'watchlist'
-      ? language === 'id'
-        ? 'Percepat interval sampling dan pastikan action critical diverifikasi.'
-        : 'Tighten sampling intervals and verify critical actions quickly.'
-      : language === 'id'
-      ? 'Aktifkan mode pemulihan: sampling dipercepat, action owner wajib, dan verifikasi pasca-maintenance.'
-      : 'Activate recovery mode: accelerated sampling, mandatory owners, and post-maintenance verification.'
-
-    return {
-      machineId: item.machine.id,
-      machineName: item.machine.machine_name,
-      reliabilityScore,
-      riskBand,
-      dataCompleteness,
-      samplingDiscipline,
-      executionReliability,
-      trendStability,
-      deteriorationSignal,
-      recommendation,
-    }
-  })
 
 
   const handleExportFleetReport = async () => {
@@ -1976,7 +1862,7 @@ export default function DashboardClient({
                 performanceDesc={copy.performanceDesc}
                 noSampleData={copy.noSampleData}
                 checkConsole={copy.checkConsole}
-                noDataAvailable={copy.noDataAvailable}
+
                 totalAnalysisCount={filteredReports.length}
                 fleetHealthIndex={avgHealthScore}
                 baselineViscosity40={activeBaselines?.viscosity40}

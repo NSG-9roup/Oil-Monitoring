@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Image from 'next/image'
-import type { Customer, AdminProfile } from '@/lib/types'
+import type { Customer } from '@/lib/types'
 
 interface AdminCustomersTabProps {
   customers: Customer[]

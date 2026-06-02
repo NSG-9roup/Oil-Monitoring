@@ -29,14 +29,7 @@ const createUserSchema = z.object({
     .regex(/[0-9]/, 'Password must include a number'),
 }).strict()
 
-function secureStringEqual(a: string, b: string) {
-  if (a.length !== b.length) return false
-  let result = 0
-  for (let index = 0; index < a.length; index += 1) {
-    result |= a.charCodeAt(index) ^ b.charCodeAt(index)
-  }
-  return result === 0
-}
+
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status })

@@ -3,32 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-type TeamUserData = {
-  full_name: string
-  email: string
-  phone_number?: string | null
-  password: string
-}
 
-type MaintenanceActionData = {
-  machine_id: string
-  title: string
-  description?: string | null
-  priority: string
-  due_date?: string | null
-  owner_profile_id?: string | null
-  alert_key?: string | null
-  source_payload?: Record<string, unknown> | null
-}
-
-type MaintenanceActionUpdate = {
-  status?: string
-  owner_profile_id?: string | null
-  verification_status?: string
-  due_date?: string | null
-  evidence_notes?: string | null
-  [key: string]: unknown
-}
 
 /**
  * Helper to verify customer permissions and get their profile

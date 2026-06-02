@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 
 import { useState } from 'react'
 import type { LabRequest } from '@/lib/types'
@@ -199,11 +200,14 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
             </div>
             <div className="p-6 bg-slate-50 flex items-center justify-center">
               <div className="relative w-full aspect-square rounded-[1.5rem] overflow-hidden border border-slate-200/60 shadow-lg bg-white p-2">
-                <img
-                  src={previewPhoto.url}
-                  alt="Bukti Foto Botol"
-                  className="w-full h-full object-cover rounded-[1rem]"
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={previewPhoto.url}
+                    alt="Bukti Foto Botol"
+                    fill
+                    className="object-cover rounded-[1rem]"
+                  />
+                </div>
               </div>
             </div>
             <div className="px-6 py-4.5 bg-white border-t border-slate-100 flex justify-end">

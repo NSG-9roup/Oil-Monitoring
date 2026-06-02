@@ -70,11 +70,7 @@ export default async function DashboardPage() {
     .eq('customer_id', profile.customer_id)
     .order('created_at', { ascending: false })
 
-  // Fetch Logs (securely scoped by RLS)
-  const { data: maintenanceActionLogs } = await supabase
-    .from('oil_maintenance_action_logs')
-    .select('id, action_id, actor_id, event_type, from_status, to_status, metadata, created_at')
-    .order('created_at', { ascending: false })
+
 
   // Fetch lab tests for this customer's machines (securely scoped by RLS)
   const machineIds = (machines || []).map(m => m.id)

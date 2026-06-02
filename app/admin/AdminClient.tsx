@@ -852,7 +852,7 @@ export default function AdminClient({
             {activeTab === 'customers' && (
               <AdminCustomersTab
                 customers={customers}
-                profile={profile}
+
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 onOpenImport={() => setModalOpen('import-customers')}
