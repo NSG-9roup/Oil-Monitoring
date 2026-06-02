@@ -116,7 +116,7 @@ export function LabReportsSection({
             const isExpanded = expandedReports.has(report.id)
 
             return (
-              <div key={report.id} className="bg-white rounded-2xl shadow-lg border-2 border-primary-100 overflow-hidden hover:shadow-xl transition-all">
+              <div key={report.id} className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300">
                 <div onClick={() => onToggleReport(report.id)} className="cursor-pointer hover:bg-primary-50 transition-colors duration-200">
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex-1">
@@ -165,7 +165,7 @@ export function LabReportsSection({
                             if (!report.pdf_path) return
                             onOpenReportPdf(report.pdf_path)
                           }}
-                          className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                          className="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all duration-300 flex items-center gap-1"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -182,19 +182,23 @@ export function LabReportsSection({
                 </div>
 
                 <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                  <div
-                    className={`px-6 py-4 bg-gradient-to-r border-t-2 border-gray-200 ${
-                      status.level === 'critical' ? 'from-red-500 to-red-600' : status.level === 'warning' ? 'from-yellow-500 to-orange-500' : 'from-green-500 to-green-600'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <h4 className="text-xl font-black text-white">{completeAnalysisLabel}</h4>
-                          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full">{status.text.toUpperCase()}</span>
-                        </div>
-                        <p className="text-white/80 text-xs mt-2 font-medium">{evaluationLabel}</p>
+                  <div className="px-6 py-4 bg-slate-50 border-t border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-base font-black text-slate-800">{completeAnalysisLabel}</h4>
+                        <span
+                          className={`px-3 py-1 text-xs font-bold rounded-full uppercase ${
+                            status.level === 'critical'
+                              ? 'bg-red-100 text-red-800'
+                              : status.level === 'warning'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          {status.text.toUpperCase()}
+                        </span>
                       </div>
+                      <p className="text-slate-500 text-xs mt-1 font-medium">{evaluationLabel}</p>
                     </div>
                   </div>
 
@@ -225,64 +229,64 @@ export function LabReportsSection({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border-2 border-blue-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">{viscosityLabel} 40°C</p>
-                          <span className={`text-lg font-black ${viscosity40Trend.direction === 'up' ? 'text-red-600' : viscosity40Trend.direction === 'down' ? 'text-green-600' : 'text-gray-600'}`}>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{viscosityLabel} 40°C</p>
+                          <span className={`text-base font-bold ${viscosity40Trend.direction === 'up' ? 'text-red-500' : viscosity40Trend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
                             {viscosity40Trend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-blue-900">{report.viscosity_40c?.toFixed(1) || notAvailableLabel}</p>
-                        <p className="text-xs text-blue-700 mt-1 font-semibold">cSt</p>
+                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.viscosity_40c?.toFixed(1) || notAvailableLabel}</p>
+                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">cSt</p>
                       </div>
 
-                      <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-4 border-2 border-indigo-200">
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-indigo-800 uppercase tracking-wide">{viscosityLabel} 100°C</p>
-                          <span className={`text-lg font-black ${viscosity100Trend.direction === 'up' ? 'text-red-600' : viscosity100Trend.direction === 'down' ? 'text-green-600' : 'text-gray-600'}`}>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{viscosityLabel} 100°C</p>
+                          <span className={`text-base font-bold ${viscosity100Trend.direction === 'up' ? 'text-red-500' : viscosity100Trend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
                             {viscosity100Trend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-indigo-900">{report.viscosity_100c?.toFixed(1) || notAvailableLabel}</p>
-                        <p className="text-xs text-indigo-700 mt-1 font-semibold">cSt</p>
+                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.viscosity_100c?.toFixed(1) || notAvailableLabel}</p>
+                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">cSt</p>
                       </div>
 
-                      <div className="bg-gradient-to-br from-cyan-50 to-cyan-100/50 rounded-xl p-4 border-2 border-cyan-200">
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-cyan-800 uppercase tracking-wide">{waterContentLabel}</p>
-                          <span className={`text-lg font-black ${waterTrend.direction === 'up' ? 'text-red-600' : waterTrend.direction === 'down' ? 'text-green-600' : 'text-gray-600'}`}>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{waterContentLabel}</p>
+                          <span className={`text-base font-bold ${waterTrend.direction === 'up' ? 'text-red-500' : waterTrend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
                             {waterTrend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-cyan-900">{report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%</p>
-                        <p className="text-xs text-cyan-700 mt-1 font-semibold">by volume</p>
-                        <p className="text-xs text-cyan-600 mt-2 font-medium">≈ {report.water_content ? (report.water_content * 10000).toFixed(0) : '0'} ppm</p>
+                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%</p>
+                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">by volume</p>
+                        <p className="text-[10px] text-slate-400 font-medium mt-1">≈ {report.water_content ? (report.water_content * 10000).toFixed(0) : '0'} ppm</p>
                       </div>
 
-                      <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border-2 border-purple-200">
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-purple-800 uppercase tracking-wide">{tanValueLabel}</p>
-                          <span className={`text-lg font-black ${tanTrend.direction === 'up' ? 'text-red-600' : tanTrend.direction === 'down' ? 'text-green-600' : 'text-gray-600'}`}>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{tanValueLabel}</p>
+                          <span className={`text-base font-bold ${tanTrend.direction === 'up' ? 'text-red-500' : tanTrend.direction === 'down' ? 'text-emerald-500' : 'text-slate-400'}`}>
                             {tanTrend.icon}
                           </span>
                         </div>
-                        <p className="text-3xl font-black text-purple-900">{report.tan_value?.toFixed(2) || notAvailableLabel}</p>
-                        <p className="text-xs text-purple-700 mt-1 font-semibold">mg KOH/g</p>
+                        <p className="text-3xl font-black text-slate-800 tracking-tight">{report.tan_value?.toFixed(2) || notAvailableLabel}</p>
+                        <p className="text-xs text-slate-400 mt-1.5 font-semibold">mg KOH/g</p>
                       </div>
                     </div>
 
                     <div
-                      className={`rounded-xl p-4 border-2 mb-4 ${
-                        status.level === 'critical' ? 'bg-red-50 border-red-200' : status.level === 'warning' ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'
-                      }`}
+                      className={`rounded-2xl p-5 border border-slate-100 border-l-4 mb-6 ${
+                        status.level === 'critical'
+                          ? 'border-l-red-500'
+                          : status.level === 'warning'
+                          ? 'border-l-amber-500'
+                          : 'border-l-emerald-500'
+                      } bg-white shadow-sm`}
                     >
-                      <h5
-                        className={`text-sm font-black uppercase tracking-wide mb-3 flex items-center ${
-                          status.level === 'critical' ? 'text-red-800' : status.level === 'warning' ? 'text-yellow-800' : 'text-green-800'
-                        }`}
-                      >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <h5 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-4 flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
                         Recommendations
@@ -293,26 +297,42 @@ export function LabReportsSection({
                           return (
                             <li
                               key={`${report.id}-${idx}`}
-                              className={`p-4 rounded-lg border-l-4 ${
-                                rec.severity === 'critical' ? 'bg-red-50 border-red-500' : rec.severity === 'warning' ? 'bg-yellow-50 border-yellow-500' : 'bg-green-50 border-green-500'
+                              className={`p-4 rounded-xl border ${
+                                rec.severity === 'critical'
+                                  ? 'bg-red-50/40 border-red-100'
+                                  : rec.severity === 'warning'
+                                  ? 'bg-amber-50/40 border-amber-100'
+                                  : 'bg-emerald-50/40 border-emerald-100'
                               }`}
                             >
-                              <div className="flex items-start gap-2">
-                                <span className="text-xl flex-shrink-0">{rec.icon}</span>
+                              <div className="flex items-start gap-3">
+                                <span className="text-lg flex-shrink-0 mt-0.5">{rec.icon}</span>
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <p className={`text-sm font-bold ${rec.severity === 'critical' ? 'text-red-800' : rec.severity === 'warning' ? 'text-yellow-800' : 'text-green-800'}`}>
+                                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                                    <p
+                                      className={`text-sm font-bold ${
+                                        rec.severity === 'critical' ? 'text-red-900' : rec.severity === 'warning' ? 'text-amber-900' : 'text-emerald-900'
+                                      }`}
+                                    >
                                       {rec.text}
                                     </p>
                                     <span
-                                      className={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${
-                                        rec.severity === 'critical' ? 'bg-red-200 text-red-800' : rec.severity === 'warning' ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'
+                                      className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider ${
+                                        rec.severity === 'critical'
+                                          ? 'bg-red-100 text-red-800'
+                                          : rec.severity === 'warning'
+                                          ? 'bg-amber-100 text-amber-800'
+                                          : 'bg-emerald-100 text-emerald-800'
                                       }`}
                                     >
                                       {actionPriority}
                                     </span>
                                   </div>
-                                  <p className={`text-xs mt-2 ${rec.severity === 'critical' ? 'text-red-600' : rec.severity === 'warning' ? 'text-yellow-600' : 'text-green-600'}`}>
+                                  <p
+                                    className={`text-xs font-medium mt-1.5 ${
+                                      rec.severity === 'critical' ? 'text-red-700' : rec.severity === 'warning' ? 'text-amber-700' : 'text-emerald-700'
+                                    }`}
+                                  >
                                     → {rec.action}
                                   </p>
                                   {onQuickRequest && (() => {
@@ -362,7 +382,7 @@ export function LabReportsSection({
                             if (!report.pdf_path) return
                             onOpenReportPdf(report.pdf_path)
                           }}
-                          className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
+                          className="flex-1 bg-slate-900 text-white px-4 py-3 rounded-xl hover:bg-slate-800 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -376,7 +396,7 @@ export function LabReportsSection({
                             if (!report.pdf_path) return
                             onDownloadReportPdf(report.pdf_path, report.test_date)
                           }}
-                          className="flex-1 bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-4 py-3 rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
+                          className="flex-1 bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-4 py-3 rounded-xl hover:from-primary-600 hover:to-secondary-600 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
