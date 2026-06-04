@@ -7,6 +7,31 @@ import type { LabRequest } from '@/lib/types'
 import imageCompression from 'browser-image-compression'
 import Image from 'next/image'
 
+interface SalesOrder {
+  id: string
+  customer_id: string
+  product_id: string
+  quantity: number
+  status: string
+  created_at: string
+  updated_at: string
+  customer?: { company_name?: string }
+  product?: { product_name?: string }
+}
+
+interface SalesComplaint {
+  id: string
+  order_id: string
+  customer_id: string
+  description: string
+  status: string
+  resolution_notes?: string | null
+  created_at: string
+  updated_at: string
+  order?: { id: string; product?: { product_name?: string } }
+  customer?: { company_name?: string }
+}
+
 interface SalesClientProps {
   user: {
     id: string
@@ -17,8 +42,8 @@ interface SalesClientProps {
     full_name?: string | null
   }
   initialLabRequests: LabRequest[]
-  initialOrders: any[]
-  initialComplaints: any[]
+  initialOrders: SalesOrder[]
+  initialComplaints: SalesComplaint[]
 }
 
 export default function SalesClient({ user, profile, initialLabRequests, initialOrders = [], initialComplaints = [] }: SalesClientProps) {
@@ -98,7 +123,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         .eq('id', orderId)
       if (error) throw error
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
-    } catch (e) {
+    } catch (_e) {
       alert('Gagal mengupdate pesanan.')
     } finally {
       setLoadingId(null)
@@ -117,7 +142,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       if (error) throw error
       setComplaints(prev => prev.map(c => c.id === complaintId ? { ...c, status: 'resolved', resolution_notes: notes } : c))
       alert('Komplain berhasil diselesaikan!')
-    } catch (e) {
+    } catch (_e) {
       alert('Gagal menyelesaikan komplain.')
     } finally {
       setLoadingId(null)
@@ -663,7 +688,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                       <span className="text-[9px] text-slate-400 font-bold">{new Date(comp.created_at).toLocaleDateString('id-ID')}</span>
                     </div>
                     <h4 className="text-xs font-bold text-slate-700 mb-1">Produk: {comp.order?.product?.product_name || '-'}</h4>
-                    <p className="text-sm text-slate-900 font-medium bg-slate-50 p-2 rounded-lg border border-slate-100">"{comp.description}"</p>
+                    <p className="text-sm text-slate-900 font-medium bg-slate-50 p-2 rounded-lg border border-slate-100">&ldquo;{comp.description}&rdquo;</p>
                     {comp.resolution_notes && (
                       <div className="mt-2 text-xs font-medium text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
                         Penyelesaian: {comp.resolution_notes}

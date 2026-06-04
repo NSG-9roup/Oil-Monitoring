@@ -4,11 +4,41 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 
+interface Product {
+  id: string
+  product_name: string
+  product_type?: string
+}
+
+interface Order {
+  id: string
+  customer_id: string
+  product_id: string
+  quantity: number
+  status: string
+  created_at: string
+  updated_at: string
+  product?: { product_name?: string; product_type?: string }
+}
+
+interface Complaint {
+  id: string
+  order_id: string
+  customer_id: string
+  description: string
+  status: string
+  resolution_notes?: string | null
+  created_at: string
+  updated_at: string
+  resolved_at?: string | null
+  order?: { id: string; product?: { product_name?: string } }
+}
+
 interface OrdersSectionProps {
   customerId: string
-  products: any[]
-  initialOrders: any[]
-  initialComplaints: any[]
+  products: Product[]
+  initialOrders: Order[]
+  initialComplaints: Complaint[]
   language: 'id' | 'en'
 }
 
