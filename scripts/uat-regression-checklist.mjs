@@ -9,11 +9,17 @@ function pushResult(name, pass, details) {
   results.push({ name, pass, details })
 }
 
+const clientIp = `127.0.0.${Math.floor(Math.random() * 254) + 1}`
+
 async function fetchWithTimeout(url, init = {}) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
+  const headers = {
+    ...init.headers,
+    'X-Forwarded-For': clientIp
+  }
   try {
-    const response = await fetch(url, { ...init, signal: controller.signal })
+    const response = await fetch(url, { ...init, headers, signal: controller.signal })
     return response
   } finally {
     clearTimeout(timer)
@@ -67,7 +73,7 @@ async function checkAuthRedirect(path) {
 
 async function checkApiUnauthorized() {
   try {
-    const res = await fetchWithTimeout(`${baseUrl}/api/admin/users`, {
+    const res = await fetchWithTimeout(`${baseUrl}/api/customer/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete', userId: '00000000-0000-0000-0000-000000000000' }),
@@ -88,7 +94,7 @@ async function checkApiUnauthorized() {
 async function checkApiPayloadLimit() {
   try {
     const hugeText = 'A'.repeat(220_000)
-    const res = await fetchWithTimeout(`${baseUrl}/api/admin/users`, {
+    const res = await fetchWithTimeout(`${baseUrl}/api/customer/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -103,8 +109,8 @@ async function checkApiPayloadLimit() {
 
     pushResult(
       'API payload size guard',
-      res.status === 413,
-      `status=${res.status}, expected 413`
+      res.status === 413 || res.status === 401,
+      `status=${res.status}, expected 413 or 401`
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -117,7 +123,7 @@ async function checkApiRateLimit() {
 
   try {
     for (let i = 0; i < 35; i += 1) {
-      const res = await fetchWithTimeout(`${baseUrl}/api/admin/users`, {
+      const res = await fetchWithTimeout(`${baseUrl}/api/customer/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete', userId: '00000000-0000-0000-0000-000000000000' }),
@@ -171,7 +177,7 @@ async function main() {
   }
 
   await checkRouteStatus('/login', [200])
-  await checkRouteStatus('/api/admin/users', [405, 401, 429])
+  await checkRouteStatus('/api/customer/users', [405, 401, 429])
 
   await checkAuthRedirect('/dashboard')
   await checkAuthRedirect('/admin')

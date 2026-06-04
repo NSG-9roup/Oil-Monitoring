@@ -73,7 +73,7 @@ export default async function AdminPage() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const [customersResult, machinesResult, recentTestsResult, productsResult, usersResult, labRequestsResult] = await Promise.all([
+  const [customersResult, machinesResult, recentTestsResult, productsResult, usersResult, labRequestsResult, ordersResult, complaintsResult] = await Promise.all([
     supabase
       .from('oil_customers')
       .select(`
@@ -118,6 +118,22 @@ export default async function AdminPage() {
         requested_by:oil_profiles!oil_lab_requests_requested_by_profile_id_fkey(full_name, email)
       `)
       .neq('status', 'cancelled')
+      .order('created_at', { ascending: false }),
+    adminSupabase
+      .from('oil_orders')
+      .select(`
+        *,
+        customer:oil_customers(company_name),
+        product:oil_products(product_name, product_type)
+      `)
+      .order('created_at', { ascending: false }),
+    adminSupabase
+      .from('oil_complaints')
+      .select(`
+        *,
+        customer:oil_customers(company_name),
+        order:oil_orders(product:oil_products(product_name))
+      `)
       .order('created_at', { ascending: false })
   ])
 
@@ -127,6 +143,8 @@ export default async function AdminPage() {
   const products = productsResult.data
   const users = usersResult.data
   const labRequests = labRequestsResult.data as LabRequest[] | null
+  const orders = ordersResult.data || []
+  const complaints = complaintsResult.data || []
   const normalizedUsers = (users || []).map((row) => ({
     ...row,
     customer: Array.isArray(row.customer)
@@ -144,6 +162,8 @@ export default async function AdminPage() {
       initialProducts={products || []}
       initialUsers={normalizedUsers}
       initialLabRequests={labRequests || []}
+      initialOrders={orders}
+      initialComplaints={complaints}
     />
   )
 }
