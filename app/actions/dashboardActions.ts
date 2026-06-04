@@ -37,6 +37,7 @@ export async function createLabRequest(data: {
   due_date?: string
   priority: string
   is_new_machine: boolean
+  assigned_to_profile_id?: string
   new_machine_data?: {
     machine_name: string
     model?: string
@@ -57,6 +58,7 @@ export async function createLabRequest(data: {
     status: 'pending',
     is_new_machine: data.is_new_machine,
     new_machine_data: data.is_new_machine ? data.new_machine_data : null,
+    assigned_to_profile_id: data.assigned_to_profile_id || null,
   }
 
   // Use admin client to bypass broken RLS that relies on missing JWT custom claims

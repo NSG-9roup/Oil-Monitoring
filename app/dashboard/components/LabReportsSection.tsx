@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import type {
   LabProduct,
@@ -76,19 +77,116 @@ export function LabReportsSection({
   getTrend,
   getRecommendations,
 }: LabReportsSectionProps) {
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+
   return (
     <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
-      <SectionHeader
-        title={title}
-        description={description}
-        titleClassName="text-3xl lg:text-4xl"
-      />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <SectionHeader
+          title={title}
+          description={description}
+          titleClassName="text-3xl lg:text-4xl"
+        />
+        <div className="flex items-center gap-2 bg-gray-50/50 border border-gray-100 p-1.5 rounded-2xl w-fit shrink-0">
+          <button
+            onClick={() => setViewMode('card')}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${viewMode === 'card' ? 'bg-white shadow-sm text-gray-900 border border-gray-200/60' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            Card
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${viewMode === 'table' ? 'bg-white shadow-sm text-gray-900 border border-gray-200/60' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            Table
+          </button>
+        </div>
+      </div>
 
       {reports.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p>{emptyLabel}</p>
         </div>
       ) : (
+        <>
+        {viewMode === 'table' ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-4">Tanggal Uji</th>
+                    <th className="px-6 py-4">Mesin</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Viskositas (40°C / 100°C)</th>
+                    <th className="px-6 py-4">Kandungan Air</th>
+                    <th className="px-6 py-4">TAN</th>
+                    <th className="px-6 py-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {reports.map((report) => {
+                    const status = getStatus(
+                      report.viscosity_40c || 0,
+                      report.water_content || 0,
+                      report.tan_value || 0,
+                      report.product
+                    )
+                    return (
+                      <tr key={report.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="font-bold text-gray-900 text-sm">
+                            {new Date(report.test_date).toLocaleDateString('id-ID', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-gray-800">{selectedMachineName}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
+                            status.level === 'critical' ? 'bg-red-100 text-red-800' : status.level === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                          }`}>
+                            {status.text}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {report.viscosity_40c?.toFixed(1) || '-'} / {report.viscosity_100c?.toFixed(1) || '-'} cSt
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {report.water_content ? (report.water_content * 100).toFixed(2) : '0'}%
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {report.tan_value?.toFixed(2) || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (report.pdf_path) onOpenReportPdf(report.pdf_path)
+                            }}
+                            className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
         <div className="space-y-6">
           {reports.map((report, index) => {
             const previousReport = index > 0 ? reports[index - 1] : null
@@ -411,6 +509,8 @@ export function LabReportsSection({
             )
           })}
         </div>
+        )}
+        </>
       )}
     </div>
   )

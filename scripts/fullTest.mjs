@@ -77,8 +77,6 @@ async function testTablesExist() {
     'oil_lab_tests',
     'oil_lab_requests',
     'oil_profiles',
-    'oil_maintenance_actions',
-    'oil_alert_actions',
   ]
 
   for (const table of tables) {
@@ -330,9 +328,7 @@ async function testSalesRoutes() {
   if (!error) ok(`Sales can view lab requests: ${data?.length || 0} recent records`)
   else err('Sales lab requests READ', error?.message)
 
-  const { data: maintenanceData, error: maintenanceError } = await supabase.from('oil_maintenance_actions').select('*').limit(5)
-  if (!maintenanceError) ok(`Maintenance actions table accessible: ${maintenanceData?.length || 0} records`)
-  else err('Maintenance actions READ', maintenanceError?.message)
+
 }
 
 // ─── 10. STORAGE BUCKETS ──────────────────────────────────────────────────

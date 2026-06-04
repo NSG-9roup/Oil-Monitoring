@@ -18,7 +18,6 @@ describe('TrendSection', () => {
         performanceDesc="Performance description"
         noSampleData="No sample data"
         checkConsole="Check console"
-        noDataAvailable="No data available"
         totalAnalysisCount={1}
         fleetHealthIndex={85}
         onOpenLabDetails={onOpenLabDetails}

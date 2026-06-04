@@ -6,10 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
 import { exportFleetReportPdf, type FleetReportRow } from '@/lib/pdf/exportFleetReport'
-import type { MaintenanceAction, MaintenanceActionLog } from '@/lib/types'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
+import OrdersSection from '@/app/dashboard/components/OrdersSection'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { createLabRequest } from '@/app/actions/dashboardActions'
@@ -82,9 +82,12 @@ interface DashboardClientProps {
   user: { id: string; email?: string }
   profile: DashboardProfile
   initialMachines: Machine[]
-  initialMaintenanceActions: MaintenanceAction[]
   initialLabTests: any[]
   initialLabRequests: LabRequest[]
+  initialProducts: any[]
+  initialOrders: any[]
+  initialComplaints: any[]
+  initialSalesTeam: any[]
 }
 
 type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
@@ -146,11 +149,13 @@ const dashboardCopy = {
     exportPdfTitle: 'Ekspor Laporan Armada (PDF)',
     exportPdfDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format premium.',
     analysisAndReports: 'Analisis & Laporan',
-    oilTrend: 'Tren Oli',
+    oilTrend: 'Riwayat Oli',
+    analysis: 'Analisis Lab',
     labResults: 'Hasil Lab',
-    smartAlertTitle: 'Peringatan Cerdas Berbasis Tren',
-    smartAlertDesc: 'Deteksi pola kenaikan, perubahan abnormal, dan kondisi yang mendekati batas kritis.',
-    activeAlerts: 'peringatan tren aktif',
+    smartAlertTitle: 'Peringatan Cerdas Berdasarkan Riwayat',
+    latestReport: 'Laporan Terbaru',
+    activeAlerts: 'peringatan riwayat aktif',
+    viewAll: 'Lihat Semua Laporan',
     actionCenter: 'Tindak Lanjuti di Action Center',
     exportFleetPdf: 'Ekspor Laporan Armada (PDF)',
     exportFleetDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format laporan resmi.',
@@ -242,19 +247,22 @@ const dashboardCopy = {
     customRange: 'Kustom',
     startDate: 'Tanggal Mulai',
     endDate: 'Tanggal Selesai',
-    performanceTitle: 'Tren Performa',
+    performanceTitle: 'Riwayat Performa',
+    lastTestDate: 'Tanggal Uji Terakhir',
+    machineStatus: 'Status Mesin',
+    overallCondition: 'Kondisi Keseluruhan',
     performanceDesc: 'Visualisasi metrik utama dan indikator kondisi pelumas dalam rentang waktu yang dipilih.',
     noSampleData: 'Data sampel tidak ditemukan',
     checkConsole: 'Periksa konsol browser untuk rincian debug.',
     noDataAvailable: 'Data tidak tersedia',
-    trendAlertsTitle: 'Peringatan Cerdas Berbasis Tren',
+    trendAlertsTitle: 'Peringatan Cerdas Berdasarkan Riwayat',
     trendAlertsDesc: 'Deteksi pola anomali dan kondisi yang mendekati batas kritis secara otomatis.',
-    noTrendAlerts: 'Tidak ditemukan anomali tren pada rentang waktu ini.',
-    activeTrendAlerts: (count: number) => `${count} peringatan tren aktif`,
+    noTrendAlerts: 'Tidak ditemukan anomali riwayat pada rentang waktu ini.',
+    activeTrendAlerts: (count: number) => `${count} peringatan riwayat aktif`,
     labReportsTitle: 'Laporan Laboratorium',
     labReportsEmpty: 'Belum ada laporan laboratorium pada rentang waktu ini.',
     reportCountSuffix: (count: number) => `${count} laporan ditemukan`,
-    viscosityTrend: 'Tren Viskositas',
+    viscosityTrend: 'Riwayat Viskositas',
     waterContent: 'Kandungan Air',
     tanTrend: 'Total Acid Number (TAN)',
     noMachineActions: 'Belum ada daftar tindakan untuk mesin ini.',
@@ -325,11 +333,13 @@ const dashboardCopy = {
     exportPdfTitle: 'Export Fleet Report (PDF)',
     exportPdfDesc: 'Download the executive summary and machine priority queue in a premium layout.',
     analysisAndReports: 'Analysis & Reports',
-    oilTrend: 'Oil Trend',
+    oilTrend: 'Oil History',
+    analysis: 'Lab Analysis',
     labResults: 'Lab Results',
-    smartAlertTitle: 'Trend-Based Smart Alerts',
-    smartAlertDesc: 'Detect increasing patterns, abnormal changes, and values approaching critical limits.',
-    activeAlerts: 'active trend alerts',
+    smartAlertTitle: 'History-Based Smart Alerts',
+    latestReport: 'Latest Report',
+    activeAlerts: 'active history alerts',
+    viewAll: 'View All Reports',
     actionCenter: 'Follow up in Action Center',
     exportFleetPdf: 'Export Fleet Report (PDF)',
     exportFleetDesc: 'Download executive summary and machine priority list in a professional report format.',
@@ -421,19 +431,22 @@ const dashboardCopy = {
     customRange: 'Custom',
     startDate: 'Start Date',
     endDate: 'End Date',
-    performanceTitle: 'Performance Trends',
+    performanceTitle: 'Performance History',
+    lastTestDate: 'Last Test Date',
+    machineStatus: 'Machine Status',
+    overallCondition: 'Overall Condition',
     performanceDesc: 'Key metrics visualization and lubricant condition indicators within the selected time range.',
     noSampleData: 'No sample data available',
     checkConsole: 'Check the browser console for debug details.',
     noDataAvailable: 'No data available',
-    trendAlertsTitle: 'Trend-Based Smart Alerts',
+    trendAlertsTitle: 'History-Based Smart Alerts',
     trendAlertsDesc: 'Detect rising patterns, abnormal changes, and values approaching critical limits.',
-    noTrendAlerts: 'No trend anomalies were detected in the selected time range.',
-    activeTrendAlerts: (count: number) => `${count} active trend alert${count === 1 ? '' : 's'}`,
+    noTrendAlerts: 'No history anomalies were detected in the selected time range.',
+    activeTrendAlerts: (count: number) => `${count} active history alert${count === 1 ? '' : 's'}`,
     labReportsTitle: 'Lab Reports',
     labReportsEmpty: 'No lab reports available for the selected time range',
     reportCountSuffix: (count: number) => `${count} report${count === 1 ? '' : 's'} in the selected time range`,
-    viscosityTrend: 'Viscosity Trend',
+    viscosityTrend: 'Viscosity History',
     waterContent: 'Water Content',
     tanTrend: 'Total Acid Number (TAN)',
     noMachineActions: 'No machine actions available yet.',
@@ -476,9 +489,12 @@ export default function DashboardClient({
   user,
   profile,
   initialMachines,
-  initialMaintenanceActions,
   initialLabTests,
   initialLabRequests = [],
+  initialProducts = [],
+  initialOrders = [],
+  initialComplaints = [],
+  initialSalesTeam = [],
 }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -579,6 +595,7 @@ export default function DashboardClient({
     new_machine_name: '',
     new_machine_model: '',
     new_machine_location: '',
+    assigned_to_profile_id: '',
     requested_date: '',
     priority: 'medium',
     notes: ''
@@ -586,15 +603,14 @@ export default function DashboardClient({
   const [requestSaving, setRequestSaving] = useState(false)
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
-  // Logs state reserved for future audit trail feature
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [maintenanceActionLogs, setMaintenanceActionLogs] = useState<MaintenanceActionLog[]>([])
-  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab'>('trend')
+
+  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'orders'>('trend')
 
   const handleShortcutClick = (shortcutId: string) => {
     if (shortcutId.startsWith('trend') || shortcutId === 'trend') setActiveTab('trend')
     else if (shortcutId === 'analysis') setActiveTab('analysis')
     else if (shortcutId === 'lab') setActiveTab('lab')
+    else if (shortcutId === 'orders') setActiveTab('orders')
   }
 
   const handleSendRequest = async () => {
@@ -620,6 +636,7 @@ export default function DashboardClient({
         due_date: requestForm.requested_date || undefined,
         priority: requestForm.priority,
         is_new_machine: requestForm.is_new_machine,
+        assigned_to_profile_id: requestForm.assigned_to_profile_id || undefined,
         new_machine_data: requestForm.is_new_machine ? {
           machine_name: requestForm.new_machine_name,
           model: requestForm.new_machine_model,
@@ -657,6 +674,7 @@ export default function DashboardClient({
           priority: requestForm.priority,
           status: 'pending',
           is_new_machine: requestForm.is_new_machine,
+          assigned_to_profile_id: requestForm.assigned_to_profile_id || null,
           new_machine_data: requestForm.is_new_machine ? {
             machine_name: requestForm.new_machine_name,
             model: requestForm.new_machine_model,
@@ -694,6 +712,7 @@ export default function DashboardClient({
       new_machine_name: '',
       new_machine_model: '',
       new_machine_location: '',
+      assigned_to_profile_id: '',
       priority: priority,
       requested_date: formatLocalDateInput(new Date()),
       notes: notes,
@@ -1602,6 +1621,7 @@ export default function DashboardClient({
                     { id: 'trend', label: copy.oilTrend },
                     { id: 'analysis', label: copy.analysisAndReports },
                     { id: 'lab', label: copy.labResults },
+                    { id: 'orders', label: language === 'id' ? 'Pesanan Oli' : 'Oil Orders' },
                   ].map((shortcut) => ({
                     id: shortcut.id,
                     label: shortcut.label,
@@ -2002,10 +2022,10 @@ export default function DashboardClient({
                             )}
                             <h2 className="text-2xl font-black text-slate-900 tracking-tight">{copy.smartAlertTitle}</h2>
                           </div>
-                          <p className="text-slate-400 font-medium text-sm mt-1">{copy.smartAlertDesc}</p>
+                          <p className="text-slate-400 font-medium text-sm mt-1">{copy.trendAlertsDesc}</p>
                         </div>
                         <span className="self-start sm:self-center bg-slate-50 border border-slate-100 text-slate-600 px-4.5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shrink-0">
-                          {selectedMachineTrendAlerts.length} {language === 'id' ? 'alert tren aktif' : 'active trend alerts'}
+                          {selectedMachineTrendAlerts.length} {language === 'id' ? 'peringatan riwayat aktif' : 'active history alerts'}
                         </span>
                       </div>
 
@@ -2333,6 +2353,18 @@ export default function DashboardClient({
               />
             </div>
           )}
+
+          {activeTab === 'orders' && (
+            <div key="orders" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
+              <OrdersSection
+                customerId={profile.customer_id || ''}
+                products={initialProducts}
+                initialOrders={initialOrders}
+                initialComplaints={initialComplaints}
+                language={language}
+              />
+            </div>
+          )}
         </div>
       </main>
 
@@ -2500,6 +2532,16 @@ export default function DashboardClient({
                           className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
                         />
                       </div>
+                      <select
+                        value={requestForm.assigned_to_profile_id}
+                        onChange={(e) => setRequestForm(prev => ({ ...prev, assigned_to_profile_id: e.target.value }))}
+                        className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                      >
+                        <option value="">Pilih Sales (Opsional)</option>
+                        {initialSalesTeam.map((sales: any) => (
+                          <option key={sales.id} value={sales.id}>{sales.full_name}</option>
+                        ))}
+                      </select>
                     </div>
                   )}
                 </div>

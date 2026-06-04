@@ -65,6 +65,7 @@ export interface LabRequest {
   id: string
   customer_id: string
   requested_by_profile_id: string
+  assigned_to_profile_id?: string | null
   machine_id: string | null
   title: string
   description: string | null

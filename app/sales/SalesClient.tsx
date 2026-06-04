@@ -17,20 +17,19 @@ interface SalesClientProps {
     full_name?: string | null
   }
   initialLabRequests: LabRequest[]
+  initialOrders: any[]
+  initialComplaints: any[]
 }
 
-export default function SalesClient({ user, profile, initialLabRequests }: SalesClientProps) {
+export default function SalesClient({ user, profile, initialLabRequests, initialOrders = [], initialComplaints = [] }: SalesClientProps) {
   const [requests, setRequests] = useState<LabRequest[]>(initialLabRequests)
-  const [activeTab, setActiveTab] = useState<'queue' | 'transit'>('queue')
+  const [orders, setOrders] = useState(initialOrders)
+  const [complaints, setComplaints] = useState(initialComplaints)
+  const [activeTab, setActiveTab] = useState<'queue' | 'transit' | 'orders'>('queue')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'high'>('all')
   const [loadingId, setLoadingId] = useState<string | null>(null)
   
-  // States for On-Site Verification Form
-  const [verifyingId, setVerifyingId] = useState<string | null>(null)
-  const [serialNumber, setSerialNumber] = useState('')
-  const [machineModel, setMachineModel] = useState('')
-
   // State for Uploading Photo progress indicator
   const [uploadingId, setUploadingId] = useState<string | null>(null)
 
@@ -89,53 +88,68 @@ export default function SalesClient({ user, profile, initialLabRequests }: Sales
     }
   }
 
-  // 3. Aksi verifikasi spesifikasi mesin baru langsung di tempat oleh sales
-  const handleVerifyMachine = async (requestId: string, machineId: string | null | undefined, req: LabRequest) => {
-    if (!serialNumber.trim() || !machineModel.trim()) {
-      alert('Nomor Seri dan Model wajib diisi untuk verifikasi.')
-      return
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    if (!confirm(`Ubah status pesanan menjadi ${newStatus}?`)) return
+    setLoadingId(orderId)
+    try {
+      const { error } = await supabase
+        .from('oil_orders')
+        .update({ status: newStatus })
+        .eq('id', orderId)
+      if (error) throw error
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
+    } catch (e) {
+      alert('Gagal mengupdate pesanan.')
+    } finally {
+      setLoadingId(null)
     }
+  }
 
+  const handleResolveComplaint = async (complaintId: string) => {
+    const notes = prompt('Masukkan catatan penyelesaian komplain (opsional):')
+    if (notes === null) return
+    setLoadingId(complaintId)
+    try {
+      const { error } = await supabase
+        .from('oil_complaints')
+        .update({ status: 'resolved', resolution_notes: notes, resolved_at: new Date().toISOString(), resolved_by: user.id })
+        .eq('id', complaintId)
+      if (error) throw error
+      setComplaints(prev => prev.map(c => c.id === complaintId ? { ...c, status: 'resolved', resolution_notes: notes } : c))
+      alert('Komplain berhasil diselesaikan!')
+    } catch (e) {
+      alert('Gagal menyelesaikan komplain.')
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  // 3. Aksi verifikasi spesifikasi mesin baru langsung di tempat oleh sales
+  const handleVerifyMachine = async (requestId: string, req: LabRequest) => {
     setLoadingId(requestId)
     try {
-      // Jika machine_id tidak ada, kita update data registrasi di new_machine_data
-      if (!machineId) {
-        const updatedNewData = {
-          ...req.new_machine_data,
-          serial_number: serialNumber,
-          model: machineModel,
-        }
-
-        const { error } = await supabase
-          .from('oil_lab_requests')
-          .update({ 
-            new_machine_data: updatedNewData,
-            is_new_machine: false // Melepas penanda mesin baru setelah diverifikasi
-          })
-          .eq('id', requestId)
-
-        if (error) throw error
-
-        setRequests(prev => prev.map(r => r.id === requestId ? {
-          ...r,
-          is_new_machine: false,
-          new_machine_data: updatedNewData
-        } : r))
-      } else {
-        // Jika machine_id ada, update langsung tabel oil_machines
-        const { error: machineErr } = await supabase
+      if (!req.machine_id && req.new_machine_data) {
+        // Otomatis insert mesin baru ke database tanpa perlu input tambahan
+        const { data: newMachine, error: insertErr } = await supabase
           .from('oil_machines')
-          .update({
-            serial_number: serialNumber,
-            model: machineModel
+          .insert({
+            customer_id: req.customer_id,
+            machine_name: req.new_machine_data.machine_name,
+            location: req.new_machine_data.location,
+            status: 'active'
           })
-          .eq('id', machineId)
+          .select()
+          .single()
 
-        if (machineErr) throw machineErr
+        if (insertErr) throw insertErr
 
+        // Update request dengan ID mesin yang baru dibuat
         const { error: requestErr } = await supabase
           .from('oil_lab_requests')
-          .update({ is_new_machine: false })
+          .update({ 
+            machine_id: newMachine.id,
+            is_new_machine: false
+          })
           .eq('id', requestId)
 
         if (requestErr) throw requestErr
@@ -143,21 +157,20 @@ export default function SalesClient({ user, profile, initialLabRequests }: Sales
         setRequests(prev => prev.map(r => r.id === requestId ? {
           ...r,
           is_new_machine: false,
-          machine: r.machine ? {
-            ...r.machine,
-            serial_number: serialNumber,
-            model: machineModel
-          } : null
+          machine_id: newMachine.id,
+          machine: {
+            machine_name: newMachine.machine_name,
+            location: newMachine.location,
+            serial_number: newMachine.serial_number,
+            model: newMachine.model
+          }
         } : r))
       }
 
-      alert('Spesifikasi mesin sukses diverifikasi langsung dari lokasi pabrik!')
-      setVerifyingId(null)
-      setSerialNumber('')
-      setMachineModel('')
+      alert('Mesin berhasil disetujui dan ditambahkan ke database otomatis!')
     } catch (e) {
       console.error('Verification failed:', e)
-      alert('Gagal memverifikasi spesifikasi mesin.')
+      alert('Gagal menyetujui mesin baru.')
     } finally {
       setLoadingId(null)
     }
@@ -291,28 +304,39 @@ export default function SalesClient({ user, profile, initialLabRequests }: Sales
 
       {/* Segmen Kontrol Utama (Tabs) */}
       <div className="bg-white border-b border-slate-100 p-2 sticky top-[73px] z-20 shadow-sm">
-        <div className="max-w-md mx-auto grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-2xl">
+        <div className="max-w-md mx-auto grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl">
           <button
             onClick={() => setActiveTab('queue')}
-            className={`py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
+            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
               activeTab === 'queue'
                 ? 'bg-white text-slate-950 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <span>Antrean Queue</span>
-            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
+            <span>Antrean</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
           </button>
           <button
             onClick={() => setActiveTab('transit')}
-            className={`py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
+            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
               activeTab === 'transit'
                 ? 'bg-white text-slate-950 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <span>Dalam Transit</span>
-            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black ${activeTab === 'transit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{transitCount}</span>
+            <span>Transit</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'transit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{transitCount}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+              activeTab === 'orders'
+                ? 'bg-white text-slate-950 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>Pesanan</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending' || o.status === 'processing').length}</span>
           </button>
         </div>
       </div>
@@ -502,51 +526,7 @@ export default function SalesClient({ user, profile, initialLabRequests }: Sales
                       </div>
                     )}
 
-                    {/* Inline Form Verifikasi Spesifikasi Mesin Baru */}
-                    {verifyingId === req.id && (
-                      <div className="mt-4 p-4 border-2 border-amber-200 bg-amber-50/30 rounded-2xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <h4 className="text-xs font-black text-amber-800 uppercase tracking-widest">Verifikasi On-Site</h4>
-                        <div>
-                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Nomor Seri Fisik (Serial S/N)</label>
-                          <input
-                            type="text"
-                            placeholder="Contoh: S/N-998877"
-                            value={serialNumber}
-                            onChange={(e) => setSerialNumber(e.target.value)}
-                            className="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-semibold outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Model Mesin</label>
-                          <input
-                            type="text"
-                            placeholder="Contoh: Turbo-G3"
-                            value={machineModel}
-                            onChange={(e) => setMachineModel(e.target.value)}
-                            className="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-semibold outline-none"
-                          />
-                        </div>
-                        <div className="flex gap-2 pt-1">
-                          <button
-                            onClick={() => {
-                              setVerifyingId(null)
-                              setSerialNumber('')
-                              setMachineModel('')
-                            }}
-                            className="flex-1 py-2 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
-                          >
-                            Batal
-                          </button>
-                          <button
-                            onClick={() => handleVerifyMachine(req.id, req.machine_id, req)}
-                            disabled={loadingId === req.id}
-                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm"
-                          >
-                            Simpan & Verifikasi
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Bukti mesin baru telah dihapus dari inline form - Langsung Appprove via button bawah */}
                   </div>
 
                   {/* Tombol Aksi di Bagian Bawah Kartu */}
@@ -554,16 +534,13 @@ export default function SalesClient({ user, profile, initialLabRequests }: Sales
                     {/* Aksi khusus Tab Antrean */}
                     {activeTab === 'queue' && (
                       <>
-                        {isNewMachine && verifyingId !== req.id && (
+                        {isNewMachine && (
                           <button
-                            onClick={() => {
-                              setVerifyingId(req.id)
-                              setSerialNumber(req.machine?.serial_number || '')
-                              setMachineModel(req.machine?.model || '')
-                            }}
+                            onClick={() => handleVerifyMachine(req.id, req)}
+                            disabled={loadingId === req.id}
                             className="flex-1 py-3 px-4 text-[10px] font-black uppercase tracking-widest text-amber-700 bg-amber-50/50 hover:bg-amber-50 border-r border-slate-100 transition-colors"
                           >
-                            Verifikasi Mesin
+                            Setujui Mesin
                           </button>
                         )}
                         <button
@@ -623,6 +600,84 @@ export default function SalesClient({ user, profile, initialLabRequests }: Sales
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Orders & Complaints Content */}
+        {activeTab === 'orders' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
+            {/* Orders List */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Daftar Pesanan Oli</h3>
+              {orders.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 text-center border-2 border-dashed border-slate-200 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 italic">Tidak ada pesanan.</p>
+                </div>
+              ) : (
+                orders.map(order => (
+                  <div key={order.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                          {order.customer?.company_name}
+                        </span>
+                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[8px] font-black rounded-lg uppercase tracking-wider">{order.status}</span>
+                      </div>
+                      <span className="text-[9px] text-slate-400 font-bold">{new Date(order.created_at).toLocaleDateString('id-ID')}</span>
+                    </div>
+                    <h4 className="text-sm font-black text-slate-900">{order.product?.product_name || '-'}</h4>
+                    <p className="text-xs text-slate-600 mt-1 font-medium">{order.quantity} Pcs</p>
+                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100">
+                      {order.status === 'pending' && (
+                        <button onClick={() => handleUpdateOrderStatus(order.id, 'processing')} className="flex-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">Proses Pesanan</button>
+                      )}
+                      {order.status === 'processing' && (
+                        <button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">Kirim Pesanan</button>
+                      )}
+                      {order.status === 'shipped' && (
+                        <button onClick={() => handleUpdateOrderStatus(order.id, 'completed')} className="flex-1 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">Selesai</button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Complaints List */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Komplain Customer</h3>
+              {complaints.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 text-center border-2 border-dashed border-slate-200 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 italic">Tidak ada komplain.</p>
+                </div>
+              ) : (
+                complaints.map(comp => (
+                  <div key={comp.id} className={`bg-white rounded-2xl shadow-sm border p-4 ${comp.status === 'open' ? 'border-red-200 bg-red-50/20' : 'border-slate-100'}`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                          {comp.customer?.company_name}
+                        </span>
+                        <span className={`px-2 py-0.5 text-[8px] font-black rounded-lg uppercase tracking-wider ${comp.status === 'open' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{comp.status}</span>
+                      </div>
+                      <span className="text-[9px] text-slate-400 font-bold">{new Date(comp.created_at).toLocaleDateString('id-ID')}</span>
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-700 mb-1">Produk: {comp.order?.product?.product_name || '-'}</h4>
+                    <p className="text-sm text-slate-900 font-medium bg-slate-50 p-2 rounded-lg border border-slate-100">"{comp.description}"</p>
+                    {comp.resolution_notes && (
+                      <div className="mt-2 text-xs font-medium text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                        Penyelesaian: {comp.resolution_notes}
+                      </div>
+                    )}
+                    {comp.status === 'open' && (
+                      <button onClick={() => handleResolveComplaint(comp.id)} disabled={loadingId === comp.id} className="mt-3 w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">
+                        Tandai Selesai & Beri Catatan
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
       </main>
