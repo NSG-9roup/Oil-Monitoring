@@ -23,7 +23,8 @@ export default async function DashboardPage() {
       customer:customer_id (
         id,
         company_name,
-        status
+        status,
+        logo_url
       )
     `)
     .eq('id', user.id)
