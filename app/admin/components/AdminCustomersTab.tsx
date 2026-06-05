@@ -116,6 +116,7 @@ export default function AdminCustomersTab({
                           alt={customer.company_name}
                           fill
                           className="object-contain p-1.5"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center">

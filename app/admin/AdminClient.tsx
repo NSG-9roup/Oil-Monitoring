@@ -1078,6 +1078,7 @@ export default function AdminClient({
                       alt="Logo preview"
                       fill
                       className="object-contain p-6"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-center">
@@ -1583,6 +1584,7 @@ export default function AdminClient({
                         alt="Bukti Botol Sampel" 
                         fill
                         className="object-cover" 
+                        unoptimized
                       />
                     </div>
                   </div>

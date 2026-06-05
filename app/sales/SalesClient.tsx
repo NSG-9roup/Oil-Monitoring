@@ -473,7 +473,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                       <div className="flex items-center gap-2">
                         {req.customer?.logo_url ? (
                           <div className="relative w-6 h-6 rounded overflow-hidden bg-slate-50 border border-slate-100">
-                            <Image src={req.customer.logo_url} alt="Logo" fill className="object-contain" />
+                            <Image src={req.customer.logo_url} alt="Logo" fill className="object-contain" unoptimized />
                           </div>
                         ) : (
                           <div className="w-6 h-6 bg-slate-100 rounded flex items-center justify-center text-[10px] font-black text-slate-400">C</div>
@@ -542,7 +542,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                     {hasPhoto && samplePhotoUrl && (
                       <div className="mt-4 p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0 border border-slate-100">
-                          <Image src={samplePhotoUrl} alt="Bukti Foto" fill className="object-cover" />
+                          <Image src={samplePhotoUrl} alt="Bukti Foto" fill className="object-cover" unoptimized />
                         </div>
                         <div className="min-w-0">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">FOTO BUKTI SAMPEL</p>

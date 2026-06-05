@@ -206,6 +206,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                     alt="Bukti Foto Botol"
                     fill
                     className="object-cover rounded-[1rem]"
+                    unoptimized
                   />
                 </div>
               </div>
