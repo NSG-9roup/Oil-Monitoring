@@ -1683,36 +1683,62 @@ export default function DashboardClient({
             {/* Soft accent background glow */}
             <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-gradient-to-br from-orange-400 to-red-500 opacity-5 blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
             
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {language === 'id' ? 'KONTROL PANEL ARMADA' : 'FLEET CONTROL BOARD'}
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight mt-1">
-                  {(() => {
-                    const hour = new Date().getHours();
-                    let timeGreeting = '';
-                    if (hour < 11) {
-                      timeGreeting = language === 'id' ? 'Selamat Pagi' : 'Good Morning';
-                    } else if (hour < 15) {
-                      timeGreeting = language === 'id' ? 'Selamat Siang' : 'Good Afternoon';
-                    } else if (hour < 19) {
-                      timeGreeting = language === 'id' ? 'Selamat Sore' : 'Good Evening';
-                    } else {
-                      timeGreeting = language === 'id' ? 'Selamat Malam' : 'Good Night';
-                    }
-                    return `${timeGreeting}, ${profile?.full_name?.split(' ')[0] || 'User'}`;
-                  })()} 🌟
-                </h2>
-                <p className="text-slate-500 font-semibold text-xs sm:text-sm mt-2.5">
-                  {language === 'id' 
-                    ? `Sistem monitoring oli pelumas untuk ${profile?.customer?.company_name || 'perusahaan Anda'} terpantau stabil hari ini.` 
-                    : `Lubricant oil monitoring system for ${profile?.customer?.company_name || 'your company'} is running stable today.`}
-                </p>
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
+              {/* Left Side: Logo + Divider + Welcome Text */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 w-full lg:w-auto">
+                {/* Logo Frame */}
+                <div className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm flex items-center justify-center p-2">
+                  {profile?.customer?.logo_url ? (
+                    <Image
+                      src={profile.customer.logo_url}
+                      alt="Customer logo"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-contain"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-900 flex items-center justify-center text-white font-black text-xl uppercase rounded-xl">
+                      {profile?.customer?.company_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2) || 'C'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Responsive Divider Line */}
+                <div className="hidden sm:block w-px h-14 bg-slate-200/80 self-center"></div>
+                <div className="block sm:hidden w-full h-px bg-slate-100 my-1"></div>
+
+                {/* Welcome Text */}
+                <div className="flex-1 text-center sm:text-left">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    {language === 'id' ? 'KONTROL PANEL ARMADA' : 'FLEET CONTROL BOARD'}
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight mt-1">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      let timeGreeting = '';
+                      if (hour < 11) {
+                        timeGreeting = language === 'id' ? 'Selamat Pagi' : 'Good Morning';
+                      } else if (hour < 15) {
+                        timeGreeting = language === 'id' ? 'Selamat Siang' : 'Good Afternoon';
+                      } else if (hour < 19) {
+                        timeGreeting = language === 'id' ? 'Selamat Sore' : 'Good Evening';
+                      } else {
+                        timeGreeting = language === 'id' ? 'Selamat Malam' : 'Good Night';
+                      }
+                      return `${timeGreeting}, ${profile?.full_name?.split(' ')[0] || 'User'}`;
+                    })()} 🌟
+                  </h2>
+                  <p className="text-slate-500 font-semibold text-xs sm:text-sm mt-2">
+                    {language === 'id' 
+                      ? `Sistem monitoring oli pelumas untuk ${profile?.customer?.company_name || 'perusahaan Anda'} terpantau stabil hari ini.` 
+                      : `Lubricant oil monitoring system for ${profile?.customer?.company_name || 'your company'} is running stable today.`}
+                  </p>
+                </div>
               </div>
 
-              {/* Action Quick Status badge + Company Logo */}
-              <div className="flex sm:flex-col items-start sm:items-end gap-3 shrink-0">
+              {/* Right Side: Active Status Badge */}
+              <div className="flex-shrink-0 self-center lg:self-center">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50/80 to-red-50/80 border border-orange-100/50 rounded-2xl shrink-0 select-none">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -1722,18 +1748,6 @@ export default function DashboardClient({
                     {language === 'id' ? 'SISTEM AKTIF' : 'SYSTEM LIVE'}
                   </span>
                 </div>
-                {profile?.customer?.logo_url && (
-                  <div className="bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-center max-h-[38px]">
-                    <Image
-                      src={profile.customer.logo_url}
-                      alt="Company logo"
-                      width={90}
-                      height={24}
-                      className="h-5 w-auto object-contain"
-                      unoptimized
-                    />
-                  </div>
-                )}
               </div>
             </div>
           </div>
