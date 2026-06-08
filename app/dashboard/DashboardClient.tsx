@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
-import { exportFleetReportPdf, type FleetReportRow } from '@/lib/pdf/exportFleetReport'
+import type { FleetReportRow } from '@/lib/pdf/exportFleetReport'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
@@ -723,7 +723,38 @@ export default function DashboardClient({
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
 
+  // Set up real-time subscription for lab requests and tests (Saran A)
+  useEffect(() => {
+    const channel = supabase
+      .channel('customer-dashboard-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_lab_requests'
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_lab_tests'
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .subscribe()
 
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, router])
 
   useEffect(() => {
     setLabRequests(initialLabRequests)
@@ -1492,21 +1523,50 @@ export default function DashboardClient({
 
 
 
+  const [exporting, setExporting] = useState(false)
+
   const handleExportFleetReport = async () => {
-    await exportFleetReportPdf(
-      {
-        companyName: profile?.customer?.company_name || 'Customer',
-        customerEmail: profile?.email || user.email || '-',
-        generatedBy: profile?.full_name || profile?.email || 'Customer User',
-        generatedAt: new Date(),
-        criticalCount,
-        warningCount,
-        healthyCount,
-        avgHealthScore,
-      },
-      fleetReportRows,
-      language
-    )
+    setExporting(true)
+    try {
+      const response = await fetch('/api/reports/fleet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meta: {
+            companyName: profile?.customer?.company_name || 'Customer',
+            customerEmail: profile?.email || user.email || '-',
+            generatedBy: profile?.full_name || profile?.email || 'Customer User',
+            generatedAt: new Date().toISOString(),
+            criticalCount,
+            warningCount,
+            healthyCount,
+            avgHealthScore,
+          },
+          rows: fleetReportRows,
+          language
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to generate report')
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const safeCompany = (profile?.customer?.company_name || 'Customer').replace(/[^a-z0-9]+/gi, '_')
+      a.download = `Fleet_Report_${safeCompany}_${new Date().toISOString().slice(0, 10)}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Export PDF failed:', err)
+      alert('Gagal mengekspor laporan PDF.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   const chartData = filteredSamples.map((sample) => {
@@ -2277,17 +2337,28 @@ export default function DashboardClient({
                       {/* PDF Export Button */}
                       <button
                         onClick={handleExportFleetReport}
-                        className="group w-full rounded-2xl bg-slate-900 hover:bg-slate-800 px-5 py-4 text-left text-white shadow-md shadow-slate-900/10 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-4"
+                        disabled={exporting}
+                        className={`group w-full rounded-2xl px-5 py-4 text-left text-white shadow-md transition-all duration-300 flex items-center gap-4 ${
+                          exporting 
+                            ? 'bg-slate-700 cursor-not-allowed opacity-80' 
+                            : 'bg-slate-900 hover:bg-slate-800 hover:-translate-y-0.5 shadow-slate-900/10'
+                        }`}
                       >
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
+                          {exporting ? (
+                            <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="text-xs font-black leading-tight uppercase tracking-wider text-white truncate">
-                              {copy.exportFleetPdf}
+                              {exporting ? 'Generating PDF...' : copy.exportFleetPdf}
                             </h3>
                             <span className="text-white/60 text-sm leading-none transition-transform duration-300 group-hover:translate-x-0.5 shrink-0">→</span>
                           </div>

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAuditLog } from '@/app/actions/adminActions'
 
 export async function PATCH(
   request: NextRequest,
@@ -51,6 +52,8 @@ export async function PATCH(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    await createAuditLog('UPDATE_LAB_REQUEST_STATUS', `Updated lab request ID: ${id} status to: ${status}`, { id, status, updated_by: user.id })
 
     return NextResponse.json({ success: true, status })
   } catch (err) {

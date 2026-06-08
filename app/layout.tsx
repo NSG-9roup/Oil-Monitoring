@@ -9,6 +9,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Oil Condition Monitoring',
   description: 'Industrial oil condition monitoring system',
+  manifest: '/manifest.json',
   icons: {
     icon: '/nav logo.webp',
     shortcut: '/nav logo.webp',

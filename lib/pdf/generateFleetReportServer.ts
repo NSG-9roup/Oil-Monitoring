@@ -1,5 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import fs from 'fs'
+import path from 'path'
 
 export type FleetReportRow = {
   machineName: string
@@ -16,7 +18,7 @@ export type FleetReportMeta = {
   companyName: string
   customerEmail: string
   generatedBy: string
-  generatedAt: Date
+  generatedAt: string | Date
   criticalCount: number
   warningCount: number
   healthyCount: number
@@ -93,71 +95,78 @@ const formatDate = (value?: string) => {
   }).format(date)
 }
 
-const loadImageDataUrl = async (path: string) => {
+// On the server, read dimensions directly from PNG binary header (IHDR chunk)
+function getPngDimensions(filePath: string) {
+  const buffer = fs.readFileSync(filePath)
+  if (buffer.readUInt32BE(0) !== 0x89504e47 || buffer.readUInt32BE(4) !== 0x0d0a1a0a) {
+    throw new Error('Not a valid PNG file')
+  }
+  const width = buffer.readUInt32BE(16)
+  const height = buffer.readUInt32BE(20)
+  return { width, height }
+}
+
+const getLocalImageDataUrl = (fileName: string) => {
   try {
-    const response = await fetch(path)
-    if (!response.ok) return null
-
-    const blob = await response.blob()
-
-    return await new Promise<string | null>((resolve) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null)
-      reader.onerror = () => resolve(null)
-      reader.readAsDataURL(blob)
-    })
-  } catch {
+    const filePath = path.join(process.cwd(), 'public', fileName)
+    if (!fs.existsSync(filePath)) return null
+    const buffer = fs.readFileSync(filePath)
+    const base64 = buffer.toString('base64')
+    return `data:image/png;base64,${base64}`
+  } catch (err) {
+    console.error('Error loading local image:', err)
     return null
   }
 }
 
-const loadImageDimensions = async (dataUrl: string) => {
-  return await new Promise<{ width: number; height: number } | null>((resolve) => {
-    const image = new Image()
-    image.onload = () => resolve({ width: image.naturalWidth || image.width, height: image.naturalHeight || image.height })
-    image.onerror = () => resolve(null)
-    image.src = dataUrl
-  })
-}
-
-const addImageContain = async (
+const addImageContainServer = (
   doc: jsPDF,
-  dataUrl: string | null,
+  fileName: string,
   x: number,
   y: number,
   maxWidth: number,
   maxHeight: number,
   format: 'PNG' | 'JPEG' = 'PNG'
 ) => {
+  const dataUrl = getLocalImageDataUrl(fileName)
   if (!dataUrl) return
 
-  const dimensions = await loadImageDimensions(dataUrl)
-  if (!dimensions || !dimensions.width || !dimensions.height) return
+  try {
+    const filePath = path.join(process.cwd(), 'public', fileName)
+    const dimensions = getPngDimensions(filePath)
+    if (!dimensions || !dimensions.width || !dimensions.height) return
 
-  const scale = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height)
-  const width = dimensions.width * scale
-  const height = dimensions.height * scale
-  const offsetX = x + (maxWidth - width) / 2
-  const offsetY = y + (maxHeight - height) / 2
+    const scale = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height)
+    const width = dimensions.width * scale
+    const height = dimensions.height * scale
+    const offsetX = x + (maxWidth - width) / 2
+    const offsetY = y + (maxHeight - height) / 2
 
-  doc.addImage(dataUrl, format, offsetX, offsetY, width, height)
+    doc.addImage(dataUrl, format, offsetX, offsetY, width, height)
+  } catch (err) {
+    console.error('Error adding image contain on server:', err)
+  }
 }
 
-export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetReportRow[], language: ReportLanguage = 'en') {
+export async function generateFleetReportPdfServer(
+  meta: FleetReportMeta,
+  rows: FleetReportRow[],
+  language: ReportLanguage = 'en'
+): Promise<Uint8Array> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const copy = pdfCopy[language]
-  const [headerImage, footerImage] = await Promise.all([
-    loadImageDataUrl('/header.png'),
-    loadImageDataUrl('/footer.png'),
-  ])
+
+  const hasHeader = fs.existsSync(path.join(process.cwd(), 'public', 'header.png'))
+  const hasFooter = fs.existsSync(path.join(process.cwd(), 'public', 'footer.png'))
+
+  const generatedDate = typeof meta.generatedAt === 'string' ? new Date(meta.generatedAt) : meta.generatedAt
 
   // --- HEADER SECTION ---
-  if (headerImage) {
-    await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
+  if (hasHeader) {
+    addImageContainServer(doc, 'header.png', 0, 0, pageWidth, 72)
   } else {
-    // Elegant dynamic header if image is missing
     const gradientColors = [[190, 24, 93], [157, 23, 77]]
     doc.setFillColor(gradientColors[0][0], gradientColors[0][1], gradientColors[0][2])
     doc.rect(0, 0, pageWidth, 85, 'F')
@@ -168,11 +177,11 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
     doc.setTextColor(255, 255, 255, 0.8)
-    doc.text(`${copy.generated}: ${formatDateTime(meta.generatedAt)}`, 40, 62)
+    doc.text(`${copy.generated}: ${formatDateTime(generatedDate)}`, 40, 62)
   }
 
   // --- CUSTOMER PROFILE CARD ---
-  const profileY = headerImage ? 85 : 100
+  const profileY = hasHeader ? 85 : 100
   doc.setTextColor(17, 24, 39)
   doc.setFillColor(248, 250, 252)
   doc.setDrawColor(226, 232, 240)
@@ -202,7 +211,6 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
   stats.forEach((stat, index) => {
     const x = 40 + index * (cardWidth + cardGap)
 
-    // Shadow-like effect
     doc.setFillColor(241, 245, 249)
     doc.roundedRect(x + 1, cardY + 1, cardWidth, 80, 8, 8, 'F')
     
@@ -210,7 +218,6 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
     doc.setDrawColor(226, 232, 240)
     doc.roundedRect(x, cardY, cardWidth, 80, 8, 8, 'FD')
 
-    // Top indicator line
     doc.setFillColor(stat.color[0], stat.color[1], stat.color[2])
     doc.rect(x + 10, cardY, cardWidth - 20, 3, 'F')
 
@@ -299,9 +306,9 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
   const totalPages = doc.getNumberOfPages()
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page)
-    if (headerImage) await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
-    if (footerImage) {
-      await addImageContain(doc, footerImage, 0, pageHeight - 52, pageWidth, 52)
+    if (hasHeader) addImageContainServer(doc, 'header.png', 0, 0, pageWidth, 72)
+    if (hasFooter) {
+      addImageContainServer(doc, 'footer.png', 0, pageHeight - 52, pageWidth, 52)
     } else {
       doc.setDrawColor(226, 232, 240)
       doc.line(40, pageHeight - 60, pageWidth - 40, pageHeight - 60)
@@ -314,8 +321,6 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
     doc.text(`${copy.page} ${page} of ${totalPages}`, pageWidth - 95, pageHeight - 25)
   }
 
-  const safeCompany = (meta.companyName || 'Customer').replace(/[^a-z0-9]+/gi, '_')
-  const filename = `Fleet_Report_${safeCompany}_${meta.generatedAt.toISOString().slice(0, 10)}.pdf`
-
-  doc.save(filename)
+  const pdfArrayBuffer = doc.output('arraybuffer')
+  return new Uint8Array(pdfArrayBuffer)
 }

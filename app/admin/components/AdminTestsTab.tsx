@@ -51,6 +51,26 @@ export default function AdminTestsTab({
   formatDate
 }: AdminTestsTabProps) {
 
+  const [sendingId, setSendingId] = React.useState<string | null>(null)
+
+  const handleSendEmail = async (testId: string) => {
+    setSendingId(testId)
+    try {
+      const { sendLabTestResultEmailAction } = await import('@/app/actions/emailActions')
+      const result = await sendLabTestResultEmailAction(testId)
+      if (result.success) {
+        alert('Hasil lab berhasil dikirim ke email customer!')
+      } else {
+        alert('Gagal mengirim email: ' + result.error)
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Gagal memicu pengiriman email.')
+    } finally {
+      setSendingId(null)
+    }
+  }
+
   const filteredTests = recentTests.filter(test => {
     const matchSearch = test.machine?.machine_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       test.test_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -262,6 +282,21 @@ export default function AdminTestsTab({
 
                   {/* Actions */}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-bold space-x-1.5">
+                    <button
+                      onClick={() => handleSendEmail(test.id)}
+                      disabled={sendingId === test.id}
+                      className={`inline-flex items-center px-3 py-1.5 rounded-xl transition-all duration-300 border font-bold text-[10px] uppercase tracking-wider ${
+                        sendingId === test.id
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                          : 'text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 border-emerald-100 hover:border-transparent active:scale-95'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      {sendingId === test.id ? 'Kirim...' : 'Kirim Hasil'}
+                    </button>
+
                     <button
                       onClick={() => onOpenEdit(test)}
                       className="inline-flex items-center px-3 py-1.5 text-slate-700 hover:text-white bg-slate-100 hover:bg-orange-500 rounded-xl transition-all duration-300"

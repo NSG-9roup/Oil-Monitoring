@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import type { LabRequest } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { approveNewMachine } from '@/app/actions/adminActions'
 
 interface AdminRequestsTabProps {
   labRequests: LabRequest[]
@@ -43,6 +44,35 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
       onRefresh()
     } catch {
       alert('Gagal mengupdate status.')
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const handleVerifyMachine = async (requestId: string, req: LabRequest) => {
+    if (!confirm('Setujui dan daftarkan mesin baru ini secara resmi ke database?')) return
+    setLoadingId(requestId)
+    try {
+      if (!req.machine_id && req.new_machine_data?.machine_name) {
+        const result = await approveNewMachine(
+          requestId,
+          req.customer_id,
+          req.new_machine_data.machine_name,
+          req.new_machine_data.location || null
+        )
+
+        if (result.success) {
+          alert('Mesin baru berhasil disetujui dan didaftarkan!')
+          onRefresh()
+        } else {
+          throw new Error('Approval action returned failure')
+        }
+      } else {
+        alert('Data mesin baru tidak lengkap.')
+      }
+    } catch (e) {
+      console.error('Verification failed:', e)
+      alert('Gagal menyetujui mesin baru.')
     } finally {
       setLoadingId(null)
     }
@@ -93,8 +123,8 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                       <div className="flex flex-col gap-1">
                         <span className="text-sm font-medium text-gray-800">
                           {req.is_new_machine
-                            ? (req.new_machine_data?.machine_name ?? 'Mesin Baru')
-                            : (req.machine?.machine_name ?? '-')}
+                             ? (req.new_machine_data?.machine_name ?? 'Mesin Baru')
+                             : (req.machine?.machine_name ?? '-')}
                         </span>
                         {req.is_new_machine && (
                           <span className="text-[10px] font-black text-amber-600 uppercase tracking-tighter bg-amber-50 px-1.5 py-0.5 rounded w-fit">
@@ -144,6 +174,15 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                       {new Date(req.created_at).toLocaleDateString('id-ID')}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
+                      {req.is_new_machine && (
+                        <button
+                          onClick={() => handleVerifyMachine(req.id, req)}
+                          disabled={loadingId === req.id}
+                          className="text-xs font-bold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 transition-colors disabled:opacity-50"
+                        >
+                          Setujui Mesin
+                        </button>
+                      )}
                       {req.status === 'pending' && (
                         <button
                           onClick={() => handleUpdateStatus(req.id, 'assigned')}

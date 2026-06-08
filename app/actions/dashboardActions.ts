@@ -2,8 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-
-
+import { createAuditLog } from '@/app/actions/adminActions'
 
 /**
  * Helper to verify customer permissions and get their profile
@@ -74,6 +73,8 @@ export async function createLabRequest(data: {
     throw new Error(error.message)
   }
   
+  await createAuditLog('CREATE_LAB_REQUEST', `Created lab request: ${data.title}`, { title: data.title, is_new_machine: data.is_new_machine })
+
   revalidatePath('/dashboard')
   revalidatePath('/sales')
   revalidatePath('/admin')

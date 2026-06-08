@@ -1,11 +1,22 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { createClient, uploadWithRetry } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { LabRequest } from '@/lib/types'
 import imageCompression from 'browser-image-compression'
 import Image from 'next/image'
+import { approveNewMachine } from '@/app/actions/adminActions'
+import toast from 'react-hot-toast'
+import { updateLabRequestStatusSales, updatePhotoPathSales } from '@/app/actions/salesActions'
+
+interface OfflineAction {
+  type: 'COLLECT' | 'UNDO_COLLECT' | 'UPLOAD_PHOTO'
+  requestId: string
+  fileBase64?: string
+  fileName?: string
+  fileType?: string
+}
 
 interface SalesOrder {
   id: string
@@ -64,6 +75,139 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const supabase = createClient()
   const router = useRouter()
 
+  const [isOnline, setIsOnline] = useState(true)
+  const [syncingOffline, setSyncingOffline] = useState(false)
+
+  // Setup online/offline listeners & sync queue
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine)
+      
+      const base64ToFile = async (base64: string, filename: string, mimeType: string): Promise<File> => {
+        const res = await fetch(base64)
+        const blob = await res.blob()
+        return new File([blob], filename, { type: mimeType })
+      }
+
+      const syncOfflineQueue = async () => {
+        const queueJson = localStorage.getItem('sales_offline_queue')
+        if (!queueJson) return
+
+        let queue: OfflineAction[] = []
+        try {
+          queue = JSON.parse(queueJson) as OfflineAction[]
+        } catch {
+          return
+        }
+
+        if (queue.length === 0) return
+
+        setSyncingOffline(true)
+        const toastId = toast.loading('Mensinkronisasikan perubahan offline ke database...')
+        const remainingQueue: OfflineAction[] = []
+
+        for (const action of queue) {
+          try {
+            if (action.type === 'COLLECT') {
+              await updateLabRequestStatusSales(action.requestId, 'sampling')
+            } else if (action.type === 'UNDO_COLLECT') {
+              await updateLabRequestStatusSales(action.requestId, 'pending')
+            } else if (action.type === 'UPLOAD_PHOTO' && action.fileBase64 && action.fileName && action.fileType) {
+              const file = await base64ToFile(action.fileBase64, action.fileName, action.fileType)
+              
+              const fileExt = action.fileName.split('.').pop()
+              const filePath = `samples/${action.requestId}_${Date.now()}.${fileExt}`
+
+              const { error: uploadError } = await uploadWithRetry(
+                supabase,
+                'sample-photos',
+                filePath,
+                file,
+                {
+                  upsert: true,
+                  contentType: action.fileType
+                }
+              )
+              if (uploadError) throw uploadError
+
+              await updatePhotoPathSales(action.requestId, filePath)
+            }
+          } catch (err) {
+            console.error('Failed to sync offline action:', action, err)
+            remainingQueue.push(action)
+          }
+        }
+
+        setSyncingOffline(false)
+        if (remainingQueue.length > 0) {
+          localStorage.setItem('sales_offline_queue', JSON.stringify(remainingQueue))
+          toast.error('Beberapa data offline gagal disinkronkan. Akan dicoba lagi nanti.', { id: toastId })
+        } else {
+          localStorage.removeItem('sales_offline_queue')
+          toast.success('Semua data offline berhasil disinkronkan!', { id: toastId })
+          router.refresh()
+        }
+      }
+
+      const goOnline = () => {
+        setIsOnline(true)
+        syncOfflineQueue()
+      }
+      
+      const goOffline = () => {
+        setIsOnline(false)
+      }
+
+      window.addEventListener('online', goOnline)
+      window.addEventListener('offline', goOffline)
+
+      // Initial check
+      if (navigator.onLine) {
+        syncOfflineQueue()
+      }
+
+      return () => {
+        window.removeEventListener('online', goOnline)
+        window.removeEventListener('offline', goOffline)
+      }
+    }
+  }, [supabase, router])
+
+  // Set up real-time subscription for lab requests (Saran A)
+  useEffect(() => {
+    const channel = supabase
+      .channel('sales-requests-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_lab_requests'
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, router])
+
+  // Synchronize server props with state when server components refresh
+  useEffect(() => {
+    setRequests(initialLabRequests)
+  }, [initialLabRequests])
+
+  useEffect(() => {
+    setOrders(initialOrders)
+  }, [initialOrders])
+
+  useEffect(() => {
+    setComplaints(initialComplaints)
+  }, [initialComplaints])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.replace('/login')
@@ -73,16 +217,28 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const handleCollect = async (requestId: string) => {
     if (!confirm('Konfirmasi bahwa sampel oli sudah diambil?')) return
 
+    if (!navigator.onLine) {
+      try {
+        const queueJson = localStorage.getItem('sales_offline_queue') || '[]'
+        const queue: OfflineAction[] = JSON.parse(queueJson) as OfflineAction[]
+        if (!queue.some(x => x.type === 'COLLECT' && x.requestId === requestId)) {
+          queue.push({ type: 'COLLECT', requestId })
+          localStorage.setItem('sales_offline_queue', JSON.stringify(queue))
+        }
+        setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'sampling' } : r))
+        toast.success('Offline: Penjemputan sampel disimpan lokal. Akan disinkronkan saat online.')
+      } catch (err) {
+        console.error('Offline queue write failed:', err)
+        alert('Gagal menyimpan status offline.')
+      }
+      return
+    }
+
     setLoadingId(requestId)
     try {
-      const { error } = await supabase
-        .from('oil_lab_requests')
-        .update({ status: 'sampling' })
-        .eq('id', requestId)
-
-      if (error) throw error
-
+      await updateLabRequestStatusSales(requestId, 'sampling')
       setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'sampling' } : r))
+      toast.success('Status berhasil diubah ke Sampling!')
     } catch (error) {
       console.error('Update failed:', error)
       alert('Gagal mengupdate status.')
@@ -95,16 +251,29 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const handleUndoCollect = async (requestId: string) => {
     if (!confirm('Batalkan pengambilan sampel dan kembalikan ke antrean?')) return
 
+    if (!navigator.onLine) {
+      try {
+        const queueJson = localStorage.getItem('sales_offline_queue') || '[]'
+        const queue: OfflineAction[] = JSON.parse(queueJson) as OfflineAction[]
+        const filteredQueue = queue.filter(x => !(x.type === 'COLLECT' && x.requestId === requestId))
+        if (!filteredQueue.some(x => x.type === 'UNDO_COLLECT' && x.requestId === requestId)) {
+          filteredQueue.push({ type: 'UNDO_COLLECT', requestId })
+        }
+        localStorage.setItem('sales_offline_queue', JSON.stringify(filteredQueue))
+        setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'pending' } : r))
+        toast.success('Offline: Pembatalan sampel disimpan lokal.')
+      } catch (err) {
+        console.error('Offline queue write failed:', err)
+        alert('Gagal menyimpan status offline.')
+      }
+      return
+    }
+
     setLoadingId(requestId)
     try {
-      const { error } = await supabase
-        .from('oil_lab_requests')
-        .update({ status: 'pending' })
-        .eq('id', requestId)
-
-      if (error) throw error
-
+      await updateLabRequestStatusSales(requestId, 'pending')
       setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'pending' } : r))
+      toast.success('Status dikembalikan ke Pending!')
     } catch (error) {
       console.error('Undo failed:', error)
       alert('Gagal mengembalikan status.')
@@ -123,7 +292,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         .eq('id', orderId)
       if (error) throw error
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
-    } catch (_e) {
+    } catch {
       alert('Gagal mengupdate pesanan.')
     } finally {
       setLoadingId(null)
@@ -142,7 +311,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       if (error) throw error
       setComplaints(prev => prev.map(c => c.id === complaintId ? { ...c, status: 'resolved', resolution_notes: notes } : c))
       alert('Komplain berhasil diselesaikan!')
-    } catch (_e) {
+    } catch {
       alert('Gagal menyelesaikan komplain.')
     } finally {
       setLoadingId(null)
@@ -153,46 +322,34 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const handleVerifyMachine = async (requestId: string, req: LabRequest) => {
     setLoadingId(requestId)
     try {
-      if (!req.machine_id && req.new_machine_data) {
-        // Otomatis insert mesin baru ke database tanpa perlu input tambahan
-        const { data: newMachine, error: insertErr } = await supabase
-          .from('oil_machines')
-          .insert({
-            customer_id: req.customer_id,
-            machine_name: req.new_machine_data.machine_name,
-            location: req.new_machine_data.location,
-            status: 'active'
-          })
-          .select()
-          .single()
+      if (!req.machine_id && req.new_machine_data?.machine_name) {
+        const result = await approveNewMachine(
+          requestId,
+          req.customer_id,
+          req.new_machine_data.machine_name,
+          req.new_machine_data.location || null
+        )
 
-        if (insertErr) throw insertErr
-
-        // Update request dengan ID mesin yang baru dibuat
-        const { error: requestErr } = await supabase
-          .from('oil_lab_requests')
-          .update({ 
+        if (result.success && result.machine) {
+          const newMachine = result.machine
+          setRequests(prev => prev.map(r => r.id === requestId ? {
+            ...r,
+            is_new_machine: false,
             machine_id: newMachine.id,
-            is_new_machine: false
-          })
-          .eq('id', requestId)
-
-        if (requestErr) throw requestErr
-
-        setRequests(prev => prev.map(r => r.id === requestId ? {
-          ...r,
-          is_new_machine: false,
-          machine_id: newMachine.id,
-          machine: {
-            machine_name: newMachine.machine_name,
-            location: newMachine.location,
-            serial_number: newMachine.serial_number,
-            model: newMachine.model
-          }
-        } : r))
+            machine: {
+              machine_name: newMachine.machine_name,
+              location: newMachine.location,
+              serial_number: newMachine.serial_number,
+              model: newMachine.model
+            }
+          } : r))
+          alert('Mesin berhasil disetujui dan ditambahkan ke database otomatis!')
+        } else {
+          throw new Error('Approval action returned failure')
+        }
+      } else {
+        alert('Data mesin baru tidak lengkap.')
       }
-
-      alert('Mesin berhasil disetujui dan ditambahkan ke database otomatis!')
     } catch (e) {
       console.error('Verification failed:', e)
       alert('Gagal menyetujui mesin baru.')
@@ -214,6 +371,19 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
     if (!files || files.length === 0 || !activeUploadRequestId) return
 
     const file = files[0]
+
+    // Client-side validation: MIME type and file size (Saran D)
+    if (!file.type.startsWith('image/')) {
+      alert('Hanya diperbolehkan mengunggah file gambar (JPEG/PNG/WEBP).')
+      if (e.target) e.target.value = ''
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran file foto bukti tidak boleh melebihi 5MB.')
+      if (e.target) e.target.value = ''
+      return
+    }
+
     setUploadingId(activeUploadRequestId)
 
     try {
@@ -226,32 +396,62 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       
       const compressedFile = await imageCompression(file, options)
       
+      if (!navigator.onLine) {
+        const reader = new FileReader()
+        reader.onloadend = async () => {
+          const base64 = reader.result as string
+          try {
+            const queueJson = localStorage.getItem('sales_offline_queue') || '[]'
+            const queue: OfflineAction[] = JSON.parse(queueJson) as OfflineAction[]
+            queue.push({
+              type: 'UPLOAD_PHOTO',
+              requestId: activeUploadRequestId,
+              fileBase64: base64,
+              fileName: file.name,
+              fileType: compressedFile.type
+            })
+            localStorage.setItem('sales_offline_queue', JSON.stringify(queue))
+
+            const localUrl = URL.createObjectURL(compressedFile)
+            setRequests(prev => prev.map(r => r.id === activeUploadRequestId ? { ...r, sample_photo_path: localUrl } : r))
+            toast.success('Offline: Foto bukti disimpan lokal. Akan diunggah otomatis saat online.')
+          } catch (err) {
+            console.error('Offline queue write failed:', err)
+            alert('Gagal mengantre foto offline karena penyimpanan browser penuh.')
+          } finally {
+            setUploadingId(null)
+            setActiveUploadRequestId(null)
+          }
+        }
+        reader.readAsDataURL(compressedFile)
+        return
+      }
+
       const fileExt = file.name.split('.').pop()
       const filePath = `samples/${activeUploadRequestId}_${Date.now()}.${fileExt}`
 
-      // Upload ke bucket public 'sample-photos' yang telah dipersiapkan
-      const { error: uploadError } = await supabase.storage
-        .from('sample-photos')
-        .upload(filePath, compressedFile, {
+      // Upload ke bucket public 'sample-photos' yang telah dipersiapkan dengan mekanisme retry (Saran D)
+      const { error: uploadError } = await uploadWithRetry(
+        supabase,
+        'sample-photos',
+        filePath,
+        compressedFile,
+        {
           upsert: true,
           contentType: compressedFile.type
-        })
+        }
+      )
 
       if (uploadError) throw uploadError
 
       // Update path foto di baris oil_lab_requests
-      const { error: dbError } = await supabase
-        .from('oil_lab_requests')
-        .update({ sample_photo_path: filePath })
-        .eq('id', activeUploadRequestId)
-
-      if (dbError) throw dbError
+      await updatePhotoPathSales(activeUploadRequestId, filePath)
 
       setRequests(prev => prev.map(r => r.id === activeUploadRequestId ? { ...r, sample_photo_path: filePath } : r))
-      alert('Bukti foto botol sampel berhasil diunggah!')
+      toast.success('Bukti foto botol sampel berhasil diunggah!')
     } catch (err) {
       console.error('Photo upload failed:', err)
-      alert('Gagal mengunggah foto bukti.')
+      alert('Gagal mengunggah foto bukti setelah beberapa percobaan.')
     } finally {
       setUploadingId(null)
       setActiveUploadRequestId(null)
@@ -316,7 +516,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                   className="h-5 w-auto object-contain inline-block shrink-0"
                 />
                 <span className="text-slate-800 font-extrabold text-[10px] lowercase tracking-normal bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-md border border-orange-100">sales</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500 animate-ping'}`}></span>
               </h1>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{profile.full_name || user.email || 'Sales Officer'}</p>
             </div>
@@ -326,6 +526,19 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
           </button>
         </div>
       </header>
+
+      {!isOnline && (
+        <div className="bg-red-500 text-white text-[11px] font-black uppercase tracking-wider py-2.5 px-4 text-center select-none animate-pulse flex items-center justify-center gap-1.5 z-20">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-3.536 5 5 0 011.414-3.536m0 0l2.829 2.829m-2.829 4.243L3 21M5.636 5.636a9 9 0 0112.728 0m0 0l-2.829-2.829m-1.414-1.414a1 1 0 112 0 1 1 0 01-2 0z" /></svg>
+          <span>Offline Mode: Perubahan disimpan lokal & disinkronkan saat terhubung internet</span>
+        </div>
+      )}
+      {syncingOffline && (
+        <div className="bg-orange-500 text-white text-[11px] font-black uppercase tracking-wider py-2.5 px-4 text-center select-none flex items-center justify-center gap-1.5 z-20">
+          <svg className="w-4 h-4 animate-spin shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" /></svg>
+          <span>Sinkronisasi data offline sedang berlangsung...</span>
+        </div>
+      )}
 
       {/* Segmen Kontrol Utama (Tabs) */}
       <div className="bg-white border-b border-slate-100 p-2 sticky top-[73px] z-20 shadow-sm">

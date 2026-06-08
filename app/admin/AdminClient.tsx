@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
@@ -206,6 +206,33 @@ export default function AdminClient({
 }: AdminClientProps) {
   const supabase = createClient()
   const router = useRouter()
+
+  // Set up real-time subscription for lab requests (Saran A)
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-requests-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_lab_requests'
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, router])
+
+  // Synchronize products state when server components refresh
+  useEffect(() => {
+    setProducts(initialProducts)
+  }, [initialProducts])
   
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -361,6 +388,17 @@ export default function AdminClient({
 
   const handleUploadLogo = async () => {
     if (!logoFile || !selectedItem || !('company_name' in selectedItem)) return
+    
+    // Client-side validation: MIME type and file size (Saran D)
+    if (!logoFile.type.startsWith('image/')) {
+      alert('Hanya diperbolehkan mengunggah file gambar (JPEG/PNG/GIF/WEBP) untuk logo.')
+      return
+    }
+    if (logoFile.size > 2 * 1024 * 1024) {
+      alert('Ukuran file logo tidak boleh melebihi 2MB.')
+      return
+    }
+
     const customer = selectedItem as Customer
     setUploadingLogo(true)
     try {
@@ -639,6 +677,18 @@ export default function AdminClient({
       let currentPdfPath = formData.pdf_path
 
       if (pdfFile) {
+        // Client-side validation: type must be PDF and size <= 10MB (Saran D)
+        if (pdfFile.type !== 'application/pdf') {
+          alert('Hanya diperbolehkan mengunggah file PDF untuk Laporan Lab.')
+          setLoading(false)
+          return
+        }
+        if (pdfFile.size > 10 * 1024 * 1024) {
+          alert('Ukuran file PDF Laporan Lab tidak boleh melebihi 10MB.')
+          setLoading(false)
+          return
+        }
+
         const fileExt = pdfFile.name.split('.').pop()
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
         
