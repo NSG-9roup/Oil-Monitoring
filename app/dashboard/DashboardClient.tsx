@@ -1344,18 +1344,17 @@ export default function DashboardClient({
 
     parameterSeries.forEach((series) => {
       const values = series.values
-      if (
+      if (values.length < 2) return // Not enough data for trend analysis
 
       const latest = values[values.length - 1]
       const previous = values[values.length - 2]
       const baseline = values[0]
-      const increasing = values[values.length - 3] < values[values.length - 2] && values[values.length - 2] < values[values.length - 1]
-      const percentChange = baseline !== 0 ? ((latest - baseline) / Math.abs(baseline)) * 100 : 0
-      const abnormalChange = Math.abs(percentChange) >= 10
-      const nearCritical = series.key === 'Water content'
-        ? latest >= 0.05
-        : series.key === 'TAN'
-       
+      const increasing = values.length > 2 && values[values.length - 3] < values[values.length - 2] && values[values.length - 2] < values[values.length - 1]
+      
+      const oilType = getOilType(latest.productType || '')
+      const { warning, critical } = getViscosityDeviation(latest.value, oilType, baseline.value)
+      const waterThresholds = getWaterThresholds(oilType)
+      const tanThresholds = getOilTypeThresholds(oilType).tanIncrease
 
       if (increasing || abnormalChange || nearCritical) {
         const severity: TrendSeverity = abnormalChange && nearCritical ? 'High' : increasing && abnormalChange ? 'Medium' : 'Low'
@@ -2286,7 +2285,7 @@ export default function DashboardClient({
                           </div>
 
                           <div className="flex items-center gap-4 bg-white/5 border border-white/5 rounded-3xl p-4.5">
-                            <div className={`relative flex items-center justify-center h-16 w-16 rounded-full border-4 shrink-0 font-black text-xl shadow-md ${avgHealthScore !== null && avgHealthScore >= 80 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : avgHealthScore !== null && avgHealthScore >= 60 ? 'border-amber-500 bg-amber-500/10 text-amber-400' : 'border-red-500 bg-red-500/10 text-red-400'}`}>
+                            <div className={`relative flex items-center justify-center h-16 w-16 rounded-full border-4 shrink-0 font-black text-xl shadow-md shadow-orange-500/10 ${avgHealthScore !== null && avgHealthScore >= 80 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : avgHealthScore !== null && avgHealthScore >= 60 ? 'border-amber-500 bg-amber-500/10 text-amber-400' : 'border-red-500 bg-red-500/10 text-red-400'}`}>
                               {avgHealthScore ?? '-'}
                             </div>
                             <div className="min-w-0">
