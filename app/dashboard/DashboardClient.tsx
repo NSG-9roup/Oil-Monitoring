@@ -1344,7 +1344,7 @@ export default function DashboardClient({
 
     parameterSeries.forEach((series) => {
       const values = series.values
-      if (values.length < 3) return
+      if (
 
       const latest = values[values.length - 1]
       const previous = values[values.length - 2]
