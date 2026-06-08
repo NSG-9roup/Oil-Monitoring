@@ -219,9 +219,11 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
     setOrders(initialOrders)
   }, [initialOrders])
 
+  /*
   useEffect(() => {
     setComplaints(initialComplaints)
   }, [initialComplaints])
+  */
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
