@@ -175,74 +175,7 @@ export default function AdminOverviewTab({
         </div>
       </div>
 
-      {/* Quick Actions (Bespoke Horizontal Ribbon - Stripe / Vercel style) */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100/80 p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2 select-none">
-          <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse"></span>
-          Quick Navigation Actions
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button 
-            onClick={() => setActiveTab('customers')} 
-            className="bg-slate-50/40 hover:bg-white border border-slate-100 hover:border-orange-500/25 rounded-2xl p-4 transition-all duration-350 flex items-center gap-3.5 group active:scale-98 hover:shadow-[0_8px_25px_rgba(0,0,0,0.015)]"
-          >
-            <div className="h-10 w-10 bg-white text-slate-400 rounded-xl flex items-center justify-center border border-slate-100 group-hover:text-orange-500 group-hover:border-orange-100 transition-all duration-350 shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
-            <div className="text-left min-w-0">
-              <span className="text-xs font-bold text-slate-700 tracking-wide block">Customers</span>
-              <span className="text-[9px] font-medium text-slate-400 block truncate -mt-0.5">Manage accounts</span>
-            </div>
-          </button>
 
-          <button 
-            onClick={() => setActiveTab('machines')} 
-            className="bg-slate-50/40 hover:bg-white border border-slate-100 hover:border-orange-500/25 rounded-2xl p-4 transition-all duration-350 flex items-center gap-3.5 group active:scale-98 hover:shadow-[0_8px_25px_rgba(0,0,0,0.015)]"
-          >
-            <div className="h-10 w-10 bg-white text-slate-400 rounded-xl flex items-center justify-center border border-slate-100 group-hover:text-orange-500 group-hover:border-orange-100 transition-all duration-350 shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            </div>
-            <div className="text-left min-w-0">
-              <span className="text-xs font-bold text-slate-700 tracking-wide block">Machines</span>
-              <span className="text-[9px] font-medium text-slate-400 block truncate -mt-0.5">Asset directory</span>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('tests')} 
-            className="bg-slate-50/40 hover:bg-white border border-slate-100 hover:border-orange-500/25 rounded-2xl p-4 transition-all duration-350 flex items-center gap-3.5 group active:scale-98 hover:shadow-[0_8px_25px_rgba(0,0,0,0.015)]"
-          >
-            <div className="h-10 w-10 bg-white text-slate-400 rounded-xl flex items-center justify-center border border-slate-100 group-hover:text-orange-500 group-hover:border-orange-100 transition-all duration-350 shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <div className="text-left min-w-0">
-              <span className="text-xs font-bold text-slate-700 tracking-wide block">Lab Tests</span>
-              <span className="text-[9px] font-medium text-slate-400 block truncate -mt-0.5">Diagnostic records</span>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('products')} 
-            className="bg-slate-50/40 hover:bg-white border border-slate-100 hover:border-orange-500/25 rounded-2xl p-4 transition-all duration-350 flex items-center gap-3.5 group active:scale-98 hover:shadow-[0_8px_25px_rgba(0,0,0,0.015)]"
-          >
-            <div className="h-10 w-10 bg-white text-slate-400 rounded-xl flex items-center justify-center border border-slate-100 group-hover:text-orange-500 group-hover:border-orange-100 transition-all duration-350 shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
-            <div className="text-left min-w-0">
-              <span className="text-xs font-bold text-slate-700 tracking-wide block">Products</span>
-              <span className="text-[9px] font-medium text-slate-400 block truncate -mt-0.5">Lubricant database</span>
-            </div>
-          </button>
-        </div>
-      </div>
 
       {/* Two Column Layout (Activities & Top Customers) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

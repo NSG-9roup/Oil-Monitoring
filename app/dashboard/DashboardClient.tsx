@@ -604,13 +604,14 @@ export default function DashboardClient({
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
 
-  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'orders'>('trend')
+  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'orders' | 'requests'>('trend')
 
   const handleShortcutClick = (shortcutId: string) => {
     if (shortcutId.startsWith('trend') || shortcutId === 'trend') setActiveTab('trend')
     else if (shortcutId === 'analysis') setActiveTab('analysis')
     else if (shortcutId === 'lab') setActiveTab('lab')
     else if (shortcutId === 'orders') setActiveTab('orders')
+    else if (shortcutId === 'requests') setActiveTab('requests')
   }
 
   const handleSendRequest = async () => {
@@ -1400,7 +1401,8 @@ export default function DashboardClient({
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push('/login')
+    router.replace('/login')
+    router.refresh()
   }
 
   // Filter data based on time range
@@ -1647,24 +1649,16 @@ export default function DashboardClient({
                   <span className="text-xs font-black">{initialMachines.length}</span>
                 </div>
 
-                <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-[10px] font-bold">
-                  <button onClick={() => setLanguage('id')} className={`px-2 py-1 rounded-lg transition-all ${language === 'id' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>ID</button>
-                  <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-lg transition-all ${language === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>EN</button>
-                </div>
-
-                <button 
-                  onClick={() => router.push('/dashboard/profile')}
-                  className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 p-2 rounded-xl transition-all shadow-sm flex items-center justify-center active:scale-95"
-                  title={language === 'id' ? 'Profil Saya' : 'My Profile'}
-                >
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-[10px] font-bold">
+                    <button onClick={() => setLanguage('id')} className={`px-2 py-1 rounded-lg transition-all ${language === 'id' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>ID</button>
+                    <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-lg transition-all ${language === 'en' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>EN</button>
+                  </div>
 
                 <button onClick={handleSignOut} className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-xl transition-all" title={language === 'id' ? 'Keluar' : 'Sign Out'}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>
+                </div>{/* flex items-center gap-2 */}
               </div>
             </div>
           </div>
@@ -1681,7 +1675,7 @@ export default function DashboardClient({
                     { id: 'trend', label: copy.oilTrend },
                     { id: 'analysis', label: copy.analysisAndReports },
                     { id: 'lab', label: copy.labResults },
-                    { id: 'orders', label: language === 'id' ? 'Pesanan Oli' : 'Oil Orders' },
+                    { id: 'requests', label: language === 'id' ? 'Status Lab Request' : 'Lab Request Status' },
                   ].map((shortcut) => ({
                     id: shortcut.id,
                     label: shortcut.label,
@@ -2439,15 +2433,156 @@ export default function DashboardClient({
             </div>
           )}
 
-          {activeTab === 'orders' && (
-            <div key="orders" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
-              <OrdersSection
-                customerId={profile.customer_id || ''}
-                products={initialProducts}
-                initialOrders={initialOrders}
-                initialComplaints={initialComplaints}
-                language={language}
-              />
+          {activeTab === 'requests' && (
+            <div key="requests" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
+              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 sm:p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-tr from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                      {language === 'id' ? 'Status Lab Request' : 'Lab Request Status'}
+                    </h2>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                      {language === 'id' ? 'Lacak perjalanan sampel Anda' : 'Track your sample journey'}
+                    </p>
+                  </div>
+                </div>
+
+                {labRequests.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200">
+                      <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-bold text-slate-400">
+                      {language === 'id' ? 'Belum ada lab request' : 'No lab requests yet'}
+                    </p>
+                    <p className="text-xs text-slate-300 mt-1">
+                      {language === 'id' ? 'Klik tombol "Request Lab" untuk memulai' : 'Click "Request Lab" to get started'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {labRequests.map((req) => {
+                      // Map existing statuses to timeline steps
+                      const steps = [
+                        { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Tim sales akan segera menghubungi Anda' : 'Sales team will contact you soon' },
+                        { key: 'assigned', label: language === 'id' ? 'Sales Ditugaskan' : 'Sales Assigned', icon: '👤', desc: language === 'id' ? 'Sales sedang dalam perjalanan ke lokasi Anda' : 'Sales is heading to your location' },
+                        { key: 'sampling', label: language === 'id' ? 'Pengambilan Sampel' : 'Sample Collection', icon: '🧪', desc: language === 'id' ? 'Sampel sedang diambil dari mesin Anda' : 'Sample being collected from your machine' },
+                        { key: 'completed', label: language === 'id' ? 'Hasil Lab Selesai' : 'Lab Results Ready', icon: '✅', desc: language === 'id' ? 'Laporan hasil uji lab siap diunduh' : 'Lab test report is ready for download' },
+                      ]
+
+                      const currentStepIdx = steps.findIndex(s => s.key === req.status)
+                      const statusStep = currentStepIdx >= 0 ? currentStepIdx : 0
+
+                      const statusColors: Record<string, string> = {
+                        pending: 'bg-slate-100 text-slate-600 border-slate-200',
+                        assigned: 'bg-blue-50 text-blue-700 border-blue-100',
+                        sampling: 'bg-amber-50 text-amber-700 border-amber-100',
+                        completed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                      }
+
+                      const statusLabel: Record<string, string> = {
+                        pending: language === 'id' ? 'Menunggu' : 'Pending',
+                        assigned: language === 'id' ? 'Ditugaskan' : 'Assigned',
+                        sampling: language === 'id' ? 'Pengambilan Sampel' : 'Sampling',
+                        completed: language === 'id' ? 'Selesai' : 'Completed',
+                      }
+
+                      return (
+                        <div key={req.id} className="bg-slate-50/50 rounded-[1.5rem] border border-slate-100 p-5 hover:bg-white hover:shadow-sm hover:border-orange-100 transition-all duration-300">
+                          {/* Request Header */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="min-w-0">
+                              <h3 className="text-sm font-black text-slate-900 truncate">
+                                {req.is_new_machine
+                                  ? (req.new_machine_data?.machine_name || 'Mesin Baru')
+                                  : (req.machine?.machine_name || 'Mesin')}
+                              </h3>
+                              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                {language === 'id' ? 'Diminta' : 'Requested'}: {new Date(req.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { dateStyle: 'medium' })}
+                              </p>
+                            </div>
+                            <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border shrink-0 ml-3 ${statusColors[req.status] || statusColors['pending']}`}>
+                              {statusLabel[req.status] || req.status}
+                            </span>
+                          </div>
+
+                          {/* Timeline Progress */}
+                          <div className="relative">
+                            {/* Progress line */}
+                            <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-100">
+                              <div
+                                className="h-full bg-gradient-to-r from-orange-400 to-emerald-500 transition-all duration-700"
+                                style={{ width: `${Math.min((statusStep / (steps.length - 1)) * 100, 100)}%` }}
+                              />
+                            </div>
+
+                            {/* Steps */}
+                            <div className="flex justify-between relative">
+                              {steps.map((step, idx) => {
+                                const isCompleted = idx <= statusStep
+                                const isCurrent = idx === statusStep
+
+                                return (
+                                  <div key={step.key} className="flex flex-col items-center gap-1.5 flex-1">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-base transition-all duration-500 z-10 ${
+                                      isCompleted
+                                        ? isCurrent
+                                          ? 'bg-gradient-to-tr from-orange-500 to-red-500 shadow-md shadow-orange-200 scale-110'
+                                          : 'bg-emerald-500 shadow-sm'
+                                        : 'bg-white border-2 border-slate-200'
+                                    }`}>
+                                      {isCompleted ? (
+                                        isCurrent ? (
+                                          <span className="text-sm">{step.icon}</span>
+                                        ) : (
+                                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        )
+                                      ) : (
+                                        <span className="w-2 h-2 rounded-full bg-slate-200" />
+                                      )}
+                                    </div>
+                                    <div className="text-center">
+                                      <p className={`text-[8px] font-black uppercase tracking-wide leading-tight ${
+                                        isCurrent ? 'text-orange-600' : isCompleted ? 'text-emerald-600' : 'text-slate-300'
+                                      }`}>
+                                        {step.label}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Current status description */}
+                          {steps[statusStep] && (
+                            <div className="mt-4 pt-3 border-t border-slate-100">
+                              <p className="text-[10px] text-slate-500 font-semibold flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse shrink-0"></span>
+                                {steps[statusStep].desc}
+                              </p>
+                              {(req as unknown as { notes?: string })?.notes && (
+                                <p className="text-[10px] text-slate-400 mt-1 italic">
+                                  {language === 'id' ? 'Catatan' : 'Notes'}: &ldquo;{(req as unknown as { notes?: string }).notes}&rdquo;
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

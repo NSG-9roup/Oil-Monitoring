@@ -1,5 +1,8 @@
 'use server'
 
+// Hardcoded purchasing email — all proposals go here
+const PURCHASING_EMAIL = 'warehouse@nabelsakha.com'
+
 export async function sendEmail({
   to,
   subject,
@@ -25,7 +28,7 @@ export async function sendEmail({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'OilTrack <onboarding@resend.dev>', // Default Sandbox sender
+        from: 'OilTrack <onboarding@resend.dev>',
         to: toArray,
         subject,
         html,
@@ -49,6 +52,7 @@ export async function sendEmail({
 
 /**
  * On-demand action to email chemical lab test metrics to the customer.
+ * Fixes: fetches email from auth.users if oil_profiles.email is empty.
  */
 export async function sendLabTestResultEmailAction(testId: string) {
   try {
@@ -91,18 +95,41 @@ export async function sendLabTestResultEmailAction(testId: string) {
       throw new Error('Customer ID not found for this test')
     }
 
-    // 2. Fetch customer emails
+    // 2. Fetch customer profiles
     const { data: profiles, error: profilesError } = await supabaseService
       .from('oil_profiles')
-      .select('email, full_name')
+      .select('id, email, full_name')
       .eq('customer_id', customerId)
       .eq('role', 'customer')
 
-    if (profilesError || !profiles || profiles.length === 0) {
+    if (profilesError) {
+      throw new Error(`Failed to fetch profiles: ${profilesError.message}`)
+    }
+
+    if (!profiles || profiles.length === 0) {
       throw new Error('No customer profiles found to email')
     }
 
-    const emails = profiles.map(p => p.email).filter(Boolean) as string[]
+    // 3. Gather emails — prioritize profile email, fallback to auth.users email
+    let emails: string[] = profiles.map(p => p.email).filter(Boolean) as string[]
+
+    if (emails.length === 0) {
+      // Fallback: fetch from Supabase Auth directly using service role
+      console.log('[Email] Profile emails empty, fetching from auth.users...')
+      const profileIds = profiles.map(p => p.id).filter(Boolean)
+
+      for (const profileId of profileIds) {
+        try {
+          const { data: authUser } = await supabaseService.auth.admin.getUserById(profileId)
+          if (authUser?.user?.email) {
+            emails.push(authUser.user.email)
+          }
+        } catch (authErr) {
+          console.warn(`[Email] Could not fetch auth email for profile ${profileId}:`, authErr)
+        }
+      }
+    }
+
     if (emails.length === 0) {
       throw new Error('No valid customer email addresses found')
     }
@@ -111,7 +138,7 @@ export async function sendLabTestResultEmailAction(testId: string) {
     const companyName = test.machine?.customer?.company_name || 'Customer'
     const productName = test.product?.product_name || 'N/A'
 
-    // 3. Build a beautiful HTML email layout
+    // 4. Build a beautiful HTML email layout
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #f1f5f9; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);">
         <div style="text-align: center; margin-bottom: 25px;">
@@ -190,7 +217,7 @@ export async function sendLabTestResultEmailAction(testId: string) {
       </div>
     `
 
-    // 4. Send email
+    // 5. Send email
     const result = await sendEmail({
       to: emails,
       subject: `[OilTrack] Laporan Hasil Uji Lab Selesai: ${machineName} - ${companyName}`,
@@ -204,4 +231,127 @@ export async function sendLabTestResultEmailAction(testId: string) {
     console.error('Error in sendLabTestResultEmailAction:', err)
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
   }
+}
+
+/**
+ * Send product proposal email to the purchasing department.
+ * Triggered by sales when a customer requests a product quote.
+ */
+export async function sendPurchasingProposalEmail({
+  salesName,
+  customerName,
+  companyPT,
+  productName,
+  quantity,
+  customerPhone,
+  customerEmail,
+  notes,
+}: {
+  salesName: string
+  customerName: string
+  companyPT: string
+  productName: string
+  quantity: number
+  customerPhone?: string
+  customerEmail?: string
+  notes?: string
+}) {
+  const now = new Date().toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  const html = `
+    <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.08);">
+      
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%); padding: 32px 28px; text-align: center;">
+        <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: rgba(255,255,255,0.7);">OilTrack System</p>
+        <h1 style="margin: 0; font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em;">Permintaan Penawaran Produk</h1>
+        <p style="margin: 8px 0 0 0; font-size: 12px; color: rgba(255,255,255,0.75);">${now}</p>
+      </div>
+
+      <!-- Body -->
+      <div style="background: #ffffff; padding: 28px;">
+        
+        <p style="font-size: 14px; color: #475569; margin: 0 0 20px 0; line-height: 1.6;">
+          Halo Tim <strong style="color: #0f172a;">Purchasing / Warehouse</strong>,<br>
+          Berikut adalah permintaan penawaran produk oli yang dikirimkan oleh tim sales untuk ditindaklanjuti.
+        </p>
+
+        <!-- Request Info Card -->
+        <div style="background: #f8fafc; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+          <p style="margin: 0 0 12px 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8;">Detail Permintaan</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <tr>
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600; width: 40%; vertical-align: top;">Nama Produk</td>
+              <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">${productName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600; border-top: 1px solid #f1f5f9;">Jumlah</td>
+              <td style="padding: 7px 0; color: #0f172a; font-weight: 700; border-top: 1px solid #f1f5f9;">${quantity} unit / liter</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Customer Info Card -->
+        <div style="background: #f8fafc; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+          <p style="margin: 0 0 12px 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8;">Data Customer</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <tr>
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600; width: 40%;">Nama Customer</td>
+              <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">${customerName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600; border-top: 1px solid #f1f5f9;">Perusahaan (PT)</td>
+              <td style="padding: 7px 0; color: #0f172a; font-weight: 700; border-top: 1px solid #f1f5f9;">${companyPT}</td>
+            </tr>
+            ${customerPhone ? `
+            <tr>
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600; border-top: 1px solid #f1f5f9;">No. Telepon</td>
+              <td style="padding: 7px 0; color: #0f172a; border-top: 1px solid #f1f5f9;">${customerPhone}</td>
+            </tr>
+            ` : ''}
+            ${customerEmail ? `
+            <tr>
+              <td style="padding: 7px 0; color: #64748b; font-weight: 600; border-top: 1px solid #f1f5f9;">Email</td>
+              <td style="padding: 7px 0; color: #0f172a; border-top: 1px solid #f1f5f9;">${customerEmail}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+
+        ${notes ? `
+        <!-- Notes -->
+        <div style="background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 0 12px 12px 0; padding: 14px 16px; margin-bottom: 20px;">
+          <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #ea580c;">Catatan Tambahan</p>
+          <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.5;">${notes}</p>
+        </div>
+        ` : ''}
+
+        <!-- Sales Info -->
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; margin-top: 4px;">
+          <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+            Dikirim oleh Sales: <strong style="color: #475569;">${salesName}</strong> melalui OilTrack System
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="background: #f8fafc; padding: 16px 28px; text-align: center; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0; font-size: 11px; color: #94a3b8;">OilTrack • PT Nabel Sakha Gemilang • Sistem Pemantauan Kondisi Oli Industri</p>
+      </div>
+    </div>
+  `
+
+  const result = await sendEmail({
+    to: PURCHASING_EMAIL,
+    subject: `[OilTrack] Permintaan Penawaran: ${productName} — ${companyPT}`,
+    html,
+  })
+
+  return result
 }

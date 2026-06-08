@@ -236,7 +236,8 @@ export default function AdminClient({
   
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push('/login')
+    router.replace('/login')
+    router.refresh()
   }
 
   const customers = initialCustomers
@@ -826,15 +827,6 @@ export default function AdminClient({
             </div>
             
             <div className="flex gap-2 w-full sm:w-auto">
-              <button
-                onClick={() => router.push('/dashboard/profile')}
-                className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm flex items-center w-full sm:w-auto justify-center gap-1.5 active:scale-95"
-              >
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Profile
-              </button>
               <button
                 onClick={handleSignOut}
                 className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center w-full sm:w-auto justify-center gap-1.5 active:scale-95"

@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { approveNewMachine } from '@/app/actions/adminActions'
 import toast from 'react-hot-toast'
 import { updateLabRequestStatusSales, updatePhotoPathSales } from '@/app/actions/salesActions'
+import { sendPurchasingProposalEmail } from '@/app/actions/emailActions'
 
 interface OfflineAction {
   type: 'COLLECT' | 'UNDO_COLLECT' | 'UPLOAD_PHOTO'
@@ -65,6 +66,20 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'high'>('all')
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+
+  // Purchasing proposal form state
+  const [proposalForm, setProposalForm] = useState({
+    customerName: '',
+    companyPT: '',
+    productName: '',
+    quantity: '',
+    customerPhone: '',
+    customerEmail: '',
+    notes: '',
+  })
+  const [sendingProposal, setSendingProposal] = useState(false)
+  const [proposalHistory, setProposalHistory] = useState<{ id: string; companyPT: string; productName: string; quantity: number; sentAt: string }[]>([])
   
   // State for Uploading Photo progress indicator
   const [uploadingId, setUploadingId] = useState<string | null>(null)
@@ -211,6 +226,38 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.replace('/login')
+    router.refresh()
+  }
+
+  const handleSendProposal = async () => {
+    if (!proposalForm.customerName || !proposalForm.companyPT || !proposalForm.productName || !proposalForm.quantity) {
+      toast.error('Mohon lengkapi semua field yang wajib diisi.')
+      return
+    }
+    setSendingProposal(true)
+    try {
+      const result = await sendPurchasingProposalEmail({
+        salesName: profile.full_name || user.email || 'Sales Officer',
+        customerName: proposalForm.customerName,
+        companyPT: proposalForm.companyPT,
+        productName: proposalForm.productName,
+        quantity: Number(proposalForm.quantity),
+        customerPhone: proposalForm.customerPhone || undefined,
+        customerEmail: proposalForm.customerEmail || undefined,
+        notes: proposalForm.notes || undefined,
+      })
+      if (!result.success) throw new Error(result.error)
+      toast.success('✅ Penawaran berhasil dikirim ke Purchasing!')
+      setProposalHistory(prev => [
+        { id: Date.now().toString(), companyPT: proposalForm.companyPT, productName: proposalForm.productName, quantity: Number(proposalForm.quantity), sentAt: new Date().toISOString() },
+        ...prev
+      ])
+      setProposalForm({ customerName: '', companyPT: '', productName: '', quantity: '', customerPhone: '', customerEmail: '', notes: '' })
+    } catch (err) {
+      toast.error(`Gagal mengirim: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setSendingProposal(false)
+    }
   }
 
   // 1. Aksi transisi status: Antrean -> Transit (Collected)
@@ -518,12 +565,47 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                 <span className="text-slate-800 font-extrabold text-[10px] lowercase tracking-normal bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-md border border-orange-100">sales</span>
                 <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500 animate-ping'}`}></span>
               </h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{profile.full_name || user.email || 'Sales Officer'}</p>
+              <p className="text-[10px] font-black text-slate-700 tracking-wide">
+                {profile.full_name ? (
+                  <span>👤 {profile.full_name}</span>
+                ) : (
+                  <span className="text-slate-400">{user.email || 'Sales Officer'}</span>
+                )}
+              </p>
             </div>
           </div>
-          <button onClick={handleSignOut} className="p-2.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-xl transition-all border border-slate-100 active:scale-95">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-          </button>
+          {/* Toggle View Mode + Logout */}
+          <div className="flex items-center gap-2">
+            {(activeTab === 'queue' || activeTab === 'transit') && (
+              <div className="flex bg-slate-100 rounded-xl p-0.5">
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`p-1.5 rounded-lg transition-all ${
+                    viewMode === 'card' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                  title="Card View"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-1.5 rounded-lg transition-all ${
+                    viewMode === 'table' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                  title="Table View"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 3v18M14 3v18" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <button onClick={handleSignOut} className="p-2.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-xl transition-all border border-slate-100 active:scale-95">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -841,81 +923,211 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
           </div>
         )}
 
-        {/* Orders & Complaints Content */}
+        {/* Table View for Queue & Transit */}
+        {(activeTab === 'queue' || activeTab === 'transit') && viewMode === 'table' && filteredRequests.length > 0 && (
+          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  <th className="px-4 py-3 text-left font-black text-slate-400 uppercase tracking-widest text-[9px]">Customer</th>
+                  <th className="px-4 py-3 text-left font-black text-slate-400 uppercase tracking-widest text-[9px]">Mesin</th>
+                  <th className="px-4 py-3 text-left font-black text-slate-400 uppercase tracking-widest text-[9px]">Lokasi</th>
+                  <th className="px-4 py-3 text-center font-black text-slate-400 uppercase tracking-widest text-[9px]">Prioritas</th>
+                  <th className="px-4 py-3 text-center font-black text-slate-400 uppercase tracking-widest text-[9px]">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRequests.map((req) => (
+                  <tr key={req.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-700 truncate max-w-[100px]">{req.customer?.company_name || '-'}</td>
+                    <td className="px-4 py-3 font-bold text-slate-900 truncate max-w-[100px]">
+                      {req.is_new_machine ? req.new_machine_data?.machine_name : req.machine?.machine_name}
+                      {req.is_new_machine && <span className="ml-1 text-amber-600 text-[9px] font-black">NEW</span>}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 truncate max-w-[80px]">
+                      {req.is_new_machine ? req.new_machine_data?.location : req.machine?.location || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider ${
+                        req.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'
+                      }`}>{req.priority}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {activeTab === 'queue' ? (
+                        <button
+                          onClick={() => handleCollect(req.id)}
+                          disabled={loadingId === req.id}
+                          className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-black transition-all disabled:opacity-50"
+                        >
+                          {loadingId === req.id ? '...' : 'Ambil'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUndoCollect(req.id)}
+                          disabled={loadingId === req.id}
+                          className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-red-100 transition-all disabled:opacity-50"
+                        >
+                          {loadingId === req.id ? '...' : 'Batal'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Orders Tab — Kirim Penawaran ke Purchasing */}
         {activeTab === 'orders' && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300">
-            {/* Orders List */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Daftar Pesanan Oli</h3>
-              {orders.length === 0 ? (
-                <div className="bg-white rounded-2xl p-6 text-center border-2 border-dashed border-slate-200 shadow-sm">
-                  <p className="text-xs font-bold text-slate-400 italic">Tidak ada pesanan.</p>
-                </div>
-              ) : (
-                orders.map(order => (
-                  <div key={order.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                          {order.customer?.company_name}
-                        </span>
-                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[8px] font-black rounded-lg uppercase tracking-wider">{order.status}</span>
-                      </div>
-                      <span className="text-[9px] text-slate-400 font-bold">{new Date(order.created_at).toLocaleDateString('id-ID')}</span>
-                    </div>
-                    <h4 className="text-sm font-black text-slate-900">{order.product?.product_name || '-'}</h4>
-                    <p className="text-xs text-slate-600 mt-1 font-medium">{order.quantity} Pcs</p>
-                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100">
-                      {order.status === 'pending' && (
-                        <button onClick={() => handleUpdateOrderStatus(order.id, 'processing')} className="flex-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">Proses Pesanan</button>
-                      )}
-                      {order.status === 'processing' && (
-                        <button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">Kirim Pesanan</button>
-                      )}
-                      {order.status === 'shipped' && (
-                        <button onClick={() => handleUpdateOrderStatus(order.id, 'completed')} className="flex-1 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">Selesai</button>
-                      )}
-                    </div>
+          <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-300">
+            
+            {/* Form Card */}
+            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-orange-50 to-amber-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
                   </div>
-                ))
-              )}
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">Kirim Penawaran ke Purchasing</h3>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Email akan dikirim ke <strong className="text-orange-600">warehouse@nabelsakha.com</strong></p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Nama Customer */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Customer <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Nama contact person customer"
+                    value={proposalForm.customerName}
+                    onChange={e => setProposalForm(p => ({ ...p, customerName: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+                  />
+                </div>
+
+                {/* Nama PT */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Perusahaan (PT) <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="PT / CV / UD nama perusahaan"
+                    value={proposalForm.companyPT}
+                    onChange={e => setProposalForm(p => ({ ...p, companyPT: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+                  />
+                </div>
+
+                {/* Produk + Jumlah inline */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Produk <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Mobil DTE 26"
+                      value={proposalForm.productName}
+                      onChange={e => setProposalForm(p => ({ ...p, productName: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-3 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jumlah <span className="text-red-500">*</span></label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      min="1"
+                      value={proposalForm.quantity}
+                      onChange={e => setProposalForm(p => ({ ...p, quantity: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-3 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Kontak Customer */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">No. Telepon</label>
+                    <input
+                      type="tel"
+                      placeholder="08xx-xxxx-xxxx"
+                      value={proposalForm.customerPhone}
+                      onChange={e => setProposalForm(p => ({ ...p, customerPhone: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-3 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Email Customer</label>
+                    <input
+                      type="email"
+                      placeholder="customer@email.com"
+                      value={proposalForm.customerEmail}
+                      onChange={e => setProposalForm(p => ({ ...p, customerEmail: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-3 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Catatan */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Catatan Tambahan</label>
+                  <textarea
+                    placeholder="Spesifikasi khusus, urgensi, atau keterangan lainnya..."
+                    value={proposalForm.notes}
+                    onChange={e => setProposalForm(p => ({ ...p, notes: e.target.value }))}
+                    rows={3}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none resize-none"
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleSendProposal}
+                  disabled={sendingProposal}
+                  className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-black uppercase tracking-[0.15em] text-[10px] rounded-2xl transition-all shadow-lg shadow-orange-200 hover:shadow-orange-300 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98]"
+                >
+                  {sendingProposal ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      Mengirim...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      Kirim ke Purchasing
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
-            {/* Complaints List */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Komplain Customer</h3>
-              {complaints.length === 0 ? (
-                <div className="bg-white rounded-2xl p-6 text-center border-2 border-dashed border-slate-200 shadow-sm">
-                  <p className="text-xs font-bold text-slate-400 italic">Tidak ada komplain.</p>
-                </div>
-              ) : (
-                complaints.map(comp => (
-                  <div key={comp.id} className={`bg-white rounded-2xl shadow-sm border p-4 ${comp.status === 'open' ? 'border-red-200 bg-red-50/20' : 'border-slate-100'}`}>
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                          {comp.customer?.company_name}
-                        </span>
-                        <span className={`px-2 py-0.5 text-[8px] font-black rounded-lg uppercase tracking-wider ${comp.status === 'open' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{comp.status}</span>
-                      </div>
-                      <span className="text-[9px] text-slate-400 font-bold">{new Date(comp.created_at).toLocaleDateString('id-ID')}</span>
+            {/* History Penawaran yang Terkirim */}
+            {proposalHistory.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Riwayat Penawaran Terkirim (Sesi Ini)</h3>
+                {proposalHistory.map(h => (
+                  <div key={h.id} className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center justify-between shadow-sm">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-900 truncate">{h.productName}</p>
+                      <p className="text-[10px] text-slate-500 font-medium truncate">{h.companyPT} • {h.quantity} unit</p>
                     </div>
-                    <h4 className="text-xs font-bold text-slate-700 mb-1">Produk: {comp.order?.product?.product_name || '-'}</h4>
-                    <p className="text-sm text-slate-900 font-medium bg-slate-50 p-2 rounded-lg border border-slate-100">&ldquo;{comp.description}&rdquo;</p>
-                    {comp.resolution_notes && (
-                      <div className="mt-2 text-xs font-medium text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                        Penyelesaian: {comp.resolution_notes}
-                      </div>
-                    )}
-                    {comp.status === 'open' && (
-                      <button onClick={() => handleResolveComplaint(comp.id)} disabled={loadingId === comp.id} className="mt-3 w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">
-                        Tandai Selesai & Beri Catatan
-                      </button>
-                    )}
+                    <div className="text-right shrink-0 ml-3">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded-lg border border-emerald-100">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                        Terkirim
+                      </span>
+                      <p className="text-[9px] text-slate-400 mt-1">{new Date(h.sentAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
