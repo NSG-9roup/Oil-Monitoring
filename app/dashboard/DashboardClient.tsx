@@ -9,7 +9,6 @@ import type { FleetReportRow } from '@/lib/pdf/exportFleetReport'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
-import OrdersSection from '@/app/dashboard/components/OrdersSection'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { createLabRequest } from '@/app/actions/dashboardActions'
@@ -459,8 +458,8 @@ const dashboardCopy = {
     evaluationBasedOnIndustryStandard: 'Evaluation based on industry-standard oil practices',
     machineLabel: 'Machine',
     productLabel: 'Product',
-    viscosityLabel: 'Viscosity',
-    waterContentLabel: 'Water Content',
+    viscosityLabel: 'Viskositas',
+    waterContentLabel: 'Kandungan Air',
     tanValueLabel: 'TAN Value',
     actionTemplates: {
       critical: ['Retest oil', 'Check seal leakage', 'Inspect filter condition'],
@@ -468,11 +467,11 @@ const dashboardCopy = {
       normal: ['Schedule routine sampling', 'Inspect filter condition', 'Log follow-up notes'],
     },
     trend: {
-      viscosityTitle: 'Viscosity is moving away from the normal band',
+      viscosityTitle: 'Viskositas menunjukkan tren di luar batas normal',
       viscosityAction: 'Check operating temperature, dilution risk, and oil stability.',
-      waterTitle: 'Water content shows a consistent increase',
+      waterTitle: 'Kandungan air menunjukkan kenaikan yang konsisten',
       waterAction: 'Inspect seals, breathers, and contamination sources. Retest after corrective action.',
-      tanTitle: 'TAN is rising faster than the normal rate',
+      tanTitle: 'Nilai TAN naik lebih cepat dari laju normal',
       tanAction: 'Review oxidation drivers and schedule verification sampling.',
       increasingTrend: 'shows a consistent increase',
       abnormalChange: 'changed abnormally',
@@ -2300,15 +2299,15 @@ export default function DashboardClient({
                             <span className="text-[10px] text-white/60 font-black uppercase tracking-wider block mb-3.5">{snapshotTitles.statusBreakdown}</span>
                             <div className="grid grid-cols-3 gap-3 text-center">
                               <div className="bg-white/5 border border-white/5 rounded-2xl p-2.5">
-                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-wider">{snapshotTitles.normal}</span>
+                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-widest">{snapshotTitles.normal}</span>
                                 <span className="text-base font-black text-emerald-400 block mt-0.5">{healthyCount}</span>
                               </div>
                               <div className="bg-white/5 border border-white/5 rounded-2xl p-2.5">
-                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-wider">{snapshotTitles.warning}</span>
+                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-widest">{snapshotTitles.warning}</span>
                                 <span className="text-base font-black text-amber-400 block mt-0.5">{warningCount}</span>
                               </div>
                               <div className="bg-white/5 border border-white/5 rounded-2xl p-2.5">
-                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-wider">{snapshotTitles.critical}</span>
+                                <span className="text-[9px] text-white/40 block font-bold uppercase tracking-widest">{snapshotTitles.critical}</span>
                                 <span className="text-base font-black text-red-400 block mt-0.5">{criticalCount}</span>
                               </div>
                             </div>
@@ -2570,7 +2569,7 @@ export default function DashboardClient({
                                 <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse shrink-0"></span>
                                 {steps[statusStep].desc}
                               </p>
-                              {(req as unknown as { notes?: string })?.notes && (
+                              {(req as unknown as { notes?: string }).notes && (
                                 <p className="text-[10px] text-slate-400 mt-1 italic">
                                   {language === 'id' ? 'Catatan' : 'Notes'}: &ldquo;{(req as unknown as { notes?: string }).notes}&rdquo;
                                 </p>
@@ -2742,7 +2741,7 @@ export default function DashboardClient({
                           placeholder={copy.requestLab.modelPlaceholder}
                           value={requestForm.new_machine_model}
                           onChange={(e) => setRequestForm(prev => ({ ...prev, new_machine_model: e.target.value }))}
-                          className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                          className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-gray-400 transition-all outline-none"
                         />
                         <input
                           type="text"

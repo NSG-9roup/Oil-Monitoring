@@ -61,7 +61,7 @@ interface SalesClientProps {
 export default function SalesClient({ user, profile, initialLabRequests, initialOrders = [], initialComplaints = [] }: SalesClientProps) {
   const [requests, setRequests] = useState<LabRequest[]>(initialLabRequests)
   const [orders, setOrders] = useState(initialOrders)
-  const [complaints, setComplaints] = useState(initialComplaints)
+  // const [complaints, setComplaints] = useState(initialComplaints)
   const [activeTab, setActiveTab] = useState<'queue' | 'transit' | 'orders'>('queue')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'high'>('all')
@@ -324,42 +324,6 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
     } catch (error) {
       console.error('Undo failed:', error)
       alert('Gagal mengembalikan status.')
-    } finally {
-      setLoadingId(null)
-    }
-  }
-
-  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
-    if (!confirm(`Ubah status pesanan menjadi ${newStatus}?`)) return
-    setLoadingId(orderId)
-    try {
-      const { error } = await supabase
-        .from('oil_orders')
-        .update({ status: newStatus })
-        .eq('id', orderId)
-      if (error) throw error
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
-    } catch {
-      alert('Gagal mengupdate pesanan.')
-    } finally {
-      setLoadingId(null)
-    }
-  }
-
-  const handleResolveComplaint = async (complaintId: string) => {
-    const notes = prompt('Masukkan catatan penyelesaian komplain (opsional):')
-    if (notes === null) return
-    setLoadingId(complaintId)
-    try {
-      const { error } = await supabase
-        .from('oil_complaints')
-        .update({ status: 'resolved', resolution_notes: notes, resolved_at: new Date().toISOString(), resolved_by: user.id })
-        .eq('id', complaintId)
-      if (error) throw error
-      setComplaints(prev => prev.map(c => c.id === complaintId ? { ...c, status: 'resolved', resolution_notes: notes } : c))
-      alert('Komplain berhasil diselesaikan!')
-    } catch {
-      alert('Gagal menyelesaikan komplain.')
     } finally {
       setLoadingId(null)
     }

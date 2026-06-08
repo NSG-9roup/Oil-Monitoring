@@ -111,7 +111,8 @@ export async function sendLabTestResultEmailAction(testId: string) {
     }
 
     // 3. Gather emails — prioritize profile email, fallback to auth.users email
-    let emails: string[] = profiles.map(p => p.email).filter(Boolean) as string[]
+    const profileEmails = profiles.map(p => p.email).filter(Boolean) as string[]
+    const emails: string[] = [...profileEmails]
 
     if (emails.length === 0) {
       // Fallback: fetch from Supabase Auth directly using service role
