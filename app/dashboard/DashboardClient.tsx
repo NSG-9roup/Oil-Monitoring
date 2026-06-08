@@ -9,6 +9,7 @@ import type { FleetReportRow } from '@/lib/pdf/exportFleetReport'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
+import OrdersSection from '@/app/dashboard/components/OrdersSection'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { createLabRequest } from '@/app/actions/dashboardActions'
@@ -1354,8 +1355,7 @@ export default function DashboardClient({
       const nearCritical = series.key === 'Water content'
         ? latest >= 0.05
         : series.key === 'TAN'
-        ? latest >= 0.7
-        : latest <= previous * 0.9 || latest >= previous * 1.1
+       
 
       if (increasing || abnormalChange || nearCritical) {
         const severity: TrendSeverity = abnormalChange && nearCritical ? 'High' : increasing && abnormalChange ? 'Medium' : 'Low'
@@ -2126,7 +2126,7 @@ export default function DashboardClient({
                                   {getSeverityBadge(alert.severity)}
                                   <div className="flex items-center gap-2">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                      {alert.parameter === 'Water content' ? (language === 'id' ? 'Kandungan Air' : 'Water Content') : alert.parameter}
+                                      {alert.parameter === 'Water content' ? (language === 'id' ? 'Kandungan air' : 'Water Content') : alert.parameter}
                                     </span>
                                     {getParameterIcon(alert.parameter)}
                                   </div>
@@ -2639,27 +2639,14 @@ export default function DashboardClient({
                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{language === 'id' ? 'Analisis Laporan Uji Lab' : 'Lab Test Report Analysis'}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <a
-                  href={currentPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  {language === 'id' ? 'Buka Di Tab Baru' : 'Open In New Tab'}
-                </a>
-                <button
-                  onClick={() => setPdfViewerOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
-                >
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+              <button 
+                onClick={() => setPdfViewerOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
+              >
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
             <div className="flex-1 overflow-hidden bg-slate-900">
               <iframe
