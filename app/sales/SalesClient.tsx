@@ -8,7 +8,7 @@ import imageCompression from 'browser-image-compression'
 import Image from 'next/image'
 import { approveNewMachine } from '@/app/actions/adminActions'
 import toast from 'react-hot-toast'
-import { updateLabRequestStatusSales, updatePhotoPathSales } from '@/app/actions/salesActions'
+import { updateLabRequestStatusSales, updatePhotoPathSales, acceptAndSendProposalSales } from '@/app/actions/salesActions'
 import { sendPurchasingProposalEmail } from '@/app/actions/emailActions'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 
@@ -53,6 +53,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'high'>('all')
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [showManualForm, setShowManualForm] = useState(false)
 
   // Purchasing proposal form state
   const [proposalForm, setProposalForm] = useState({
@@ -246,6 +247,21 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       toast.error(`Gagal mengirim: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setSendingProposal(false)
+    }
+  }
+
+  const handleAccOrder = async (orderId: string) => {
+    setLoadingId(orderId)
+    try {
+      const result = await acceptAndSendProposalSales(orderId)
+      if (result.success) {
+        toast.success('✓ Penawaran berhasil di-ACC dan dikirim ke Purchasing!')
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'processing' } : o))
+      }
+    } catch (err) {
+      toast.error(`Gagal memproses penawaran: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setLoadingId(null)
     }
   }
 
@@ -609,7 +625,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
             }`}
           >
             <span>Pesanan</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending' || o.status === 'processing').length}</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
           </button>
         </div>
       </div>
@@ -933,10 +949,93 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
 
         {/* Orders Tab — Kirim Penawaran ke Purchasing */}
         {activeTab === 'orders' && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-300">
+          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
             
             {/* Form Card */}
+            {/* Customer Requests Card */}
             <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-5 border-b border-slate-100 bg-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">Permintaan Penawaran Pelanggan</h3>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Daftar permintaan penawaran harga produk yang dikirim oleh pelanggan.</p>
+                  </div>
+                </div>
+                <span className="bg-orange-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full">
+                  {orders.filter(o => o.status === 'pending').length} Baru
+                </span>
+              </div>
+
+              <div className="divide-y divide-slate-100">
+                {orders.length === 0 ? (
+                  <div className="p-10 text-center text-slate-400 italic text-xs">
+                    Belum ada permintaan penawaran dari pelanggan.
+                  </div>
+                ) : (
+                  orders.map(order => {
+                    const isPending = order.status === 'pending'
+                    const isLoading = loadingId === order.id
+                    return (
+                      <div key={order.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-all">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-900">{order.customer?.company_name || 'PT N/A'}</span>
+                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${
+                              order.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              order.status === 'processing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              order.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              order.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-slate-50 text-slate-600 border-slate-200'
+                            }`}>
+                              {order.status === 'pending' ? 'Menunggu ACC' :
+                               order.status === 'processing' ? 'Terkirim ke Purchasing' :
+                               order.status === 'completed' ? 'Selesai' :
+                               order.status === 'cancelled' ? 'Dibatalkan' : order.status}
+                            </span>
+                          </div>
+                          <div className="text-xs font-bold text-slate-700">
+                            {order.product?.product_name || 'Produk N/A'} &bull; <span className="text-slate-500">{order.quantity} Pcs</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-semibold">
+                            Diminta pada: {new Date(order.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                        {isPending && (
+                          <button
+                            onClick={() => handleAccOrder(order.id)}
+                            disabled={isLoading}
+                            className="sm:self-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50"
+                          >
+                            {isLoading ? 'Memproses...' : '✓ ACC & Kirim Penawaran'}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Collapse/Toggle button for manual proposal form */}
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => setShowManualForm(!showManualForm)}
+                className="text-xs font-bold text-slate-400 hover:text-orange-500 transition-colors uppercase tracking-wider flex items-center gap-1.5"
+              >
+                <span>{showManualForm ? 'Sembunyikan Form Manual' : 'Buat Penawaran Manual Baru'}</span>
+                <svg className={`w-4 h-4 transition-transform duration-300 ${showManualForm ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+
+            {showManualForm && (
+              <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
               <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-orange-50 to-amber-50">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
@@ -1059,6 +1158,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                 </button>
               </div>
             </div>
+            )}
 
             {/* History Penawaran yang Terkirim */}
             {proposalHistory.length > 0 && (

@@ -994,6 +994,7 @@ export default function AdminClient({
               <AdminOrdersTab
                 initialOrders={initialOrders}
                 initialComplaints={initialComplaints}
+                products={products}
               />
             )}
 

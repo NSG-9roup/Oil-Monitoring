@@ -43,11 +43,19 @@ interface OrdersSectionProps {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  processing: 'bg-blue-100 text-blue-700',
-  shipped: 'bg-purple-100 text-purple-700',
-  completed: 'bg-emerald-100 text-emerald-700',
-  cancelled: 'bg-red-100 text-red-700',
+  pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  processing: 'bg-blue-100 text-blue-700 border-blue-200',
+  shipped: 'bg-purple-100 text-purple-700 border-purple-200',
+  completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  cancelled: 'bg-red-100 text-red-700 border-red-200',
+}
+
+const STATUS_LABELS: Record<string, Record<'id' | 'en', string>> = {
+  pending: { id: 'Menunggu ACC', en: 'Pending Approval' },
+  processing: { id: 'Diproses (Dikirim)', en: 'Processing (Emailed)' },
+  shipped: { id: 'Dikirim', en: 'Shipped' },
+  completed: { id: 'Selesai', en: 'Completed' },
+  cancelled: { id: 'Dibatalkan', en: 'Cancelled' },
 }
 
 const COMPLAINT_STATUS_STYLES: Record<string, string> = {
@@ -98,10 +106,10 @@ export default function OrdersSection({
       setOrders([data, ...orders])
       setIsOrderModalOpen(false)
       setOrderForm({ productId: '', quantity: 1 })
-      alert(language === 'id' ? 'Pesanan berhasil dibuat!' : 'Order created successfully!')
+      alert(language === 'id' ? 'Permintaan penawaran berhasil dibuat!' : 'Quotation request created successfully!')
     } catch (err) {
       console.error(err)
-      alert(language === 'id' ? 'Gagal membuat pesanan' : 'Failed to create order')
+      alert(language === 'id' ? 'Gagal membuat permintaan penawaran' : 'Failed to create quotation request')
     } finally {
       setIsSubmitting(false)
     }
@@ -144,8 +152,8 @@ export default function OrdersSection({
       <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <SectionHeader
-            title={language === 'id' ? 'Pemesanan Produk Oli' : 'Oil Product Orders'}
-            description={language === 'id' ? 'Pantau status pesanan produk pelumas Anda' : 'Track your lubricant product orders status'}
+            title={language === 'id' ? 'Permintaan Penawaran Produk' : 'Product Quotation Requests'}
+            description={language === 'id' ? 'Ajukan permintaan penawaran harga produk oli dan pantau statusnya' : 'Request product price quotations and track their status'}
             titleClassName="text-3xl lg:text-4xl"
           />
           <button
@@ -153,7 +161,7 @@ export default function OrdersSection({
             className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-md active:scale-95 shrink-0"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-            {language === 'id' ? 'Pesan Oli' : 'Order Oil'}
+            {language === 'id' ? 'Minta Penawaran' : 'Request Quotation'}
           </button>
         </div>
 
@@ -191,8 +199,8 @@ export default function OrdersSection({
                         <span className="text-sm text-gray-600">{order.quantity} Pcs</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${STATUS_STYLES[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                          {order.status}
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${STATUS_STYLES[order.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                          {STATUS_LABELS[order.status]?.[language] || order.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -273,7 +281,7 @@ export default function OrdersSection({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-black text-gray-900">{language === 'id' ? 'Buat Pesanan Oli' : 'Create Oil Order'}</h3>
+              <h3 className="text-lg font-black text-gray-900">{language === 'id' ? 'Minta Penawaran Produk' : 'Request Product Quotation'}</h3>
               <button onClick={() => setIsOrderModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-50 transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -311,7 +319,7 @@ export default function OrdersSection({
                   {language === 'id' ? 'Batal' : 'Cancel'}
                 </button>
                 <button type="submit" disabled={isSubmitting} className="flex-1 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50">
-                  {isSubmitting ? (language === 'id' ? 'Memproses...' : 'Processing...') : (language === 'id' ? 'Kirim Pesanan' : 'Submit Order')}
+                  {isSubmitting ? (language === 'id' ? 'Memproses...' : 'Processing...') : (language === 'id' ? 'Kirim Permintaan' : 'Submit Request')}
                 </button>
               </div>
             </form>

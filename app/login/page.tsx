@@ -97,6 +97,19 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-grid-pattern relative overflow-hidden px-4">
+      {/* Glassmorphic Loader Overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/75 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="flex flex-col items-center gap-6 max-w-sm text-center px-6">
+            <OilDropLoader className="text-orange-500 scale-125" label="" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-slate-800 tracking-tight animate-pulse">Menghubungkan ke Portal...</h3>
+              <p className="text-xs text-slate-400 font-medium">Mohon tunggu sebentar, kami sedang menyiapkan dashboard Anda.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Animated background organic glowing blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-orange-400/10 to-red-500/10 filter blur-[120px] animate-blob"></div>

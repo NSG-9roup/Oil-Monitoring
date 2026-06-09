@@ -33,15 +33,10 @@ export interface AdminComplaint {
 interface AdminOrdersTabProps {
   initialOrders: AdminOrder[]
   initialComplaints: AdminComplaint[]
+  products: Array<{ id: string; product_name: string }>
 }
 
-const ORDER_STATUS_FLOW: Record<string, string | null> = {
-  pending: 'processing',
-  processing: 'shipped',
-  shipped: 'completed',
-  completed: null,
-  cancelled: null,
-}
+
 
 const ORDER_STATUS_STYLES: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -71,7 +66,7 @@ const COMPLAINT_STATUS_LABELS: Record<string, string> = {
   resolved: 'Selesai',
 }
 
-export default function AdminOrdersTab({ initialOrders, initialComplaints }: AdminOrdersTabProps) {
+export default function AdminOrdersTab({ initialOrders, initialComplaints, products = [] }: AdminOrdersTabProps) {
   const supabase = createClient()
 
   const [orders, setOrders] = useState<AdminOrder[]>(initialOrders)
@@ -80,6 +75,13 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints }: Adm
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+
+  // Edit modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingOrder, setEditingOrder] = useState<AdminOrder | null>(null)
+  const [editProductId, setEditProductId] = useState('')
+  const [editQuantity, setEditQuantity] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // --- Orders ---
   const filteredOrders = orders.filter(o => {
@@ -100,38 +102,65 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints }: Adm
     return matchSearch && matchStatus
   })
 
-  const handleAdvanceOrderStatus = async (order: AdminOrder) => {
-    const nextStatus = ORDER_STATUS_FLOW[order.status]
-    if (!nextStatus) return
-    if (!confirm(`Ubah status pesanan menjadi "${ORDER_STATUS_LABELS[nextStatus]}"?`)) return
+  const openEditModal = (order: AdminOrder) => {
+    setEditingOrder(order)
+    setEditProductId(order.product_id)
+    setEditQuantity(order.quantity)
+    setIsEditModalOpen(true)
+  }
 
-    setLoadingId(order.id)
+  const handleUpdateOrder = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingOrder || !editProductId || editQuantity <= 0) return
+    setIsSubmitting(true)
     try {
       const { error } = await supabase
         .from('oil_orders')
-        .update({ status: nextStatus, updated_at: new Date().toISOString() })
-        .eq('id', order.id)
+        .update({
+          product_id: editProductId,
+          quantity: editQuantity,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingOrder.id)
+
       if (error) throw error
-      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: nextStatus } : o))
-    } catch {
-      alert('Gagal mengupdate status pesanan.')
+
+      const updatedProduct = products.find(p => p.id === editProductId)
+
+      setOrders(prev => prev.map(o => o.id === editingOrder.id ? {
+        ...o,
+        product_id: editProductId,
+        quantity: editQuantity,
+        product: {
+          ...o.product,
+          product_name: updatedProduct?.product_name || o.product?.product_name
+        }
+      } : o))
+
+      setIsEditModalOpen(false)
+      setEditingOrder(null)
+      alert('Permintaan penawaran berhasil diubah!')
+    } catch (err) {
+      console.error(err)
+      alert('Gagal mengubah permintaan penawaran.')
     } finally {
-      setLoadingId(null)
+      setIsSubmitting(false)
     }
   }
 
-  const handleCancelOrder = async (orderId: string) => {
-    if (!confirm('Batalkan pesanan ini?')) return
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus permintaan penawaran ini?')) return
     setLoadingId(orderId)
     try {
       const { error } = await supabase
         .from('oil_orders')
-        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .delete()
         .eq('id', orderId)
       if (error) throw error
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o))
-    } catch {
-      alert('Gagal membatalkan pesanan.')
+      setOrders(prev => prev.filter(o => o.id !== orderId))
+    } catch (err) {
+      console.error(err)
+      alert('Gagal menghapus permintaan penawaran.')
     } finally {
       setLoadingId(null)
     }
@@ -288,7 +317,6 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints }: Adm
                   </tr>
                 ) : (
                   filteredOrders.map(order => {
-                    const nextStatus = ORDER_STATUS_FLOW[order.status]
                     const isLoading = loadingId === order.id
                     return (
                       <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
@@ -318,23 +346,27 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints }: Adm
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
-                            {nextStatus && (
-                              <button
-                                onClick={() => handleAdvanceOrderStatus(order)}
-                                disabled={isLoading}
-                                className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
-                              >
-                                {isLoading ? '...' : `→ ${ORDER_STATUS_LABELS[nextStatus]}`}
-                              </button>
-                            )}
-                            {order.status !== 'completed' && order.status !== 'cancelled' && (
-                              <button
-                                onClick={() => handleCancelOrder(order.id)}
-                                disabled={isLoading}
-                                className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors disabled:opacity-50"
-                              >
-                                Batal
-                              </button>
+                            {order.status === 'pending' ? (
+                              <>
+                                <button
+                                  onClick={() => openEditModal(order)}
+                                  disabled={isLoading}
+                                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  disabled={isLoading}
+                                  className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  Hapus
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-400 italic">
+                                Terkunci (Sudah ACC)
+                              </span>
                             )}
                           </div>
                         </td>
@@ -427,6 +459,70 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints }: Adm
           </div>
         )}
       </div>
+
+      {/* Edit Order Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Edit Permintaan Penawaran</h3>
+              <button 
+                onClick={() => { setIsEditModalOpen(false); setEditingOrder(null) }} 
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleUpdateOrder} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Pilih Produk</label>
+                  <select
+                    required
+                    value={editProductId}
+                    onChange={(e) => setEditProductId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
+                  >
+                    <option value="">-- Pilih Produk --</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.id}>{p.product_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Kuantitas (Pcs)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
+                  />
+                </div>
+              </div>
+              <div className="mt-8 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => { setIsEditModalOpen(false); setEditingOrder(null) }} 
+                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting} 
+                  className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

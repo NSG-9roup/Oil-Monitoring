@@ -83,13 +83,33 @@ export default async function DashboardPage() {
         .order('created_at', { ascending: false })
     : Promise.resolve({ data: [], error: null })
 
-  const [labTestsResult, labRequestsResult] = await Promise.all([
+  const productsPromise = supabase
+    .from('oil_products')
+    .select('*')
+    .order('product_name')
+
+  const ordersPromise = profile.customer_id
+    ? supabase
+        .from('oil_orders')
+        .select(`
+          *,
+          product:product_id(product_name, product_type)
+        `)
+        .eq('customer_id', profile.customer_id)
+        .order('created_at', { ascending: false })
+    : Promise.resolve({ data: [], error: null })
+
+  const [labTestsResult, labRequestsResult, productsResult, ordersResult] = await Promise.all([
     labTestsPromise,
     labRequestsPromise,
+    productsPromise,
+    ordersPromise,
   ])
 
   const initialLabTests = labTestsResult.data || []
   const initialLabRequests = labRequestsResult.data || []
+  const products = productsResult.data || []
+  const initialOrders = ordersResult.data || []
 
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
@@ -114,6 +134,8 @@ export default async function DashboardPage() {
       initialLabTests={initialLabTests}
       initialLabRequests={initialLabRequests}
       initialSalesTeam={initialSalesTeam || []}
+      products={products}
+      initialOrders={initialOrders}
     />
   )
 }

@@ -14,6 +14,7 @@ import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { createLabRequest } from '@/app/actions/dashboardActions'
 import type { LabRequest } from '@/app/dashboard/components/types'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
+import OrdersSection from '@/app/dashboard/components/OrdersSection'
 
 interface Machine {
   id: string
@@ -85,6 +86,8 @@ interface DashboardClientProps {
   initialLabTests: any[]
   initialLabRequests: LabRequest[]
   initialSalesTeam: any[]
+  products: any[]
+  initialOrders: any[]
 }
 
 type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
@@ -489,6 +492,8 @@ export default function DashboardClient({
   initialLabTests,
   initialLabRequests = [],
   initialSalesTeam = [],
+  products = [],
+  initialOrders = [],
 }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -599,13 +604,14 @@ export default function DashboardClient({
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
 
-  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'requests'>('trend')
+  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'requests' | 'orders'>('trend')
 
   const handleShortcutClick = (shortcutId: string) => {
     if (shortcutId.startsWith('trend') || shortcutId === 'trend') setActiveTab('trend')
     else if (shortcutId === 'analysis') setActiveTab('analysis')
     else if (shortcutId === 'lab') setActiveTab('lab')
     else if (shortcutId === 'requests') setActiveTab('requests')
+    else if (shortcutId === 'orders') setActiveTab('orders')
   }
 
   const handleSendRequest = async () => {
@@ -1689,6 +1695,7 @@ export default function DashboardClient({
                     { id: 'analysis', label: copy.analysisAndReports },
                     { id: 'lab', label: copy.labResults },
                     { id: 'requests', label: language === 'id' ? 'Status Lab Request' : 'Lab Request Status' },
+                    { id: 'orders', label: language === 'id' ? 'Pesanan Oli' : 'Oil Orders' },
                   ].map((shortcut) => ({
                     id: shortcut.id,
                     label: shortcut.label,
@@ -1951,9 +1958,9 @@ export default function DashboardClient({
         </div>
 
         {/* Tabbed Content Section */}
-        <div className="flex-1 w-full relative animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 min-h-[600px] space-y-8">
+        <div className="flex-1 w-full relative animate-in fade-in slide-in-from-bottom-2 duration-200 min-h-[600px] space-y-8">
           {activeTab === 'trend' && (
-            <div key="trend" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
+            <div key="trend" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
               <TrendSection
                 language={language}
                 chartData={chartData}
@@ -2070,7 +2077,7 @@ export default function DashboardClient({
             }
 
             return (
-              <div key="analysis" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
+              <div key="analysis" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
                   
                   {/* Left Column: Smart Trend Alerts (2/3 width) */}
@@ -2406,7 +2413,7 @@ export default function DashboardClient({
           })()}
 
           {activeTab === 'lab' && (
-            <div key="lab" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
+            <div key="lab" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
               <LabReportsSection
                 title={copy.labReportsTitle}
                 description={copy.reportCountSuffix(filteredReports.length)}
@@ -2447,7 +2454,7 @@ export default function DashboardClient({
           )}
 
           {activeTab === 'requests' && (
-            <div key="requests" className="w-full animate-in fade-in slide-in-from-right-4 duration-700">
+            <div key="requests" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
               <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-gradient-to-tr from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
@@ -2609,6 +2616,17 @@ export default function DashboardClient({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+          {activeTab === 'orders' && (
+            <div key="orders" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+              <OrdersSection
+                customerId={profile.customer_id || ''}
+                products={products}
+                initialOrders={initialOrders}
+                initialComplaints={[]}
+                language={language}
+              />
             </div>
           )}
         </div>
