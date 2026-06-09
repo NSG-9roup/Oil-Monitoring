@@ -54,6 +54,7 @@ export default function LoginPage() {
         localStorage.setItem('oiltrack_remember_me', rememberMe ? 'true' : 'false')
         
         // Premium Client-Side Routing utilizing Next.js push and refresh
+        // Keep loading = true during redirects to avoid transition flicker
         if (role === 'admin') {
           router.push('/admin')
           router.refresh()
@@ -65,11 +66,13 @@ export default function LoginPage() {
           router.refresh()
         } else {
           router.push('/login')
+          setLoading(false)
         }
+      } else {
+        setLoading(false)
       }
     } catch (err: unknown) {
       setError(getErrorMessage(err))
-    } finally {
       setLoading(false)
     }
   }
