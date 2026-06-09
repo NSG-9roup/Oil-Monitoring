@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAuditLog } from './adminActions'
 import { revalidatePath } from 'next/cache'
+import { createServiceClient } from '@/lib/supabase/service'
 
 async function verifySalesOrAdmin() {
   const supabase = await createClient()
@@ -32,12 +33,7 @@ async function verifySalesOrAdmin() {
 export async function updateLabRequestStatusSales(requestId: string, status: string) {
   const { user } = await verifySalesOrAdmin()
 
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  const supabaseService = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseService = createServiceClient()
 
   const { error: updateError } = await supabaseService
     .from('oil_lab_requests')
@@ -69,12 +65,7 @@ export async function updateLabRequestStatusSales(requestId: string, status: str
 export async function updatePhotoPathSales(requestId: string, filePath: string) {
   const { user } = await verifySalesOrAdmin()
 
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  const supabaseService = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseService = createServiceClient()
 
   const { error: updateError } = await supabaseService
     .from('oil_lab_requests')

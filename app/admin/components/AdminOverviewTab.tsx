@@ -11,7 +11,7 @@ interface AdminOverviewTabProps {
   totalTests: number
   products: AdminProduct[]
   recentTests: AdminLabTest[]
-  setActiveTab: (tab: 'overview' | 'customers' | 'machines' | 'products' | 'tests' | 'users' | 'requests') => void
+  setActiveTab: (tab: 'overview' | 'customers' | 'machines' | 'products' | 'tests' | 'users' | 'requests' | 'orders') => void
   formatDate: (value?: string | number | Date) => string
 }
 

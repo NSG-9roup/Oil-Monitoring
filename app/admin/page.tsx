@@ -2,16 +2,13 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AdminClient from './AdminClient'
 import type { AdminProfile, AdminUser, LabRequest } from '@/lib/types'
+import { createServiceClient } from '@/lib/supabase/service'
 
 export default async function AdminPage() {
   const supabase = await createClient()
 
-  const { data: { session }, error } = await supabase.auth.getSession()
+  const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user
-  console.log('[Admin Page] getSession result:', user?.id, 'Error:', error)
-  if (error) {
-    console.error('SUPABASE GETSESSION ERROR IN ADMIN PAGE:', error)
-  }
 
   if (!user) {
     redirect('/login')
@@ -24,8 +21,6 @@ export default async function AdminPage() {
     .eq('id', user.id)
     .single()
 
-  console.log('[Admin Page] profile fetch result:', profile?.role, 'Error:', profileError)
-
   const normalizedProfile: AdminProfile | null = profile
     ? {
         ...profile,
@@ -36,21 +31,16 @@ export default async function AdminPage() {
     : null
 
   if (!normalizedProfile) {
-    console.log('[Admin Page] Redirecting to /login because normalizedProfile is NULL')
     redirect('/login')
   }
 
   if (normalizedProfile.role === 'sales') {
-    console.log('[Admin Page] Redirecting to /sales')
     redirect('/sales')
   }
 
   if (normalizedProfile.role === 'customer') {
-    console.log('[Admin Page] Redirecting to /dashboard')
     redirect('/dashboard')
   }
-
-  console.log('[Admin Page] Role is admin, proceeding to render.')
 
   // Check if user is admin
   if (normalizedProfile.role !== 'admin') {
@@ -67,11 +57,7 @@ export default async function AdminPage() {
     )
   }
 
-  const { createClient: createAdminClient } = await import('@supabase/supabase-js')
-  const adminSupabase = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const adminSupabase = createServiceClient()
 
   const [customersResult, machinesResult, recentTestsResult, productsResult, usersResult, labRequestsResult, ordersResult, complaintsResult] = await Promise.all([
     supabase

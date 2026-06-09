@@ -50,17 +50,22 @@ export default function LoginPage() {
 
         const role = profile?.role
         
+        // Save remember me preference to localStorage
+        localStorage.setItem('oiltrack_remember_me', rememberMe ? 'true' : 'false')
+        
         // Premium Client-Side Routing utilizing Next.js push and refresh
         if (role === 'admin') {
           router.push('/admin')
+          router.refresh()
         } else if (role === 'sales') {
           router.push('/sales')
+          router.refresh()
         } else if (role === 'customer') {
           router.push('/dashboard')
+          router.refresh()
         } else {
           router.push('/login')
         }
-        router.refresh()
       }
     } catch (err: unknown) {
       setError(getErrorMessage(err))

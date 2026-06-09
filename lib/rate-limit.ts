@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { type SupabaseClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabase/service'
 
 type RateLimitEntry = {
   count: number
@@ -18,16 +19,11 @@ let supabaseAdminClient: SupabaseClient | null = null
 function getSupabaseAdminClient() {
   if (supabaseAdminClient) return supabaseAdminClient
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !serviceRoleKey) return null
-
-  supabaseAdminClient = createClient(url, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
+  try {
+    supabaseAdminClient = createServiceClient()
+  } catch {
+    return null
+  }
 
   return supabaseAdminClient
 }

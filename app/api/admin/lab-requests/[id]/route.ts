@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAuditLog } from '@/app/actions/adminActions'
+import { createServiceClient } from '@/lib/supabase/service'
 
 export async function PATCH(
   request: NextRequest,
@@ -35,11 +36,7 @@ export async function PATCH(
     }
 
     // Use admin client to bypass broken RLS that relies on missing JWT custom claims
-    const { createClient: createAdminClient } = await import('@supabase/supabase-js')
-    const adminSupabase = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const adminSupabase = createServiceClient()
 
     const { error } = await adminSupabase
       .from('oil_lab_requests')

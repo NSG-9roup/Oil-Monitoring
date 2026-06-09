@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import SalesClient from './SalesClient'
 import type { LabRequest } from '@/lib/types'
+import { createServiceClient } from '@/lib/supabase/service'
 
 export default async function SalesPage() {
   const supabase = await createClient()
@@ -49,11 +50,7 @@ export default async function SalesPage() {
   }
 
   // Fetch lab requests that are pending or assigned (not completed/cancelled)
-  const { createClient: createAdminClient } = await import('@supabase/supabase-js')
-  const adminSupabase = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const adminSupabase = createServiceClient()
 
   const { data: labRequests } = await adminSupabase
     .from('oil_lab_requests')
@@ -75,25 +72,12 @@ export default async function SalesPage() {
     `)
     .order('created_at', { ascending: false })
 
-  const { data: initialComplaints } = await adminSupabase
-    .from('oil_complaints')
-    .select(`
-      *,
-      customer:oil_customers(company_name),
-      order:oil_orders(
-        id,
-        product:oil_products(product_name)
-      )
-    `)
-    .order('created_at', { ascending: false })
-
   return (
     <SalesClient 
       user={{ id: user.id, email: user.email }}
       profile={profile}
       initialLabRequests={(labRequests as LabRequest[]) || []}
       initialOrders={initialOrders || []}
-      initialComplaints={initialComplaints || []}
     />
   )
 }

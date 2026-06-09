@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { LabRequest } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { approveNewMachine } from '@/app/actions/adminActions'
+import { toast } from 'react-hot-toast'
 
 interface AdminRequestsTabProps {
   labRequests: LabRequest[]
@@ -28,11 +29,11 @@ const PRIORITY_STYLES: Record<string, string> = {
 export default function AdminRequestsTab({ labRequests, onRefresh }: AdminRequestsTabProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; title: string } | null>(null)
+  const [confirmAction, setConfirmAction] = useState<{ message: string; onConfirm: () => void } | null>(null)
   
   const supabase = createClient()
 
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
-    if (!confirm(`Update status menjadi "${newStatus}"?`)) return
+  const executeUpdateStatus = async (id: string, newStatus: string) => {
     setLoadingId(id)
     try {
       const res = await fetch('/api/admin/lab-requests/' + id, {
@@ -41,16 +42,23 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
         body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) throw new Error('Failed to update')
+      toast.success(`Status berhasil diperbarui menjadi ${newStatus}`)
       onRefresh()
     } catch {
-      alert('Gagal mengupdate status.')
+      toast.error('Gagal memperbarui status permintaan.')
     } finally {
       setLoadingId(null)
     }
   }
 
-  const handleVerifyMachine = async (requestId: string, req: LabRequest) => {
-    if (!confirm('Setujui dan daftarkan mesin baru ini secara resmi ke database?')) return
+  const confirmUpdateStatus = (id: string, newStatus: string) => {
+    setConfirmAction({
+      message: `Apakah Anda yakin ingin memperbarui status permintaan menjadi "${newStatus}"?`,
+      onConfirm: () => executeUpdateStatus(id, newStatus),
+    })
+  }
+
+  const executeVerifyMachine = async (requestId: string, req: LabRequest) => {
     setLoadingId(requestId)
     try {
       if (!req.machine_id && req.new_machine_data?.machine_name) {
@@ -62,20 +70,27 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
         )
 
         if (result.success) {
-          alert('Mesin baru berhasil disetujui dan didaftarkan!')
+          toast.success('Mesin baru berhasil disetujui dan didaftarkan!')
           onRefresh()
         } else {
           throw new Error('Approval action returned failure')
         }
       } else {
-        alert('Data mesin baru tidak lengkap.')
+        toast.error('Data mesin baru tidak lengkap.')
       }
     } catch (e) {
       console.error('Verification failed:', e)
-      alert('Gagal menyetujui mesin baru.')
+      toast.error('Gagal menyetujui mesin baru.')
     } finally {
       setLoadingId(null)
     }
+  }
+
+  const confirmVerifyMachine = (requestId: string, req: LabRequest) => {
+    setConfirmAction({
+      message: 'Apakah Anda yakin ingin menyetujui dan mendaftarkan mesin baru ini secara resmi ke database?',
+      onConfirm: () => executeVerifyMachine(requestId, req),
+    })
   }
 
   return (
@@ -176,7 +191,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                     <td className="px-6 py-4 text-right space-x-2">
                       {req.is_new_machine && (
                         <button
-                          onClick={() => handleVerifyMachine(req.id, req)}
+                          onClick={() => confirmVerifyMachine(req.id, req)}
                           disabled={loadingId === req.id}
                           className="text-xs font-bold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 transition-colors disabled:opacity-50"
                         >
@@ -185,7 +200,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                       )}
                       {req.status === 'pending' && (
                         <button
-                          onClick={() => handleUpdateStatus(req.id, 'assigned')}
+                          onClick={() => confirmUpdateStatus(req.id, 'assigned')}
                           disabled={loadingId === req.id}
                           className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors disabled:opacity-50"
                         >
@@ -194,7 +209,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                       )}
                       {req.status === 'assigned' && (
                         <button
-                          onClick={() => handleUpdateStatus(req.id, 'sampling')}
+                          onClick={() => confirmUpdateStatus(req.id, 'sampling')}
                           disabled={loadingId === req.id}
                           className="text-xs font-bold text-purple-600 hover:bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200 transition-colors disabled:opacity-50"
                         >
@@ -203,7 +218,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                       )}
                       {(req.status === 'sampling' || req.status === 'assigned') && (
                         <button
-                          onClick={() => handleUpdateStatus(req.id, 'completed')}
+                          onClick={() => confirmUpdateStatus(req.id, 'completed')}
                           disabled={loadingId === req.id}
                           className="text-xs font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors disabled:opacity-50"
                         >
@@ -221,7 +236,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
 
       {/* Modal Preview Foto Botol Sampel */}
       {previewPhoto && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4 select-none">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4 select-none animate-in fade-in duration-200">
           <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <div>
@@ -256,6 +271,44 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                 className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4 select-none animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="h-12 w-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Konfirmasi Tindakan</h3>
+                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                  {confirmAction.message}
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  confirmAction.onConfirm()
+                  setConfirmAction(null)
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-750 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
+              >
+                Ya, Lanjutkan
               </button>
             </div>
           </div>

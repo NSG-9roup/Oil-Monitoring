@@ -1,5 +1,7 @@
 'use server'
 
+import { createServiceClient } from '@/lib/supabase/service'
+
 // Hardcoded purchasing email — all proposals go here
 const PURCHASING_EMAIL = 'warehouse@nabelsakha.com'
 
@@ -56,12 +58,7 @@ export async function sendEmail({
  */
 export async function sendLabTestResultEmailAction(testId: string) {
   try {
-    const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-    const supabaseService = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const supabaseService = createServiceClient()
 
     // 1. Fetch test details, machine, and product
     const { data: test, error: testError } = await supabaseService

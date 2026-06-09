@@ -41,19 +41,12 @@ export default async function DashboardPage() {
     )
   }
 
-  // Get machines for this customer - parallel with profile query for faster load
+  // Get machines for this customer
   const machinesPromise = supabase
     .from('oil_machines')
     .select('*')
     .eq('customer_id', profile.customer_id)
     .order('machine_name')
-
-  const teamMembersPromise = supabase
-    .from('oil_profiles')
-    .select('id, full_name, email, phone_number, created_at')
-    .eq('customer_id', profile.customer_id)
-    .eq('role', 'customer')
-    .order('created_at', { ascending: false })
 
   const salesTeamPromise = supabase
     .from('oil_profiles')
@@ -62,14 +55,7 @@ export default async function DashboardPage() {
     .order('full_name')
 
   const { data: machines } = await machinesPromise
-  // Note: teamMembers query kept for future UI expansion
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: teamMembers } = await teamMembersPromise
   const { data: initialSalesTeam } = await salesTeamPromise
-
-
-
-
 
   // Fetch lab tests for this customer's machines (securely scoped by RLS)
   const machineIds = (machines || []).map(m => m.id)
@@ -97,52 +83,13 @@ export default async function DashboardPage() {
         .order('created_at', { ascending: false })
     : Promise.resolve({ data: [], error: null })
 
-  // Fetch products for ordering
-  const productsPromise = supabase
-    .from('oil_products')
-    .select('*')
-    .order('product_name')
-
-  // Fetch orders
-  const ordersPromise = profile.customer_id
-    ? supabase
-        .from('oil_orders')
-        .select(`
-          *,
-          product:oil_products(product_name, product_type)
-        `)
-        .eq('customer_id', profile.customer_id)
-        .order('created_at', { ascending: false })
-    : Promise.resolve({ data: [], error: null })
-
-  // Fetch complaints
-  const complaintsPromise = profile.customer_id
-    ? supabase
-        .from('oil_complaints')
-        .select(`
-          *,
-          order:oil_orders(
-            id,
-            product:oil_products(product_name)
-          )
-        `)
-        .eq('customer_id', profile.customer_id)
-        .order('created_at', { ascending: false })
-    : Promise.resolve({ data: [], error: null })
-
-  const [labTestsResult, labRequestsResult, productsResult, ordersResult, complaintsResult] = await Promise.all([
+  const [labTestsResult, labRequestsResult] = await Promise.all([
     labTestsPromise,
     labRequestsPromise,
-    productsPromise,
-    ordersPromise,
-    complaintsPromise
   ])
 
   const initialLabTests = labTestsResult.data || []
   const initialLabRequests = labRequestsResult.data || []
-  const initialProducts = productsResult.data || []
-  const initialOrders = ordersResult.data || []
-  const initialComplaints = complaintsResult.data || []
 
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
@@ -166,9 +113,6 @@ export default async function DashboardPage() {
       initialMachines={machines || []}
       initialLabTests={initialLabTests}
       initialLabRequests={initialLabRequests}
-      initialProducts={initialProducts}
-      initialOrders={initialOrders}
-      initialComplaints={initialComplaints}
       initialSalesTeam={initialSalesTeam || []}
     />
   )

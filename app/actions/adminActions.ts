@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { CustomerFormData, MachineFormData, ProductFormData, LabTestFormData, UserFormData } from '@/lib/types'
+import { createServiceClient } from '@/lib/supabase/service'
 
 /**
  * Helper to verify admin permissions and get the server client.
@@ -151,12 +152,7 @@ export async function createUser(data: UserFormData & { action?: string }) {
   await verifyAdmin() // Verify the current user is an admin
 
   // Need service role for auth admin
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  const supabaseService = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseService = createServiceClient()
 
   const email = data.email.toLowerCase()
   const fullName = data.full_name?.trim()
@@ -196,12 +192,7 @@ export async function createUser(data: UserFormData & { action?: string }) {
 export async function updateUser(id: string, data: Partial<UserFormData> & { action?: string }) {
   await verifyAdmin()
   
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  const supabaseService = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseService = createServiceClient()
 
   const contactEmail = data.contact_email?.toLowerCase() || null
   const phoneNumber = data.phone_number?.trim() || null
@@ -227,12 +218,7 @@ export async function updateUser(id: string, data: Partial<UserFormData> & { act
 export async function deleteUser(id: string) {
   await verifyAdmin()
   
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  const supabaseService = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseService = createServiceClient()
 
   const { error: authError } = await supabaseService.auth.admin.deleteUser(id)
   if (authError) throw new Error(authError.message)
@@ -251,12 +237,7 @@ export async function uploadAdminFile(formData: FormData) {
 
   if (!bucket || !path || !file) throw new Error('Missing upload parameters')
 
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  const supabaseService = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseService = createServiceClient()
 
   let attempt = 0
   const retries = 3
@@ -341,12 +322,7 @@ export async function approveNewMachine(
 ) {
   await verifyAdminOrSales()
   
-  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-  const supabaseService = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseService = createServiceClient()
 
   // 1. Insert new machine using service role client to bypass sales RLS constraints
   const { data: newMachine, error: insertErr } = await supabaseService
@@ -404,12 +380,7 @@ export async function createAuditLog(
     const user = session?.user
     const actorId = user?.id || null
 
-    const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-    const supabaseService = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const supabaseService = createServiceClient()
 
     const { error } = await supabaseService
       .from('oil_audit_logs')

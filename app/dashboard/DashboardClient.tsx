@@ -9,11 +9,11 @@ import type { FleetReportRow } from '@/lib/pdf/exportFleetReport'
 import { useChartHeight } from '@/lib/hooks/useWindowSize'
 import { logger } from '@/lib/logger'
 import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
-import OrdersSection from '@/app/dashboard/components/OrdersSection'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { createLabRequest } from '@/app/actions/dashboardActions'
 import type { LabRequest } from '@/app/dashboard/components/types'
+import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 
 interface Machine {
   id: string
@@ -84,9 +84,6 @@ interface DashboardClientProps {
   initialMachines: Machine[]
   initialLabTests: any[]
   initialLabRequests: LabRequest[]
-  initialProducts: any[]
-  initialOrders: any[]
-  initialComplaints: any[]
   initialSalesTeam: any[]
 }
 
@@ -459,8 +456,8 @@ const dashboardCopy = {
     evaluationBasedOnIndustryStandard: 'Evaluation based on industry-standard oil practices',
     machineLabel: 'Machine',
     productLabel: 'Product',
-    viscosityLabel: 'Viskositas',
-    waterContentLabel: 'Kandungan Air',
+    viscosityLabel: 'Viscosity',
+    waterContentLabel: 'Water Content',
     tanValueLabel: 'TAN Value',
     actionTemplates: {
       critical: ['Retest oil', 'Check seal leakage', 'Inspect filter condition'],
@@ -468,11 +465,11 @@ const dashboardCopy = {
       normal: ['Schedule routine sampling', 'Inspect filter condition', 'Log follow-up notes'],
     },
     trend: {
-      viscosityTitle: 'Viskositas menunjukkan tren di luar batas normal',
+      viscosityTitle: 'Viscosity shows a trend outside normal limits',
       viscosityAction: 'Check operating temperature, dilution risk, and oil stability.',
-      waterTitle: 'Kandungan air menunjukkan kenaikan yang konsisten',
+      waterTitle: 'Water content shows a consistent increase',
       waterAction: 'Inspect seals, breathers, and contamination sources. Retest after corrective action.',
-      tanTitle: 'Nilai TAN naik lebih cepat dari laju normal',
+      tanTitle: 'TAN value is rising faster than normal',
       tanAction: 'Review oxidation drivers and schedule verification sampling.',
       increasingTrend: 'shows a consistent increase',
       abnormalChange: 'changed abnormally',
@@ -491,13 +488,12 @@ export default function DashboardClient({
   initialMachines,
   initialLabTests,
   initialLabRequests = [],
-  initialProducts = [],
-  initialOrders = [],
-  initialComplaints = [],
   initialSalesTeam = [],
 }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
+  useTabAutoLogout()
+  useEffect(() => { signOutIfTabWasClosed() }, [])
   const [language, setLanguage] = useState<Language>('id')
   const [labRequests, setLabRequests] = useState<LabRequest[]>(initialLabRequests)
   const copy = dashboardCopy[language]
@@ -530,19 +526,18 @@ export default function DashboardClient({
 
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(() => preferredMachine)
   const chartMachine = useMemo(() => {
-    if (selectedMachine && normalizedLabTests.some((test) => test.machine_id === selectedMachine.id)) {
+    if (selectedMachine) {
       return selectedMachine
     }
     return preferredMachine
-  }, [normalizedLabTests, preferredMachine, selectedMachine])
+  }, [preferredMachine, selectedMachine])
 
   // Derive oilSamples from server-prefetched lab tests (no client fetch needed)
   const oilSamples = useMemo(() => {
     const allSorted = [...normalizedLabTests].sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime())
-    if (!chartMachine) return allSorted
+    if (!chartMachine) return []
 
-    const selectedMachineSamples = allSorted.filter((t) => t.machine_id === chartMachine.id)
-    return selectedMachineSamples.length > 0 ? selectedMachineSamples : allSorted
+    return allSorted.filter((t) => t.machine_id === chartMachine.id)
   }, [chartMachine, normalizedLabTests]) as OilSample[]
 
   const labReports = oilSamples as LabReport[]
@@ -604,13 +599,12 @@ export default function DashboardClient({
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
 
-  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'orders' | 'requests'>('trend')
+  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'requests'>('trend')
 
   const handleShortcutClick = (shortcutId: string) => {
     if (shortcutId.startsWith('trend') || shortcutId === 'trend') setActiveTab('trend')
     else if (shortcutId === 'analysis') setActiveTab('analysis')
     else if (shortcutId === 'lab') setActiveTab('lab')
-    else if (shortcutId === 'orders') setActiveTab('orders')
     else if (shortcutId === 'requests') setActiveTab('requests')
   }
 
@@ -1347,14 +1341,35 @@ export default function DashboardClient({
       if (values.length < 2) return // Not enough data for trend analysis
 
       const latest = values[values.length - 1]
-      const previous = values[values.length - 2]
       const baseline = values[0]
       const increasing = values.length > 2 && values[values.length - 3] < values[values.length - 2] && values[values.length - 2] < values[values.length - 1]
       
-      const oilType = getOilType(latest.productType || '')
-      const { warning, critical } = getViscosityDeviation(latest.value, oilType, baseline.value)
-      const waterThresholds = getWaterThresholds(oilType)
-      const tanThresholds = getOilTypeThresholds(oilType).tanIncrease
+      const latestTestObj = recentTests[recentTests.length - 1]
+      const oilType = getOilType(latestTestObj.product?.product_type || '')
+
+      let abnormalChange = false
+      let nearCritical = false
+      let percentChange = 0
+
+      if (baseline > 0) {
+        percentChange = ((latest - baseline) / baseline) * 100
+        const absChange = Math.abs(percentChange)
+        
+        if (series.key === 'Viscosity') {
+           const viscThresholds = getOilTypeThresholds(oilType).viscosityChange
+           if (absChange > viscThresholds.warning) abnormalChange = true
+           if (absChange > viscThresholds.critical * 0.8) nearCritical = true
+        } else if (series.key === 'TAN') {
+           const tanThresholds = getOilTypeThresholds(oilType).tanIncrease
+           const tanIncrease = latest - baseline
+           if (tanIncrease > tanThresholds.warning) abnormalChange = true
+           if (tanIncrease > tanThresholds.critical * 0.8) nearCritical = true
+        } else if (series.key === 'Water content') {
+           const waterThresholds = getWaterThresholds(oilType)
+           if (latest > waterThresholds.warning) abnormalChange = true
+           if (latest > waterThresholds.critical * 0.8) nearCritical = true
+        }
+      }
 
       if (increasing || abnormalChange || nearCritical) {
         const severity: TrendSeverity = abnormalChange && nearCritical ? 'High' : increasing && abnormalChange ? 'Medium' : 'Low'
@@ -2468,12 +2483,17 @@ export default function DashboardClient({
                   <div className="space-y-4">
                     {labRequests.map((req) => {
                       // Map existing statuses to timeline steps
-                      const steps = [
-                        { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Tim sales akan segera menghubungi Anda' : 'Sales team will contact you soon' },
-                        { key: 'assigned', label: language === 'id' ? 'Sales Ditugaskan' : 'Sales Assigned', icon: '👤', desc: language === 'id' ? 'Sales sedang dalam perjalanan ke lokasi Anda' : 'Sales is heading to your location' },
-                        { key: 'sampling', label: language === 'id' ? 'Pengambilan Sampel' : 'Sample Collection', icon: '🧪', desc: language === 'id' ? 'Sampel sedang diambil dari mesin Anda' : 'Sample being collected from your machine' },
-                        { key: 'completed', label: language === 'id' ? 'Hasil Lab Selesai' : 'Lab Results Ready', icon: '✅', desc: language === 'id' ? 'Laporan hasil uji lab siap diunduh' : 'Lab test report is ready for download' },
-                      ]
+                      const steps = req.status === 'cancelled'
+                        ? [
+                            { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Permintaan uji lab diajukan' : 'Lab request was submitted' },
+                            { key: 'cancelled', label: language === 'id' ? 'Dibatalkan' : 'Cancelled', icon: '❌', desc: language === 'id' ? 'Permintaan uji lab ini dibatalkan' : 'This lab request was cancelled' },
+                          ]
+                        : [
+                            { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Tim sales akan segera menghubungi Anda' : 'Sales team will contact you soon' },
+                            { key: 'assigned', label: language === 'id' ? 'Sales Ditugaskan' : 'Sales Assigned', icon: '👤', desc: language === 'id' ? 'Sales sedang dalam perjalanan ke lokasi Anda' : 'Sales is heading to your location' },
+                            { key: 'sampling', label: language === 'id' ? 'Pengambilan Sampel' : 'Sample Collection', icon: '🧪', desc: language === 'id' ? 'Sampel sedang diambil dari mesin Anda' : 'Sample being collected from your machine' },
+                            { key: 'completed', label: language === 'id' ? 'Hasil Lab Selesai' : 'Lab Results Ready', icon: '✅', desc: language === 'id' ? 'Laporan hasil uji lab siap diunduh' : 'Lab test report is ready for download' },
+                          ]
 
                       const currentStepIdx = steps.findIndex(s => s.key === req.status)
                       const statusStep = currentStepIdx >= 0 ? currentStepIdx : 0
@@ -2483,6 +2503,7 @@ export default function DashboardClient({
                         assigned: 'bg-blue-50 text-blue-700 border-blue-100',
                         sampling: 'bg-amber-50 text-amber-700 border-amber-100',
                         completed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                        cancelled: 'bg-red-50 text-red-700 border-red-100',
                       }
 
                       const statusLabel: Record<string, string> = {
@@ -2490,6 +2511,7 @@ export default function DashboardClient({
                         assigned: language === 'id' ? 'Ditugaskan' : 'Assigned',
                         sampling: language === 'id' ? 'Pengambilan Sampel' : 'Sampling',
                         completed: language === 'id' ? 'Selesai' : 'Completed',
+                        cancelled: language === 'id' ? 'Dibatalkan' : 'Cancelled',
                       }
 
                       return (
@@ -2516,7 +2538,7 @@ export default function DashboardClient({
                             {/* Progress line */}
                             <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-100">
                               <div
-                                className="h-full bg-gradient-to-r from-orange-400 to-emerald-500 transition-all duration-700"
+                                className={`h-full transition-all duration-700 ${req.status === 'cancelled' ? 'bg-red-500' : 'bg-gradient-to-r from-orange-400 to-emerald-500'}`}
                                 style={{ width: `${Math.min((statusStep / (steps.length - 1)) * 100, 100)}%` }}
                               />
                             </div>
@@ -2532,7 +2554,9 @@ export default function DashboardClient({
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-base transition-all duration-500 z-10 ${
                                       isCompleted
                                         ? isCurrent
-                                          ? 'bg-gradient-to-tr from-orange-500 to-red-500 shadow-md shadow-orange-200 scale-110'
+                                          ? req.status === 'cancelled'
+                                            ? 'bg-gradient-to-tr from-red-500 to-red-600 shadow-md shadow-red-200 scale-110'
+                                            : 'bg-gradient-to-tr from-orange-500 to-red-500 shadow-md shadow-orange-200 scale-110'
                                           : 'bg-emerald-500 shadow-sm'
                                         : 'bg-white border-2 border-slate-200'
                                     }`}>
@@ -2550,7 +2574,11 @@ export default function DashboardClient({
                                     </div>
                                     <div className="text-center">
                                       <p className={`text-[8px] font-black uppercase tracking-wide leading-tight ${
-                                        isCurrent ? 'text-orange-600' : isCompleted ? 'text-emerald-600' : 'text-slate-300'
+                                        isCurrent
+                                          ? req.status === 'cancelled'
+                                            ? 'text-red-600'
+                                            : 'text-orange-600'
+                                          : isCompleted ? 'text-emerald-600' : 'text-slate-300'
                                       }`}>
                                         {step.label}
                                       </p>

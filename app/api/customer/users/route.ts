@@ -1,19 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { checkRateLimitDistributed, getClientIp, pruneRateLimitStore } from '@/lib/rate-limit'
+import { createServiceClient } from '@/lib/supabase/service'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-)
+const supabaseAdmin = createServiceClient()
 
 const createUserSchema = z.object({
   action: z.literal('create'),

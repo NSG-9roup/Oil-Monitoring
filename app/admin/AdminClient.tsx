@@ -8,6 +8,7 @@ import imageCompression from 'browser-image-compression'
 import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
 import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, UserRole, LabRequest } from '@/lib/types'
+import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 
 import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, uploadAdminFile } from '@/app/actions/adminActions'
 
@@ -206,8 +207,10 @@ export default function AdminClient({
 }: AdminClientProps) {
   const supabase = createClient()
   const router = useRouter()
+  useTabAutoLogout()
+  useEffect(() => { signOutIfTabWasClosed() }, [])
 
-  // Set up real-time subscription for lab requests (Saran A)
+  // Set up real-time subscription for lab requests
   useEffect(() => {
     const channel = supabase
       .channel('admin-requests-sync')

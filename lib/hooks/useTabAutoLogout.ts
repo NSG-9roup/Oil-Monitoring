@@ -74,6 +74,15 @@ export async function signOutIfTabWasClosed() {
 
   const tabWasOpen = sessionStorage.getItem(SESSION_KEY)
   const closeTs = localStorage.getItem(CLOSE_TIMESTAMP_KEY)
+  const rememberMe = localStorage.getItem('oiltrack_remember_me') === 'true'
+
+  // If rememberMe is checked, we do NOT auto-logout on tab close
+  if (rememberMe) {
+    if (closeTs) {
+      localStorage.removeItem(CLOSE_TIMESTAMP_KEY)
+    }
+    return
+  }
 
   if (!tabWasOpen && closeTs) {
     // Tab was previously closed (not refreshed). Sign out.

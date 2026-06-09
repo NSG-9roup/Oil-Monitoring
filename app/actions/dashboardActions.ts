@@ -3,14 +3,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createAuditLog } from '@/app/actions/adminActions'
+import { createServiceClient } from '@/lib/supabase/service'
 
 /**
  * Helper to verify customer permissions and get their profile
  */
 async function verifyCustomer() {
   const supabase = await createClient()
-  const { data: { session }, error: authError } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
     throw new Error('Unauthorized')
@@ -61,11 +61,7 @@ export async function createLabRequest(data: {
   }
 
   // Use admin client to bypass broken RLS that relies on missing JWT custom claims
-  const { createClient: createAdminClient } = await import('@supabase/supabase-js')
-  const adminSupabase = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const adminSupabase = createServiceClient()
 
   const { error } = await adminSupabase.from('oil_lab_requests').insert([insertData])
   if (error) {

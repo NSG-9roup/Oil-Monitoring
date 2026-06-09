@@ -10,6 +10,7 @@ import { approveNewMachine } from '@/app/actions/adminActions'
 import toast from 'react-hot-toast'
 import { updateLabRequestStatusSales, updatePhotoPathSales } from '@/app/actions/salesActions'
 import { sendPurchasingProposalEmail } from '@/app/actions/emailActions'
+import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 
 interface OfflineAction {
   type: 'COLLECT' | 'UNDO_COLLECT' | 'UPLOAD_PHOTO'
@@ -31,19 +32,6 @@ interface SalesOrder {
   product?: { product_name?: string }
 }
 
-interface SalesComplaint {
-  id: string
-  order_id: string
-  customer_id: string
-  description: string
-  status: string
-  resolution_notes?: string | null
-  created_at: string
-  updated_at: string
-  order?: { id: string; product?: { product_name?: string } }
-  customer?: { company_name?: string }
-}
-
 interface SalesClientProps {
   user: {
     id: string
@@ -55,13 +43,11 @@ interface SalesClientProps {
   }
   initialLabRequests: LabRequest[]
   initialOrders: SalesOrder[]
-  initialComplaints: SalesComplaint[]
 }
 
-export default function SalesClient({ user, profile, initialLabRequests, initialOrders = [], initialComplaints = [] }: SalesClientProps) {
+export default function SalesClient({ user, profile, initialLabRequests, initialOrders = [] }: SalesClientProps) {
   const [requests, setRequests] = useState<LabRequest[]>(initialLabRequests)
   const [orders, setOrders] = useState(initialOrders)
-  // const [complaints, setComplaints] = useState(initialComplaints)
   const [activeTab, setActiveTab] = useState<'queue' | 'transit' | 'orders'>('queue')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'high'>('all')
@@ -89,7 +75,8 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
 
   const supabase = createClient()
   const router = useRouter()
-
+  useTabAutoLogout()
+  useEffect(() => { signOutIfTabWasClosed() }, [])
   const [isOnline, setIsOnline] = useState(true)
   const [syncingOffline, setSyncingOffline] = useState(false)
 
@@ -278,7 +265,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         toast.success('Offline: Penjemputan sampel disimpan lokal. Akan disinkronkan saat online.')
       } catch (err) {
         console.error('Offline queue write failed:', err)
-        alert('Gagal menyimpan status offline.')
+        toast.error('Gagal menyimpan status offline.')
       }
       return
     }
@@ -290,7 +277,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       toast.success('Status berhasil diubah ke Sampling!')
     } catch (error) {
       console.error('Update failed:', error)
-      alert('Gagal mengupdate status.')
+      toast.error('Gagal mengupdate status.')
     } finally {
       setLoadingId(null)
     }
@@ -313,7 +300,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         toast.success('Offline: Pembatalan sampel disimpan lokal.')
       } catch (err) {
         console.error('Offline queue write failed:', err)
-        alert('Gagal menyimpan status offline.')
+        toast.error('Gagal menyimpan status offline.')
       }
       return
     }
@@ -325,7 +312,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       toast.success('Status dikembalikan ke Pending!')
     } catch (error) {
       console.error('Undo failed:', error)
-      alert('Gagal mengembalikan status.')
+      toast.error('Gagal mengembalikan status.')
     } finally {
       setLoadingId(null)
     }
@@ -356,16 +343,16 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
               model: newMachine.model
             }
           } : r))
-          alert('Mesin berhasil disetujui dan ditambahkan ke database otomatis!')
+          toast.success('✅ Mesin berhasil disetujui dan ditambahkan ke database!')
         } else {
           throw new Error('Approval action returned failure')
         }
       } else {
-        alert('Data mesin baru tidak lengkap.')
+        toast.error('Data mesin baru tidak lengkap.')
       }
     } catch (e) {
       console.error('Verification failed:', e)
-      alert('Gagal menyetujui mesin baru.')
+      toast.error('Gagal menyetujui mesin baru.')
     } finally {
       setLoadingId(null)
     }
