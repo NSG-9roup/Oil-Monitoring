@@ -77,7 +77,8 @@ export default async function DashboardPage() {
         .from('oil_lab_requests')
         .select(`
           *,
-          machine:oil_machines(machine_name, location)
+          machine:oil_machines(machine_name, location),
+          assigned_to:oil_profiles(full_name)
         `)
         .eq('customer_id', profile.customer_id)
         .order('created_at', { ascending: false })

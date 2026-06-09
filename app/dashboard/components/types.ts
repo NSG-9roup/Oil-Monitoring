@@ -85,4 +85,8 @@ export interface LabRequest {
     machine_name: string
     location?: string | null
   } | null
+  sample_photo_path?: string | null
+  assigned_to?: {
+    full_name: string
+  } | null
 }

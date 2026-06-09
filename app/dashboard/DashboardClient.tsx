@@ -603,6 +603,15 @@ export default function DashboardClient({
   const [requestSaving, setRequestSaving] = useState(false)
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
+  const [expandedRequestIds, setExpandedRequestIds] = useState<Set<string>>(new Set())
+  const toggleRequestExpand = (id: string) => {
+    setExpandedRequestIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'requests' | 'orders'>('trend')
 
@@ -651,7 +660,8 @@ export default function DashboardClient({
           .from('oil_lab_requests')
           .select(`
             *,
-            machine:oil_machines(machine_name, location)
+            machine:oil_machines(machine_name, location),
+            assigned_to:oil_profiles(full_name)
           `)
           .eq('customer_id', profile.customer_id)
           .order('created_at', { ascending: false })
@@ -2527,11 +2537,15 @@ export default function DashboardClient({
                       }
 
                       return (
-                        <div key={req.id} className="bg-slate-50/50 rounded-[1.5rem] border border-slate-100 p-5 hover:bg-white hover:shadow-sm hover:border-orange-100 transition-all duration-300">
-                          {/* Request Header */}
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="min-w-0">
-                              <h3 className="text-sm font-black text-slate-900 truncate">
+                        <div
+                          key={req.id}
+                          onClick={() => toggleRequestExpand(req.id)}
+                          className="bg-white rounded-[1.5rem] border border-slate-100 p-5 hover:shadow-md hover:border-orange-200 transition-all duration-300 cursor-pointer relative overflow-hidden group"
+                        >
+                          {/* Card Header (Collapsed view contents) */}
+                          <div className="flex items-start justify-between pb-3">
+                            <div className="min-w-0 pr-4">
+                              <h3 className="text-sm font-black text-slate-900 truncate group-hover:text-orange-600 transition-colors">
                                 {req.is_new_machine
                                   ? (req.new_machine_data?.machine_name || 'Mesin Baru')
                                   : (req.machine?.machine_name || 'Mesin')}
@@ -2540,81 +2554,156 @@ export default function DashboardClient({
                                 {language === 'id' ? 'Diminta' : 'Requested'}: {new Date(req.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { dateStyle: 'medium' })}
                               </p>
                             </div>
-                            <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border shrink-0 ml-3 ${statusColors[req.status] || statusColors['pending']}`}>
-                              {statusLabel[req.status] || req.status}
-                            </span>
+                            <div className="flex items-center gap-2.5 shrink-0 ml-3">
+                              <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${statusColors[req.status] || statusColors['pending']}`}>
+                                {statusLabel[req.status] || req.status}
+                              </span>
+                              <svg
+                                className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${expandedRequestIds.has(req.id) ? 'rotate-180' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
                           </div>
 
-                          {/* Timeline Progress */}
-                          <div className="relative">
-                            {/* Progress line */}
-                            <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-100">
-                              <div
-                                className={`h-full transition-all duration-700 ${req.status === 'cancelled' ? 'bg-red-500' : 'bg-gradient-to-r from-orange-400 to-emerald-500'}`}
-                                style={{ width: `${Math.min((statusStep / (steps.length - 1)) * 100, 100)}%` }}
-                              />
-                            </div>
+                          {/* Micro Progress Bar (stretching 100% width of the card below header) */}
+                          <div className="absolute left-0 right-0 bottom-0 h-[3px] bg-slate-100/60 overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-700 ${req.status === 'cancelled' ? 'bg-red-500' : 'bg-gradient-to-r from-orange-400 to-emerald-500'}`}
+                              style={{ width: `${Math.min((statusStep / (steps.length - 1)) * 100, 100)}%` }}
+                            />
+                          </div>
 
-                            {/* Steps */}
-                            <div className="flex justify-between relative">
+                          {/* Accordion Expanded Content */}
+                          <div
+                            className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                              expandedRequestIds.has(req.id)
+                                ? 'max-h-[800px] opacity-100 mt-4 pt-5 border-t border-slate-100'
+                                : 'max-h-0 opacity-0 pointer-events-none'
+                            }`}
+                          >
+                            {/* Vertical Stepper Tracker */}
+                            <div className="relative pl-12 space-y-6 py-2">
+                              {/* Vertical timeline line */}
+                              <div className="absolute top-4 bottom-4 left-[15px] w-[2px] bg-slate-100">
+                                <div
+                                  className={`absolute top-0 left-0 w-full transition-all duration-700 ${req.status === 'cancelled' ? 'bg-red-400' : 'bg-emerald-400'}`}
+                                  style={{ height: `${Math.min((statusStep / (steps.length - 1)) * 100, 100)}%` }}
+                                />
+                              </div>
+
                               {steps.map((step, idx) => {
                                 const isCompleted = idx <= statusStep
                                 const isCurrent = idx === statusStep
 
                                 return (
-                                  <div key={step.key} className="flex flex-col items-center gap-1.5 flex-1">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-base transition-all duration-500 z-10 ${
-                                      isCompleted
-                                        ? isCurrent
-                                          ? req.status === 'cancelled'
-                                            ? 'bg-gradient-to-tr from-red-500 to-red-600 shadow-md shadow-red-200 scale-110'
-                                            : 'bg-gradient-to-tr from-orange-500 to-red-500 shadow-md shadow-orange-200 scale-110'
-                                          : 'bg-emerald-500 shadow-sm'
-                                        : 'bg-white border-2 border-slate-200'
-                                    }`}>
-                                      {isCompleted ? (
-                                        isCurrent ? (
-                                          <span className="text-sm">{step.icon}</span>
+                                  <div key={step.key} className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                                    {/* Circle indicator */}
+                                    <div className="absolute -left-12 top-0.5 flex items-center justify-center">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all duration-500 z-10 ${
+                                        isCompleted
+                                          ? isCurrent
+                                            ? req.status === 'cancelled'
+                                              ? 'bg-red-500 shadow-md shadow-red-200 ring-4 ring-red-50 scale-105'
+                                              : 'bg-orange-500 shadow-md shadow-orange-200 ring-4 ring-orange-50 scale-105 animate-pulse'
+                                            : 'bg-emerald-500 shadow-sm shadow-emerald-100'
+                                          : 'bg-white border-2 border-slate-200'
+                                      }`}>
+                                        {isCompleted ? (
+                                          isCurrent ? (
+                                            <span className="text-xs">{step.icon}</span>
+                                          ) : (
+                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          )
                                         ) : (
-                                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                          </svg>
-                                        )
-                                      ) : (
-                                        <span className="w-2 h-2 rounded-full bg-slate-200" />
-                                      )}
+                                          <span className="w-2 h-2 rounded-full bg-slate-200" />
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="text-center">
-                                      <p className={`text-[8px] font-black uppercase tracking-wide leading-tight ${
+
+                                    {/* Step text content */}
+                                    <div className="flex-1 min-w-0 pr-2">
+                                      <h4 className={`text-xs font-black uppercase tracking-wider ${
                                         isCurrent
-                                          ? req.status === 'cancelled'
-                                            ? 'text-red-600'
-                                            : 'text-orange-600'
-                                          : isCompleted ? 'text-emerald-600' : 'text-slate-300'
+                                          ? req.status === 'cancelled' ? 'text-red-600' : 'text-orange-600'
+                                          : isCompleted ? 'text-emerald-600' : 'text-slate-400'
                                       }`}>
                                         {step.label}
+                                      </h4>
+                                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5 leading-relaxed">
+                                        {step.desc}
                                       </p>
                                     </div>
+
+                                    {/* Additional details (PIC or update timestamp) */}
+                                    {isCompleted && (
+                                      <div className="text-[10px] text-slate-400 font-semibold sm:text-right shrink-0 mt-1 sm:mt-0">
+                                        {step.key === 'pending' && (
+                                          <span>
+                                            {new Date(req.created_at).toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                                          </span>
+                                        )}
+                                        {(step.key === 'assigned' || step.key === 'sampling') && req.assigned_to && (
+                                          <div className="flex flex-col sm:items-end">
+                                            <span className="text-slate-600 font-bold">
+                                              PIC: {req.assigned_to.full_name}
+                                            </span>
+                                            <span className="text-[9px] text-slate-400">
+                                              {language === 'id' ? 'Sales NSG' : 'NSG Sales'}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {step.key === 'completed' && req.updated_at && (
+                                          <span>
+                                            {new Date(req.updated_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { dateStyle: 'short' })}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 )
                               })}
                             </div>
-                          </div>
 
-                          {/* Current status description */}
-                          {steps[statusStep] && (
-                            <div className="mt-4 pt-3 border-t border-slate-100">
-                              <p className="text-[10px] text-slate-500 font-semibold flex items-center gap-1.5">
-                                <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse shrink-0"></span>
-                                {steps[statusStep].desc}
-                              </p>
-                              {(req as unknown as { notes?: string }).notes && (
-                                <p className="text-[10px] text-slate-400 mt-1 italic">
-                                  {language === 'id' ? 'Catatan' : 'Notes'}: &ldquo;{(req as unknown as { notes?: string }).notes}&rdquo;
+                            {/* Request Notes / Description */}
+                            {(req.description || (req as any).notes) && (
+                              <div className="mt-5 p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                                <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                  {language === 'id' ? 'Catatan Permintaan' : 'Request Notes'}
+                                </h5>
+                                <p className="text-xs text-slate-600 leading-relaxed font-semibold">
+                                  {req.description || (req as any).notes}
                                 </p>
+                              </div>
+                            )}
+
+                            {/* Additional metadata info (priority, location etc.) */}
+                            <div className="mt-4 flex flex-wrap gap-3 items-center justify-between text-[10px] text-slate-400 font-semibold border-t border-slate-50 pt-4 pb-2">
+                              <div className="flex items-center gap-1.5">
+                                <span>{language === 'id' ? 'Prioritas:' : 'Priority:'}</span>
+                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase ${
+                                  req.priority === 'high' ? 'bg-red-50 text-red-600 border border-red-100' :
+                                  req.priority === 'medium' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                                  'bg-slate-100 text-slate-600 border border-slate-200'
+                                }`}>
+                                  {req.priority}
+                                </span>
+                              </div>
+                              {req.sample_photo_path && (
+                                <div className="flex items-center gap-1 text-emerald-600">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  <span>{language === 'id' ? 'Foto Sampel Tersedia' : 'Sample Photo Available'}</span>
+                                </div>
                               )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       )
                     })}
