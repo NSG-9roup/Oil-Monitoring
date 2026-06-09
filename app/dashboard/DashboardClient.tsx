@@ -1959,8 +1959,9 @@ export default function DashboardClient({
 
         {/* Tabbed Content Section */}
         <div className="flex-1 w-full relative animate-in fade-in slide-in-from-bottom-2 duration-200 min-h-[600px] space-y-8">
-          {activeTab === 'trend' && (
-            <div key="trend" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+          {/* Trend Tab */}
+          <div className={`w-full ${activeTab === 'trend' ? 'block' : 'hidden'}`}>
+            <div key="trend" className="w-full">
               <TrendSection
                 language={language}
                 chartData={chartData}
@@ -1979,9 +1980,11 @@ export default function DashboardClient({
                 onOpenLabDetails={() => setActiveTab('lab')}
               />
             </div>
-          )}
+          </div>
 
-          {activeTab === 'analysis' && (() => {
+          {/* Analysis Tab */}
+          <div className={`w-full ${activeTab === 'analysis' ? 'block' : 'hidden'}`}>
+            {(() => {
             const selectedMachineInsight = selectedMachine
               ? machineInsights.find((item) => item.machine.id === selectedMachine.id)
               : null
@@ -2406,14 +2409,15 @@ export default function DashboardClient({
                       </button>
                     </div>
                   </div>
-
                 </div>
               </div>
             )
           })()}
+        </div>
 
-          {activeTab === 'lab' && (
-            <div key="lab" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+          {/* Lab Tab */}
+          <div className={`w-full ${activeTab === 'lab' ? 'block' : 'hidden'}`}>
+            <div key="lab" className="w-full">
               <LabReportsSection
                 title={copy.labReportsTitle}
                 description={copy.reportCountSuffix(filteredReports.length)}
@@ -2451,10 +2455,11 @@ export default function DashboardClient({
                 getRecommendations={getRecommendations}
               />
             </div>
-          )}
+          </div>
 
-          {activeTab === 'requests' && (
-            <div key="requests" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+          {/* Requests Tab */}
+          <div className={`w-full ${activeTab === 'requests' ? 'block' : 'hidden'}`}>
+            <div key="requests" className="w-full">
               <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-gradient-to-tr from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
@@ -2617,9 +2622,10 @@ export default function DashboardClient({
                 )}
               </div>
             </div>
-          )}
-          {activeTab === 'orders' && (
-            <div key="orders" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+          </div>
+          {/* Orders Tab */}
+          <div className={`w-full ${activeTab === 'orders' ? 'block' : 'hidden'}`}>
+            <div key="orders" className="w-full">
               <OrdersSection
                 customerId={profile.customer_id || ''}
                 products={products}
@@ -2628,7 +2634,7 @@ export default function DashboardClient({
                 language={language}
               />
             </div>
-          )}
+          </div>
         </div>
       </main>
 

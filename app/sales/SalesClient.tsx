@@ -631,7 +631,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       </div>
 
       {/* Mesin Pencari & Filter Chips */}
-      <div className="bg-white px-4 py-3 border-b border-slate-100">
+      <div className={`bg-white px-4 py-3 border-b border-slate-100 ${activeTab !== 'orders' ? 'block' : 'hidden'}`}>
         <div className="max-w-md mx-auto space-y-3">
           {/* Bar Pencarian */}
           <div className="relative">
@@ -696,7 +696,9 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
 
       {/* Main List */}
       <main className="flex-1 max-w-md mx-auto w-full p-4 space-y-4 z-10">
-        <div className="flex items-center justify-between px-1 mb-1">
+        {/* Requests List wrapper */}
+        <div className={`space-y-4 ${activeTab !== 'orders' ? 'block' : 'hidden'}`}>
+          <div className="flex items-center justify-between px-1 mb-1">
           <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
             {activeTab === 'queue' ? 'Daftar Pengambilan Sampel' : 'Daftar Sampel Dalam Transit'}
           </h2>
@@ -946,10 +948,10 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
             </table>
           </div>
         )}
+        </div>
 
         {/* Orders Tab — Kirim Penawaran ke Purchasing */}
-        {activeTab === 'orders' && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+        <div className={`space-y-5 ${activeTab === 'orders' ? 'block' : 'hidden'}`}>
             
             {/* Form Card */}
             {/* Customer Requests Card */}
@@ -1182,7 +1184,6 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
               </div>
             )}
           </div>
-        )}
       </main>
 
       <footer className="p-8 text-center bg-white border-t border-slate-100">
