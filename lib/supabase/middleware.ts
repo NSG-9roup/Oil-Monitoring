@@ -72,8 +72,18 @@ export async function updateSession(request: NextRequest) {
 
     const role = profile?.role
 
+    if (!role) {
+      if (isAuthPath) {
+        return supabaseResponse
+      }
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('error', 'no_profile')
+      return NextResponse.redirect(url)
+    }
+
     // 1. Dynamic login redirection for already authenticated users
-    if (pathname === '/login' || pathname === '/reset-password') {
+    if (pathname === '/login') {
       const url = request.nextUrl.clone()
       if (role === 'admin') url.pathname = '/admin'
       else if (role === 'sales') url.pathname = '/sales'

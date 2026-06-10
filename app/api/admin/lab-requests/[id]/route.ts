@@ -42,7 +42,7 @@ export async function PATCH(
       .from('oil_lab_requests')
       .update({
         status,
-        assigned_to_profile_id: status === 'assigned' ? user.id : undefined,
+        assigned_to_profile_id: status === 'assigned' ? user.id : (status === 'pending' ? null : undefined),
       })
       .eq('id', id)
 

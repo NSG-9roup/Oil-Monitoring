@@ -2,6 +2,7 @@
 
 import React from 'react'
 import type { AdminLabTest, Customer, AdminMachine } from '@/lib/types'
+import { toast } from 'react-hot-toast'
 
 interface AdminTestsTabProps {
   recentTests: AdminLabTest[]
@@ -59,13 +60,13 @@ export default function AdminTestsTab({
       const { sendLabTestResultEmailAction } = await import('@/app/actions/emailActions')
       const result = await sendLabTestResultEmailAction(testId)
       if (result.success) {
-        alert('Hasil lab berhasil dikirim ke email customer!')
+        toast.success('Hasil lab berhasil dikirim ke email customer!')
       } else {
-        alert('Gagal mengirim email: ' + result.error)
+        toast.error('Gagal mengirim email: ' + result.error)
       }
     } catch (err) {
       console.error(err)
-      alert('Gagal memicu pengiriman email.')
+      toast.error('Gagal memicu pengiriman email.')
     } finally {
       setSendingId(null)
     }

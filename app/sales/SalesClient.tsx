@@ -390,12 +390,12 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
 
     // Client-side validation: MIME type and file size (Saran D)
     if (!file.type.startsWith('image/')) {
-      alert('Hanya diperbolehkan mengunggah file gambar (JPEG/PNG/WEBP).')
+      toast.error('Hanya diperbolehkan mengunggah file gambar (JPEG/PNG/WEBP).')
       if (e.target) e.target.value = ''
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran file foto bukti tidak boleh melebihi 5MB.')
+      toast.error('Ukuran file foto bukti tidak boleh melebihi 5MB.')
       if (e.target) e.target.value = ''
       return
     }
@@ -433,7 +433,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
             toast.success('Offline: Foto bukti disimpan lokal. Akan diunggah otomatis saat online.')
           } catch (err) {
             console.error('Offline queue write failed:', err)
-            alert('Gagal mengantre foto offline karena penyimpanan browser penuh.')
+            toast.error('Gagal mengantre foto offline karena penyimpanan browser penuh.')
           } finally {
             setUploadingId(null)
             setActiveUploadRequestId(null)
@@ -467,7 +467,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       toast.success('Bukti foto botol sampel berhasil diunggah!')
     } catch (err) {
       console.error('Photo upload failed:', err)
-      alert('Gagal mengunggah foto bukti setelah beberapa percobaan.')
+      toast.error('Gagal mengunggah foto bukti setelah beberapa percobaan.')
     } finally {
       setUploadingId(null)
       setActiveUploadRequestId(null)
@@ -571,7 +571,12 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                 </button>
               </div>
             )}
-            <button onClick={handleSignOut} className="p-2.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-xl transition-all border border-slate-100 active:scale-95">
+            <a href="/sales/profile" className="p-2.5 bg-slate-50 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-xl transition-all border border-slate-100 active:scale-95 animate-in fade-in zoom-in duration-300" title="Profil Saya">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </a>
+            <button onClick={handleSignOut} className="p-2.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-xl transition-all border border-slate-100 active:scale-95" title="Keluar">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
+import { toast } from 'react-hot-toast'
 
 interface Product {
   id: string
@@ -106,10 +107,10 @@ export default function OrdersSection({
       setOrders([data, ...orders])
       setIsOrderModalOpen(false)
       setOrderForm({ productId: '', quantity: 1 })
-      alert(language === 'id' ? 'Permintaan penawaran berhasil dibuat!' : 'Quotation request created successfully!')
+      toast.success(language === 'id' ? 'Permintaan penawaran berhasil dibuat!' : 'Quotation request created successfully!')
     } catch (err) {
       console.error(err)
-      alert(language === 'id' ? 'Gagal membuat permintaan penawaran' : 'Failed to create quotation request')
+      toast.error(language === 'id' ? 'Gagal membuat permintaan penawaran' : 'Failed to create quotation request')
     } finally {
       setIsSubmitting(false)
     }
@@ -137,10 +138,10 @@ export default function OrdersSection({
       setIsComplaintModalOpen(false)
       setComplaintDesc('')
       setSelectedOrderId(null)
-      alert(language === 'id' ? 'Komplain berhasil dikirim!' : 'Complaint submitted successfully!')
+      toast.success(language === 'id' ? 'Komplain berhasil dikirim!' : 'Complaint submitted successfully!')
     } catch (err) {
       console.error(err)
-      alert(language === 'id' ? 'Gagal mengirim komplain' : 'Failed to submit complaint')
+      toast.error(language === 'id' ? 'Gagal mengirim komplain' : 'Failed to submit complaint')
     } finally {
       setIsSubmitting(false)
     }

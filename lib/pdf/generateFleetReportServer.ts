@@ -163,22 +163,8 @@ export async function generateFleetReportPdfServer(
 
   const generatedDate = typeof meta.generatedAt === 'string' ? new Date(meta.generatedAt) : meta.generatedAt
 
-  // --- HEADER SECTION ---
-  if (hasHeader) {
-    addImageContainServer(doc, 'header.png', 0, 0, pageWidth, 72)
-  } else {
-    const gradientColors = [[190, 24, 93], [157, 23, 77]]
-    doc.setFillColor(gradientColors[0][0], gradientColors[0][1], gradientColors[0][2])
-    doc.rect(0, 0, pageWidth, 85, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(22)
-    doc.text(copy.title, 40, 42)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.setTextColor(255, 255, 255, 0.8)
-    doc.text(`${copy.generated}: ${formatDateTime(generatedDate)}`, 40, 62)
-  }
+  // --- HEADER SECTION PLACEHOLDER ---
+  // (We now draw the header dynamically on all pages in the final page loop to prevent duplicates)
 
   // --- CUSTOMER PROFILE CARD ---
   const profileY = hasHeader ? 85 : 100
@@ -299,14 +285,32 @@ export async function generateFleetReportPdfServer(
         data.cell.styles.fontStyle = 'bold'
       }
     },
-    margin: { left: 40, right: 40, bottom: 80 },
+    margin: { top: 90, left: 40, right: 40, bottom: 80 },
   })
 
-  // --- FOOTER SECTION ---
+  // --- HEADER & FOOTER SECTION LOOP ---
   const totalPages = doc.getNumberOfPages()
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page)
-    if (hasHeader) addImageContainServer(doc, 'header.png', 0, 0, pageWidth, 72)
+    
+    // Draw Header
+    if (hasHeader) {
+      addImageContainServer(doc, 'header.png', 0, 0, pageWidth, 72)
+    } else {
+      const gradientColors = [[190, 24, 93], [157, 23, 77]]
+      doc.setFillColor(gradientColors[0][0], gradientColors[0][1], gradientColors[0][2])
+      doc.rect(0, 0, pageWidth, 85, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(16)
+      doc.text(copy.title, 40, 42)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(255, 255, 255, 0.8)
+      doc.text(`${copy.generated}: ${formatDateTime(generatedDate)}`, 40, 60)
+    }
+
+    // Draw Footer
     if (hasFooter) {
       addImageContainServer(doc, 'footer.png', 0, pageHeight - 52, pageWidth, 52)
     } else {

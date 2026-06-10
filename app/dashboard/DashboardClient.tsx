@@ -15,6 +15,7 @@ import { createLabRequest } from '@/app/actions/dashboardActions'
 import type { LabRequest } from '@/app/dashboard/components/types'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 import OrdersSection from '@/app/dashboard/components/OrdersSection'
+import { toast } from 'react-hot-toast'
 
 interface Machine {
   id: string
@@ -625,11 +626,11 @@ export default function DashboardClient({
 
   const handleSendRequest = async () => {
     if (!requestForm.is_new_machine && !requestForm.machine_id) {
-      alert('Silakan pilih mesin atau centang mesin baru.')
+      toast.error('Silakan pilih mesin atau centang mesin baru.')
       return
     }
     if (requestForm.is_new_machine && !requestForm.new_machine_name) {
-      alert('Silakan masukkan nama mesin baru.')
+      toast.error('Silakan masukkan nama mesin baru.')
       return
     }
 
@@ -703,10 +704,10 @@ export default function DashboardClient({
       }
       
       setIsRequestModalOpen(false)
-      alert('Permintaan uji lab berhasil dikirim!')
+      toast.success('Permintaan uji lab berhasil dikirim!')
     } catch (error) {
       console.error('Request failed:', error)
-      alert('Gagal mengirim permintaan.')
+      toast.error('Gagal mengirim permintaan.')
     } finally {
       setRequestSaving(false)
     }
@@ -785,7 +786,7 @@ export default function DashboardClient({
 
   const handleDownloadPDF = async (pdfPath: string, testDate: string) => {
     if (!pdfPath) {
-      alert('No PDF report available for this test')
+      toast.error('No PDF report available for this test')
       return
     }
     
@@ -807,7 +808,7 @@ export default function DashboardClient({
       URL.revokeObjectURL(url)
     } catch (error: unknown) {
       logger.error('Error downloading PDF:', error)
-      alert(`Failed to download PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(`Failed to download PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -1594,7 +1595,7 @@ export default function DashboardClient({
       window.URL.revokeObjectURL(url)
     } catch (err) {
       console.error('Export PDF failed:', err)
-      alert('Gagal mengekspor laporan PDF.')
+      toast.error('Gagal mengekspor laporan PDF.')
     } finally {
       setExporting(false)
     }

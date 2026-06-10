@@ -96,4 +96,9 @@ CREATE POLICY "complaints_select_customer"
 DROP POLICY IF EXISTS "oil_lab_tests_select_customer" ON public.oil_lab_tests;
 CREATE POLICY "oil_lab_tests_select_customer" ON public.oil_lab_tests
     FOR SELECT TO authenticated
-    USING (customer_id = public.get_my_customer_id());
+    USING (
+        machine_id IN (
+            SELECT id FROM public.oil_machines
+            WHERE customer_id = public.get_my_customer_id()
+        )
+    );

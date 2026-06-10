@@ -40,7 +40,7 @@ export async function updateLabRequestStatusSales(requestId: string, status: str
     .from('oil_lab_requests')
     .update({ 
       status,
-      assigned_to_profile_id: status === 'sampling' ? user.id : undefined
+      assigned_to_profile_id: status === 'sampling' ? user.id : (status === 'pending' ? null : undefined)
     })
     .eq('id', requestId)
 

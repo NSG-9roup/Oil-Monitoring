@@ -77,3 +77,44 @@ export async function createLabRequest(data: {
   return { success: true }
 }
 
+/**
+ * Shared server action to update the authenticated user's own profile columns (full_name and phone_number).
+ * Bypasses direct RLS restrictions by using the service client after verifying identity.
+ */
+export async function updateAnyUserProfile(data: {
+  full_name: string
+  phone_number?: string
+}) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error('Unauthorized')
+  }
+
+  if (!data.full_name || data.full_name.trim().length < 2) {
+    throw new Error('Name must be at least 2 characters')
+  }
+
+  const supabaseService = createServiceClient()
+  const { error } = await supabaseService
+    .from('oil_profiles')
+    .update({
+      full_name: data.full_name.trim(),
+      phone_number: data.phone_number?.trim() || null,
+    })
+    .eq('id', user.id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  // Audit logging for profile updates
+  await createAuditLog('UPDATE_PROFILE', `User updated profile info`, { userId: user.id })
+
+  revalidatePath('/dashboard/profile')
+  revalidatePath('/sales/profile')
+  revalidatePath('/admin')
+  return { success: true }
+}
+

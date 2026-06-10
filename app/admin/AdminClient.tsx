@@ -9,6 +9,7 @@ import OilDropLoader from '@/app/components/OilDropLoader'
 import Image from 'next/image'
 import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, AdminProduct, UserRole, LabRequest } from '@/lib/types'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
+import toast from 'react-hot-toast'
 
 import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, uploadAdminFile } from '@/app/actions/adminActions'
 
@@ -40,6 +41,15 @@ const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) return error.message
   if (typeof error === 'object' && error !== null && 'message' in error) return String((error as any).message)
   return 'Unknown error'
+}
+
+const alert = (message: string) => {
+  const lower = message.toLowerCase()
+  if (lower.includes('error') || lower.includes('failed') || lower.includes('gagal') || lower.includes('tidak boleh') || lower.includes('terlalu besar')) {
+    toast.error(message)
+  } else {
+    toast.success(message)
+  }
 }
 
 type FormValue = string | number | undefined | null

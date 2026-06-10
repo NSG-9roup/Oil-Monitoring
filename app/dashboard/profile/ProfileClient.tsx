@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
+import { updateAnyUserProfile } from '@/app/actions/dashboardActions'
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -34,15 +35,14 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
       setErrors({})
       setIsSaving(true)
 
-      const { error } = await supabase
-        .from('oil_profiles')
-        .update({
-          full_name: formData.full_name,
-          phone_number: formData.phone_number,
-        })
-        .eq('id', initialProfile.id)
+      const result = await updateAnyUserProfile({
+        full_name: formData.full_name,
+        phone_number: formData.phone_number,
+      })
 
-      if (error) throw error
+      if (!result.success) {
+        throw new Error('Failed to update profile')
+      }
 
       toast.success('Profile updated successfully')
       setIsEditing(false)
@@ -103,7 +103,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{initialProfile.full_name}</h2>
-          <p className="text-gray-500">{initialProfile.customer?.company_name || 'System Admin'}</p>
+          <p className="text-gray-500">{initialProfile.customer?.company_name || (initialProfile.role === 'sales' ? 'Sales Representative' : 'System Admin')}</p>
           <span className="inline-block mt-2 px-3 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full capitalize">
             {initialProfile.role}
           </span>

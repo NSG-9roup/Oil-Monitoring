@@ -153,23 +153,8 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
     loadImageDataUrl('/footer.png'),
   ])
 
-  // --- HEADER SECTION ---
-  if (headerImage) {
-    await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
-  } else {
-    // Elegant dynamic header if image is missing
-    const gradientColors = [[190, 24, 93], [157, 23, 77]]
-    doc.setFillColor(gradientColors[0][0], gradientColors[0][1], gradientColors[0][2])
-    doc.rect(0, 0, pageWidth, 85, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(22)
-    doc.text(copy.title, 40, 42)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.setTextColor(255, 255, 255, 0.8)
-    doc.text(`${copy.generated}: ${formatDateTime(meta.generatedAt)}`, 40, 62)
-  }
+  // --- HEADER SECTION PLACEHOLDER ---
+  // (We now draw the header dynamically on all pages in the final page loop to prevent duplicates)
 
   // --- CUSTOMER PROFILE CARD ---
   const profileY = headerImage ? 85 : 100
@@ -292,14 +277,32 @@ export async function exportFleetReportPdf(meta: FleetReportMeta, rows: FleetRep
         data.cell.styles.fontStyle = 'bold'
       }
     },
-    margin: { left: 40, right: 40, bottom: 80 },
+    margin: { top: 90, left: 40, right: 40, bottom: 80 },
   })
 
-  // --- FOOTER SECTION ---
+  // --- HEADER & FOOTER SECTION LOOP ---
   const totalPages = doc.getNumberOfPages()
   for (let page = 1; page <= totalPages; page += 1) {
     doc.setPage(page)
-    if (headerImage) await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
+    
+    // Draw Header
+    if (headerImage) {
+      await addImageContain(doc, headerImage, 0, 0, pageWidth, 72)
+    } else {
+      const gradientColors = [[190, 24, 93], [157, 23, 77]]
+      doc.setFillColor(gradientColors[0][0], gradientColors[0][1], gradientColors[0][2])
+      doc.rect(0, 0, pageWidth, 85, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(16)
+      doc.text(copy.title, 40, 42)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(255, 255, 255, 0.8)
+      doc.text(`${copy.generated}: ${formatDateTime(meta.generatedAt)}`, 40, 60)
+    }
+
+    // Draw Footer
     if (footerImage) {
       await addImageContain(doc, footerImage, 0, pageHeight - 52, pageWidth, 52)
     } else {

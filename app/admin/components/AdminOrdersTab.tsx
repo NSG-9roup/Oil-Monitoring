@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'react-hot-toast'
 
 export interface AdminOrder {
   id: string
@@ -139,10 +140,10 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
 
       setIsEditModalOpen(false)
       setEditingOrder(null)
-      alert('Permintaan penawaran berhasil diubah!')
+      toast.success('Permintaan penawaran berhasil diubah!')
     } catch (err) {
       console.error(err)
-      alert('Gagal mengubah permintaan penawaran.')
+      toast.error('Gagal mengubah permintaan penawaran.')
     } finally {
       setIsSubmitting(false)
     }
@@ -160,7 +161,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
       setOrders(prev => prev.filter(o => o.id !== orderId))
     } catch (err) {
       console.error(err)
-      alert('Gagal menghapus permintaan penawaran.')
+      toast.error('Gagal menghapus permintaan penawaran.')
     } finally {
       setLoadingId(null)
     }
@@ -186,7 +187,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
         )
       )
     } catch {
-      alert('Gagal menyelesaikan keluhan.')
+      toast.error('Gagal menyelesaikan keluhan.')
     } finally {
       setLoadingId(null)
     }
@@ -204,7 +205,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
         prev.map(c => c.id === complaintId ? { ...c, status: 'in_progress' } : c)
       )
     } catch {
-      alert('Gagal mengupdate keluhan.')
+      toast.error('Gagal mengupdate keluhan.')
     } finally {
       setLoadingId(null)
     }
