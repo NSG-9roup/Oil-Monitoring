@@ -2470,41 +2470,46 @@ export default function DashboardClient({
 
           {/* Requests Tab */}
           <div className={`w-full ${activeTab === 'requests' ? 'block' : 'hidden'}`}>
-            <div key="requests" className="w-full">
-              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-tr from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                      {language === 'id' ? 'Status Lab Request' : 'Lab Request Status'}
-                    </h2>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                      {language === 'id' ? 'Lacak perjalanan sampel Anda' : 'Track your sample journey'}
-                    </p>
-                  </div>
-                </div>
-
-                {labRequests.length === 0 ? (
-                  <div className="py-16 text-center">
-                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200">
-                      <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
+            {(() => {
+              const activeRequests = labRequests.filter((req) =>
+                ['pending', 'assigned', 'sampling'].includes(req.status)
+              )
+              return (
+                <div key="requests" className="w-full">
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 sm:p-8">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-tr from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                          {language === 'id' ? 'Status Lab Request' : 'Lab Request Status'}
+                        </h2>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                          {language === 'id' ? 'Lacak perjalanan sampel Anda' : 'Track your sample journey'}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm font-bold text-slate-400">
-                      {language === 'id' ? 'Belum ada lab request' : 'No lab requests yet'}
-                    </p>
-                    <p className="text-xs text-slate-300 mt-1">
-                      {language === 'id' ? 'Klik tombol "Request Lab" untuk memulai' : 'Click "Request Lab" to get started'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {labRequests.map((req) => {
+
+                    {activeRequests.length === 0 ? (
+                      <div className="py-16 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200">
+                          <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-bold text-slate-400">
+                          {language === 'id' ? 'Belum ada lab request' : 'No lab requests yet'}
+                        </p>
+                        <p className="text-xs text-slate-300 mt-1">
+                          {language === 'id' ? 'Klik tombol "Request Lab" untuk memulai' : 'Click "Request Lab" to get started'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {activeRequests.map((req) => {
                       // Map existing statuses to timeline steps
                       const steps = req.status === 'cancelled'
                         ? [
@@ -2708,10 +2713,12 @@ export default function DashboardClient({
                         </div>
                       )
                     })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )
+            })()}
           </div>
           {/* Orders Tab */}
           <div className={`w-full ${activeTab === 'orders' ? 'block' : 'hidden'}`}>

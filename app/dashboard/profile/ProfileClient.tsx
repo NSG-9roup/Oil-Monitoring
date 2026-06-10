@@ -198,6 +198,83 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
               </div>
             )}
           </div>
+        {/* Push Notification Section */}
+        <div className="pt-6 border-t border-gray-200 space-y-4">
+          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+            <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            Sistem Notifikasi Push
+          </h3>
+          <p className="text-xs text-gray-500 leading-relaxed font-semibold">
+            Aktifkan notifikasi push untuk menerima pembaruan status uji lab mesin Anda secara real-time di perangkat ini.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={async () => {
+                if (!('Notification' in window)) {
+                  toast.error('Browser Anda tidak mendukung notifikasi push.')
+                  return
+                }
+                const permission = await Notification.requestPermission()
+                if (permission === 'granted') {
+                  toast.success('Notifikasi berhasil diaktifkan!')
+                  try {
+                    const reg = await navigator.serviceWorker.ready
+                    const sub = await reg.pushManager.subscribe({
+                      userVisibleOnly: true,
+                    }).catch(() => null)
+                    
+                    if (sub) {
+                      await fetch('/api/push/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subscription: sub })
+                      })
+                    }
+                  } catch (e) {
+                    console.log('Push subscribe backend error:', e)
+                  }
+                } else {
+                  toast.error('Izin notifikasi ditolak.')
+                }
+              }}
+              className="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-[11px] uppercase tracking-wider hover:bg-slate-800 transition-colors"
+            >
+              Aktifkan Notifikasi
+            </button>
+            
+            <button
+              onClick={async () => {
+                if (!('Notification' in window) || Notification.permission !== 'granted') {
+                  toast.error('Harap aktifkan notifikasi terlebih dahulu.')
+                  return
+                }
+                
+                try {
+                  const reg = await navigator.serviceWorker.ready
+                  reg.showNotification('OilTrack Simulator', {
+                    body: 'Notifikasi simulasi: Hasil uji lab mesin CNC-01 telah selesai diproses.',
+                    icon: 'https://i.imgur.com/8nqsjFz.png',
+                    badge: 'https://i.imgur.com/8nqsjFz.png',
+                    data: '/dashboard',
+                    vibrate: [100, 50, 100],
+                  } as unknown as NotificationOptions)
+                  toast.success('Notifikasi simulasi dikirim!')
+                } catch {
+                  new Notification('OilTrack Simulator', {
+                    body: 'Notifikasi simulasi: Hasil uji lab mesin CNC-01 telah selesai.',
+                    icon: 'https://i.imgur.com/8nqsjFz.png',
+                  })
+                  toast.success('Notifikasi simulasi dikirim (fallback)!')
+                }
+              }}
+              className="px-4 py-2 border border-orange-200 text-orange-600 font-bold rounded-xl text-[11px] uppercase tracking-wider hover:bg-orange-50 transition-colors"
+            >
+              Simulasi Tes Push
+            </button>
+          </div>
+        </div>
 
         {/* Change Password Section */}
         <div className="pt-6 border-t border-gray-200">

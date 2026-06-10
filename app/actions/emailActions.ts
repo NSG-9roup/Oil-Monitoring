@@ -45,6 +45,22 @@ export async function sendEmail({
 
     const data = await res.json()
     console.log('[Resend Email] Email sent successfully:', data)
+
+    try {
+      const supabaseService = createServiceClient()
+      await supabaseService.from('oil_email_logs').insert([
+        {
+          resend_id: data.id,
+          recipient_email: Array.isArray(to) ? to.join(', ') : to,
+          subject,
+          status: 'sent',
+          metadata: data
+        }
+      ])
+    } catch (dbErr) {
+      console.warn('[Resend Email] Failed to write initial log:', dbErr)
+    }
+
     return { success: true, data }
   } catch (err) {
     console.error('[Resend Email] Failed to send email:', err)

@@ -78,6 +78,48 @@ export function LabReportsSection({
   getRecommendations,
 }: LabReportsSectionProps) {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'critical' | 'warning' | 'normal'>('all')
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'viscosity_high' | 'water_high' | 'tan_high'>('newest')
+
+  const filteredReports = reports.filter((report) => {
+    const matchesSearch =
+      (report.product?.product_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (report.notes || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      new Date(report.test_date)
+        .toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+
+    const status = getStatus(
+      report.viscosity_40c || 0,
+      report.water_content || 0,
+      report.tan_value || 0,
+      report.product
+    )
+    const matchesStatus = statusFilter === 'all' || status.level === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
+
+  const sortedReports = [...filteredReports].sort((a, b) => {
+    if (sortBy === 'newest') {
+      return new Date(b.test_date).getTime() - new Date(a.test_date).getTime()
+    }
+    if (sortBy === 'oldest') {
+      return new Date(a.test_date).getTime() - new Date(b.test_date).getTime()
+    }
+    if (sortBy === 'viscosity_high') {
+      return (b.viscosity_40c || 0) - (a.viscosity_40c || 0)
+    }
+    if (sortBy === 'water_high') {
+      return (b.water_content || 0) - (a.water_content || 0)
+    }
+    if (sortBy === 'tan_high') {
+      return (b.tan_value || 0) - (a.tan_value || 0)
+    }
+    return 0
+  })
 
   return (
     <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
@@ -105,9 +147,70 @@ export function LabReportsSection({
         </div>
       </div>
 
+      {/* Search and Filters Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+        {/* Search */}
+        <div className="relative">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={language === 'id' ? 'Cari nama oli atau catatan...' : 'Search product or notes...'}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl text-xs font-semibold text-slate-800 transition-all outline-none"
+          />
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Status Filter */}
+        <div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'critical' | 'warning' | 'normal')}
+            className="w-full px-3 py-2.5 bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl text-xs font-semibold text-slate-850 transition-all outline-none cursor-pointer"
+          >
+            <option value="all">{language === 'id' ? 'Semua Status' : 'All Statuses'}</option>
+            <option value="normal">{language === 'id' ? 'Normal' : 'Normal'}</option>
+            <option value="warning">{language === 'id' ? 'Warning' : 'Warning'}</option>
+            <option value="critical">{language === 'id' ? 'Critical' : 'Critical'}</option>
+          </select>
+        </div>
+
+        {/* Sorting */}
+        <div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'viscosity_high' | 'water_high' | 'tan_high')}
+            className="w-full px-3 py-2.5 bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl text-xs font-semibold text-slate-850 transition-all outline-none cursor-pointer"
+          >
+            <option value="newest">{language === 'id' ? 'Terbaru' : 'Newest'}</option>
+            <option value="oldest">{language === 'id' ? 'Terlama' : 'Oldest'}</option>
+            <option value="viscosity_high">{language === 'id' ? 'Viskositas Tertinggi' : 'Highest Viscosity'}</option>
+            <option value="water_high">{language === 'id' ? 'Kandungan Air Tertinggi' : 'Highest Water Content'}</option>
+            <option value="tan_high">{language === 'id' ? 'TAN Tertinggi' : 'Highest TAN'}</option>
+          </select>
+        </div>
+      </div>
+
       {reports.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p>{emptyLabel}</p>
+        </div>
+      ) : sortedReports.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <svg className="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <p className="text-sm font-bold">{language === 'id' ? 'Tidak ada laporan yang cocok dengan filter Anda' : 'No reports match your filters'}</p>
+          <button
+            onClick={() => { setSearchTerm(''); setStatusFilter('all'); setSortBy('newest'); }}
+            className="text-xs text-orange-500 font-bold mt-2 hover:underline animate-pulse"
+          >
+            {language === 'id' ? 'Reset Filter' : 'Reset Filters'}
+          </button>
         </div>
       ) : (
         <>
@@ -127,7 +230,7 @@ export function LabReportsSection({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {reports.map((report) => {
+                  {sortedReports.map((report) => {
                     const status = getStatus(
                       report.viscosity_40c || 0,
                       report.water_content || 0,
@@ -188,7 +291,7 @@ export function LabReportsSection({
           </div>
         ) : (
         <div className="space-y-6">
-          {reports.map((report, index) => {
+          {sortedReports.map((report, index) => {
             const previousReport = index > 0 ? reports[index - 1] : null
             const status = getStatus(
               report.viscosity_40c || 0,

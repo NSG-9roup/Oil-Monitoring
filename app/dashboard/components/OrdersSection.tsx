@@ -4,6 +4,15 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import { toast } from 'react-hot-toast'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
 
 interface Product {
   id: string
@@ -75,6 +84,50 @@ export default function OrdersSection({
   const supabase = createClient()
   const [orders, setOrders] = useState(initialOrders)
   const [complaints, setComplaints] = useState(initialComplaints)
+
+  // Process orders data for monthly analytics
+  const getMonthlyAnalytics = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+    const currentMonth = new Date().getMonth()
+    const currentYear = new Date().getFullYear()
+
+    interface AnalyticsItem {
+      monthIndex: number
+      year: number
+      name: string
+      total: number
+    }
+    const last6Months: AnalyticsItem[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(currentYear, currentMonth - i, 1)
+      const m = d.getMonth()
+      const y = d.getFullYear()
+      last6Months.push({
+        monthIndex: m,
+        year: y,
+        name: `${months[m]} ${y}`,
+        total: 0
+      })
+    }
+
+    orders.forEach(order => {
+      const orderDate = new Date(order.created_at)
+      const m = orderDate.getMonth()
+      const y = orderDate.getFullYear()
+
+      const match = last6Months.find(item => item.monthIndex === m && item.year === y)
+      if (match) {
+        match.total += order.quantity
+      }
+    })
+
+    return last6Months.map(item => ({
+      name: item.name,
+      'Volume (Unit)': item.total
+    }))
+  }
+
+  const chartData = getMonthlyAnalytics()
 
   // Modals
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
@@ -149,6 +202,38 @@ export default function OrdersSection({
 
   return (
     <div className="space-y-8">
+      {/* Analytics Chart */}
+      {orders.length > 0 && (
+        <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
+          <SectionHeader
+            title={language === 'id' ? 'Analisis Kuantitas Penawaran' : 'Quotation Quantity Analytics'}
+            description={language === 'id' ? 'Akumulasi kuantitas produk oli yang diminta dalam 6 bulan terakhir' : 'Accumulated quantity of oil products requested over the last 6 months'}
+            titleClassName="text-2xl lg:text-3xl"
+          />
+          <div className="h-64 w-full mt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#dc2626" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '11px', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#fb923c' }}
+                  cursor={{ fill: '#f8fafc' }}
+                />
+                <Bar dataKey="Volume (Unit)" fill="url(#colorVolume)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       {/* Orders Section */}
       <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">

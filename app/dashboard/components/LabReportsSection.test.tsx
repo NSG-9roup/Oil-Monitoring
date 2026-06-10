@@ -70,7 +70,7 @@ describe('LabReportsSection', () => {
       />
     )
 
-    expect(getStatus).toHaveBeenCalledTimes(1)
+    expect(getStatus).toHaveBeenCalledTimes(2)
     expect(getTrend).toHaveBeenCalledTimes(4)
     expect(getRecommendations).toHaveBeenCalledTimes(1)
 

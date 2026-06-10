@@ -402,4 +402,36 @@ export async function createAuditLog(
   }
 }
 
+/**
+ * Fetch all email logs for the admin panel.
+ */
+export async function getEmailLogs() {
+  const supabase = await createClient()
+  const { data: { session }, error: authError } = await supabase.auth.getSession()
+  const user = session?.user
+  
+  if (authError || !user) {
+    throw new Error('Unauthorized: Please log in')
+  }
+  
+  const { data: profile } = await supabase
+    .from('oil_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+    
+  if (!profile || profile.role !== 'admin') {
+    throw new Error('Forbidden: Admin access required')
+  }
+
+  const supabaseService = createServiceClient()
+  const { data, error } = await supabaseService
+    .from('oil_email_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
 
