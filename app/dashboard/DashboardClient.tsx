@@ -662,7 +662,7 @@ export default function DashboardClient({
           .select(`
             *,
             machine:oil_machines(machine_name, location),
-            assigned_to:oil_profiles(full_name)
+            assigned_to:oil_profiles!oil_lab_requests_assigned_to_profile_id_fkey(full_name)
           `)
           .eq('customer_id', profile.customer_id)
           .order('created_at', { ascending: false })
