@@ -102,7 +102,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-grid-pattern relative overflow-hidden px-4">
       {/* Glassmorphic Loader Overlay */}
       {loading && (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/75 backdrop-blur-xl animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/75 backdrop-blur-xl animate-pop-micro">
           <div className="flex flex-col items-center gap-6 max-w-sm text-center px-6">
             <OilDropLoader className="text-orange-500 scale-125" label="" />
             <div className="space-y-2">
@@ -119,7 +119,7 @@ export default function LoginPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-red-500/10 to-amber-500/10 filter blur-[120px] animate-blob animation-delay-2000"></div>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] w-full max-w-md relative z-10 border border-white/50 animate-in fade-in zoom-in-95 duration-500">
+      <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] w-full max-w-md relative z-10 border border-white/50 animate-pop-micro">
         <div className="text-center mb-8">
           {/* Brand Logo Header */}
           <div className="flex justify-center items-center mb-6 select-none">
@@ -153,7 +153,7 @@ export default function LoginPage() {
 
         {!isForgotMode ? (
           /* ================= LOGIN MODE ================= */
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5 animate-pop-micro">
             {/* Email Input */}
             <div>
               <label htmlFor="email" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
@@ -243,7 +243,7 @@ export default function LoginPage() {
 
             {/* Error Message rendering */}
             {error && (
-              <div className="bg-red-50/50 border border-red-200/50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="bg-red-50/50 border border-red-200/50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-pop-micro">
                 <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -271,7 +271,7 @@ export default function LoginPage() {
           </form>
         ) : (
           /* ================= FORGOT PASSWORD MODE ================= */
-          <form onSubmit={handleForgotPassword} className="space-y-5 animate-in fade-in duration-300">
+          <form onSubmit={handleForgotPassword} className="space-y-5 animate-pop-micro">
             <div>
               <p className="text-xs font-medium text-slate-500 leading-relaxed mb-4">
                 Masukkan alamat email akun Anda. Kami akan mengirimkan tautan pemulihan untuk mengatur ulang kata sandi Anda.
@@ -300,7 +300,7 @@ export default function LoginPage() {
 
             {/* Error Message rendering */}
             {error && (
-              <div className="bg-red-50/50 border border-red-200/50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-in fade-in duration-300">
+              <div className="bg-red-50/50 border border-red-200/50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-pop-micro">
                 <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -310,7 +310,7 @@ export default function LoginPage() {
 
             {/* Success Message rendering */}
             {successMsg && (
-              <div className="bg-emerald-50/60 border border-emerald-200/50 text-emerald-700 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-in fade-in duration-300">
+              <div className="bg-emerald-50/60 border border-emerald-200/50 text-emerald-700 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-pop-micro">
                 <svg className="w-5 h-5 shrink-0 text-emerald-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>

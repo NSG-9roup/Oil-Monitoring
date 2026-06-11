@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-red-500/10 to-amber-500/10 filter blur-[120px] animate-blob animation-delay-2000"></div>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] w-full max-w-md relative z-10 border border-white/50 animate-in fade-in zoom-in-95 duration-500">
+      <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] w-full max-w-md relative z-10 border border-white/50 animate-pop-micro">
         <div className="text-center mb-8">
           {/* Brand Logo Header */}
           <div className="flex justify-center items-center mb-6 select-none">
@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
           </div>
         ) : success ? (
           /* ================= SUCCESS STATE ================= */
-          <div className="space-y-6 text-center animate-in fade-in duration-300">
+          <div className="space-y-6 text-center animate-pop-micro">
             <div className="h-16 w-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -126,7 +126,7 @@ export default function ResetPasswordPage() {
           </div>
         ) : (
           /* ================= RESET FORM MODE ================= */
-          <form onSubmit={handleResetPassword} className="space-y-5">
+          <form onSubmit={handleResetPassword} className="space-y-5 animate-pop-micro">
             {/* New Password Input */}
             <div>
               <label htmlFor="newPassword" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
@@ -213,7 +213,7 @@ export default function ResetPasswordPage() {
 
             {/* Error Message rendering */}
             {error && (
-              <div className="bg-red-50/50 border border-red-200/50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-in fade-in duration-300">
+              <div className="bg-red-50/50 border border-red-200/50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold flex items-start gap-2.5 animate-pop-micro">
                 <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>

@@ -43,9 +43,18 @@ interface SalesClientProps {
   }
   initialLabRequests: LabRequest[]
   initialOrders: SalesOrder[]
+  initialCustomers?: { id: string; company_name: string }[]
+  initialProducts?: { id: string; product_name: string; product_type: string }[]
 }
 
-export default function SalesClient({ user, profile, initialLabRequests, initialOrders = [] }: SalesClientProps) {
+export default function SalesClient({
+  user,
+  profile,
+  initialLabRequests,
+  initialOrders = [],
+  initialCustomers = [],
+  initialProducts = []
+}: SalesClientProps) {
   const [requests, setRequests] = useState<LabRequest[]>(initialLabRequests)
   const [orders, setOrders] = useState(initialOrders)
   const [activeTab, setActiveTab] = useState<'queue' | 'transit' | 'orders'>('queue')
@@ -71,6 +80,22 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   // State for Uploading Photo progress indicator
   const [uploadingId, setUploadingId] = useState<string | null>(null)
 
+  // Autocomplete suggestions states & refs
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [productSearch, setProductSearch] = useState('')
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
+  const [showProductDropdown, setShowProductDropdown] = useState(false)
+  
+  const customerDropdownRef = useRef<HTMLDivElement>(null)
+  const productDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Offline queue status indicator states
+  const [offlineQueueCount, setOfflineQueueCount] = useState(0)
+  const [offlineRequestIds, setOfflineRequestIds] = useState<string[]>([])
+
+  // Lightbox Image Viewer state
+  const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeUploadRequestId, setActiveUploadRequestId] = useState<string | null>(null)
 
@@ -78,6 +103,49 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const router = useRouter()
   useTabAutoLogout()
   useEffect(() => { signOutIfTabWasClosed() }, [])
+
+  // Helper to read and cache offline queue state
+  const updateQueueCount = () => {
+    if (typeof window !== 'undefined') {
+      const queueJson = localStorage.getItem('sales_offline_queue')
+      if (queueJson) {
+        try {
+          const queue = JSON.parse(queueJson) as OfflineAction[]
+          if (Array.isArray(queue)) {
+            setOfflineQueueCount(queue.length)
+            setOfflineRequestIds(queue.map(x => x.requestId))
+            return
+          }
+        } catch {
+          // ignore
+        }
+      }
+      setOfflineQueueCount(0)
+      setOfflineRequestIds([])
+    }
+  }
+
+  // Handle click outside autocomplete dropdowns to dismiss
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (customerDropdownRef.current && !customerDropdownRef.current.contains(event.target as Node)) {
+        setShowCustomerDropdown(false)
+      }
+      if (productDropdownRef.current && !productDropdownRef.current.contains(event.target as Node)) {
+        setShowProductDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Update counter on mount and via storage/custom events
+  useEffect(() => {
+    updateQueueCount()
+    const handleStorageChange = () => updateQueueCount()
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -157,9 +225,11 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         setSyncingOffline(false)
         if (remainingQueue.length > 0) {
           localStorage.setItem('sales_offline_queue', JSON.stringify(remainingQueue))
+          updateQueueCount()
           toast.error('Beberapa data offline gagal disinkronkan. Akan dicoba lagi nanti.', { id: toastId })
         } else {
           localStorage.removeItem('sales_offline_queue')
+          updateQueueCount()
           toast.success('Semua data offline berhasil disinkronkan!', { id: toastId })
           router.refresh()
         }
@@ -220,6 +290,22 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
     setOrders(initialOrders)
   }, [initialOrders])
 
+  // Filter customers based on search input
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch) return initialCustomers
+    return initialCustomers.filter(c => 
+      c.company_name.toLowerCase().includes(customerSearch.toLowerCase())
+    )
+  }, [customerSearch, initialCustomers])
+
+  // Filter products based on search input
+  const filteredProducts = useMemo(() => {
+    if (!productSearch) return initialProducts
+    return initialProducts.filter(p => 
+      p.product_name.toLowerCase().includes(productSearch.toLowerCase())
+    )
+  }, [productSearch, initialProducts])
+
   /*
   useEffect(() => {
     setComplaints(initialComplaints)
@@ -260,6 +346,8 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         return next
       })
       setProposalForm({ customerName: '', companyPT: '', productName: '', quantity: '', customerPhone: '', customerEmail: '', notes: '' })
+      setCustomerSearch('')
+      setProductSearch('')
     } catch (err) {
       toast.error(`Gagal mengirim: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
@@ -295,6 +383,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
           localStorage.setItem('sales_offline_queue', JSON.stringify(queue))
         }
         setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'sampling' } : r))
+        updateQueueCount()
         toast.success('Offline: Penjemputan sampel disimpan lokal. Akan disinkronkan saat online.')
       } catch (err) {
         console.error('Offline queue write failed:', err)
@@ -330,6 +419,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         }
         localStorage.setItem('sales_offline_queue', JSON.stringify(filteredQueue))
         setRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'pending' } : r))
+        updateQueueCount()
         toast.success('Offline: Pembatalan sampel disimpan lokal.')
       } catch (err) {
         console.error('Offline queue write failed:', err)
@@ -444,6 +534,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
               fileType: compressedFile.type
             })
             localStorage.setItem('sales_offline_queue', JSON.stringify(queue))
+            updateQueueCount()
 
             const localUrl = URL.createObjectURL(compressedFile)
             setRequests(prev => prev.map(r => r.id === activeUploadRequestId ? { ...r, sample_photo_path: localUrl } : r))
@@ -603,7 +694,13 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       {!isOnline && (
         <div className="bg-red-500 text-white text-[11px] font-black uppercase tracking-wider py-2.5 px-4 text-center select-none animate-pulse flex items-center justify-center gap-1.5 z-20">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-3.536 5 5 0 011.414-3.536m0 0l2.829 2.829m-2.829 4.243L3 21M5.636 5.636a9 9 0 0112.728 0m0 0l-2.829-2.829m-1.414-1.414a1 1 0 112 0 1 1 0 01-2 0z" /></svg>
-          <span>Offline Mode: Perubahan disimpan lokal & disinkronkan saat terhubung internet</span>
+          <span>Offline Mode: {offlineQueueCount > 0 ? `${offlineQueueCount} perubahan tersimpan lokal` : 'Perubahan disimpan lokal'} & akan disinkronkan saat terhubung internet</span>
+        </div>
+      )}
+      {isOnline && offlineQueueCount > 0 && !syncingOffline && (
+        <div className="bg-orange-500 text-white text-[11px] font-black uppercase tracking-wider py-2.5 px-4 text-center select-none flex items-center justify-center gap-1.5 z-20">
+          <svg className="w-4 h-4 animate-spin shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" /></svg>
+          <span>Menunggu sinkronisasi: {offlineQueueCount} perubahan tertunda...</span>
         </div>
       )}
       {syncingOffline && (
@@ -615,39 +712,50 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
 
       {/* Segmen Kontrol Utama (Tabs) */}
       <div className="bg-white border-b border-slate-100 p-2 sticky top-[73px] z-20 shadow-sm">
-        <div className="max-w-md mx-auto grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl">
+        <div className="max-w-md mx-auto relative bg-slate-100 p-1 rounded-2xl flex select-none">
+          {/* Sliding active background indicator */}
+          <div 
+            className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
+            style={{
+              width: 'calc(33.333% - 5.33px)',
+              left: activeTab === 'queue' ? '4px' : activeTab === 'transit' ? 'calc(33.333% + 1.33px)' : 'calc(66.666% - 1.33px)'
+            }}
+          />
+          
           <button
             onClick={() => setActiveTab('queue')}
-            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
               activeTab === 'queue'
-                ? 'bg-white text-slate-950 shadow-sm'
+                ? 'text-slate-950'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <span>Antrean</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black transition-all duration-300 ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
           </button>
+          
           <button
             onClick={() => setActiveTab('transit')}
-            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
               activeTab === 'transit'
-                ? 'bg-white text-slate-950 shadow-sm'
+                ? 'text-slate-950'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <span>Transit</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'transit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{transitCount}</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black transition-all duration-300 ${activeTab === 'transit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{transitCount}</span>
           </button>
+          
           <button
             onClick={() => setActiveTab('orders')}
-            className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
               activeTab === 'orders'
-                ? 'bg-white text-slate-950 shadow-sm'
+                ? 'text-slate-950'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <span>Pesanan</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black transition-all duration-300 ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
           </button>
         </div>
       </div>
@@ -747,6 +855,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                 : null
 
               const isAssignedToMe = req.assigned_to_profile_id === profile.id
+              const isOfflinePending = offlineRequestIds.includes(req.id)
 
               return (
                 <div
@@ -766,12 +875,18 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                         ) : (
                           <div className="w-6 h-6 bg-slate-100 rounded flex items-center justify-center text-[10px] font-black text-slate-400">C</div>
                         )}
-                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider truncate max-w-[20ch]">
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider truncate max-w-[18ch]">
                           {req.customer?.company_name}
                         </span>
                       </div>
                       
                       <div className="flex items-center gap-1.5">
+                        {isOfflinePending && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 text-[8px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+                            ⏳ Pending Sync
+                          </span>
+                        )}
                         {isAssignedToMe && (
                           <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[8px] font-black rounded-lg uppercase tracking-wider">TUGAS SAYA</span>
                         )}
@@ -828,14 +943,31 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
 
                     {/* Thumbnail Bukti Foto Botol Sampel */}
                     {hasPhoto && samplePhotoUrl && (
-                      <div className="mt-4 p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3">
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0 border border-slate-100">
-                          <Image src={samplePhotoUrl} alt="Bukti Foto" fill className="object-cover" unoptimized />
+                      <div className="mt-4 p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between gap-3">
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer group/photo"
+                          onClick={() => setActiveLightboxImage(samplePhotoUrl)}
+                        >
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0 border border-slate-100 ring-2 ring-transparent group-hover/photo:ring-orange-500/50 transition-all">
+                            <Image src={samplePhotoUrl} alt="Bukti Foto" fill className="object-cover" unoptimized />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 flex items-center justify-center transition-opacity">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">FOTO BUKTI SAMPEL</p>
+                            <p className="text-[11px] font-bold text-slate-700 truncate group-hover/photo:text-orange-600 transition-colors">Lihat Foto Lengkap 🔍</p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">FOTO BUKTI SAMPEL</p>
-                          <p className="text-[11px] font-bold text-slate-700 truncate">Terunggah di Pabrik</p>
-                        </div>
+
+                        {activeTab === 'transit' && (
+                          <button
+                            onClick={() => handlePhotoUploadTrigger(req.id)}
+                            className="text-[10px] font-black uppercase text-slate-400 hover:text-orange-500 px-3 py-1.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow transition-all"
+                          >
+                            Ganti
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -846,31 +978,39 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                   <div className="flex border-t border-slate-100">
                     {/* Aksi khusus Tab Antrean */}
                     {activeTab === 'queue' && (
-                      <>
-                        {isNewMachine && (
+                      <div className="w-full flex flex-col">
+                        {isNewMachine ? (
                           <button
                             onClick={() => handleVerifyMachine(req.id, req)}
                             disabled={loadingId === req.id}
-                            className="flex-1 py-3 px-4 text-[10px] font-black uppercase tracking-widest text-amber-700 bg-amber-50/50 hover:bg-amber-50 border-r border-slate-100 transition-colors"
+                            className="w-full py-4 text-xs font-black uppercase tracking-wider text-amber-800 bg-amber-50 hover:bg-amber-100/80 transition-colors flex items-center justify-center gap-2 border-t border-slate-100"
                           >
-                            Setujui Mesin
+                            {loadingId === req.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-800/20 border-t-amber-800" />
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Setujui & Verifikasi Mesin Baru
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleCollect(req.id)}
+                            disabled={loadingId === req.id}
+                            className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-[0.15em] text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                          >
+                            {loadingId === req.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                                Ambil Sampel Oli
+                              </>
+                            )}
                           </button>
                         )}
-                        <button
-                          onClick={() => handleCollect(req.id)}
-                          disabled={loadingId === req.id}
-                          className="flex-[2] py-4 bg-slate-900 text-white font-black uppercase tracking-[0.15em] text-[10px] hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
-                        >
-                          {loadingId === req.id ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                          ) : (
-                            <>
-                              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                              Ambil Sampel
-                            </>
-                          )}
-                        </button>
-                      </>
+                      </div>
                     )}
 
                     {/* Aksi khusus Tab Transit */}
@@ -880,14 +1020,14 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                         <button
                           onClick={() => handlePhotoUploadTrigger(req.id)}
                           disabled={uploadingId === req.id}
-                          className="flex-1 py-4 bg-white text-slate-800 border-r border-slate-100 font-black uppercase tracking-wider text-[10px] hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                          className="flex-1 py-4 bg-orange-50 text-orange-700 border-r border-orange-100 hover:bg-orange-100/60 font-black uppercase tracking-wider text-xs transition-all flex items-center justify-center gap-2"
                         >
                           {uploadingId === req.id ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900/20 border-t-slate-950" />
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-700/20 border-t-orange-700" />
                           ) : (
                             <>
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                              {hasPhoto ? 'Ganti Foto' : 'Ambil Foto Botol'}
+                              {hasPhoto ? 'Ubah Foto Bukti' : 'Ambil Foto Botol'}
                             </>
                           )}
                         </button>
@@ -896,7 +1036,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                         <button
                           onClick={() => handleUndoCollect(req.id)}
                           disabled={loadingId === req.id}
-                          className="flex-1 py-4 bg-red-50 text-red-700 font-black uppercase tracking-wider text-[10px] hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                          className="flex-1 py-4 bg-red-50 text-red-700 font-black uppercase tracking-wider text-xs hover:bg-red-100/70 transition-all flex items-center justify-center gap-2"
                         >
                           {loadingId === req.id ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-700/20 border-t-red-700" />
@@ -1088,28 +1228,75 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                 </div>
 
                 {/* Nama PT */}
-                <div>
+                <div className="relative" ref={customerDropdownRef}>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Perusahaan (PT) <span className="text-red-500">*</span></label>
                   <input
                     type="text"
-                    placeholder="PT / CV / UD nama perusahaan"
-                    value={proposalForm.companyPT}
-                    onChange={e => setProposalForm(p => ({ ...p, companyPT: e.target.value }))}
+                    placeholder="Ketik untuk mencari perusahaan..."
+                    value={customerSearch || proposalForm.companyPT}
+                    onChange={e => {
+                      setCustomerSearch(e.target.value)
+                      setProposalForm(p => ({ ...p, companyPT: e.target.value }))
+                      setShowCustomerDropdown(true)
+                    }}
+                    onFocus={() => setShowCustomerDropdown(true)}
                     className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
                   />
+                  {showCustomerDropdown && filteredCustomers.length > 0 && (
+                    <div className="absolute z-40 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl animate-pop-micro divide-y divide-slate-50">
+                      {filteredCustomers.map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setProposalForm(p => ({ ...p, companyPT: c.company_name }))
+                            setCustomerSearch(c.company_name)
+                            setShowCustomerDropdown(false)
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-orange-50 text-xs font-bold text-slate-700 hover:text-orange-600 transition-colors"
+                        >
+                          {c.company_name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Produk + Jumlah inline */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="relative" ref={productDropdownRef}>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Produk <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      placeholder="Contoh: Mobil DTE 26"
-                      value={proposalForm.productName}
-                      onChange={e => setProposalForm(p => ({ ...p, productName: e.target.value }))}
+                      placeholder="Ketik nama oli..."
+                      value={productSearch || proposalForm.productName}
+                      onChange={e => {
+                        setProductSearch(e.target.value)
+                        setProposalForm(p => ({ ...p, productName: e.target.value }))
+                        setShowProductDropdown(true)
+                      }}
+                      onFocus={() => setShowProductDropdown(true)}
                       className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-3 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
                     />
+                    {showProductDropdown && filteredProducts.length > 0 && (
+                      <div className="absolute z-40 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl animate-pop-micro divide-y divide-slate-50">
+                        {filteredProducts.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setProposalForm(form => ({ ...form, productName: p.product_name }))
+                              setProductSearch(p.product_name)
+                              setShowProductDropdown(false)
+                            }}
+                            className="w-full text-left px-3 py-2.5 hover:bg-orange-50 text-xs font-bold text-slate-700 hover:text-orange-600 transition-colors"
+                          >
+                            <span className="block font-bold">{p.product_name}</span>
+                            <span className="block text-[9px] text-slate-400 uppercase font-medium mt-0.5">{p.product_type}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jumlah <span className="text-red-500">*</span></label>
@@ -1212,6 +1399,36 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Authenticated Field Representative</p>
         <p className="text-xs font-bold text-slate-800 mt-1">© 2026 PT Nabel Sakha Gemilang</p>
       </footer>
+
+      {/* Lightbox Modal */}
+      {activeLightboxImage && (
+        <div 
+          className="fixed inset-0 z-[250] flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-fast"
+          onClick={() => setActiveLightboxImage(null)}
+        >
+          <button 
+            onClick={() => setActiveLightboxImage(null)}
+            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95"
+            title="Tutup"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          
+          <div 
+            className="relative max-w-lg w-full max-h-[80vh] aspect-square sm:aspect-auto rounded-3xl overflow-hidden shadow-2xl border border-white/10 animate-pop-micro bg-slate-950"
+            onClick={e => e.stopPropagation()}
+          >
+            <Image 
+              src={activeLightboxImage} 
+              alt="Foto Bukti Sampel" 
+              fill 
+              className="object-contain" 
+              unoptimized 
+            />
+          </div>
+          <p className="text-white/60 text-xs font-semibold mt-4 tracking-wide text-center">Ketuk di mana saja untuk menutup</p>
+        </div>
+      )}
     </div>
   )
 }

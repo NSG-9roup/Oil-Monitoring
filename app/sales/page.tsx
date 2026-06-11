@@ -72,12 +72,24 @@ export default async function SalesPage() {
     `)
     .order('created_at', { ascending: false })
 
+  const { data: initialCustomers } = await adminSupabase
+    .from('oil_customers')
+    .select('id, company_name')
+    .order('company_name', { ascending: true })
+
+  const { data: initialProducts } = await adminSupabase
+    .from('oil_products')
+    .select('id, product_name, product_type')
+    .order('product_name', { ascending: true })
+
   return (
     <SalesClient 
       user={{ id: user.id, email: user.email }}
       profile={profile}
       initialLabRequests={(labRequests as LabRequest[]) || []}
       initialOrders={initialOrders || []}
+      initialCustomers={initialCustomers || []}
+      initialProducts={initialProducts || []}
     />
   )
 }
