@@ -78,6 +78,19 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
   const router = useRouter()
   useTabAutoLogout()
   useEffect(() => { signOutIfTabWasClosed() }, [])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sales_proposal_history')
+      if (stored) {
+        try {
+          setProposalHistory(JSON.parse(stored))
+        } catch (e) {
+          console.error('Failed to parse proposal history:', e)
+        }
+      }
+    }
+  }, [])
   const [isOnline, setIsOnline] = useState(true)
   const [syncingOffline, setSyncingOffline] = useState(false)
 
@@ -238,10 +251,14 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       })
       if (!result.success) throw new Error(result.error)
       toast.success('✅ Penawaran berhasil dikirim ke Purchasing!')
-      setProposalHistory(prev => [
-        { id: Date.now().toString(), companyPT: proposalForm.companyPT, productName: proposalForm.productName, quantity: Number(proposalForm.quantity), sentAt: new Date().toISOString() },
-        ...prev
-      ])
+      setProposalHistory(prev => {
+        const next = [
+          { id: Date.now().toString(), companyPT: proposalForm.companyPT, productName: proposalForm.productName, quantity: Number(proposalForm.quantity), sentAt: new Date().toISOString() },
+          ...prev
+        ]
+        localStorage.setItem('sales_proposal_history', JSON.stringify(next))
+        return next
+      })
       setProposalForm({ customerName: '', companyPT: '', productName: '', quantity: '', customerPhone: '', customerEmail: '', notes: '' })
     } catch (err) {
       toast.error(`Gagal mengirim: ${err instanceof Error ? err.message : 'Unknown error'}`)

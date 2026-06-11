@@ -71,80 +71,6 @@ async function checkAuthRedirect(path) {
   }
 }
 
-async function checkApiUnauthorized() {
-  try {
-    const res = await fetchWithTimeout(`${baseUrl}/api/customer/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', userId: '00000000-0000-0000-0000-000000000000' }),
-      redirect: 'manual',
-    })
-
-    pushResult(
-      'API unauthorized guard',
-      res.status === 401,
-      `status=${res.status}, expected 401`
-    )
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    pushResult('API unauthorized guard', false, `request failed: ${message}`)
-  }
-}
-
-async function checkApiPayloadLimit() {
-  try {
-    const hugeText = 'A'.repeat(220_000)
-    const res = await fetchWithTimeout(`${baseUrl}/api/customer/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'create',
-        email: 'oversize-test@example.com',
-        password: 'password123',
-        full_name: hugeText,
-        role: 'customer',
-      }),
-      redirect: 'manual',
-    })
-
-    pushResult(
-      'API payload size guard',
-      res.status === 413 || res.status === 401,
-      `status=${res.status}, expected 413 or 401`
-    )
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    pushResult('API payload size guard', false, `request failed: ${message}`)
-  }
-}
-
-async function checkApiRateLimit() {
-  const statuses = []
-
-  try {
-    for (let i = 0; i < 35; i += 1) {
-      const res = await fetchWithTimeout(`${baseUrl}/api/customer/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', userId: '00000000-0000-0000-0000-000000000000' }),
-        redirect: 'manual',
-      })
-      statuses.push(res.status)
-    }
-
-    const has401 = statuses.includes(401)
-    const has429 = statuses.includes(429)
-    pushResult(
-      'API rate limit guard',
-      has401 && has429,
-      `statuses observed: ${JSON.stringify(statuses.slice(0, 10))}... (expect mix of 401 then 429)`
-    )
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    pushResult('API rate limit guard', false, `request failed: ${message}`)
-  }
-}
-
 function printSummary() {
   const passCount = results.filter((r) => r.pass).length
   const failCount = results.length - passCount
@@ -177,14 +103,9 @@ async function main() {
   }
 
   await checkRouteStatus('/login', [200])
-  await checkRouteStatus('/api/customer/users', [405, 401, 429])
 
   await checkAuthRedirect('/dashboard')
   await checkAuthRedirect('/admin')
-
-  await checkApiUnauthorized()
-  await checkApiPayloadLimit()
-  await checkApiRateLimit()
 
   printSummary()
 }

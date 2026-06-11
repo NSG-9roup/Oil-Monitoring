@@ -160,22 +160,6 @@ const dashboardCopy = {
     actionCenter: 'Tindak Lanjuti di Action Center',
     exportFleetPdf: 'Ekspor Laporan Armada (PDF)',
     exportFleetDesc: 'Unduh ringkasan eksekutif dan daftar prioritas mesin dalam format laporan resmi.',
-    teamManagementTitle: 'Manajemen Pengguna Perusahaan',
-    teamManagementDesc: 'Kelola anggota tim perusahaan agar mereka dapat mengakses dashboard dan data pemantauan secara bersamaan.',
-    teamMembersTitle: 'Daftar Pengguna Perusahaan',
-    teamMembersEmpty: 'Belum ada pengguna lain yang terdaftar di perusahaan ini.',
-    teamRoleCustomer: 'Pengguna Pelanggan',
-    teamAddFormTitle: 'Tambah Pengguna Baru',
-    teamAddFormDesc: 'Pengguna baru akan otomatis terhubung dengan profil perusahaan akun ini.',
-    teamFullName: 'Nama Lengkap',
-    teamEmail: 'Email',
-    teamPhone: 'No. Telepon',
-    teamPassword: 'Kata Sandi',
-    teamPasswordHint: 'Minimal 8 karakter, gunakan kombinasi huruf besar, kecil, dan angka.',
-    teamCreateButton: 'Tambah Pengguna',
-    teamCreatingButton: 'Menambahkan...',
-    teamCreateSuccess: 'Pengguna perusahaan berhasil ditambahkan.',
-    teamCreateError: 'Gagal menambahkan pengguna perusahaan',
     requestLab: {
       openButton: 'Ajukan Uji Lab',
       title: 'Permintaan Uji Laboratorium',
@@ -344,22 +328,6 @@ const dashboardCopy = {
     actionCenter: 'Follow up in Action Center',
     exportFleetPdf: 'Export Fleet Report (PDF)',
     exportFleetDesc: 'Download executive summary and machine priority list in a professional report format.',
-    teamManagementTitle: 'Company User Management',
-    teamManagementDesc: 'Manage team members so they can collaborate on the dashboard and monitoring data.',
-    teamMembersTitle: 'Company Users',
-    teamMembersEmpty: 'No other users have been added to this company yet.',
-    teamRoleCustomer: 'Customer User',
-    teamAddFormTitle: 'Add New User',
-    teamAddFormDesc: 'The new user will be automatically linked to this company profile.',
-    teamFullName: 'Full Name',
-    teamEmail: 'Email',
-    teamPhone: 'Phone Number',
-    teamPassword: 'Password',
-    teamPasswordHint: 'At least 8 characters with a mix of uppercase, lowercase, and numbers.',
-    teamCreateButton: 'Add User',
-    teamCreatingButton: 'Adding...',
-    teamCreateSuccess: 'Company user added successfully.',
-    teamCreateError: 'Failed to add company user',
     requestLab: {
       openButton: 'Request Test Lab',
       title: 'Lab Test Request',
@@ -2511,17 +2479,12 @@ export default function DashboardClient({
                       <div className="space-y-4">
                         {activeRequests.map((req) => {
                       // Map existing statuses to timeline steps
-                      const steps = req.status === 'cancelled'
-                        ? [
-                            { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Permintaan uji lab diajukan' : 'Lab request was submitted' },
-                            { key: 'cancelled', label: language === 'id' ? 'Dibatalkan' : 'Cancelled', icon: '❌', desc: language === 'id' ? 'Permintaan uji lab ini dibatalkan' : 'This lab request was cancelled' },
-                          ]
-                        : [
-                            { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Tim sales akan segera menghubungi Anda' : 'Sales team will contact you soon' },
-                            { key: 'assigned', label: language === 'id' ? 'Sales Ditugaskan' : 'Sales Assigned', icon: '👤', desc: language === 'id' ? 'Sales sedang dalam perjalanan ke lokasi Anda' : 'Sales is heading to your location' },
-                            { key: 'sampling', label: language === 'id' ? 'Pengambilan Sampel' : 'Sample Collection', icon: '🧪', desc: language === 'id' ? 'Sampel sedang diambil dari mesin Anda' : 'Sample being collected from your machine' },
-                            { key: 'completed', label: language === 'id' ? 'Hasil Lab Selesai' : 'Lab Results Ready', icon: '✅', desc: language === 'id' ? 'Laporan hasil uji lab siap diunduh' : 'Lab test report is ready for download' },
-                          ]
+                      const steps = [
+                        { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Tim sales akan segera menghubungi Anda' : 'Sales team will contact you soon' },
+                        { key: 'assigned', label: language === 'id' ? 'Sales Ditugaskan' : 'Sales Assigned', icon: '👤', desc: language === 'id' ? 'Sales sedang dalam perjalanan ke lokasi Anda' : 'Sales is heading to your location' },
+                        { key: 'sampling', label: language === 'id' ? 'Pengambilan Sampel' : 'Sample Collection', icon: '🧪', desc: language === 'id' ? 'Sampel sedang diambil dari mesin Anda' : 'Sample being collected from your machine' },
+                        { key: 'completed', label: language === 'id' ? 'Hasil Lab Selesai' : 'Lab Results Ready', icon: '✅', desc: language === 'id' ? 'Laporan hasil uji lab siap diunduh' : 'Lab test report is ready for download' },
+                      ]
 
                       const currentStepIdx = steps.findIndex(s => s.key === req.status)
                       const statusStep = currentStepIdx >= 0 ? currentStepIdx : 0
@@ -2732,6 +2695,7 @@ export default function DashboardClient({
               />
             </div>
           </div>
+
         </div>
       </main>
 
