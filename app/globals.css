@@ -88,6 +88,24 @@ body {
     opacity: 0;
     animation: oil-ripple 1s ease-out infinite;
   }
+
+  .animate-fade-fast {
+    animation: fade-fast 120ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .animate-pop-micro {
+    animation: pop-micro 120ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes fade-fast {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pop-micro {
+  from { transform: scale(0.98); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes blob {

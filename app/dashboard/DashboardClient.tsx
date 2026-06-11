@@ -1937,9 +1937,9 @@ export default function DashboardClient({
         </div>
 
         {/* Tabbed Content Section */}
-        <div className="flex-1 w-full relative animate-in fade-in slide-in-from-bottom-2 duration-200 min-h-[600px] space-y-8">
+        <div className="flex-1 w-full relative min-h-[600px] space-y-8">
           {/* Trend Tab */}
-          <div className={`w-full ${activeTab === 'trend' ? 'block' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'trend' ? 'block animate-pop-micro' : 'hidden'}`}>
             <div key="trend" className="w-full">
               <TrendSection
                 language={language}
@@ -1962,7 +1962,7 @@ export default function DashboardClient({
           </div>
 
           {/* Analysis Tab */}
-          <div className={`w-full ${activeTab === 'analysis' ? 'block' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'analysis' ? 'block animate-pop-micro' : 'hidden'}`}>
             {(() => {
             const selectedMachineInsight = selectedMachine
               ? machineInsights.find((item) => item.machine.id === selectedMachine.id)
@@ -2395,7 +2395,7 @@ export default function DashboardClient({
         </div>
 
           {/* Lab Tab */}
-          <div className={`w-full ${activeTab === 'lab' ? 'block' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'lab' ? 'block animate-pop-micro' : 'hidden'}`}>
             <div key="lab" className="w-full">
               <LabReportsSection
                 title={copy.labReportsTitle}
@@ -2437,7 +2437,7 @@ export default function DashboardClient({
           </div>
 
           {/* Requests Tab */}
-          <div className={`w-full ${activeTab === 'requests' ? 'block' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'requests' ? 'block animate-pop-micro' : 'hidden'}`}>
             {(() => {
               const activeRequests = labRequests.filter((req) =>
                 ['pending', 'assigned', 'sampling'].includes(req.status)
@@ -2684,7 +2684,7 @@ export default function DashboardClient({
             })()}
           </div>
           {/* Orders Tab */}
-          <div className={`w-full ${activeTab === 'orders' ? 'block' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'orders' ? 'block animate-pop-micro' : 'hidden'}`}>
             <div key="orders" className="w-full">
               <OrdersSection
                 customerId={profile.customer_id || ''}
@@ -2737,8 +2737,8 @@ export default function DashboardClient({
 
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && currentPdfUrl && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setPdfViewerOpen(false)}>
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-in fade-in duration-300" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-fade-fast" onClick={() => setPdfViewerOpen(false)}>
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
             <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
@@ -2773,8 +2773,8 @@ export default function DashboardClient({
 
       {/* Request Lab Modal */}
       {isRequestModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110]" onClick={() => setIsRequestModalOpen(false)}>
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-fade-fast" onClick={() => setIsRequestModalOpen(false)}>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
             <div className="bg-white px-8 py-6 border-b border-slate-100 flex justify-between items-center text-slate-900 select-none">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">

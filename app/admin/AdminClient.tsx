@@ -1070,8 +1070,8 @@ export default function AdminClient({
       
       {/* Customer Add/Edit Modal */}
       {(modalOpen === 'add-customer' || modalOpen === 'edit-customer') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -1140,8 +1140,8 @@ export default function AdminClient({
 
       {/* Logo Upload Modal */}
       {selectedCustomerForLogo && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -1238,8 +1238,8 @@ export default function AdminClient({
 
       {/* Machine Add/Edit Modal */}
       {(modalOpen === 'add-machine' || modalOpen === 'edit-machine') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -1330,8 +1330,8 @@ export default function AdminClient({
 
       {/* Product Add/Edit Modal */}
       {(modalOpen === 'add-product' || modalOpen === 'edit-product') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -1497,8 +1497,8 @@ export default function AdminClient({
 
       {/* Lab Test Add/Edit Modal */}
       {(modalOpen === 'add-test' || modalOpen === 'edit-test') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden max-h-[90vh] overflow-y-auto animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -1732,8 +1732,8 @@ export default function AdminClient({
 
       {/* User Add/Edit Modal */}
       {(modalOpen === 'add-user' || modalOpen === 'edit-user') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -1859,8 +1859,8 @@ export default function AdminClient({
 
       {/* Import Customers CSV Modal */}
       {modalOpen === 'import-customers' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -2043,8 +2043,8 @@ export default function AdminClient({
 
       {/* Import Products CSV Modal */}
       {modalOpen === 'import-products' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -2237,8 +2237,8 @@ export default function AdminClient({
 
       {/* Quick Add Machine Modal */}
       {quickAddModal === 'machine' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -2326,8 +2326,8 @@ export default function AdminClient({
 
       {/* Quick Add Product Modal */}
       {quickAddModal === 'product' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
@@ -2490,8 +2490,8 @@ export default function AdminClient({
 
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && currentPdfUrl && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100]" onClick={() => setPdfViewerOpen(false)}>
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-in fade-in duration-300" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-fade-fast" onClick={() => setPdfViewerOpen(false)}>
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
             <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
