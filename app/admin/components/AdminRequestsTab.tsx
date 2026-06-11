@@ -236,8 +236,8 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
 
       {/* Modal Preview Foto Botol Sampel */}
       {previewPhoto && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4 select-none animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4 select-none animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
             <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Foto Bukti Sampel</h3>
@@ -279,8 +279,8 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
 
       {/* Confirmation Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4 select-none animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4 select-none animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-pop-micro">
             <div className="p-6 text-center space-y-4">
               <div className="h-12 w-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

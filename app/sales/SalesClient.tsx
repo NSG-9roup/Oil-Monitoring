@@ -588,7 +588,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
                 </button>
               </div>
             )}
-            <a href="/sales/profile" className="p-2.5 bg-slate-50 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-xl transition-all border border-slate-100 active:scale-95 animate-in fade-in zoom-in duration-300" title="Profil Saya">
+            <a href="/sales/profile" className="p-2.5 bg-slate-50 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-xl transition-all border border-slate-100 active:scale-95 animate-pop-micro" title="Profil Saya">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -719,7 +719,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
       {/* Main List */}
       <main className="flex-1 max-w-md mx-auto w-full p-4 space-y-4 z-10">
         {/* Requests List wrapper */}
-        <div className={`space-y-4 ${activeTab !== 'orders' ? 'block' : 'hidden'}`}>
+        <div className={`space-y-4 ${activeTab !== 'orders' ? 'block animate-pop-micro' : 'hidden'}`}>
           <div className="flex items-center justify-between px-1 mb-1">
           <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
             {activeTab === 'queue' ? 'Daftar Pengambilan Sampel' : 'Daftar Sampel Dalam Transit'}
@@ -973,7 +973,7 @@ export default function SalesClient({ user, profile, initialLabRequests, initial
         </div>
 
         {/* Orders Tab — Kirim Penawaran ke Purchasing */}
-        <div className={`space-y-5 ${activeTab === 'orders' ? 'block' : 'hidden'}`}>
+        <div className={`space-y-5 ${activeTab === 'orders' ? 'block animate-pop-micro' : 'hidden'}`}>
             
             {/* Form Card */}
             {/* Customer Requests Card */}

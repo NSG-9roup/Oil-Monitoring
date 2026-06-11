@@ -364,8 +364,8 @@ export default function OrdersSection({
 
       {/* Order Modal */}
       {isOrderModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-pop-micro">
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-lg font-black text-gray-900">{language === 'id' ? 'Minta Penawaran Produk' : 'Request Product Quotation'}</h3>
               <button onClick={() => setIsOrderModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-50 transition-colors">
@@ -415,8 +415,8 @@ export default function OrdersSection({
 
       {/* Complaint Modal */}
       {isComplaintModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-pop-micro">
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-lg font-black text-gray-900">{language === 'id' ? 'Buat Komplain' : 'File Complaint'}</h3>
               <button onClick={() => setIsComplaintModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-50 transition-colors">

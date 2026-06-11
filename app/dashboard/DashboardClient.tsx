@@ -1700,7 +1700,7 @@ export default function DashboardClient({
             
             {/* Custom Date Range Picker UI */}
             {timeRange === 'custom' && (
-              <div className="bg-white/50 border-t border-gray-100 px-4 py-3 flex flex-wrap items-center gap-4 animate-in slide-in-from-top-2 duration-300">
+              <div className="bg-white/50 border-t border-gray-100 px-4 py-3 flex flex-wrap items-center gap-4 animate-pop-micro">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{copy.startDate}</span>
                   <input 
@@ -1731,7 +1731,7 @@ export default function DashboardClient({
       </div>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col relative gap-8" style={{ scrollbarGutter: 'stable' }}>
         {/* Welcome Section with Dynamic Time-Aware Greeting Banner */}
-        <div className="animate-in fade-in slide-in-from-left-4 duration-700 w-full">
+        <div className="animate-pop-micro w-full">
           <div className="bg-white rounded-[2rem] border border-slate-105 p-6 sm:p-8 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.03)] relative overflow-hidden group">
             {/* Soft accent background glow */}
             <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-gradient-to-br from-orange-400 to-red-500 opacity-5 blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
@@ -1807,7 +1807,7 @@ export default function DashboardClient({
         </div>
 
         {/* Global Machine Health Overview */}
-        <div className="w-full animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
+        <div className="w-full animate-pop-micro">
           <div className="mb-4 flex items-end justify-between px-2">
             <div>
               <h2 className="text-lg font-black text-slate-900 tracking-tight">Machine Health Overview</h2>
@@ -1872,7 +1872,7 @@ export default function DashboardClient({
                 <div className="absolute top-0 right-0 w-48 h-48 bg-slate-50 rounded-full blur-[60px] -mr-24 -mt-24 opacity-60"></div>
                 
                 {selectedMachine ? (
-                  <div key={selectedMachine.id} className="w-full relative z-10 animate-in fade-in slide-in-from-right-6 duration-700">
+                  <div key={selectedMachine.id} className="w-full relative z-10 animate-pop-micro">
                     <div className="flex flex-col mb-6">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.15em] mb-3 w-fit ${
                         latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical'
@@ -2059,7 +2059,7 @@ export default function DashboardClient({
             }
 
             return (
-              <div key="analysis" className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+              <div key="analysis" className="w-full animate-pop-micro">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
                   
                   {/* Left Column: Smart Trend Alerts (2/3 width) */}
@@ -2826,7 +2826,7 @@ export default function DashboardClient({
                       ))}
                     </select>
                   ) : (
-                    <div className="space-y-3 animate-in fade-in duration-300">
+                    <div className="space-y-3 animate-pop-micro">
                       <input
                         type="text"
                         placeholder={copy.requestLab.newMachineNamePlaceholder}

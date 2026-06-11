@@ -1400,7 +1400,7 @@ export default function AdminClient({
                         setFormData({...formData, viscosity_grade: e.target.value})
                       }
                     }}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-in fade-in duration-200"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-pop-micro"
                   >
                     <option value="">Select Viscosity Grade</option>
                     <optgroup label="ISO VG (Industrial)">
@@ -1447,7 +1447,7 @@ export default function AdminClient({
                     <option value="OTHER">🔧 Other (Type Manually)</option>
                   </select>
                 ) : (
-                  <div className="flex gap-2 animate-in fade-in duration-200">
+                  <div className="flex gap-2 animate-pop-micro">
                     <input
                       type="text"
                       value={String(formData.viscosity_grade ?? '')}
@@ -2398,7 +2398,7 @@ export default function AdminClient({
                         setQuickAddData({...quickAddData, viscosity_grade: e.target.value})
                       }
                     }}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-in fade-in duration-200"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-pop-micro"
                   >
                     <option value="">Select Viscosity Grade</option>
                     <optgroup label="ISO VG (Industrial)">
@@ -2445,7 +2445,7 @@ export default function AdminClient({
                     <option value="OTHER">🔧 Other (Type Manually)</option>
                   </select>
                 ) : (
-                  <div className="flex gap-2 animate-in fade-in duration-200">
+                  <div className="flex gap-2 animate-pop-micro">
                     <input
                       type="text"
                       value={String(quickAddData.viscosity_grade ?? '')}

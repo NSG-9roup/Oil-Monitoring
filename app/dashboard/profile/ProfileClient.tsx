@@ -289,7 +289,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
               Ubah Kata Sandi
             </button>
           ) : (
-            <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200 space-y-4 max-w-md animate-in fade-in slide-in-from-top-3 duration-300">
+            <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200 space-y-4 max-w-md animate-pop-micro">
               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
                 <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />

@@ -73,7 +73,7 @@ export default function AdminOverviewTab({
     .slice(0, 5)
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+    <div className="space-y-8 animate-pop-micro">
       {/* Title */}
       <div>
         <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
