@@ -18,10 +18,11 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       data
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
     console.error('Supabase Ping Error:', error)
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     )
   }

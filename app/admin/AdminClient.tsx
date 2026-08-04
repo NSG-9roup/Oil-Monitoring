@@ -282,6 +282,10 @@ export default function AdminClient({
   const [products, setProducts] = useState<AdminProduct[]>(initialProducts)
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
+  
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
 
   // --- Computed Variables ---
   const totalCustomers = customers.length
