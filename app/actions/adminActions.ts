@@ -430,7 +430,10 @@ export async function getEmailLogs() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.warn('[getEmailLogs] Notice:', error.message)
+    return []
+  }
   return data || []
 }
 
