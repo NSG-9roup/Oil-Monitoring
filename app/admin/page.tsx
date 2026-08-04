@@ -90,7 +90,7 @@ export default async function AdminPage() {
     supabase
       .from('oil_products')
       .select('*')
-      .order('id'),
+      .order('product_name', { ascending: true }),
     supabase
       .from('oil_profiles')
       .select('id, full_name, email, phone_number, role, customer_id, created_at, updated_at, customer:oil_customers(company_name)')

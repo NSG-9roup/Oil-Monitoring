@@ -109,44 +109,7 @@ export async function acceptAndSendProposalSales(orderId: string) {
     throw new Error('Order not found')
   }
 
-  // 2. Fetch customer contact details from profile
-  const { data: profiles } = await supabaseService
-    .from('oil_profiles')
-    .select('full_name, email, phone_number')
-    .eq('customer_id', order.customer_id)
-    .eq('role', 'customer')
-    .limit(1)
-
-  const customerProfile = profiles?.[0]
-  const customerName = customerProfile?.full_name || 'Customer'
-  const customerEmail = customerProfile?.email || order.customer?.email || undefined
-  const customerPhone = customerProfile?.phone_number || order.customer?.phone_number || undefined
-
-  // 3. Fetch sales name
-  const { data: salesProfile } = await supabaseService
-    .from('oil_profiles')
-    .select('full_name')
-    .eq('id', user.id)
-    .single()
-  const salesName = salesProfile?.full_name || 'Sales Representative'
-
-  // 4. Send purchasing proposal email
-  const emailResult = await sendPurchasingProposalEmail({
-    salesName,
-    customerName,
-    companyPT: order.customer?.company_name || 'N/A',
-    productName: order.product?.product_name || 'N/A',
-    quantity: order.quantity,
-    customerPhone,
-    customerEmail,
-    notes: 'Penawaran dibuat via persetujuan (ACC) Sales di aplikasi.',
-  })
-
-  if (!emailResult.success) {
-    throw new Error(`Gagal mengirim email penawaran: ${emailResult.error}`)
-  }
-
-  // 5. Update order status to 'processing'
+  // 2. Update order status to 'processing' FIRST
   const { error: updateError } = await supabaseService
     .from('oil_orders')
     .update({ 
@@ -160,7 +123,42 @@ export async function acceptAndSendProposalSales(orderId: string) {
     throw new Error(`Gagal memperbarui status order: ${updateError.message}`)
   }
 
-  // 6. Audit logging
+  // 3. Try sending purchasing proposal email notification gracefully
+  try {
+    const { data: profiles } = await supabaseService
+      .from('oil_profiles')
+      .select('full_name, email, phone_number')
+      .eq('customer_id', order.customer_id)
+      .eq('role', 'customer')
+      .limit(1)
+
+    const customerProfile = profiles?.[0]
+    const customerName = customerProfile?.full_name || 'Customer'
+    const customerEmail = customerProfile?.email || order.customer?.email || undefined
+    const customerPhone = customerProfile?.phone_number || order.customer?.phone_number || undefined
+
+    const { data: salesProfile } = await supabaseService
+      .from('oil_profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+    const salesName = salesProfile?.full_name || 'Sales Representative'
+
+    await sendPurchasingProposalEmail({
+      salesName,
+      customerName,
+      companyPT: order.customer?.company_name || 'N/A',
+      productName: order.product?.product_name || 'N/A',
+      quantity: order.quantity,
+      customerPhone,
+      customerEmail,
+      notes: 'Penawaran dibuat via persetujuan (ACC) Sales di aplikasi.',
+    })
+  } catch (emailErr) {
+    console.error('Non-blocking purchasing email error:', emailErr)
+  }
+
+  // 4. Audit logging
   await createAuditLog(
     'SALES_ACC_ORDER',
     `Sales ACC order ID: ${orderId} and sent proposal to purchasing`,
