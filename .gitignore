@@ -30,3 +30,10 @@ yarn-error.log*
 
 # Typescript
 *.tsbuildinfo
+
+# Documents & Temp
+*.pdf
+*.docx
+diagrams/
+supabase/.temp/
+
