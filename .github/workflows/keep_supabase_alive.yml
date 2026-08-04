@@ -1,0 +1,22 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 00:00 UTC
+    - cron: '0 0 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
+          KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}"
+          if [ -z "$URL" ]; then
+            echo "NEXT_PUBLIC_SUPABASE_URL secret is not set, fallback using default env format if available"
+          fi
+          curl -i -X GET "${URL}/rest/v1/oil_products?select=id&limit=1" \
+            -H "apikey: ${KEY}" \
+            -H "Authorization: Bearer ${KEY}"
