@@ -11,7 +11,7 @@ import type { AdminProfile, Customer, AdminMachine, AdminLabTest, AdminUser, Adm
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 import toast from 'react-hot-toast'
 
-import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, uploadAdminFile, getEmailLogs } from '@/app/actions/adminActions'
+import { createCustomer, updateCustomer, deleteCustomer, createMachine, updateMachine, deleteMachine, createUser, updateUser, deleteUser, createProduct, updateProduct, deleteProduct, createTest, updateTest, deleteTest, uploadAdminFile } from '@/app/actions/adminActions'
 
 // Modular components
 import AdminOverviewTab from './components/AdminOverviewTab'
@@ -22,7 +22,6 @@ import AdminTestsTab from './components/AdminTestsTab'
 import AdminUsersTab from './components/AdminUsersTab'
 import AdminRequestsTab from './components/AdminRequestsTab'
 import AdminOrdersTab, { AdminOrder, AdminComplaint } from './components/AdminOrdersTab'
-import AdminEmailLogsTab from './components/AdminEmailLogsTab'
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -283,30 +282,6 @@ export default function AdminClient({
   const [products, setProducts] = useState<AdminProduct[]>(initialProducts)
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
-  
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [pdfFile, setPdfFile] = useState<File | null>(null)
-  const [emailLogs, setEmailLogs] = useState<any[]>([])
-  const [emailLogsLoading, setEmailLogsLoading] = useState(false)
-
-  const fetchEmailLogs = async () => {
-    setEmailLogsLoading(true)
-    try {
-      const logs = await getEmailLogs()
-      setEmailLogs(logs)
-    } catch (e: any) {
-      toast.error('Gagal memuat log email: ' + e.message)
-    } finally {
-      setEmailLogsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (activeTab === 'email_logs') {
-      fetchEmailLogs()
-    }
-  }, [activeTab])
 
   // --- Computed Variables ---
   const totalCustomers = customers.length

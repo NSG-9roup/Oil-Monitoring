@@ -140,22 +140,22 @@ export function TrendSection({
                   <Legend verticalAlign="top" height={36}/>
                   
                   {/* Healthy Band (±10%) */}
-                  {baselineViscosity40 && (
+                  {Boolean(baselineViscosity40 && baselineViscosity40 > 0 && !isNaN(baselineViscosity40)) && (
                     <ReferenceArea 
-                      y1={baselineViscosity40 * 0.9} 
-                      y2={baselineViscosity40 * 1.1} 
+                      y1={baselineViscosity40! * 0.9} 
+                      y2={baselineViscosity40! * 1.1} 
                       fill="#10b981" 
                       fillOpacity={0.08} 
                     />
                   )}
                   
                   {/* Warning Limits (±20%) */}
-                  {baselineViscosity40 && (
+                  {Boolean(baselineViscosity40 && baselineViscosity40 > 0 && !isNaN(baselineViscosity40)) && (
                     <>
-                      <ReferenceLine y={baselineViscosity40 * 1.2} stroke="#ef4444" strokeDasharray="3 3">
+                      <ReferenceLine y={baselineViscosity40! * 1.2} stroke="#ef4444" strokeDasharray="3 3">
                         <Label value={language === 'id' ? 'Batas Maks (+20%)' : 'Max (+20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
-                      <ReferenceLine y={baselineViscosity40 * 0.8} stroke="#ef4444" strokeDasharray="3 3">
+                      <ReferenceLine y={baselineViscosity40! * 0.8} stroke="#ef4444" strokeDasharray="3 3">
                         <Label value={language === 'id' ? 'Batas Min (-20%)' : 'Min (-20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
                     </>
@@ -199,22 +199,22 @@ export function TrendSection({
                   <Legend verticalAlign="top" height={36}/>
                   
                   {/* Healthy Band (±10%) */}
-                  {baselineViscosity100 && (
+                  {Boolean(baselineViscosity100 && baselineViscosity100 > 0 && !isNaN(baselineViscosity100)) && (
                     <ReferenceArea 
-                      y1={baselineViscosity100 * 0.9} 
-                      y2={baselineViscosity100 * 1.1} 
+                      y1={baselineViscosity100! * 0.9} 
+                      y2={baselineViscosity100! * 1.1} 
                       fill="#10b981" 
                       fillOpacity={0.08} 
                     />
                   )}
                   
                   {/* Warning Limits (±20%) */}
-                  {baselineViscosity100 && (
+                  {Boolean(baselineViscosity100 && baselineViscosity100 > 0 && !isNaN(baselineViscosity100)) && (
                     <>
-                      <ReferenceLine y={baselineViscosity100 * 1.2} stroke="#ef4444" strokeDasharray="3 3">
+                      <ReferenceLine y={baselineViscosity100! * 1.2} stroke="#ef4444" strokeDasharray="3 3">
                         <Label value={language === 'id' ? 'Batas Maks (+20%)' : 'Max (+20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
-                      <ReferenceLine y={baselineViscosity100 * 0.8} stroke="#ef4444" strokeDasharray="3 3">
+                      <ReferenceLine y={baselineViscosity100! * 0.8} stroke="#ef4444" strokeDasharray="3 3">
                         <Label value={language === 'id' ? 'Batas Min (-20%)' : 'Min (-20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
                     </>
