@@ -99,7 +99,7 @@ export async function acceptAndSendProposalSales(orderId: string) {
     .from('oil_orders')
     .select(`
       *,
-      customer:oil_customers(company_name, phone_number, email),
+      customer:oil_customers(company_name),
       product:oil_products(product_name)
     `)
     .eq('id', orderId)
