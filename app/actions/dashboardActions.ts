@@ -118,3 +118,39 @@ export async function updateAnyUserProfile(data: {
   return { success: true }
 }
 
+export async function createOrderQuotation(data: {
+  productId: string
+  quantity: number
+}) {
+  const { profile } = await verifyCustomer()
+
+  if (!data.productId || data.quantity <= 0) {
+    throw new Error('Produk dan kuantitas valid harus diisi')
+  }
+
+  const supabaseService = createServiceClient()
+  const { data: newOrder, error } = await supabaseService
+    .from('oil_orders')
+    .insert([{
+      customer_id: profile.customer_id,
+      product_id: data.productId,
+      quantity: data.quantity,
+      status: 'pending'
+    }])
+    .select(`*, product:oil_products(product_name, product_type)`)
+    .single()
+
+  if (error) {
+    console.error('Error creating order quotation:', error)
+    throw new Error(error.message)
+  }
+
+  await createAuditLog('CREATE_ORDER_QUOTATION', `Permintaan penawaran dibuat`, { productId: data.productId, quantity: data.quantity })
+
+  revalidatePath('/dashboard')
+  revalidatePath('/admin')
+  revalidatePath('/sales')
+  return { success: true, data: newOrder }
+}
+
+

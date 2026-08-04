@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { createOrderQuotation } from '@/app/actions/dashboardActions'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import { toast } from 'react-hot-toast'
 import {
@@ -144,26 +145,21 @@ export default function OrdersSection({
     if (!orderForm.productId || orderForm.quantity <= 0) return
     setIsSubmitting(true)
     try {
-      const { data, error } = await supabase
-        .from('oil_orders')
-        .insert({
-          customer_id: customerId,
-          product_id: orderForm.productId,
-          quantity: orderForm.quantity,
-          status: 'pending',
-        })
-        .select(`*, product:oil_products(product_name, product_type)`)
-        .single()
+      const res = await createOrderQuotation({
+        productId: orderForm.productId,
+        quantity: orderForm.quantity,
+      })
 
-      if (error) throw error
-
-      setOrders([data, ...orders])
+      if (res.data) {
+        setOrders([res.data, ...orders])
+      }
       setIsOrderModalOpen(false)
       setOrderForm({ productId: '', quantity: 1 })
       toast.success(language === 'id' ? 'Permintaan penawaran berhasil dibuat!' : 'Quotation request created successfully!')
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err)
-      toast.error(language === 'id' ? 'Gagal membuat permintaan penawaran' : 'Failed to create quotation request')
+      const errMsg = err instanceof Error ? err.message : 'Failed to create quotation request'
+      toast.error(errMsg)
     } finally {
       setIsSubmitting(false)
     }
