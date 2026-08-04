@@ -74,38 +74,72 @@ export function TrendSection({
                 </div>
               </div>
               
-              <div className={`px-5 py-3 rounded-2xl border flex flex-col justify-center min-w-[160px] ${
+              <div className={`px-5 py-3 rounded-2xl border flex items-center gap-3 min-w-[190px] ${
                 fleetHealthIndex !== null && fleetHealthIndex >= 80 
-                  ? 'bg-emerald-50/80 border-emerald-100' 
+                  ? 'bg-emerald-50/80 border-emerald-100/80 shadow-sm' 
                   : fleetHealthIndex !== null && fleetHealthIndex >= 60 
-                  ? 'bg-amber-50/80 border-amber-100' 
-                  : 'bg-gray-50/80 border-gray-100'
+                  ? 'bg-amber-50/80 border-amber-100/80 shadow-sm' 
+                  : 'bg-slate-50/80 border-slate-100'
               }`}>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">
-                  {language === 'id' ? 'Fleet Health Index' : 'Fleet Health Index'}
-                </p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-2xl font-black leading-none ${
-                    fleetHealthIndex !== null && fleetHealthIndex >= 80 
-                      ? 'text-emerald-700' 
-                      : fleetHealthIndex !== null && fleetHealthIndex >= 60 
-                      ? 'text-amber-700' 
-                      : 'text-gray-900'
-                  }`}>
-                    {fleetHealthIndex !== null ? `${fleetHealthIndex}%` : 'N/A'}
+                {/* Donut Gauge Ring SVG */}
+                <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
+                  <svg className="w-11 h-11 transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-slate-200 stroke-current"
+                      strokeWidth="3.5"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className={`${
+                        fleetHealthIndex !== null && fleetHealthIndex >= 80
+                          ? 'text-emerald-500'
+                          : fleetHealthIndex !== null && fleetHealthIndex >= 60
+                          ? 'text-amber-500'
+                          : 'text-rose-500'
+                      } stroke-current transition-all duration-1000 ease-out`}
+                      strokeDasharray={`${fleetHealthIndex !== null ? fleetHealthIndex : 0}, 100`}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <span className="absolute text-[11px] font-black text-slate-800">
+                    {fleetHealthIndex !== null ? `${fleetHealthIndex}` : '0'}
                   </span>
-                  <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">{language === 'id' ? 'Skor' : 'Score'}</span>
+                </div>
+
+                <div className="flex flex-col justify-center">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">
+                    {language === 'id' ? 'Skor Kesehatan' : 'Health Score'}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <span className={`text-xs font-black uppercase tracking-wider ${
+                      fleetHealthIndex !== null && fleetHealthIndex >= 80 
+                        ? 'text-emerald-700' 
+                        : fleetHealthIndex !== null && fleetHealthIndex >= 60 
+                        ? 'text-amber-700' 
+                        : 'text-slate-900'
+                    }`}>
+                      {fleetHealthIndex !== null && fleetHealthIndex >= 80
+                        ? (language === 'id' ? 'Sangat Baik' : 'Optimal')
+                        : fleetHealthIndex !== null && fleetHealthIndex >= 60
+                        ? (language === 'id' ? 'Waspada' : 'Warning')
+                        : (language === 'id' ? 'Belum Ada Uji' : 'No Data')}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={onOpenLabDetails}
-                className="ml-2 px-8 py-4 rounded-full bg-gray-900 text-white text-[11px] font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
+                className="ml-2 px-7 py-3.5 rounded-2xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
               >
-                {language === 'id' ? 'LIHAT DETAIL' : 'VIEW DETAILS'}
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                {language === 'id' ? 'AJUKAN UJI LAB' : 'REQUEST TEST'}
+                <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                 </svg>
               </button>
             </div>
@@ -114,18 +148,36 @@ export function TrendSection({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
           {/* Card 1: Viscosity @ 40°C */}
-          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
               <span className="w-3 h-3 bg-orange-500 rounded-full mr-3 animate-pulse"></span>
               <GlossaryTooltip termKey="viscosity40c" language={language} label={language === 'id' ? 'Viskositas @40°C' : 'Viscosity @40°C'} />
             </h3>
             {chartData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[200px] sm:h-[250px] lg:h-[300px] text-gray-400">
-                <svg className="w-16 h-16 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <p className="font-semibold">{noSampleData}</p>
-                <p className="text-sm text-gray-400 mt-1">{checkConsole}</p>
+              <div className="flex flex-col items-center justify-center p-8 bg-slate-50/60 rounded-3xl border border-dashed border-slate-200 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center mb-4 shadow-sm">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.606 15.1a2 2 0 01-1.183-1.637l-.234-2.34a2 2 0 01.378-1.41l1.5-2.25a2 2 0 011.41-.75l2.428-.242a6 6 0 004.242-1.757l.158-.158a6 6 0 014.242-1.757l2.428.242a2 2 0 011.41.75l1.5 2.25a2 2 0 01.378 1.41l-.234 2.34a2 2 0 01-1.183 1.637l-2.387.477z" />
+                  </svg>
+                </div>
+                <h4 className="text-base font-black text-slate-800 uppercase tracking-wider mb-1">
+                  {language === 'id' ? 'Belum Ada Sampel Uji Lab' : 'No Lab Sample Data'}
+                </h4>
+                <p className="text-xs text-slate-500 max-w-sm mb-5 leading-relaxed">
+                  {language === 'id' 
+                    ? 'Ajukan pengujian sampel oli pertama Anda untuk mengaktifkan pemantauan grafik tren viskositas real-time.'
+                    : 'Submit your first oil sample test to activate real-time viscosity trend monitoring.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenLabDetails}
+                  className="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-widest shadow-md transition-all active:scale-95 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                  {language === 'id' ? 'Ajukan Sampel Uji Lab Pertama' : 'Request First Lab Test'}
+                </button>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={chartHeight}>
