@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import DashboardClient from './DashboardClient'
 
 export default async function DashboardPage() {
@@ -89,8 +90,10 @@ export default async function DashboardPage() {
     .select('*')
     .order('product_name')
 
+  const serviceSupabase = createServiceClient()
+
   const ordersPromise = profile.customer_id
-    ? supabase
+    ? serviceSupabase
         .from('oil_orders')
         .select(`
           *,
