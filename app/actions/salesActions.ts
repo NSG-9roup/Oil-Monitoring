@@ -117,7 +117,6 @@ export async function acceptAndSendProposalSales(orderId: string) {
       .from('oil_orders')
       .update({ 
         status: 'processing',
-        updated_by: user.id,
         updated_at: new Date().toISOString()
       })
       .eq('id', orderId)
