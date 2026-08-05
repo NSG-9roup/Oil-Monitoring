@@ -7,10 +7,8 @@ export default async function DashboardPage() {
   const supabase = await createClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  const user = session?.user
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/login')
@@ -103,17 +101,30 @@ export default async function DashboardPage() {
         .order('created_at', { ascending: false })
     : Promise.resolve({ data: [], error: null })
 
-  const [labTestsResult, labRequestsResult, productsResult, ordersResult] = await Promise.all([
+  const complaintsPromise = profile.customer_id
+    ? serviceSupabase
+        .from('oil_complaints')
+        .select(`
+          *,
+          order:oil_orders(id, product:oil_products(product_name))
+        `)
+        .eq('customer_id', profile.customer_id)
+        .order('created_at', { ascending: false })
+    : Promise.resolve({ data: [], error: null })
+
+  const [labTestsResult, labRequestsResult, productsResult, ordersResult, complaintsResult] = await Promise.all([
     labTestsPromise,
     labRequestsPromise,
     productsPromise,
     ordersPromise,
+    complaintsPromise,
   ])
 
   const initialLabTests = labTestsResult.data || []
   const initialLabRequests = labRequestsResult.data || []
   const products = productsResult.data || []
   const initialOrders = ordersResult.data || []
+  const initialComplaints = complaintsResult.data || []
 
   // Sanitize profile to only serializable data
   const sanitizedProfile = {
@@ -140,6 +151,7 @@ export default async function DashboardPage() {
       initialSalesTeam={initialSalesTeam || []}
       products={products}
       initialOrders={initialOrders}
+      initialComplaints={initialComplaints}
     />
   )
 }

@@ -8,10 +8,8 @@ export default async function SalesPage() {
   const supabase = await createClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  
-  const user = session?.user
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/login')
@@ -35,8 +33,7 @@ export default async function SalesPage() {
     redirect('/login')
   }
 
-  if (profile.role === 'admin') redirect('/admin')
-  if (profile.role === 'customer') redirect('/dashboard')
+
 
   if (profile.role !== 'sales') {
     return (

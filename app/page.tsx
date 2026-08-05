@@ -4,8 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export default async function Home() {
   const supabase = await createClient()
 
-  const { data: { session }, error } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user }, error } = await supabase.auth.getUser()
   if (error) {
     console.error('SUPABASE GETSESSION ERROR IN ROOT PAGE:', error)
   }

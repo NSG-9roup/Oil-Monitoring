@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+const supabase = createClient()
+
 export function SessionWarning() {
   const [showWarning, setShowWarning] = useState(false)
   const [countdownSeconds, setCountdownSeconds] = useState(0)
-  const supabase = createClient()
 
   useEffect(() => {
     const handleSessionWarning = () => {

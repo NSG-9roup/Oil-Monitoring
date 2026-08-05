@@ -1,8 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { generateFleetReportPdfServer } from '@/lib/pdf/generateFleetReportServer'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const body = await request.json()
     const { meta, rows, language } = body
 

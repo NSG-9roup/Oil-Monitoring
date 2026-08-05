@@ -131,17 +131,18 @@ export async function sendLabTestResultEmailAction(testId: string) {
       // Fallback: fetch from Supabase Auth directly using service role
       console.log('[Email] Profile emails empty, fetching from auth.users...')
       const profileIds = profiles.map(p => p.id).filter(Boolean)
-
-      for (const profileId of profileIds) {
-        try {
-          const { data: authUser } = await supabaseService.auth.admin.getUserById(profileId)
-          if (authUser?.user?.email) {
-            emails.push(authUser.user.email)
+      const authEmails = await Promise.all(
+        profileIds.map(async (profileId: string) => {
+          try {
+            const { data: authUser } = await supabaseService.auth.admin.getUserById(profileId)
+            return authUser?.user?.email || null
+          } catch (authErr) {
+            console.warn(`[Email] Could not fetch auth email for profile ${profileId}:`, authErr)
+            return null
           }
-        } catch (authErr) {
-          console.warn(`[Email] Could not fetch auth email for profile ${profileId}:`, authErr)
-        }
-      }
+        })
+      )
+      emails.push(...(authEmails.filter(Boolean) as string[]))
     }
 
     if (emails.length === 0) {

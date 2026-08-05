@@ -7,8 +7,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 export default async function AdminPage() {
   const supabase = await createClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/login')
@@ -34,13 +33,7 @@ export default async function AdminPage() {
     redirect('/login')
   }
 
-  if (normalizedProfile.role === 'sales') {
-    redirect('/sales')
-  }
 
-  if (normalizedProfile.role === 'customer') {
-    redirect('/dashboard')
-  }
 
   // Check if user is admin
   if (normalizedProfile.role !== 'admin') {

@@ -23,8 +23,7 @@
     },
     {
       "files": [
-        "app/login/page.tsx",
-        "app/purchases/PurchaseClient.tsx"
+        "app/login/page.tsx"
       ],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off"

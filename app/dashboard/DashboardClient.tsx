@@ -12,7 +12,7 @@ import { ShortcutNavigator } from '@/app/dashboard/components/ShortcutNavigator'
 import { TrendSection } from '@/app/dashboard/components/TrendSection'
 import { LabReportsSection } from '@/app/dashboard/components/LabReportsSection'
 import { createLabRequest } from '@/app/actions/dashboardActions'
-import type { LabRequest } from '@/app/dashboard/components/types'
+import type { LabRequest, TrendAlertItem } from '@/app/dashboard/components/types'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 import OrdersSection from '@/app/dashboard/components/OrdersSection'
 import { toast } from 'react-hot-toast'
@@ -89,22 +89,14 @@ interface DashboardClientProps {
   initialSalesTeam: any[]
   products: any[]
   initialOrders: any[]
+  initialComplaints: any[]
 }
 
 type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
 type TrendSeverity = 'Low' | 'Medium' | 'High'
 type Language = 'id' | 'en'
 
-interface TrendAlertItem {
-  id: string
-  parameter: 'Viscosity' | 'Water content' | 'TAN'
-  severity: TrendSeverity
-  title: string
-  message: string
-  recommendedAction: string
-  chartValue: number
-  chartDate: string
-}
+
 
 
 
@@ -463,6 +455,7 @@ export default function DashboardClient({
   initialSalesTeam = [],
   products = [],
   initialOrders = [],
+  initialComplaints = [],
 }: DashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -2690,7 +2683,7 @@ export default function DashboardClient({
                 customerId={profile.customer_id || ''}
                 products={products}
                 initialOrders={initialOrders}
-                initialComplaints={[]}
+                initialComplaints={initialComplaints}
                 language={language}
               />
             </div>

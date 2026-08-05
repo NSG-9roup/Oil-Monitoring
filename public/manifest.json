@@ -2,7 +2,7 @@
   "name": "Oil Condition Monitoring",
   "short_name": "OilTrack",
   "description": "Industrial oil condition monitoring and management system",
-  "start_url": "/sales",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#be185d",

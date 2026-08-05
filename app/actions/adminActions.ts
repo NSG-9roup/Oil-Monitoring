@@ -10,8 +10,7 @@ import { createServiceClient } from '@/lib/supabase/service'
  */
 async function verifyAdmin() {
   const supabase = await createClient()
-  const { data: { session }, error: authError } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
     throw new Error('Unauthorized: Please log in')
@@ -290,8 +289,7 @@ export async function uploadAdminFile(formData: FormData) {
  */
 async function verifyAdminOrSales() {
   const supabase = await createClient()
-  const { data: { session }, error: authError } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   if (authError || !user) {
     throw new Error('Unauthorized: Please log in')
@@ -376,8 +374,7 @@ export async function createAuditLog(
 ) {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    const { data: { user } } = await supabase.auth.getUser()
     const actorId = user?.id || null
 
     const supabaseService = createServiceClient()
