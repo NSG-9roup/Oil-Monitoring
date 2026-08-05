@@ -834,48 +834,73 @@ export default function SalesClient({
             )}
           </div>
 
-          {/* Filter Chips Horizontal */}
+          {/* Filter Chips Horizontal dengan Badges Counter Realtime */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 no-scrollbar select-none">
-            <button
-              onClick={() => setFilterMode('all')}
-              className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
-                filterMode === 'all'
-                  ? 'bg-slate-900 border-slate-950 text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-              }`}
-            >
-              Semua
-            </button>
-            <button
-              onClick={() => setFilterMode('mine')}
-              className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
-                filterMode === 'mine'
-                  ? 'bg-orange-500 border-orange-600 text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-              }`}
-            >
-              Tugas Saya
-            </button>
-            <button
-              onClick={() => setFilterMode('new')}
-              className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
-                filterMode === 'new'
-                  ? 'bg-amber-500 border-amber-600 text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-              }`}
-            >
-              Mesin Baru 🟡
-            </button>
-            <button
-              onClick={() => setFilterMode('high')}
-              className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
-                filterMode === 'high'
-                  ? 'bg-red-500 border-red-600 text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-              }`}
-            >
-              Prioritas 🔴
-            </button>
+            {(() => {
+              const currentRequests = requests.filter((r) =>
+                activeTab === 'queue' ? ['pending', 'assigned'].includes(r.status) : r.status === 'sampling'
+              )
+              const mineCount = currentRequests.filter((r) => r.assigned_to_profile_id === profile.id).length
+              const newCount = currentRequests.filter((r) => r.is_new_machine).length
+              const highCount = currentRequests.filter((r) => r.priority === 'high').length
+
+              return (
+                <>
+                  <button
+                    onClick={() => setFilterMode('all')}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 border ${
+                      filterMode === 'all'
+                        ? 'bg-slate-900 border-slate-950 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    <span>Semua</span>
+                    <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      {currentRequests.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setFilterMode('mine')}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 border ${
+                      filterMode === 'mine'
+                        ? 'bg-orange-500 border-orange-600 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    <span>Tugas Saya</span>
+                    <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'mine' ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-700'}`}>
+                      {mineCount}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setFilterMode('new')}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 border ${
+                      filterMode === 'new'
+                        ? 'bg-amber-500 border-amber-600 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    <span>Mesin Baru 🟡</span>
+                    <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'new' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>
+                      {newCount}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setFilterMode('high')}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-1.5 border ${
+                      filterMode === 'high'
+                        ? 'bg-red-500 border-red-600 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    <span>Prioritas 🔴</span>
+                    <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'high' ? 'bg-white/20 text-white' : 'bg-red-100 text-red-700'}`}>
+                      {highCount}
+                    </span>
+                  </button>
+                </>
+              )
+            })()}
           </div>
         </div>
       </div>
