@@ -857,43 +857,47 @@ export default function AdminClient({
 
       {/* Main Workspace */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
-        
-        {/* Tab Selection */}
-        <div className="w-full bg-white rounded-[2rem] border border-slate-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.03)] mb-6 overflow-hidden select-none">
-          <div className="bg-slate-50/50 border-b border-slate-100 overflow-x-auto sm:overflow-visible">
-            <nav className="flex min-w-max sm:min-w-0 sm:w-full sm:justify-center">
+               {/* Tab Selection — Modern Glassmorphism Rounded Pills (Style Gambar 2) */}
+        <div className="w-full bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-200/70 p-2 shadow-sm mb-6 select-none">
+          <div className="overflow-x-auto no-scrollbar">
+            <nav className="flex items-center gap-2 min-w-max p-0.5">
               {[
-                { key: 'overview', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 3v18h18" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 14l3-3 3 2 5-6" /></svg>, label: 'Overview' },
-                { key: 'customers', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, label: 'Customers' },
-                { key: 'machines', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Machines' },
-                { key: 'products', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>, label: 'Products' },
-                { key: 'tests', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>, label: 'Tests' },
-                { key: 'orders', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, label: 'Orders' },
-                { key: 'users', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5.121 17.804A4 4 0 018 16h8a4 4 0 012.879 1.804M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, label: 'Users' },
-                { key: 'requests', icon: <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>, label: 'Requests' }
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => {
-                    setActiveTab(tab.key as TabKey)
-                    setSearchQuery('')
-                    setDateFilter('all')
-                    setCustomDateFrom('')
-                    setCustomDateTo('')
-                    setFilterCompany('all')
-                    setFilterMachine('all')
-                  }}                  className={`px-6 py-4.5 text-[10px] font-black border-b-2 transition-all whitespace-nowrap uppercase tracking-widest flex items-center justify-center gap-1 ${
-                    activeTab === tab.key
-                      ? 'border-orange-500 text-orange-600 bg-white/70 shadow-sm'
-                      : 'border-transparent text-slate-400 hover:text-orange-500 hover:bg-white/30'
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+                { key: 'overview', icon: '📈', label: 'OVERVIEW' },
+                { key: 'customers', icon: '👥', label: 'CUSTOMERS' },
+                { key: 'machines', icon: '⚙️', label: 'MACHINES' },
+                { key: 'products', icon: '📦', label: 'PRODUCTS' },
+                { key: 'tests', icon: '📄', label: 'TESTS' },
+                { key: 'orders', icon: '🛒', label: 'ORDERS' },
+                { key: 'users', icon: '👤', label: 'USERS' },
+                { key: 'requests', icon: '📋', label: 'REQUESTS' }
+              ].map((tab) => {
+                const isActive = activeTab === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => {
+                      setActiveTab(tab.key as TabKey)
+                      setSearchQuery('')
+                      setDateFilter('all')
+                      setCustomDateFrom('')
+                      setCustomDateTo('')
+                      setFilterCompany('all')
+                      setFilterMachine('all')
+                    }}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap border ${
+                      isActive
+                        ? 'bg-slate-900 border-slate-950 text-white shadow-md shadow-slate-900/10 scale-[1.02]'
+                        : 'bg-white border-slate-200/80 text-slate-500 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-sm">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
             </nav>
           </div>
+        </div>
 
           {/* Tab Workspaces */}
           <div className="p-6 sm:p-8">
@@ -1010,7 +1014,6 @@ export default function AdminClient({
             )}
 
           </div>
-        </div>
       </main>
 
       {/* Footer */}
