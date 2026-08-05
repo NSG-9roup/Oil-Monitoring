@@ -362,6 +362,8 @@ export default function SalesClient({
       if (result.success) {
         toast.success('✓ Penawaran berhasil di-ACC dan dikirim ke Purchasing!')
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'processing' } : o))
+      } else {
+        toast.error(`Gagal memproses penawaran: ${result.error || 'Terjadi kesalahan'}`)
       }
     } catch (err) {
       toast.error(`Gagal memproses penawaran: ${err instanceof Error ? err.message : 'Unknown error'}`)
