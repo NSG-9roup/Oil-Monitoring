@@ -628,66 +628,73 @@ export default function SalesClient({
         className="hidden"
       />
 
-      {/* Header Premium */}
-      <header className="bg-white border-b border-slate-100 px-4 py-4 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-md mx-auto flex justify-between items-center select-none">
-          <div className="flex items-center">
-            <div>
-              <h1 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-1.5 select-none">
-                <Image
-                  src="/teks logo.webp"
-                  alt="OilTrack"
-                  width={3186}
-                  height={881}
-                  className="h-5 w-auto object-contain inline-block shrink-0"
-                />
-                <span className="text-slate-800 font-extrabold text-[10px] lowercase tracking-normal bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-md border border-orange-100">sales</span>
-                <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500 animate-ping'}`}></span>
-              </h1>
-              <p className="text-[10px] font-black text-slate-700 tracking-wide">
-                {profile.full_name ? (
-                  <span>👤 {profile.full_name}</span>
-                ) : (
-                  <span className="text-slate-400">{user.email || 'Sales Officer'}</span>
-                )}
-              </p>
+      {/* Header Premium Glassmorphism */}
+      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 px-4 sm:px-6 lg:px-8 py-3.5 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto flex justify-between items-center select-none">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/teks logo.webp"
+              alt="OilTrack"
+              width={3186}
+              height={881}
+              className="h-6 sm:h-7 w-auto object-contain inline-block shrink-0"
+            />
+            <div className="h-5 w-px bg-slate-200 hidden sm:block"></div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-800 font-black text-[10px] uppercase tracking-wider bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full border border-orange-100/80">sales</span>
+              <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500 animate-ping'}`} title={isOnline ? 'Terhubung Ke Internet' : 'Modus Offline'}></span>
             </div>
           </div>
-          {/* Toggle View Mode + Logout */}
-          <div className="flex items-center gap-2">
+
+          {/* User Profile Info & Action Controls */}
+          <div className="flex items-center gap-3">
+            <a href="/sales/profile" className="flex items-center gap-2.5 p-1.5 sm:pr-3 hover:bg-slate-100/80 rounded-2xl transition-all border border-transparent hover:border-slate-200 group">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-orange-500 to-red-600 p-0.5 shadow-sm">
+                <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center text-white text-xs font-black uppercase">
+                  {(profile.full_name?.charAt(0) || user.email?.charAt(0) || 'S').toUpperCase()}
+                </div>
+              </div>
+              <div className="hidden sm:block text-left">
+                <span className="block text-xs font-black text-slate-800 group-hover:text-orange-600 transition-colors leading-tight">
+                  {profile.full_name || 'Sales Officer'}
+                </span>
+                <span className="block text-[9px] font-bold text-slate-400 truncate max-w-[15ch]">
+                  {user.email || 'Sales'}
+                </span>
+              </div>
+            </a>
+
             {(activeTab === 'queue' || activeTab === 'transit') && (
-              <div className="flex bg-slate-100 rounded-xl p-0.5">
+              <div className="hidden sm:flex bg-slate-100 rounded-xl p-0.5">
                 <button
                   onClick={() => setViewMode('card')}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'card' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                    viewMode === 'card' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-800'
                   }`}
-                  title="Card View"
+                  title="Card Grid View"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
+                  <span>Grid</span>
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'table' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                    viewMode === 'table' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-800'
                   }`}
                   title="Table View"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 3v18M14 3v18" />
                   </svg>
+                  <span>Tabel</span>
                 </button>
               </div>
             )}
-            <a href="/sales/profile" className="p-2.5 bg-slate-50 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-xl transition-all border border-slate-100 active:scale-95 animate-pop-micro" title="Profil Saya">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </a>
-            <button onClick={handleSignOut} className="p-2.5 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-xl transition-all border border-slate-100 active:scale-95" title="Keluar">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+
+            <button onClick={handleSignOut} className="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title="Keluar Akun">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
         </div>
@@ -712,76 +719,123 @@ export default function SalesClient({
         </div>
       )}
 
+      {/* KPI Stats Overview Cards Row */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 select-none">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Total Sampling</span>
+              <span className="text-lg font-black text-slate-900">{pendingCount}</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Pending ACC</span>
+              <span className="text-lg font-black text-amber-600">{orders.filter(o => o.status === 'pending').length}</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Dalam Transit</span>
+              <span className="text-lg font-black text-blue-600">{transitCount}</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Purchasing</span>
+              <span className="text-lg font-black text-emerald-600">{orders.filter(o => o.status === 'processing').length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Segmen Kontrol Utama (Tabs) */}
-      <div className="bg-white border-b border-slate-100 p-2 sticky top-[73px] z-20 shadow-sm">
-        <div className="max-w-md mx-auto relative bg-slate-100 p-1 rounded-2xl flex select-none">
-          {/* Sliding active background indicator */}
-          <div 
-            className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
-            style={{
-              width: 'calc(33.333% - 5.33px)',
-              left: activeTab === 'queue' ? '4px' : activeTab === 'transit' ? 'calc(33.333% + 1.33px)' : 'calc(66.666% - 1.33px)'
-            }}
-          />
-          
-          <button
-            onClick={() => setActiveTab('queue')}
-            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
-              activeTab === 'queue'
-                ? 'text-slate-950'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Antrean</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black transition-all duration-300 ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('transit')}
-            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
-              activeTab === 'transit'
-                ? 'text-slate-950'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Transit</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black transition-all duration-300 ${activeTab === 'transit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{transitCount}</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
-              activeTab === 'orders'
-                ? 'text-slate-950'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Pesanan</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black transition-all duration-300 ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
-          </button>
+      <div className="bg-white/80 backdrop-blur-xl border-y border-slate-100 p-2.5 mt-4 sticky top-[61px] z-20 shadow-sm">
+        <div className="max-w-7xl mx-auto">
+          <div className="relative bg-slate-100/80 p-1 rounded-2xl flex select-none max-w-2xl mx-auto">
+            {/* Sliding active background indicator */}
+            <div 
+              className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
+              style={{
+                width: 'calc(33.333% - 5.33px)',
+                left: activeTab === 'queue' ? '4px' : activeTab === 'transit' ? 'calc(33.333% + 1.33px)' : 'calc(66.666% - 1.33px)'
+              }}
+            />
+            
+            <button
+              onClick={() => setActiveTab('queue')}
+              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-2 ${
+                activeTab === 'queue'
+                  ? 'text-slate-950'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>Antrean Sampling</span>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('transit')}
+              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-2 ${
+                activeTab === 'transit'
+                  ? 'text-slate-950'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>In-Transit</span>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'transit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{transitCount}</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-2 ${
+                activeTab === 'orders'
+                  ? 'text-slate-950'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>Pesanan Pelanggan</span>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mesin Pencari & Filter Chips */}
-      <div className={`bg-white px-4 py-3 border-b border-slate-100 ${activeTab !== 'orders' ? 'block' : 'hidden'}`}>
-        <div className="max-w-md mx-auto space-y-3">
+      <div className={`bg-white px-4 sm:px-6 lg:px-8 py-3.5 border-b border-slate-100 ${activeTab !== 'orders' ? 'block' : 'hidden'}`}>
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Bar Pencarian */}
-          <div className="relative">
+          <div className="relative w-full sm:max-w-md">
             <input
               type="text"
               placeholder="Cari Customer, Mesin, atau Area..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 pl-10 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+              className="w-full bg-slate-50/80 border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 rounded-2xl px-4 py-2.5 pl-10 text-xs font-bold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
             />
-            <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 p-0.5 hover:bg-slate-200 rounded-full transition-all"><svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-2.5 p-0.5 hover:bg-slate-200 rounded-full transition-all"><svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
             )}
           </div>
 
           {/* Filter Chips Horizontal */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 no-scrollbar select-none">
             <button
               onClick={() => setFilterMode('all')}
               className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
@@ -826,8 +880,8 @@ export default function SalesClient({
         </div>
       </div>
 
-      {/* Main List */}
-      <main className="flex-1 max-w-md mx-auto w-full p-4 space-y-4 z-10">
+      {/* Main List & Grid Section */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 z-10">
         {/* Requests List wrapper */}
         <div className={`space-y-4 ${activeTab !== 'orders' ? 'block animate-pop-micro' : 'hidden'}`}>
           <div className="flex items-center justify-between px-1 mb-1">
@@ -845,7 +899,7 @@ export default function SalesClient({
             <p className="text-xs font-bold text-slate-400 italic">Tidak ada tugas sampling yang cocok.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className={viewMode === 'card' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'space-y-4'}>
             {filteredRequests.map((req) => {
               const isNewMachine = req.is_new_machine
               const machineData = isNewMachine ? req.new_machine_data : null

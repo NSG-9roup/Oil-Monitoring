@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { updateAnyUserProfile } from '@/app/actions/dashboardActions'
 
 const profileSchema = z.object({
-  full_name: z.string().min(2, 'Name must be at least 2 characters'),
+  full_name: z.string().min(2, 'Nama harus minimal 2 karakter'),
   phone_number: z.string().optional(),
 })
 
@@ -30,7 +30,6 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
 
   const handleSave = async () => {
     try {
-      // Validate with Zod
       profileSchema.parse(formData)
       setErrors({})
       setIsSaving(true)
@@ -41,10 +40,10 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
       })
 
       if (!result.success) {
-        throw new Error('Failed to update profile')
+        throw new Error(result.error || 'Gagal memperbarui profil')
       }
 
-      toast.success('Profile updated successfully')
+      toast.success('Profil berhasil diperbarui')
       setIsEditing(false)
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
@@ -53,10 +52,10 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
           if (e.path[0]) fieldErrors[e.path[0].toString()] = e.message
         })
         setErrors(fieldErrors)
-        toast.error('Please check the form for errors')
+        toast.error('Silakan periksa kembali form pengisian')
       } else {
         console.error(err)
-        toast.error((err as Error).message || 'Failed to update profile')
+        toast.error((err as Error).message || 'Gagal memperbarui profil')
       }
     } finally {
       setIsSaving(false)
@@ -65,11 +64,11 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
 
   const handleDirectPasswordChange = async () => {
     if (passwordData.new_password.length < 6) {
-      toast.error(initialProfile.role === 'customer' || true ? 'Kata sandi minimal 6 karakter' : 'Password must be at least 6 characters')
+      toast.error('Kata sandi minimal 6 karakter')
       return
     }
     if (passwordData.new_password !== passwordData.confirm_password) {
-      toast.error(initialProfile.role === 'customer' || true ? 'Konfirmasi kata sandi tidak cocok' : 'Passwords do not match')
+      toast.error('Konfirmasi kata sandi tidak cocok')
       return
     }
 
@@ -81,7 +80,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
 
       if (error) throw error
 
-      toast.success(initialProfile.role === 'customer' || true ? 'Kata sandi berhasil diperbarui' : 'Password changed successfully')
+      toast.success('Kata sandi berhasil diperbarui')
       setPasswordData({ new_password: '', confirm_password: '' })
       setShowPasswordForm(false)
     } catch (err: unknown) {
@@ -92,89 +91,57 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
     }
   }
 
-
+  const initialLetter = (formData.full_name?.charAt(0) || userEmail?.charAt(0) || '?').toUpperCase()
+  const roleDisplay = initialProfile.role === 'sales' 
+    ? 'Sales Representative' 
+    : initialProfile.role === 'admin' 
+    ? 'System Administrator' 
+    : 'Customer Client'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* Header Info */}
-      <div className="p-6 sm:p-8 bg-gray-50 border-b border-gray-200 flex items-center gap-6">
-        <div className="h-20 w-20 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl font-bold uppercase shadow-sm">
-          {formData.full_name?.charAt(0) || userEmail?.charAt(0) || '?'}
+    <div className="space-y-6 animate-pop-micro">
+      {/* Profile Card Header Banner */}
+      <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden relative">
+        <div className="h-28 bg-gradient-to-r from-slate-900 via-slate-800 to-orange-950 relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-48 h-48 bg-orange-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute right-1/3 -bottom-10 w-36 h-36 bg-red-500/10 rounded-full blur-xl pointer-events-none"></div>
         </div>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">{initialProfile.full_name}</h2>
-          <p className="text-gray-500">{initialProfile.customer?.company_name || (initialProfile.role === 'sales' ? 'Sales Representative' : 'System Admin')}</p>
-          <span className="inline-block mt-2 px-3 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full capitalize">
-            {initialProfile.role}
-          </span>
-        </div>
-      </div>
 
-      <div className="p-6 sm:p-8 space-y-6">
-        {/* Form Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Full Name</label>
-            <input
-              type="text"
-              disabled={!isEditing}
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className={`w-full p-2.5 rounded-lg border focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500 ${
-                errors.full_name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.full_name && <p className="text-red-500 text-xs">{errors.full_name}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Email Address</label>
-            <input
-              type="email"
-              disabled
-              value={userEmail}
-              className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-100 text-gray-500"
-              title="Email cannot be changed here"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Phone Number</label>
-            <input
-              type="tel"
-              disabled={!isEditing}
-              value={formData.phone_number}
-              onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-              className="w-full p-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500"
-              placeholder="+62 8..."
-            />
-          </div>
-
-          {initialProfile.customer && (
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700">Company</label>
-              <input
-                type="text"
-                disabled
-                value={initialProfile.customer.company_name}
-                className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-100 text-gray-500"
-              />
+        <div className="px-6 sm:px-8 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12">
+          <div className="flex items-end gap-5">
+            <div className="h-24 w-24 rounded-2xl bg-gradient-to-tr from-orange-500 to-red-600 p-1 shadow-lg shadow-orange-500/20 shrink-0">
+              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-white text-3xl font-black uppercase tracking-wider">
+                {initialLetter}
+              </div>
             </div>
-          )}
-        </div>
+            <div className="space-y-1 pb-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  {formData.full_name || 'Pengguna OilTrack'}
+                </h2>
+                <span className="px-3 py-1 bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">
+                  {initialProfile.role || 'User'}
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-slate-500">
+                {initialProfile.customer?.company_name || roleDisplay}
+              </p>
+            </div>
+          </div>
 
-        {/* Action Buttons */}
-        <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="w-full sm:w-auto">
+          <div className="pb-1">
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full sm:w-auto px-6 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
+                className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-2"
               >
-                Edit Profile
+                <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 210.3H3v-3.572L16.732 3.732z" />
+                </svg>
+                Edit Informasi Profil
               </button>
             ) : (
-              <div className="flex gap-3 w-full sm:w-auto">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setIsEditing(false)
@@ -184,177 +151,282 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
                     })
                     setErrors({})
                   }}
-                  className="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 sm:flex-none px-6 py-2.5 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                  className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
+                  {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
                 </button>
               </div>
             )}
           </div>
-        {/* Push Notification Section */}
-        <div className="pt-6 border-t border-gray-200 space-y-4">
-          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            Sistem Notifikasi Push
-          </h3>
-          <p className="text-xs text-gray-500 leading-relaxed font-semibold">
-            Aktifkan notifikasi push untuk menerima pembaruan status uji lab mesin Anda secara real-time di perangkat ini.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={async () => {
-                if (!('Notification' in window)) {
-                  toast.error('Browser Anda tidak mendukung notifikasi push.')
-                  return
-                }
-                const permission = await Notification.requestPermission()
-                if (permission === 'granted') {
-                  toast.success('Notifikasi berhasil diaktifkan!')
+        </div>
+      </div>
+
+      {/* Main Profile Info Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Account Details & Status */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white rounded-3xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-4">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Detail Ringkasan
+            </h3>
+
+            <div className="space-y-3.5 divide-y divide-slate-100">
+              <div className="pt-1">
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Role Akses</span>
+                <span className="text-xs font-bold text-slate-800 mt-0.5 block capitalize">{initialProfile.role || 'sales'}</span>
+              </div>
+
+              <div className="pt-3">
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Status Akun</span>
+                <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                  Aktif & Terverifikasi
+                </span>
+              </div>
+
+              {initialProfile.customer && (
+                <div className="pt-3">
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Perusahaan Terdaftar</span>
+                  <span className="text-xs font-bold text-slate-800 mt-0.5 block">{initialProfile.customer.company_name}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Push Notification Box */}
+          <div className="bg-white rounded-3xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-4">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              Notifikasi Perangkat
+            </h3>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              Terima notifikasi instan saat penawaran atau permintaan sampel di-update.
+            </p>
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={async () => {
+                  if (!('Notification' in window)) {
+                    toast.error('Browser Anda tidak mendukung notifikasi push.')
+                    return
+                  }
+                  const permission = await Notification.requestPermission()
+                  if (permission === 'granted') {
+                    toast.success('Notifikasi push berhasil diaktifkan!')
+                    try {
+                      const reg = await navigator.serviceWorker.ready
+                      const sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                      }).catch(() => null)
+                      
+                      if (sub) {
+                        await fetch('/api/push/subscribe', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ subscription: sub })
+                        })
+                      }
+                    } catch (e) {
+                      console.log('Push subscribe backend error:', e)
+                    }
+                  } else {
+                    toast.error('Izin notifikasi ditolak oleh pengguna.')
+                  }
+                }}
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all shadow-sm active:scale-98 flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Aktifkan Notifikasi
+              </button>
+              
+              <button
+                onClick={async () => {
+                  if (!('Notification' in window) || Notification.permission !== 'granted') {
+                    toast.error('Harap aktifkan izin notifikasi terlebih dahulu.')
+                    return
+                  }
                   try {
                     const reg = await navigator.serviceWorker.ready
-                    const sub = await reg.pushManager.subscribe({
-                      userVisibleOnly: true,
-                    }).catch(() => null)
-                    
-                    if (sub) {
-                      await fetch('/api/push/subscribe', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ subscription: sub })
-                      })
-                    }
-                  } catch (e) {
-                    console.log('Push subscribe backend error:', e)
+                    reg.showNotification('OilTrack System', {
+                      body: 'Notifikasi simulasi: Permintaan penawaran telah disetujui.',
+                      icon: 'https://i.imgur.com/8nqsjFz.png',
+                      badge: 'https://i.imgur.com/8nqsjFz.png',
+                      data: '/sales',
+                    } as unknown as NotificationOptions)
+                    toast.success('Notifikasi simulasi berhasil terdaftar!')
+                  } catch {
+                    new Notification('OilTrack System', {
+                      body: 'Notifikasi simulasi: Permintaan penawaran telah disetujui.',
+                      icon: 'https://i.imgur.com/8nqsjFz.png',
+                    })
+                    toast.success('Notifikasi simulasi dikirim (fallback)!')
                   }
-                } else {
-                  toast.error('Izin notifikasi ditolak.')
-                }
-              }}
-              className="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-[11px] uppercase tracking-wider hover:bg-slate-800 transition-colors"
-            >
-              Aktifkan Notifikasi
-            </button>
-            
-            <button
-              onClick={async () => {
-                if (!('Notification' in window) || Notification.permission !== 'granted') {
-                  toast.error('Harap aktifkan notifikasi terlebih dahulu.')
-                  return
-                }
-                
-                try {
-                  const reg = await navigator.serviceWorker.ready
-                  reg.showNotification('OilTrack Simulator', {
-                    body: 'Notifikasi simulasi: Hasil uji lab mesin CNC-01 telah selesai diproses.',
-                    icon: 'https://i.imgur.com/8nqsjFz.png',
-                    badge: 'https://i.imgur.com/8nqsjFz.png',
-                    data: '/dashboard',
-                    vibrate: [100, 50, 100],
-                  } as unknown as NotificationOptions)
-                  toast.success('Notifikasi simulasi dikirim!')
-                } catch {
-                  new Notification('OilTrack Simulator', {
-                    body: 'Notifikasi simulasi: Hasil uji lab mesin CNC-01 telah selesai.',
-                    icon: 'https://i.imgur.com/8nqsjFz.png',
-                  })
-                  toast.success('Notifikasi simulasi dikirim (fallback)!')
-                }
-              }}
-              className="px-4 py-2 border border-orange-200 text-orange-600 font-bold rounded-xl text-[11px] uppercase tracking-wider hover:bg-orange-50 transition-colors"
-            >
-              Simulasi Tes Push
-            </button>
+                }}
+                className="w-full py-2.5 border border-slate-200 text-slate-600 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center justify-center gap-2"
+              >
+                Simulasi Tes Notifikasi
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Change Password Section */}
-        <div className="pt-6 border-t border-gray-200">
-          {!showPasswordForm ? (
-            <button
-              onClick={() => setShowPasswordForm(true)}
-              className="w-full sm:w-auto px-6 py-2.5 text-orange-650 font-bold hover:bg-orange-50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Right Column: Editable Profile Fields & Password Form */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Information Form */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-5">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Informasi Pribadi & Kontak
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                  Nama Lengkap
+                </label>
+                <input
+                  type="text"
+                  disabled={!isEditing}
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  className={`w-full px-4 py-3 bg-slate-50/50 focus:bg-white border rounded-2xl text-xs font-bold text-slate-800 transition-all outline-none disabled:bg-slate-100/60 disabled:text-slate-500 ${
+                    errors.full_name ? 'border-red-400 focus:ring-4 focus:ring-red-100' : 'border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50'
+                  }`}
+                  placeholder="Nama Lengkap Anda"
+                />
+                {errors.full_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.full_name}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                  Alamat Email (Pengenal Utama)
+                </label>
+                <input
+                  type="email"
+                  disabled
+                  value={userEmail}
+                  className="w-full px-4 py-3 bg-slate-100/80 border border-slate-200/80 rounded-2xl text-xs font-bold text-slate-500 cursor-not-allowed"
+                />
+                <p className="text-[10px] text-slate-400 font-semibold mt-1">Email akun ditautkan dari sistem otentikasi utama dan tidak dapat diubah di sini.</p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                  Nomor Telepon / WhatsApp
+                </label>
+                <input
+                  type="tel"
+                  disabled={!isEditing}
+                  value={formData.phone_number}
+                  onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50 rounded-2xl text-xs font-bold text-slate-800 transition-all outline-none disabled:bg-slate-100/60 disabled:text-slate-500"
+                  placeholder="+62 812 3456 7890"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Security & Password Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-5">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Ubah Kata Sandi
-            </button>
-          ) : (
-            <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200 space-y-4 max-w-md animate-pop-micro">
-              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-                Ubah Kata Sandi Baru
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="space-y-1 relative">
-                  <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Kata Sandi Baru</label>
-                  <div className="relative">
+              Keamanan Akun & Kata Sandi
+            </h3>
+
+            {!showPasswordForm ? (
+              <div className="flex items-center justify-between p-4 bg-orange-50/50 border border-orange-100 rounded-2xl">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Kata Sandi Akun</h4>
+                  <p className="text-[11px] text-slate-500 font-medium">Perbarui kata sandi Anda secara berkala untuk menjaga keamanan akun.</p>
+                </div>
+                <button
+                  onClick={() => setShowPasswordForm(true)}
+                  className="px-4 py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-600 font-black text-xs rounded-xl uppercase tracking-wider transition-all shadow-sm active:scale-95 shrink-0"
+                >
+                  Ubah Kata Sandi
+                </button>
+              </div>
+            ) : (
+              <div className="bg-slate-50/70 p-5 border border-slate-200/80 rounded-2xl space-y-4 animate-pop-micro">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                      Kata Sandi Baru
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={passwordData.new_password}
+                        onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                        placeholder="Minimal 6 karakter"
+                        className="w-full px-4 py-3 pr-10 bg-white border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50 rounded-xl text-xs font-bold text-slate-800 transition-all outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-3 text-slate-400 hover:text-orange-500 transition-colors"
+                      >
+                        {showNewPassword ? (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                      Konfirmasi Kata Sandi Baru
+                    </label>
                     <input
                       type={showNewPassword ? 'text' : 'password'}
-                      value={passwordData.new_password}
-                      onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                      placeholder="Minimal 6 karakter"
-                      className="w-full p-2.5 pr-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-xs font-bold"
+                      value={passwordData.confirm_password}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                      placeholder="Masukkan ulang kata sandi"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50 rounded-xl text-xs font-bold text-slate-800 transition-all outline-none"
                     />
+                  </div>
+
+                  <div className="flex gap-2 pt-1">
                     <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-650 transition-colors"
+                      onClick={() => {
+                        setShowPasswordForm(false)
+                        setPasswordData({ new_password: '', confirm_password: '' })
+                      }}
+                      className="px-4 py-2.5 bg-slate-200/80 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs uppercase tracking-wider transition-colors"
                     >
-                      {showNewPassword ? (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                      )}
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleDirectPasswordChange}
+                      disabled={isUpdatingPassword}
+                      className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:from-orange-600 hover:to-red-700 transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:opacity-50"
+                    >
+                      {isUpdatingPassword ? 'Memproses...' : 'Simpan Kata Sandi'}
                     </button>
                   </div>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black text-gray-500 uppercase tracking-wider">Konfirmasi Kata Sandi</label>
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={passwordData.confirm_password}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                    placeholder="Masukkan ulang kata sandi"
-                    className="w-full p-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-xs font-bold"
-                  />
-                </div>
-
-                <div className="flex gap-2.5 pt-2">
-                  <button
-                    onClick={() => {
-                      setShowPasswordForm(false)
-                      setPasswordData({ new_password: '', confirm_password: '' })
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 font-bold rounded-xl text-[11px] uppercase tracking-wider hover:bg-gray-100 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleDirectPasswordChange}
-                    disabled={isUpdatingPassword}
-                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-wider hover:from-orange-600 hover:to-red-700 transition-all shadow-md shadow-orange-500/10 active:scale-95 disabled:opacity-50"
-                  >
-                    {isUpdatingPassword ? 'Memproses...' : 'Ubah Sandi'}
-                  </button>
-                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
