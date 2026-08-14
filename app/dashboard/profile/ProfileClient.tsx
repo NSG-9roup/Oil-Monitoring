@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
@@ -11,7 +11,41 @@ const profileSchema = z.object({
   phone_number: z.string().optional(),
 })
 
-export default function ProfileClient({ initialProfile, userEmail }: { initialProfile: Record<string, unknown> & { id?: string, full_name?: string, phone_number?: string, role?: string, customer?: { company_name?: string } }, userEmail: string }) {
+interface ProfileStats {
+  machinesCount: number
+  labTestsCount: number
+  labRequestsCount: number
+  ordersCount: number
+}
+
+interface TeamMember {
+  id: string
+  full_name: string | null
+  email: string | null
+  role: string | null
+  phone_number: string | null
+  created_at: string | null
+}
+
+interface ProfileClientProps {
+  initialProfile: Record<string, unknown> & {
+    id?: string
+    full_name?: string
+    phone_number?: string
+    role?: string
+    customer?: { company_name?: string; status?: string }
+  }
+  userEmail: string
+  stats?: ProfileStats
+  teamMembers?: TeamMember[]
+}
+
+export default function ProfileClient({
+  initialProfile,
+  userEmail,
+  stats = { machinesCount: 0, labTestsCount: 0, labRequestsCount: 0, ordersCount: 0 },
+  teamMembers = []
+}: ProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -26,7 +60,15 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
   })
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  const [notifPermission, setNotifPermission] = useState<string>('default')
+  
   const supabase = createClient()
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifPermission(Notification.permission)
+    }
+  }, [])
 
   const handleSave = async () => {
     try {
@@ -43,7 +85,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
         throw new Error(result.error || 'Gagal memperbarui profil')
       }
 
-      toast.success('Profil berhasil diperbarui')
+      toast.success('Profil berhasil diperbarui!')
       setIsEditing(false)
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
@@ -80,7 +122,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
 
       if (error) throw error
 
-      toast.success('Kata sandi berhasil diperbarui')
+      toast.success('Kata sandi berhasil diperbarui!')
       setPasswordData({ new_password: '', confirm_password: '' })
       setShowPasswordForm(false)
     } catch (err: unknown) {
@@ -88,6 +130,37 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
       toast.error((err as Error).message || 'Gagal memperbarui kata sandi')
     } finally {
       setIsUpdatingPassword(false)
+    }
+  }
+
+  const handleEnablePushNotification = async () => {
+    if (!('Notification' in window)) {
+      toast.error('Browser Anda tidak mendukung notifikasi push.')
+      return
+    }
+    const permission = await Notification.requestPermission()
+    setNotifPermission(permission)
+    
+    if (permission === 'granted') {
+      toast.success('Notifikasi push berhasil diaktifkan!')
+      try {
+        const reg = await navigator.serviceWorker.ready
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+        }).catch(() => null)
+        
+        if (sub) {
+          await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subscription: sub })
+          })
+        }
+      } catch (e) {
+        console.log('Push subscribe backend error:', e)
+      }
+    } else {
+      toast.error('Izin notifikasi ditolak oleh pengguna.')
     }
   }
 
@@ -100,16 +173,16 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
 
   return (
     <div className="space-y-6 animate-pop-micro">
-      {/* Profile Card Header Banner */}
+      {/* Profile Card Banner */}
       <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden relative">
-        <div className="h-28 bg-gradient-to-r from-slate-900 via-slate-800 to-orange-950 relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-48 h-48 bg-orange-500/10 rounded-full blur-2xl pointer-events-none"></div>
-          <div className="absolute right-1/3 -bottom-10 w-36 h-36 bg-red-500/10 rounded-full blur-xl pointer-events-none"></div>
+        <div className="h-32 bg-gradient-to-r from-slate-950 via-slate-850 to-orange-950 relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-56 h-56 bg-orange-500/15 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute right-1/3 -bottom-10 w-40 h-40 bg-red-500/15 rounded-full blur-xl pointer-events-none"></div>
         </div>
 
-        <div className="px-6 sm:px-8 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12">
+        <div className="px-6 sm:px-8 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14">
           <div className="flex items-end gap-5">
-            <div className="h-24 w-24 rounded-2xl bg-gradient-to-tr from-orange-500 to-red-600 p-1 shadow-lg shadow-orange-500/20 shrink-0">
+            <div className="h-24 w-24 rounded-2xl bg-gradient-to-tr from-orange-500 via-amber-500 to-red-600 p-1 shadow-xl shadow-orange-500/20 shrink-0">
               <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-white text-3xl font-black uppercase tracking-wider">
                 {initialLetter}
               </div>
@@ -166,12 +239,58 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
             )}
           </div>
         </div>
+
+        {/* Corporate Asset Statistics Summary Bar */}
+        {initialProfile.role === 'customer' && (
+          <div className="px-6 sm:px-8 py-4 bg-slate-50/80 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-100/80 text-orange-600 flex items-center justify-center font-black shrink-0">
+                ⚙️
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Mesin Terdaftar</span>
+                <span className="text-sm font-black text-slate-900">{stats.machinesCount} Mesin</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center font-black shrink-0">
+                🧪
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Pengujian Lab</span>
+                <span className="text-sm font-black text-slate-900">{stats.labTestsCount} Laporan</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100/80 text-amber-600 flex items-center justify-center font-black shrink-0">
+                📋
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Request Lab</span>
+                <span className="text-sm font-black text-slate-900">{stats.labRequestsCount} Permintaan</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100/80 text-emerald-600 flex items-center justify-center font-black shrink-0">
+                📦
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Pesanan Oli</span>
+                <span className="text-sm font-black text-slate-900">{stats.ordersCount} Transaksi</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Main Profile Info Grid */}
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Account Details & Status */}
+        {/* Left Column: Summary & Push Notification Status */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Account Overview Box */}
           <div className="bg-white rounded-3xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-4">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,8 +301,8 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
 
             <div className="space-y-3.5 divide-y divide-slate-100">
               <div className="pt-1">
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Role Akses</span>
-                <span className="text-xs font-bold text-slate-800 mt-0.5 block capitalize">{initialProfile.role || 'sales'}</span>
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Role Akses Sistem</span>
+                <span className="text-xs font-bold text-slate-800 mt-0.5 block capitalize">{roleDisplay}</span>
               </div>
 
               <div className="pt-3">
@@ -203,53 +322,39 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
             </div>
           </div>
 
-          {/* Push Notification Box */}
+          {/* Push Notification Device Manager */}
           <div className="bg-white rounded-3xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-4">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              Notifikasi Perangkat
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Notifikasi Perangkat
+              </h3>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                notifPermission === 'granted'
+                  ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                  : notifPermission === 'denied'
+                  ? 'bg-red-50 text-red-600 border-red-200'
+                  : 'bg-amber-50 text-amber-600 border-amber-200'
+              }`}>
+                {notifPermission === 'granted' ? 'Aktif' : notifPermission === 'denied' ? 'Dibatasi' : 'Belum Izin'}
+              </span>
+            </div>
+
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Terima notifikasi instan saat penawaran atau permintaan sampel di-update.
+              Dapatkan notifikasi instan secara otomatis saat hasil uji lab terbit atau penawaran produk disetujui.
             </p>
+
             <div className="space-y-2 pt-1">
               <button
-                onClick={async () => {
-                  if (!('Notification' in window)) {
-                    toast.error('Browser Anda tidak mendukung notifikasi push.')
-                    return
-                  }
-                  const permission = await Notification.requestPermission()
-                  if (permission === 'granted') {
-                    toast.success('Notifikasi push berhasil diaktifkan!')
-                    try {
-                      const reg = await navigator.serviceWorker.ready
-                      const sub = await reg.pushManager.subscribe({
-                        userVisibleOnly: true,
-                      }).catch(() => null)
-                      
-                      if (sub) {
-                        await fetch('/api/push/subscribe', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ subscription: sub })
-                        })
-                      }
-                    } catch (e) {
-                      console.log('Push subscribe backend error:', e)
-                    }
-                  } else {
-                    toast.error('Izin notifikasi ditolak oleh pengguna.')
-                  }
-                }}
+                onClick={handleEnablePushNotification}
                 className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-all shadow-sm active:scale-98 flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Aktifkan Notifikasi
+                {notifPermission === 'granted' ? 'Perbarui Izin Notifikasi' : 'Aktifkan Notifikasi Push'}
               </button>
               
               <button
@@ -261,15 +366,15 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
                   try {
                     const reg = await navigator.serviceWorker.ready
                     reg.showNotification('OilTrack System', {
-                      body: 'Notifikasi simulasi: Permintaan penawaran telah disetujui.',
+                      body: 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.',
                       icon: 'https://i.imgur.com/8nqsjFz.png',
                       badge: 'https://i.imgur.com/8nqsjFz.png',
-                      data: '/sales',
+                      data: '/dashboard',
                     } as unknown as NotificationOptions)
-                    toast.success('Notifikasi simulasi berhasil terdaftar!')
+                    toast.success('Notifikasi simulasi berhasil dikirim!')
                   } catch {
                     new Notification('OilTrack System', {
-                      body: 'Notifikasi simulasi: Permintaan penawaran telah disetujui.',
+                      body: 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.',
                       icon: 'https://i.imgur.com/8nqsjFz.png',
                     })
                     toast.success('Notifikasi simulasi dikirim (fallback)!')
@@ -283,9 +388,9 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
           </div>
         </div>
 
-        {/* Right Column: Editable Profile Fields & Password Form */}
+        {/* Right Column: Profile Form, Team Roster, Security */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Information Form */}
+          {/* Editable Personal Info Form */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-5">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,7 +427,7 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
                   value={userEmail}
                   className="w-full px-4 py-3 bg-slate-100/80 border border-slate-200/80 rounded-2xl text-xs font-bold text-slate-500 cursor-not-allowed"
                 />
-                <p className="text-[10px] text-slate-400 font-semibold mt-1">Email akun ditautkan dari sistem otentikasi utama dan tidak dapat diubah di sini.</p>
+                <p className="text-[10px] text-slate-400 font-semibold mt-1">Email akun ditautkan dari sistem otentikasi utama dan tidak dapat diubah secara langsung.</p>
               </div>
 
               <div>
@@ -341,7 +446,71 @@ export default function ProfileClient({ initialProfile, userEmail }: { initialPr
             </div>
           </div>
 
-          {/* Security & Password Card */}
+          {/* Company Team Members Roster */}
+          {initialProfile.role === 'customer' && teamMembers.length > 0 && (
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Anggota Tim Perusahaan ({teamMembers.length})
+                </h3>
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  {initialProfile.customer?.company_name || 'Customer Team'}
+                </span>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                {teamMembers.map((member) => {
+                  const isCurrent = member.id === initialProfile.id
+                  const memberLetter = (member.full_name?.charAt(0) || member.email?.charAt(0) || '?').toUpperCase()
+
+                  return (
+                    <div
+                      key={member.id}
+                      className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${
+                        isCurrent
+                          ? 'bg-orange-50/50 border-orange-200/80 shadow-sm'
+                          : 'bg-slate-50/50 border-slate-100 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs uppercase ${
+                          isCurrent
+                            ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}>
+                          {memberLetter}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-slate-900">
+                              {member.full_name || 'Pengguna'}
+                            </h4>
+                            {isCurrent && (
+                              <span className="px-2 py-0.2 bg-orange-100 text-orange-700 text-[9px] font-black uppercase rounded-full">
+                                Saya
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-500 font-medium">
+                            {member.email} {member.phone_number ? `• ${member.phone_number}` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-wider rounded-lg capitalize">
+                        {member.role || 'Staff'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Account Security Card */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 space-y-5">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
