@@ -176,6 +176,7 @@ export default function OrdersSection({
           order_id: selectedOrderId,
           customer_id: customerId,
           description: complaintDesc,
+          complaint_text: complaintDesc,
           status: 'open',
         })
         .select(`*, order:oil_orders(id, product:oil_products(product_name))`)
