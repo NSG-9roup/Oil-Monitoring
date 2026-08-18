@@ -2,8 +2,8 @@
 
 import { createServiceClient } from '@/lib/supabase/service'
 
-// Hardcoded purchasing email — all proposals go here
-const PURCHASING_EMAIL = 'warehouse@nabelsakha.com'
+// Configurable purchasing email via env variable with fallback
+const PURCHASING_EMAIL = process.env.PURCHASING_EMAIL || 'warehouse@nabelsakha.com'
 
 export async function sendEmail({
   to,
