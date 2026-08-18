@@ -40,14 +40,16 @@ export default async function DashboardPage() {
     )
   }
 
+  const serviceSupabase = createServiceClient()
+
   // Get machines for this customer
-  const machinesPromise = supabase
+  const machinesPromise = serviceSupabase
     .from('oil_machines')
     .select('*')
     .eq('customer_id', profile.customer_id)
     .order('machine_name')
 
-  const salesTeamPromise = supabase
+  const salesTeamPromise = serviceSupabase
     .from('oil_profiles')
     .select('id, full_name')
     .eq('role', 'sales')
@@ -56,23 +58,23 @@ export default async function DashboardPage() {
   const { data: machines } = await machinesPromise
   const { data: initialSalesTeam } = await salesTeamPromise
 
-  // Fetch lab tests for this customer's machines (securely scoped by RLS)
+  // Fetch lab tests for this customer's machines (securely scoped by machine IDs)
   const machineIds = (machines || []).map(m => m.id)
   const labTestsPromise = machineIds.length > 0
-    ? supabase
+    ? serviceSupabase
         .from('oil_lab_tests')
         .select(`
           id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, water_content_unit,
-          tan_value, pdf_path, created_at,
-          product:product_id(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)
+          tan_value, notes, pdf_path, created_at,
+          product:oil_products(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)
         `)
         .in('machine_id', machineIds)
         .order('test_date', { ascending: false })
     : Promise.resolve({ data: [], error: null })
 
-  // Fetch lab requests (securely scoped by RLS)
+  // Fetch lab requests (securely scoped by customer_id)
   const labRequestsPromise = profile.customer_id
-    ? supabase
+    ? serviceSupabase
         .from('oil_lab_requests')
         .select(`
           *,
@@ -83,19 +85,17 @@ export default async function DashboardPage() {
         .order('created_at', { ascending: false })
     : Promise.resolve({ data: [], error: null })
 
-  const productsPromise = supabase
+  const productsPromise = serviceSupabase
     .from('oil_products')
     .select('*')
     .order('product_name')
-
-  const serviceSupabase = createServiceClient()
 
   const ordersPromise = profile.customer_id
     ? serviceSupabase
         .from('oil_orders')
         .select(`
           *,
-          product:product_id(product_name, product_type)
+          product:oil_products(product_name, product_type)
         `)
         .eq('customer_id', profile.customer_id)
         .order('created_at', { ascending: false })
