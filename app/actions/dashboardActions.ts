@@ -171,12 +171,14 @@ export async function createCustomerComplaint(data: {
     }
 
     const supabaseService = createServiceClient()
+    const descText = data.description.trim()
     const { data: newComplaint, error } = await supabaseService
       .from('oil_complaints')
       .insert([{
         order_id: data.orderId,
         customer_id: profile.customer_id,
-        description: data.description.trim(),
+        description: descText,
+        complaint_text: descText,
         status: 'open'
       }])
       .select(`*, order:oil_orders(id, product:oil_products(product_name))`)
