@@ -1669,74 +1669,24 @@ export default function DashboardClient({
           </div>
         </header>
 
-        {/* Paten Navigator */}
+        {/* Paten Navigator — Symmetrical 5-Column Full-Width Navbar */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-1.5 shadow-sm overflow-hidden">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
-              <div className="flex-1 overflow-x-auto no-scrollbar">
-                <ShortcutNavigator
-                  ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
-                  items={[
-                    { id: 'trend', label: copy.oilTrend },
-                    { id: 'analysis', label: copy.analysisAndReports },
-                    { id: 'lab', label: copy.labResults },
-                    { id: 'requests', label: language === 'id' ? 'Status Lab Request' : 'Lab Request Status' },
-                    { id: 'orders', label: language === 'id' ? 'Penawaran Oli' : 'Oil Quotations' },
-                  ].map((shortcut) => ({
-                    id: shortcut.id,
-                    label: shortcut.label,
-                    isActive: activeTab === shortcut.id,
-                  }))}
-                  onItemClick={handleShortcutClick}
-                />
-              </div>
-              <div className="hidden lg:block w-px h-7 bg-slate-200 mx-1 shrink-0"></div>
-              <div className="flex items-center gap-1.5 px-2 py-1 overflow-x-auto no-scrollbar shrink-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1 whitespace-nowrap">{copy.timeRangeTitle}</span>
-                {['7d', '30d', '90d', '6m', 'custom', 'all'].map((range) => (
-                  <button 
-                    key={range}
-                    onClick={() => setTimeRange(range as any)} 
-                    className={`px-2.5 py-1.5 rounded-xl font-black text-[10px] tracking-wider uppercase transition-all duration-200 whitespace-nowrap border ${
-                      timeRange === range 
-                        ? 'bg-slate-900 border-slate-950 text-white shadow-sm scale-[1.02]' 
-                        : 'bg-slate-50 border-slate-200/70 text-slate-500 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300'
-                    }`}
-                  >
-                    {range === 'custom' ? copy.customRange.toUpperCase() : range.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Custom Date Range Picker UI */}
-            {timeRange === 'custom' && (
-              <div className="bg-white/50 border-t border-gray-100 px-4 py-3 flex flex-wrap items-center gap-4 animate-pop-micro">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{copy.startDate}</span>
-                  <input 
-                    type="date" 
-                    value={customDateRange.start || ''} 
-                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{copy.endDate}</span>
-                  <input 
-                    type="date" 
-                    value={customDateRange.end || ''} 
-                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                    className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
-                  />
-                </div>
-                {(!customDateRange.start || !customDateRange.end) && (
-                  <p className="text-[10px] font-bold text-amber-600 animate-pulse">
-                    {language === 'id' ? 'Silakan pilih rentang tanggal' : 'Please select a date range'}
-                  </p>
-                )}
-              </div>
-            )}
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-2 shadow-sm select-none">
+            <ShortcutNavigator
+              ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
+              items={[
+                { id: 'trend', label: copy.oilTrend },
+                { id: 'analysis', label: copy.analysisAndReports },
+                { id: 'lab', label: copy.labResults },
+                { id: 'requests', label: language === 'id' ? 'Status Lab Request' : 'Lab Request Status' },
+                { id: 'orders', label: language === 'id' ? 'Penawaran Oli' : 'Oil Quotations' },
+              ].map((shortcut) => ({
+                id: shortcut.id,
+                label: shortcut.label,
+                isActive: activeTab === shortcut.id,
+              }))}
+              onItemClick={handleShortcutClick}
+            />
           </div>
         </div>
       </div>
@@ -1951,7 +1901,65 @@ export default function DashboardClient({
         <div className="flex-1 w-full relative min-h-[600px] space-y-8">
           {/* Trend Tab */}
           <div className={`w-full ${activeTab === 'trend' ? 'block animate-pop-micro' : 'hidden'}`}>
-            <div key="trend" className="w-full">
+            <div key="trend" className="w-full space-y-4">
+              {/* Contextual Time Range Filter Bar for Trend Analytics */}
+              <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-3 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-800">{copy.timeRangeTitle}</span>
+                  <span className="text-slate-400 text-xs hidden sm:inline">•</span>
+                  <span className="text-[10px] font-bold text-slate-500 hidden sm:inline">
+                    {timeRange === 'all' ? (language === 'id' ? 'Semua Riwayat Pengujian' : 'All Test History') : 
+                     timeRange === 'custom' ? (language === 'id' ? 'Periode Kustom' : 'Custom Period') : 
+                     `${language === 'id' ? 'Periode Terakhir' : 'Last Period'}: ${timeRange.toUpperCase()}`}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {['7d', '30d', '90d', '6m', 'custom', 'all'].map((range) => (
+                    <button 
+                      key={range}
+                      onClick={() => setTimeRange(range as any)} 
+                      className={`px-3 py-1.5 rounded-xl font-black text-[10px] tracking-wider uppercase transition-all duration-200 border ${
+                        timeRange === range 
+                          ? 'bg-slate-900 border-slate-950 text-white shadow-sm scale-[1.02]' 
+                          : 'bg-slate-50 border-slate-200/70 text-slate-500 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300'
+                      }`}
+                    >
+                      {range === 'custom' ? copy.customRange.toUpperCase() : range.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Date Range Picker UI */}
+              {timeRange === 'custom' && (
+                <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 px-5 py-3.5 flex flex-wrap items-center gap-4 animate-pop-micro shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{copy.startDate}</span>
+                    <input 
+                      type="date" 
+                      value={customDateRange.start || ''} 
+                      onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all shadow-sm"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{copy.endDate}</span>
+                    <input 
+                      type="date" 
+                      value={customDateRange.end || ''} 
+                      onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all shadow-sm"
+                    />
+                  </div>
+                  {(!customDateRange.start || !customDateRange.end) && (
+                    <p className="text-[10px] font-bold text-amber-600 animate-pulse">
+                      {language === 'id' ? 'Silakan pilih rentang tanggal' : 'Please select a date range'}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <TrendSection
                 language={language}
                 chartData={chartData}
