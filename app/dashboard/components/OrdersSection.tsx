@@ -56,16 +56,14 @@ interface OrdersSectionProps {
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800 border-amber-200',
   processing: 'bg-blue-100 text-blue-800 border-blue-200',
-  shipped: 'bg-purple-100 text-purple-800 border-purple-200',
   completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   cancelled: 'bg-red-100 text-red-800 border-red-200',
 }
 
 const STATUS_LABELS: Record<string, Record<'id' | 'en', string>> = {
   pending: { id: 'Menunggu Review Sales', en: 'Pending Sales Review' },
-  processing: { id: 'Diteruskan ke Purchasing (Email Terkirim)', en: 'Forwarded to Purchasing (Emailed)' },
-  shipped: { id: 'SPH / Sampel Terkirim', en: 'Quotation / Sample Sent' },
-  completed: { id: 'Selesai / Deal', en: 'Completed / Deal' },
+  processing: { id: 'Diteruskan ke Admin Sales (Email Terkirim)', en: 'Forwarded to Admin Sales (Emailed)' },
+  completed: { id: 'Selesai / Penawaran Diterbitkan', en: 'Completed / Quotation Issued' },
   cancelled: { id: 'Dibatalkan', en: 'Cancelled' },
 }
 
@@ -248,7 +246,7 @@ export default function OrdersSection({
           </button>
         </div>
 
-        {/* Live Notification Banner when Quotation is Forwarded to Purchasing */}
+        {/* Live Notification Banner when Quotation is Forwarded to Admin Sales */}
         {orders.some(o => o.status === 'processing') && (
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl flex items-start gap-3 shadow-sm animate-pop-micro">
             <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-md shadow-blue-500/20">
@@ -256,12 +254,12 @@ export default function OrdersSection({
             </div>
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-blue-900">
-                {language === 'id' ? 'Permintaan Penawaran Diteruskan ke Tim Purchasing' : 'Quotation Forwarded to Purchasing Team'}
+                {language === 'id' ? 'Permintaan Penawaran Diteruskan ke Tim Admin Sales' : 'Quotation Forwarded to Admin Sales Team'}
               </h4>
               <p className="text-xs text-blue-800 font-medium mt-0.5 leading-relaxed">
                 {language === 'id'
-                  ? 'Permintaan penawaran Anda telah disetujui oleh Sales dan diteruskan langsung ke Tim Pengadaan (Purchasing/Warehouse). Anda akan segera dihubungi oleh tim kami via Email / WhatsApp resmi untuk pengiriman Surat Penawaran Harga (SPH).'
-                  : 'Your price quotation request has been approved by Sales and forwarded directly to the Purchasing/Warehouse team. Our team will contact you shortly via official Email / WhatsApp.'}
+                  ? 'Permintaan penawaran Anda telah diteruskan oleh Sales ke Tim Admin Sales. Anda akan segera dihubungi oleh tim kami via Email / WhatsApp resmi untuk pengiriman Penawaran.'
+                  : 'Your price quotation request has been forwarded by Sales to the Admin Sales team. Our team will contact you shortly via official Email / WhatsApp for the quotation.'}
               </p>
             </div>
           </div>
@@ -306,7 +304,7 @@ export default function OrdersSection({
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {(order.status === 'completed' || order.status === 'shipped') && (
+                        {order.status === 'completed' && (
                           <button
                             onClick={() => {
                               setSelectedOrderId(order.id)

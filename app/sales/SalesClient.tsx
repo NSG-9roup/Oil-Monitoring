@@ -1231,15 +1231,15 @@ export default function SalesClient({
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-black text-slate-900">{order.customer?.company_name || 'PT N/A'}</span>
                             <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${
-                              order.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                              order.status === 'processing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                              order.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                              order.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                              order.status === 'pending' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                              order.status === 'processing' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                              order.status === 'completed' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                              order.status === 'cancelled' ? 'bg-red-50 text-red-800 border-red-200' :
                               'bg-slate-50 text-slate-600 border-slate-200'
                             }`}>
-                              {order.status === 'pending' ? 'Menunggu ACC' :
-                               order.status === 'processing' ? 'Terkirim ke Purchasing' :
-                               order.status === 'completed' ? 'Selesai' :
+                              {order.status === 'pending' ? 'Menunggu Review Sales' :
+                               order.status === 'processing' ? 'Diteruskan ke Admin Sales' :
+                               order.status === 'completed' ? 'Selesai / Penawaran Diterbitkan' :
                                order.status === 'cancelled' ? 'Dibatalkan' : order.status}
                             </span>
                           </div>
@@ -1256,7 +1256,7 @@ export default function SalesClient({
                             disabled={isLoading}
                             className="sm:self-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50"
                           >
-                            {isLoading ? 'Memproses...' : '✓ ACC & Kirim Penawaran'}
+                            {isLoading ? 'Memproses...' : '✓ ACC & Teruskan ke Admin Sales'}
                           </button>
                         )}
                       </div>
@@ -1289,8 +1289,8 @@ export default function SalesClient({
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-slate-900">Kirim Penawaran ke Purchasing</h3>
-                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Email akan dikirim ke <strong className="text-orange-600">warehouse@nabelsakha.com</strong></p>
+                    <h3 className="text-sm font-black text-slate-900">Kirim Penawaran ke Admin Sales</h3>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Email notifikasi penawaran akan dikirimkan langsung ke Tim Admin Sales / Sales Support</p>
                   </div>
                 </div>
               </div>

@@ -293,8 +293,8 @@ export async function sendPurchasingProposalEmail({
       <div style="background: #ffffff; padding: 28px;">
         
         <p style="font-size: 14px; color: #475569; margin: 0 0 20px 0; line-height: 1.6;">
-          Halo Tim <strong style="color: #0f172a;">Purchasing / Warehouse</strong>,<br>
-          Berikut adalah permintaan penawaran produk oli yang dikirimkan oleh tim sales untuk ditindaklanjuti.
+          Halo Tim <strong style="color: #0f172a;">Admin Sales / Sales Support</strong>,<br>
+          Berikut adalah permintaan penawaran harga produk oli yang diteruskan oleh tim sales untuk segera diterbitkan surat penawaran (quotation).
         </p>
 
         <!-- Request Info Card -->
