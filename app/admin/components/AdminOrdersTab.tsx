@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveComplaintAction, updateComplaintStatusAction } from '@/app/actions/adminActions'
 import { toast } from 'react-hot-toast'
 
 export interface AdminOrder {
@@ -82,6 +83,10 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
   const [editQuantity, setEditQuantity] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Complaint resolve modal state
+  const [resolvingComplaint, setResolvingComplaint] = useState<AdminComplaint | null>(null)
+  const [resolutionNotes, setResolutionNotes] = useState('')
+
   // --- Orders ---
   const filteredOrders = orders.filter(o => {
     const matchSearch =
@@ -110,10 +115,10 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
 
   const handleUpdateOrder = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingOrder || !editProductId || editQuantity <= 0) return
+    if (!editingOrder) return
     setIsSubmitting(true)
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('oil_orders')
         .update({
           product_id: editProductId,
@@ -121,27 +126,16 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
           updated_at: new Date().toISOString()
         })
         .eq('id', editingOrder.id)
-
+        .select(`*, customer:oil_customers(company_name), product:oil_products(product_name, product_type)`)
+        .single()
       if (error) throw error
-
-      const updatedProduct = products.find(p => p.id === editProductId)
-
-      setOrders(prev => prev.map(o => o.id === editingOrder.id ? {
-        ...o,
-        product_id: editProductId,
-        quantity: editQuantity,
-        product: {
-          ...o.product,
-          product_name: updatedProduct?.product_name || o.product?.product_name
-        }
-      } : o))
-
+      setOrders(prev => prev.map(o => o.id === editingOrder.id ? (data as AdminOrder) : o))
       setIsEditModalOpen(false)
       setEditingOrder(null)
-      toast.success('Permintaan penawaran berhasil diubah!')
+      toast.success('Permintaan penawaran berhasil diubah.')
     } catch (err) {
       console.error(err)
-      toast.error('Gagal mengubah permintaan penawaran.')
+      toast.error('Gagal mengupdate permintaan penawaran.')
     } finally {
       setIsSubmitting(false)
     }
@@ -157,6 +151,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
         .eq('id', orderId)
       if (error) throw error
       setOrders(prev => prev.filter(o => o.id !== orderId))
+      toast.success('Permintaan penawaran berhasil dihapus.')
     } catch (err) {
       console.error(err)
       toast.error('Gagal menghapus permintaan penawaran.')
@@ -165,44 +160,52 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
     }
   }
 
-  const handleResolveComplaint = async (complaintId: string) => {
-    const notes = prompt('Masukkan catatan penyelesaian keluhan (opsional):')
-    if (notes === null) return
-    setLoadingId(complaintId)
+  const handleOpenResolveModal = (comp: AdminComplaint) => {
+    setResolvingComplaint(comp)
+    setResolutionNotes(comp.resolution_notes || '')
+  }
+
+  const handleConfirmResolve = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resolvingComplaint) return
+    setIsSubmitting(true)
     try {
-      const { error } = await supabase
-        .from('oil_complaints')
-        .update({
-          status: 'resolved',
-          resolution_notes: notes || null,
-          resolved_at: new Date().toISOString(),
-        })
-        .eq('id', complaintId)
-      if (error) throw error
+      await resolveComplaintAction({
+        complaintId: resolvingComplaint.id,
+        resolutionNotes: resolutionNotes
+      })
+
       setComplaints(prev =>
         prev.map(c =>
-          c.id === complaintId ? { ...c, status: 'resolved', resolution_notes: notes || null } : c
+          c.id === resolvingComplaint.id
+            ? { ...c, status: 'resolved', resolution_notes: resolutionNotes || null, resolved_at: new Date().toISOString() }
+            : c
         )
       )
-    } catch {
+      setResolvingComplaint(null)
+      setResolutionNotes('')
+      toast.success('Keluhan berhasil diselesaikan dan catatan resolusi tersimpan!')
+    } catch (err) {
+      console.error(err)
       toast.error('Gagal menyelesaikan keluhan.')
     } finally {
-      setLoadingId(null)
+      setIsSubmitting(false)
     }
   }
 
   const handleMarkInProgress = async (complaintId: string) => {
     setLoadingId(complaintId)
     try {
-      const { error } = await supabase
-        .from('oil_complaints')
-        .update({ status: 'in_progress' })
-        .eq('id', complaintId)
-      if (error) throw error
+      await updateComplaintStatusAction({
+        complaintId,
+        status: 'in_progress'
+      })
       setComplaints(prev =>
         prev.map(c => c.id === complaintId ? { ...c, status: 'in_progress' } : c)
       )
-    } catch {
+      toast.success('Status keluhan diubah menjadi Diproses.')
+    } catch (err) {
+      console.error(err)
       toast.error('Gagal mengupdate keluhan.')
     } finally {
       setLoadingId(null)
@@ -439,7 +442,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
                             )}
                             {comp.status !== 'resolved' && (
                               <button
-                                onClick={() => handleResolveComplaint(comp.id)}
+                                onClick={() => handleOpenResolveModal(comp)}
                                 disabled={isLoading}
                                 className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
                               >
@@ -515,6 +518,80 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
                   className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Complaint Resolution Modal Card */}
+      {resolvingComplaint && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden animate-pop-micro">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-sm">
+                  ✓
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Selesaikan Keluhan Pelanggan</h3>
+                  <p className="text-[10px] font-bold text-slate-400 mt-0.5">
+                    {resolvingComplaint.customer?.company_name || 'Customer'} • {resolvingComplaint.order?.product?.product_name || 'Produk'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setResolvingComplaint(null)} 
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleConfirmResolve} className="p-6">
+              <div className="space-y-4">
+                {/* Keluhan Customer (Readonly info bubble) */}
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">Pesan Keluhan dari Customer:</span>
+                  <p className="text-xs font-bold text-slate-800 italic">
+                    "{resolvingComplaint.description}"
+                  </p>
+                </div>
+
+                {/* Input Balasan / Catatan Resolusi */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-2">
+                    Catatan Balasan / Tindak Lanjut Resolusi
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                    placeholder="Tuliskan penjelasan, solusi, atau nomor resi pengiriman untuk customer..."
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 block p-3 transition-colors outline-none resize-none"
+                  ></textarea>
+                  <span className="text-[10px] text-slate-400 font-medium mt-1 block">
+                    Catatan ini akan langsung terbaca oleh customer di tabel Riwayat Komplain mereka.
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setResolvingComplaint(null)} 
+                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting} 
+                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+                >
+                  {isSubmitting ? 'Menyimpan...' : '✓ Selesaikan Keluhan'}
                 </button>
               </div>
             </form>

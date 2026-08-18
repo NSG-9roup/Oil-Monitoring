@@ -454,4 +454,57 @@ export async function createAuditLog(
   }
 }
 
+export async function resolveComplaintAction(data: {
+  complaintId: string
+  resolutionNotes: string
+}) {
+  await verifyAdmin()
+  const supabaseService = createServiceClient()
+
+  const { error } = await supabaseService
+    .from('oil_complaints')
+    .update({
+      status: 'resolved',
+      resolution_notes: data.resolutionNotes?.trim() || null,
+      resolved_at: new Date().toISOString()
+    })
+    .eq('id', data.complaintId)
+
+  if (error) {
+    console.error('Error resolving complaint:', error)
+    throw new Error(error.message)
+  }
+
+  await createAuditLog('RESOLVE_COMPLAINT', `Admin resolved complaint ID: ${data.complaintId}`, { complaintId: data.complaintId, resolutionNotes: data.resolutionNotes })
+
+  revalidatePath('/admin')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function updateComplaintStatusAction(data: {
+  complaintId: string
+  status: 'open' | 'in_progress' | 'resolved'
+}) {
+  await verifyAdmin()
+  const supabaseService = createServiceClient()
+
+  const { error } = await supabaseService
+    .from('oil_complaints')
+    .update({ status: data.status })
+    .eq('id', data.complaintId)
+
+  if (error) {
+    console.error('Error updating complaint status:', error)
+    throw new Error(error.message)
+  }
+
+  await createAuditLog('UPDATE_COMPLAINT_STATUS', `Admin updated complaint ID: ${data.complaintId} status to ${data.status}`, { complaintId: data.complaintId, status: data.status })
+
+  revalidatePath('/admin')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+
 
