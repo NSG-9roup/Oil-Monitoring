@@ -809,7 +809,7 @@ export default function SalesClient({
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>Pesanan Pelanggan</span>
+              <span>Penawaran Pelanggan</span>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
             </button>
           </div>

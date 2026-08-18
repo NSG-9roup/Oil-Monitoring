@@ -48,10 +48,10 @@ const ORDER_STATUS_STYLES: Record<string, string> = {
 }
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending: 'Menunggu',
-  processing: 'Diproses',
-  shipped: 'Dikirim',
-  completed: 'Selesai',
+  pending: 'Menunggu Review',
+  processing: 'Diteruskan ke Purchasing',
+  shipped: 'SPH Terkirim',
+  completed: 'Selesai / Deal',
   cancelled: 'Dibatalkan',
 }
 
@@ -220,8 +220,8 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Pesanan', value: orders.length, color: 'text-slate-900', bg: 'bg-slate-50 border-slate-200' },
-          { label: 'Menunggu', value: pendingOrders, color: 'text-yellow-700', bg: 'bg-yellow-50 border-yellow-200' },
+          { label: 'Total Penawaran', value: orders.length, color: 'text-slate-900', bg: 'bg-slate-50 border-slate-200' },
+          { label: 'Menunggu Review', value: pendingOrders, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
           { label: 'Total Keluhan', value: complaints.length, color: 'text-slate-900', bg: 'bg-slate-50 border-slate-200' },
           { label: 'Keluhan Terbuka', value: openComplaints, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
         ].map(stat => (
@@ -241,9 +241,9 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
               onClick={() => { setActiveSection('orders'); setStatusFilter('all'); setSearchQuery('') }}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${activeSection === 'orders' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              Pesanan
+              Penawaran Produk
               {pendingOrders > 0 && (
-                <span className="ml-2 bg-yellow-400 text-yellow-900 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                <span className="ml-2 bg-amber-400 text-amber-900 text-[9px] font-black px-1.5 py-0.5 rounded-full">
                   {pendingOrders}
                 </span>
               )}

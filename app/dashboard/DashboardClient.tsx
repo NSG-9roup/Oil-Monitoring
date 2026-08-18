@@ -1681,7 +1681,7 @@ export default function DashboardClient({
                     { id: 'analysis', label: copy.analysisAndReports },
                     { id: 'lab', label: copy.labResults },
                     { id: 'requests', label: language === 'id' ? 'Status Lab Request' : 'Lab Request Status' },
-                    { id: 'orders', label: language === 'id' ? 'Pesanan Oli' : 'Oil Orders' },
+                    { id: 'orders', label: language === 'id' ? 'Penawaran Oli' : 'Oil Quotations' },
                   ].map((shortcut) => ({
                     id: shortcut.id,
                     label: shortcut.label,
