@@ -178,7 +178,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
       setComplaints(prev =>
         prev.map(c =>
           c.id === resolvingComplaint.id
-            ? { ...c, status: 'resolved', resolution_notes: resolutionNotes || null, resolved_at: new Date().toISOString() }
+            ? { ...c, status: 'resolved', resolution_notes: resolutionNotes || null }
             : c
         )
       )

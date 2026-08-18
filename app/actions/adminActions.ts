@@ -465,8 +465,7 @@ export async function resolveComplaintAction(data: {
     .from('oil_complaints')
     .update({
       status: 'resolved',
-      resolution_notes: data.resolutionNotes?.trim() || null,
-      resolved_at: new Date().toISOString()
+      resolution_notes: data.resolutionNotes?.trim() || null
     })
     .eq('id', data.complaintId)
 
