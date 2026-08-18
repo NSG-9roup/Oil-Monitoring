@@ -857,9 +857,9 @@ export default function AdminClient({
 
       {/* Main Workspace */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
-        {/* Tab Selection — Modern Glassmorphism Rounded Pills */}
-        <div className="w-full bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-2 shadow-sm mb-6 select-none overflow-x-auto no-scrollbar">
-          <nav className="flex items-center gap-1.5 min-w-max p-0.5">
+        {/* Tab Selection — Symmetrical Full-Width Modern Grid */}
+        <div className="w-full bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-2 shadow-sm mb-6 select-none">
+          <nav className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 w-full p-0.5">
             {[
               { 
                 key: 'overview', 
@@ -952,7 +952,7 @@ export default function AdminClient({
                     setFilterCompany('all')
                     setFilterMachine('all')
                   }}
-                  className={`px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap border ${
+                  className={`w-full justify-center px-2 py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap border ${
                     isActive
                       ? 'bg-slate-900 border-slate-950 text-white shadow-md shadow-slate-900/10 scale-[1.02]'
                       : 'bg-white border-slate-200/80 text-slate-500 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300'
