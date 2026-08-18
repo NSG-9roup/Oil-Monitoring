@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { createOrderQuotation } from '@/app/actions/dashboardActions'
+import { createOrderQuotation, createCustomerComplaint } from '@/app/actions/dashboardActions'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import { toast } from 'react-hot-toast'
 import {
@@ -165,31 +165,30 @@ export default function OrdersSection({
 
   const handleCreateComplaint = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedOrderId || !complaintDesc.trim()) return
+    if (!selectedOrderId || !complaintDesc.trim()) {
+      toast.error(language === 'id' ? 'Silakan pilih pesanan dan isi deskripsi keluhan' : 'Please select an order and enter complaint description')
+      return
+    }
     setIsSubmitting(true)
     try {
-      const { data, error } = await supabase
-        .from('oil_complaints')
-        .insert({
-          order_id: selectedOrderId,
-          customer_id: customerId,
-          description: complaintDesc,
-          complaint_text: complaintDesc,
-          status: 'open',
-        })
-        .select(`*, order:oil_orders(id, product:oil_products(product_name))`)
-        .single()
+      const res = await createCustomerComplaint({
+        orderId: selectedOrderId,
+        description: complaintDesc,
+      })
 
-      if (error) throw error
+      if (!res.success || !res.data) {
+        throw new Error(res.error || 'Gagal membuat komplain')
+      }
 
-      setComplaints([data, ...complaints])
+      setComplaints([res.data, ...complaints])
       setIsComplaintModalOpen(false)
       setComplaintDesc('')
       setSelectedOrderId(null)
       toast.success(language === 'id' ? 'Komplain berhasil dikirim!' : 'Complaint submitted successfully!')
-    } catch (err) {
-      console.error(err)
-      toast.error(language === 'id' ? 'Gagal mengirim komplain' : 'Failed to submit complaint')
+    } catch (err: unknown) {
+      console.error('Error submitting complaint:', err)
+      const errMsg = err instanceof Error ? err.message : 'Gagal mengirim komplain'
+      toast.error(errMsg)
     } finally {
       setIsSubmitting(false)
     }

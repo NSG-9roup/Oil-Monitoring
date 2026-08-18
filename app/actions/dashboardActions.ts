@@ -158,3 +158,43 @@ export async function createOrderQuotation(data: {
     return { success: false, error: err instanceof Error ? err.message : String(err) }
   }
 }
+
+export async function createCustomerComplaint(data: {
+  orderId: string
+  description: string
+}) {
+  try {
+    const { profile } = await verifyCustomer()
+
+    if (!data.orderId || !data.description?.trim()) {
+      return { success: false, error: 'Pesanan dan deskripsi komplain wajib diisi' }
+    }
+
+    const supabaseService = createServiceClient()
+    const { data: newComplaint, error } = await supabaseService
+      .from('oil_complaints')
+      .insert([{
+        order_id: data.orderId,
+        customer_id: profile.customer_id,
+        description: data.description.trim(),
+        status: 'open'
+      }])
+      .select(`*, order:oil_orders(id, product:oil_products(product_name))`)
+      .single()
+
+    if (error) {
+      console.error('Error creating customer complaint:', error)
+      return { success: false, error: error.message }
+    }
+
+    await createAuditLog('CREATE_COMPLAINT', `Customer filed complaint for order ID: ${data.orderId}`, { orderId: data.orderId, description: data.description })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/admin')
+    return { success: true, data: newComplaint }
+  } catch (err) {
+    console.error('Error in createCustomerComplaint:', err)
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
