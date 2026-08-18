@@ -1670,10 +1670,10 @@ export default function DashboardClient({
         </header>
 
         {/* Paten Navigator */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3">
-          <div className="bg-gray-50/30 backdrop-blur-md rounded-2xl border border-gray-100/50 shadow-sm overflow-hidden">
-            <div className="flex flex-col md:flex-row md:items-center">
-              <div className="flex-1 p-1.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-1.5 shadow-sm overflow-hidden">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+              <div className="flex-1 overflow-x-auto no-scrollbar">
                 <ShortcutNavigator
                   ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
                   items={[
@@ -1690,14 +1690,18 @@ export default function DashboardClient({
                   onItemClick={handleShortcutClick}
                 />
               </div>
-              <div className="hidden md:block w-px h-6 bg-gray-200 mx-1"></div>
-              <div className="flex items-center gap-1.5 p-1.5 overflow-x-auto">
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mx-2 whitespace-nowrap">{copy.timeRangeTitle}</span>
+              <div className="hidden lg:block w-px h-7 bg-slate-200 mx-1 shrink-0"></div>
+              <div className="flex items-center gap-1.5 px-2 py-1 overflow-x-auto no-scrollbar shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1 whitespace-nowrap">{copy.timeRangeTitle}</span>
                 {['7d', '30d', '90d', '6m', 'custom', 'all'].map((range) => (
                   <button 
                     key={range}
                     onClick={() => setTimeRange(range as any)} 
-                    className={`px-3 py-1.5 rounded-lg font-black text-[9px] tracking-wide transition-all ${timeRange === range ? 'bg-slate-900 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                    className={`px-2.5 py-1.5 rounded-xl font-black text-[10px] tracking-wider uppercase transition-all duration-200 whitespace-nowrap border ${
+                      timeRange === range 
+                        ? 'bg-slate-900 border-slate-950 text-white shadow-sm scale-[1.02]' 
+                        : 'bg-slate-50 border-slate-200/70 text-slate-500 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300'
+                    }`}
                   >
                     {range === 'custom' ? copy.customRange.toUpperCase() : range.toUpperCase()}
                   </button>
