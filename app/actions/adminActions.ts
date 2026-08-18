@@ -50,8 +50,29 @@ export async function updateCustomer(id: string, data: Partial<CustomerFormData>
 }
 
 export async function deleteCustomer(id: string) {
-  const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_customers').delete().eq('id', id)
+  await verifyAdmin()
+  const supabaseService = createServiceClient()
+
+  // 1. Get logo url to clean up storage if exists
+  const { data: customer } = await supabaseService
+    .from('oil_customers')
+    .select('logo_url')
+    .eq('id', id)
+    .single()
+
+  if (customer?.logo_url) {
+    try {
+      const fileName = customer.logo_url.split('/').pop()
+      if (fileName) {
+        await supabaseService.storage.from('customer-logos').remove([fileName])
+      }
+    } catch (e) {
+      console.warn('Could not remove customer logo file:', e)
+    }
+  }
+
+  // 2. Delete customer (PostgreSQL CASCADE will handle machines, requests, orders, complaints)
+  const { error } = await supabaseService.from('oil_customers').delete().eq('id', id)
   if (error) throw new Error(error.message)
   await createAuditLog('DELETE_CUSTOMER', `Deleted customer ID: ${id}`, { id })
   revalidatePath('/admin')
@@ -79,8 +100,25 @@ export async function updateMachine(id: string, data: Partial<MachineFormData>) 
 }
 
 export async function deleteMachine(id: string) {
-  const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_machines').delete().eq('id', id)
+  await verifyAdmin()
+  const supabaseService = createServiceClient()
+
+  // 1. Find all lab test PDFs associated with this machine to delete from storage
+  const { data: machineTests } = await supabaseService
+    .from('oil_lab_tests')
+    .select('pdf_path')
+    .eq('machine_id', id)
+
+  const pdfsToRemove = (machineTests || []).map(t => t.pdf_path).filter(Boolean) as string[]
+  if (pdfsToRemove.length > 0) {
+    try {
+      await supabaseService.storage.from('lab-reports').remove(pdfsToRemove)
+    } catch (e) {
+      console.warn('Could not remove machine test PDF files:', e)
+    }
+  }
+
+  const { error } = await supabaseService.from('oil_machines').delete().eq('id', id)
   if (error) throw new Error(error.message)
   await createAuditLog('DELETE_MACHINE', `Deleted machine ID: ${id}`, { id })
   revalidatePath('/admin')
@@ -137,8 +175,25 @@ export async function updateTest(id: string, data: Partial<LabTestFormData>) {
 }
 
 export async function deleteTest(id: string) {
-  const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_lab_tests').delete().eq('id', id)
+  await verifyAdmin()
+  const supabaseService = createServiceClient()
+
+  // 1. Find PDF path to clean up from storage
+  const { data: testRecord } = await supabaseService
+    .from('oil_lab_tests')
+    .select('pdf_path')
+    .eq('id', id)
+    .single()
+
+  if (testRecord?.pdf_path) {
+    try {
+      await supabaseService.storage.from('lab-reports').remove([testRecord.pdf_path])
+    } catch (e) {
+      console.warn('Could not remove test PDF file from storage:', e)
+    }
+  }
+
+  const { error } = await supabaseService.from('oil_lab_tests').delete().eq('id', id)
   if (error) throw new Error(error.message)
   await createAuditLog('DELETE_LAB_TEST', `Deleted lab test ID: ${id}`, { id })
   revalidatePath('/admin')
