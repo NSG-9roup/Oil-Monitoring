@@ -556,7 +556,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
                   <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">Pesan Keluhan dari Customer:</span>
                   <p className="text-xs font-bold text-slate-800 italic">
-                    "{resolvingComplaint.description}"
+                    &ldquo;{resolvingComplaint.description}&rdquo;
                   </p>
                 </div>
 

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { createOrderQuotation, createCustomerComplaint } from '@/app/actions/dashboardActions'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import { toast } from 'react-hot-toast'
@@ -29,7 +28,10 @@ interface Order {
   status: string
   created_at: string
   updated_at: string
-  product?: { product_name?: string; product_type?: string }
+  product?: {
+    product_name?: string
+    product_type?: string
+  }
 }
 
 interface Complaint {
@@ -40,9 +42,11 @@ interface Complaint {
   status: string
   resolution_notes?: string | null
   created_at: string
-  updated_at: string
-  resolved_at?: string | null
-  order?: { id: string; product?: { product_name?: string } }
+  order?: {
+    product?: {
+      product_name?: string
+    }
+  }
 }
 
 interface OrdersSectionProps {
@@ -57,12 +61,12 @@ const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800 border-amber-200',
   processing: 'bg-blue-100 text-blue-800 border-blue-200',
   completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  cancelled: 'bg-red-100 text-red-800 border-red-200',
+  cancelled: 'bg-rose-100 text-rose-800 border-rose-200',
 }
 
-const STATUS_LABELS: Record<string, Record<'id' | 'en', string>> = {
+const STATUS_LABELS: Record<string, { id: string; en: string }> = {
   pending: { id: 'Menunggu Review Sales', en: 'Pending Sales Review' },
-  processing: { id: 'Diteruskan ke Admin Sales (Email Terkirim)', en: 'Forwarded to Admin Sales (Emailed)' },
+  processing: { id: 'Diteruskan ke Admin Sales (Email Terkirim)', en: 'Forwarded to Admin Sales (Email Sent)' },
   completed: { id: 'Selesai / Penawaran Diterbitkan', en: 'Completed / Quotation Issued' },
   cancelled: { id: 'Dibatalkan', en: 'Cancelled' },
 }
@@ -74,13 +78,11 @@ const COMPLAINT_STATUS_STYLES: Record<string, string> = {
 }
 
 export default function OrdersSection({
-  customerId,
   products,
   initialOrders,
   initialComplaints,
   language,
 }: OrdersSectionProps) {
-  const supabase = createClient()
   const [orders, setOrders] = useState(initialOrders)
   const [complaints, setComplaints] = useState(initialComplaints)
 
