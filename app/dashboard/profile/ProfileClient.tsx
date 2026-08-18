@@ -33,7 +33,7 @@ interface ProfileClientProps {
     full_name?: string
     phone_number?: string
     role?: string
-    customer?: { company_name?: string; status?: string }
+    customer?: { company_name?: string; status?: string; logo_url?: string | null }
   }
   userEmail: string
   stats?: ProfileStats
@@ -175,28 +175,39 @@ export default function ProfileClient({
     <div className="space-y-6 animate-pop-micro">
       {/* Profile Card Banner */}
       <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden relative">
-        <div className="h-32 bg-gradient-to-r from-slate-950 via-slate-850 to-orange-950 relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-56 h-56 bg-orange-500/15 rounded-full blur-2xl pointer-events-none"></div>
-          <div className="absolute right-1/3 -bottom-10 w-40 h-40 bg-red-500/15 rounded-full blur-xl pointer-events-none"></div>
+        <div className="h-36 bg-gradient-to-r from-slate-950 via-slate-900 to-orange-950 relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-56 h-56 bg-orange-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute right-1/3 -bottom-10 w-40 h-40 bg-red-500/15 rounded-full blur-2xl pointer-events-none"></div>
         </div>
 
-        <div className="px-6 sm:px-8 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14">
+        <div className="px-6 sm:px-8 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-5 -mt-14">
           <div className="flex items-end gap-5">
-            <div className="h-24 w-24 rounded-2xl bg-gradient-to-tr from-orange-500 via-amber-500 to-red-600 p-1 shadow-xl shadow-orange-500/20 shrink-0">
-              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-white text-3xl font-black uppercase tracking-wider">
-                {initialLetter}
-              </div>
+            <div className="h-24 w-24 rounded-2xl bg-white border-4 border-white shadow-xl shadow-slate-900/10 p-0.5 shrink-0 overflow-hidden">
+              {initialProfile.customer?.logo_url ? (
+                <div className="w-full h-full bg-white rounded-[12px] flex items-center justify-center p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={initialProfile.customer.logo_url}
+                    alt="Corporate logo"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-slate-850 to-slate-950 rounded-[12px] flex items-center justify-center text-white text-3xl font-black uppercase tracking-wider shadow-inner">
+                  {initialLetter}
+                </div>
+              )}
             </div>
             <div className="space-y-1 pb-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
                   {formData.full_name || 'Pengguna OilTrack'}
                 </h2>
-                <span className="px-3 py-1 bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">
+                <span className="px-3 py-1 bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
                   {initialProfile.role || 'User'}
                 </span>
               </div>
-              <p className="text-xs font-semibold text-slate-500">
+              <p className="text-xs font-bold text-slate-500">
                 {initialProfile.customer?.company_name || roleDisplay}
               </p>
             </div>
@@ -244,8 +255,11 @@ export default function ProfileClient({
         {initialProfile.role === 'customer' && (
           <div className="px-6 sm:px-8 py-4 bg-slate-50/80 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-100/80 text-orange-600 flex items-center justify-center font-black shrink-0">
-                ⚙️
+              <div className="w-10 h-10 rounded-2xl bg-orange-100/80 text-orange-600 border border-orange-200/60 flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </div>
               <div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Mesin Terdaftar</span>
@@ -254,8 +268,10 @@ export default function ProfileClient({
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center font-black shrink-0">
-                🧪
+              <div className="w-10 h-10 rounded-2xl bg-blue-100/80 text-blue-600 border border-blue-200/60 flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
               </div>
               <div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Pengujian Lab</span>
@@ -264,8 +280,10 @@ export default function ProfileClient({
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100/80 text-amber-600 flex items-center justify-center font-black shrink-0">
-                📋
+              <div className="w-10 h-10 rounded-2xl bg-amber-100/80 text-amber-600 border border-amber-200/60 flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
               </div>
               <div>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Request Lab</span>
@@ -274,12 +292,14 @@ export default function ProfileClient({
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100/80 text-emerald-600 flex items-center justify-center font-black shrink-0">
-                📦
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Pesanan Oli</span>
-                <span className="text-sm font-black text-slate-900">{stats.ordersCount} Transaksi</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Penawaran Oli</span>
+                <span className="text-sm font-black text-slate-900">{stats.ordersCount} Penawaran</span>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import ProfileClient from './ProfileClient'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default async function ProfilePage() {
       customer:customer_id (
         id,
         company_name,
+        logo_url,
         status,
         created_at
       )
@@ -63,6 +65,7 @@ export default async function ProfilePage() {
   const customerId = normalizedProfile.customer_id
 
   if (customerId) {
+    const serviceDb = createServiceClient()
     const [
       { count: machinesCount },
       { count: labTestsCount },
@@ -70,11 +73,11 @@ export default async function ProfilePage() {
       { count: ordersCount },
       { data: teamData }
     ] = await Promise.all([
-      supabase.from('oil_machines').select('*', { count: 'exact', head: true }).eq('customer_id', customerId),
-      supabase.from('oil_lab_tests').select('id, oil_machines!inner(customer_id)', { count: 'exact', head: true }).eq('oil_machines.customer_id', customerId),
-      supabase.from('oil_lab_requests').select('*', { count: 'exact', head: true }).eq('customer_id', customerId),
-      supabase.from('oil_orders').select('*', { count: 'exact', head: true }).eq('customer_id', customerId),
-      supabase.from('oil_profiles').select('id, full_name, email, role, phone_number, created_at').eq('customer_id', customerId).order('created_at', { ascending: true })
+      serviceDb.from('oil_machines').select('*', { count: 'exact', head: true }).eq('customer_id', customerId),
+      serviceDb.from('oil_lab_tests').select('id, oil_machines!inner(customer_id)', { count: 'exact', head: true }).eq('oil_machines.customer_id', customerId),
+      serviceDb.from('oil_lab_requests').select('*', { count: 'exact', head: true }).eq('customer_id', customerId),
+      serviceDb.from('oil_orders').select('*', { count: 'exact', head: true }).eq('customer_id', customerId),
+      serviceDb.from('oil_profiles').select('id, full_name, email, role, phone_number, created_at').eq('customer_id', customerId).order('created_at', { ascending: true })
     ])
 
     stats = {
