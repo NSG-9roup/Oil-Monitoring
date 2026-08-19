@@ -8,7 +8,13 @@ import imageCompression from 'browser-image-compression'
 import Image from 'next/image'
 import { approveNewMachine } from '@/app/actions/adminActions'
 import toast from 'react-hot-toast'
-import { updateLabRequestStatusSales, updatePhotoPathSales, acceptAndSendProposalSales } from '@/app/actions/salesActions'
+import { 
+  updateLabRequestStatusSales, 
+  updatePhotoPathSales, 
+  acceptAndSendProposalSales,
+  updateComplaintStatusSales,
+  resolveComplaintSales
+} from '@/app/actions/salesActions'
 import { sendPurchasingProposalEmail } from '@/app/actions/emailActions'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 
@@ -32,6 +38,20 @@ interface SalesOrder {
   product?: { product_name?: string }
 }
 
+export interface SalesComplaint {
+  id: string
+  order_id: string
+  customer_id: string
+  description: string
+  status: string
+  resolution_notes?: string | null
+  created_at: string
+  updated_at: string
+  resolved_at?: string | null
+  customer?: { company_name?: string }
+  order?: { product?: { product_name?: string } }
+}
+
 interface SalesClientProps {
   user: {
     id: string
@@ -45,6 +65,7 @@ interface SalesClientProps {
   initialOrders: SalesOrder[]
   initialCustomers?: { id: string; company_name: string }[]
   initialProducts?: { id: string; product_name: string; product_type: string }[]
+  initialComplaints?: SalesComplaint[]
 }
 
 export default function SalesClient({
@@ -53,11 +74,18 @@ export default function SalesClient({
   initialLabRequests,
   initialOrders = [],
   initialCustomers = [],
-  initialProducts = []
+  initialProducts = [],
+  initialComplaints = [],
 }: SalesClientProps) {
   const [requests, setRequests] = useState<LabRequest[]>(initialLabRequests)
   const [orders, setOrders] = useState(initialOrders)
-  const [activeTab, setActiveTab] = useState<'queue' | 'transit' | 'orders'>('queue')
+  const [complaints, setComplaints] = useState<SalesComplaint[]>(initialComplaints)
+  const [activeTab, setActiveTab] = useState<'queue' | 'transit' | 'orders' | 'complaints'>('queue')
+  const [complaintFilter, setComplaintFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved'>('all')
+  const [selectedComplaint, setSelectedComplaint] = useState<SalesComplaint | null>(null)
+  const [isResolveModalOpen, setIsResolveModalOpen] = useState(false)
+  const [resolutionNotes, setResolutionNotes] = useState('')
+  const [isResolving, setIsResolving] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'high'>('all')
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -259,9 +287,9 @@ export default function SalesClient({
     }
   }, [supabase, router])
 
-  // Set up real-time subscription for lab requests (Saran A)
+  // Set up real-time subscription for lab requests and complaints
   useEffect(() => {
-    const channel = supabase
+    const requestsChannel = supabase
       .channel('sales-requests-sync')
       .on(
         'postgres_changes',
@@ -276,8 +304,24 @@ export default function SalesClient({
       )
       .subscribe()
 
+    const complaintsChannel = supabase
+      .channel('sales-complaints-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_complaints'
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .subscribe()
+
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(requestsChannel)
+      supabase.removeChannel(complaintsChannel)
     }
   }, [supabase, router])
 
@@ -289,6 +333,10 @@ export default function SalesClient({
   useEffect(() => {
     setOrders(initialOrders)
   }, [initialOrders])
+
+  useEffect(() => {
+    setComplaints(initialComplaints)
+  }, [initialComplaints])
 
   // Filter customers based on search input
   const filteredCustomers = useMemo(() => {
@@ -306,11 +354,80 @@ export default function SalesClient({
     )
   }, [productSearch, initialProducts])
 
-  /*
-  useEffect(() => {
-    setComplaints(initialComplaints)
-  }, [initialComplaints])
-  */
+  // Filter complaints based on status filter and search query
+  const filteredComplaints = useMemo(() => {
+    return complaints.filter(c => {
+      const matchesStatus = complaintFilter === 'all' ? true : c.status === complaintFilter
+      const query = searchQuery.toLowerCase().trim()
+      const matchesSearch = !query || 
+        (c.customer?.company_name && c.customer.company_name.toLowerCase().includes(query)) ||
+        (c.order?.product?.product_name && c.order.product.product_name.toLowerCase().includes(query)) ||
+        (c.description && c.description.toLowerCase().includes(query)) ||
+        (c.resolution_notes && c.resolution_notes.toLowerCase().includes(query))
+      return matchesStatus && matchesSearch
+    })
+  }, [complaints, complaintFilter, searchQuery])
+
+  // Handlers for complaints
+  const handleProcessComplaint = async (complaintId: string) => {
+    try {
+      setLoadingId(complaintId)
+      const res = await updateComplaintStatusSales(complaintId, 'in_progress')
+      if (res.success) {
+        setComplaints(prev => prev.map(c => c.id === complaintId ? { ...c, status: 'in_progress', updated_at: new Date().toISOString() } : c))
+        toast.success('Status keluhan diubah menjadi Sedang Ditindaklanjuti!')
+      } else {
+        toast.error(res.error || 'Gagal memperbarui status keluhan.')
+      }
+    } catch (err) {
+      toast.error('Terjadi kesalahan saat memproses keluhan.')
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const handleOpenResolveModal = (complaint: SalesComplaint) => {
+    setSelectedComplaint(complaint)
+    setResolutionNotes(complaint.resolution_notes || '')
+    setIsResolveModalOpen(true)
+  }
+
+  const handleResolveComplaint = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedComplaint) return
+    if (!resolutionNotes.trim()) {
+      toast.error('Silakan isi catatan solusi / tindakan resolusi.')
+      return
+    }
+
+    try {
+      setIsResolving(true)
+      const res = await resolveComplaintSales({
+        complaintId: selectedComplaint.id,
+        resolutionNotes: resolutionNotes.trim()
+      })
+
+      if (res.success) {
+        setComplaints(prev => prev.map(c => c.id === selectedComplaint.id ? {
+          ...c,
+          status: 'resolved',
+          resolution_notes: resolutionNotes.trim(),
+          resolved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } : c))
+        toast.success('✅ Keluhan berhasil diselesaikan dan solusi tersimpan!')
+        setIsResolveModalOpen(false)
+        setSelectedComplaint(null)
+        setResolutionNotes('')
+      } else {
+        toast.error(res.error || 'Gagal menyelesaikan keluhan.')
+      }
+    } catch (err) {
+      toast.error('Terjadi kesalahan saat menyimpan resolusi keluhan.')
+    } finally {
+      setIsResolving(false)
+    }
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -721,24 +838,14 @@ export default function SalesClient({
 
       {/* KPI Stats Overview Cards Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 select-none">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
           <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
             </div>
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Total Sampling</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Antrean Sampling</span>
               <span className="text-lg font-black text-slate-900">{pendingCount}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-            <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Pending ACC</span>
-              <span className="text-lg font-black text-amber-600">{orders.filter(o => o.status === 'pending').length}</span>
             </div>
           </div>
 
@@ -753,6 +860,16 @@ export default function SalesClient({
           </div>
 
           <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Pending ACC</span>
+              <span className="text-lg font-black text-amber-600">{orders.filter(o => o.status === 'pending').length}</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
@@ -761,37 +878,47 @@ export default function SalesClient({
               <span className="text-lg font-black text-emerald-600">{orders.filter(o => o.status === 'processing').length}</span>
             </div>
           </div>
+
+          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3 col-span-2 sm:col-span-1">
+            <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Keluhan Terbuka</span>
+              <span className="text-lg font-black text-rose-600">{complaints.filter(c => c.status === 'open').length}</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Segmen Kontrol Utama (Tabs) */}
       <div className="bg-white/80 backdrop-blur-xl border-y border-slate-100 p-2.5 mt-4 sticky top-[61px] z-20 shadow-sm">
         <div className="max-w-7xl mx-auto">
-          <div className="relative bg-slate-100/80 p-1 rounded-2xl flex select-none max-w-2xl mx-auto">
+          <div className="relative bg-slate-100/80 p-1 rounded-2xl flex select-none max-w-3xl mx-auto">
             {/* Sliding active background indicator */}
             <div 
               className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
               style={{
-                width: 'calc(33.333% - 5.33px)',
-                left: activeTab === 'queue' ? '4px' : activeTab === 'transit' ? 'calc(33.333% + 1.33px)' : 'calc(66.666% - 1.33px)'
+                width: 'calc(25% - 2px)',
+                left: activeTab === 'queue' ? '4px' : activeTab === 'transit' ? 'calc(25% + 2px)' : activeTab === 'orders' ? 'calc(50% + 0px)' : 'calc(75% - 2px)'
               }}
             />
             
             <button
               onClick={() => setActiveTab('queue')}
-              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-2 ${
+              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
                 activeTab === 'queue'
                   ? 'text-slate-950'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>Antrean Sampling</span>
+              <span>Antrean</span>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
             </button>
             
             <button
               onClick={() => setActiveTab('transit')}
-              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-2 ${
+              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
                 activeTab === 'transit'
                   ? 'text-slate-950'
                   : 'text-slate-500 hover:text-slate-800'
@@ -803,14 +930,32 @@ export default function SalesClient({
             
             <button
               onClick={() => setActiveTab('orders')}
-              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-2 ${
+              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
                 activeTab === 'orders'
                   ? 'text-slate-950'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>Penawaran Pelanggan</span>
+              <span>Penawaran</span>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('complaints')}
+              className={`flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 relative z-10 flex items-center justify-center gap-1.5 ${
+                activeTab === 'complaints'
+                  ? 'text-slate-950'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>Keluhan</span>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${
+                complaints.filter(c => c.status === 'open').length > 0
+                  ? 'bg-rose-600 text-white animate-pulse'
+                  : activeTab === 'complaints' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'
+              }`}>
+                {complaints.filter(c => c.status === 'open').length}
+              </span>
             </button>
           </div>
         </div>
@@ -823,7 +968,7 @@ export default function SalesClient({
           <div className="relative w-full sm:max-w-md">
             <input
               type="text"
-              placeholder="Cari Customer, Mesin, atau Area..."
+              placeholder={activeTab === 'complaints' ? "Cari Customer, Keluhan, atau Catatan Solusi..." : "Cari Customer, Mesin, atau Area..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50/80 border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 rounded-2xl px-4 py-2.5 pl-10 text-xs font-bold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
@@ -1474,12 +1619,278 @@ export default function SalesClient({
               </div>
             )}
           </div>
+
+        {/* Complaints Tab — Kelola Keluhan Pelanggan */}
+        <div className={`space-y-5 ${activeTab === 'complaints' ? 'block animate-pop-micro' : 'hidden'}`}>
+          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+            {/* Header with Title & Filter Chips */}
+            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-rose-50/50 via-slate-50 to-orange-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-rose-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-rose-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Kelola Keluhan & Komplain Pelanggan</h3>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Tindak lanjuti kendala pelanggan, ubah status, dan berikan catatan solusi resmi.</p>
+                </div>
+              </div>
+
+              {/* Status Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 select-none">
+                {[
+                  { id: 'all', label: 'Semua', count: complaints.length },
+                  { id: 'open', label: 'Terbuka', count: complaints.filter(c => c.status === 'open').length },
+                  { id: 'in_progress', label: 'Diproses', count: complaints.filter(c => c.status === 'in_progress').length },
+                  { id: 'resolved', label: 'Selesai', count: complaints.filter(c => c.status === 'resolved').length },
+                ].map(filter => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setComplaintFilter(filter.id as any)}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                      complaintFilter === filter.id
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/70'
+                    }`}
+                  >
+                    <span>{filter.label}</span>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
+                      complaintFilter === filter.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {filter.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* List / Cards of Complaints */}
+            <div className="divide-y divide-slate-100">
+              {filteredComplaints.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center text-slate-400">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <p className="text-xs font-bold text-slate-600">Tidak ada keluhan ditemukan</p>
+                  <p className="text-[10px] text-slate-400">Semua keluhan dalam filter ini telah tertangani dengan baik.</p>
+                </div>
+              ) : (
+                filteredComplaints.map(complaint => {
+                  const isOpen = complaint.status === 'open'
+                  const isInProgress = complaint.status === 'in_progress'
+                  const isResolved = complaint.status === 'resolved'
+                  const isLoading = loadingId === complaint.id
+
+                  return (
+                    <div key={complaint.id} className="p-5 sm:p-6 hover:bg-slate-50/50 transition-all space-y-3.5">
+                      {/* Top Row: Customer & Badges */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="text-xs sm:text-sm font-black text-slate-900">
+                            {complaint.customer?.company_name || 'PT Customer'}
+                          </span>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${
+                            isOpen ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse' :
+                            isInProgress ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}>
+                            {isOpen ? '● Menunggu Respon' :
+                             isInProgress ? '⏳ Sedang Ditindaklanjuti' :
+                             '✓ Selesai / Teratasi'}
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-semibold text-slate-400">
+                          Diajukan: {new Date(complaint.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+
+                      {/* Related Product / Order Info */}
+                      {complaint.order?.product?.product_name && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-bold text-slate-700">
+                          <span className="text-slate-400">Terkait Pesanan Oli:</span>
+                          <span className="text-slate-900 font-extrabold">{complaint.order.product.product_name}</span>
+                        </div>
+                      )}
+
+                      {/* Customer Complaint Message Bubble */}
+                      <div className="bg-rose-50/40 border border-rose-100 rounded-2xl p-4">
+                        <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-rose-500 mb-1">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+                          <span>Pesan Kendala dari Customer:</span>
+                        </div>
+                        <p className="text-xs font-semibold text-slate-800 leading-relaxed whitespace-pre-wrap">
+                          {complaint.description}
+                        </p>
+                      </div>
+
+                      {/* Resolution Notes Bubble (If Resolved) */}
+                      {isResolved && complaint.resolution_notes && (
+                        <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4">
+                          <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-emerald-600 mb-1">
+                            <span className="flex items-center gap-1.5">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                              Catatan Solusi / Penyelesaian Resmi:
+                            </span>
+                            {complaint.resolved_at && (
+                              <span className="text-slate-400 font-normal">
+                                Diselesaikan pada: {new Date(complaint.resolved_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-semibold text-emerald-950 leading-relaxed whitespace-pre-wrap">
+                            {complaint.resolution_notes}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action Buttons for Sales */}
+                      <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                        {isOpen && (
+                          <button
+                            type="button"
+                            onClick={() => handleProcessComplaint(complaint.id)}
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
+                          >
+                            {isLoading ? (
+                              'Memproses...'
+                            ) : (
+                              <>
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                <span>Tindak Lanjuti (Proses)</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        {!isResolved && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResolveModal(complaint)}
+                            className="px-4 py-2 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                            <span>Selesaikan Keluhan</span>
+                          </button>
+                        )}
+
+                        {isResolved && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResolveModal(complaint)}
+                            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 flex items-center gap-1"
+                          >
+                            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            <span>Update Solusi</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
       </main>
 
       <footer className="p-8 text-center bg-white border-t border-slate-100">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Authenticated Field Representative</p>
         <p className="text-xs font-bold text-slate-800 mt-1">© 2026 PT Nabel Sakha Gemilang</p>
       </footer>
+
+      {/* Resolve Complaint Modal */}
+      {isResolveModalOpen && selectedComplaint && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-fast">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-pop-micro">
+            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-orange-50 to-rose-50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-rose-500 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm shadow-rose-200">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Selesaikan Keluhan Pelanggan</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Input catatan solusi dan tindakan penanganan untuk customer.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsResolveModalOpen(false)
+                  setSelectedComplaint(null)
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-white/60 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleResolveComplaint} className="p-6 space-y-4">
+              {/* Customer & Complaint info bubble */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-900">{selectedComplaint.customer?.company_name || 'Customer'}</span>
+                  <span className="text-[9px] font-bold text-slate-400">
+                    {new Date(selectedComplaint.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 italic bg-white p-3 rounded-xl border border-slate-100">
+                  &ldquo;{selectedComplaint.description}&rdquo;
+                </p>
+              </div>
+
+              {/* Resolution Notes Textarea */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  Catatan Solusi / Tindakan Resolusi <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={resolutionNotes}
+                  onChange={(e) => setResolutionNotes(e.target.value)}
+                  placeholder="Contoh: Telah dikonfirmasi ke PIC customer. Botol sampel baru dikirimkan ulang via kurir, estimasi sampai besok siang."
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 rounded-2xl p-3.5 text-xs font-semibold text-slate-900 transition-all outline-none resize-none placeholder:text-slate-400"
+                  required
+                />
+                <p className="text-[9px] text-slate-400 mt-1">Catatan ini akan tampil secara transparan pada dashboard customer sebagai jawaban resmi.</p>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResolveModalOpen(false)
+                    setSelectedComplaint(null)
+                  }}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-2xl transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResolving}
+                  className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-2xl transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isResolving ? (
+                    <>
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                      <span>✓ Simpan Solusi</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox Modal */}
       {activeLightboxImage && (

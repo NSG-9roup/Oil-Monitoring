@@ -174,3 +174,81 @@ export async function acceptAndSendProposalSales(orderId: string) {
     return { success: false, error: err instanceof Error ? err.message : String(err) }
   }
 }
+
+/**
+ * Update complaint status by sales
+ */
+export async function updateComplaintStatusSales(complaintId: string, status: 'open' | 'in_progress' | 'resolved') {
+  try {
+    const { user } = await verifySalesOrAdmin()
+    const supabaseService = createServiceClient()
+
+    const { error: updateError } = await supabaseService
+      .from('oil_complaints')
+      .update({ 
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', complaintId)
+
+    if (updateError) {
+      return { success: false, error: updateError.message }
+    }
+
+    await createAuditLog(
+      'SALES_UPDATE_COMPLAINT_STATUS',
+      `Sales updated complaint ID: ${complaintId} status to: ${status}`,
+      { complaintId, status, salesId: user.id }
+    )
+
+    revalidatePath('/sales')
+    revalidatePath('/dashboard')
+    revalidatePath('/admin')
+    return { success: true }
+  } catch (err) {
+    console.error('Error in updateComplaintStatusSales:', err)
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+/**
+ * Resolve complaint by sales with resolution notes
+ */
+export async function resolveComplaintSales(data: {
+  complaintId: string
+  resolutionNotes: string
+}) {
+  try {
+    const { user } = await verifySalesOrAdmin()
+    const supabaseService = createServiceClient()
+
+    const { error: updateError } = await supabaseService
+      .from('oil_complaints')
+      .update({
+        status: 'resolved',
+        resolution_notes: data.resolutionNotes?.trim() || null,
+        resolved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', data.complaintId)
+
+    if (updateError) {
+      return { success: false, error: updateError.message }
+    }
+
+    await createAuditLog(
+      'SALES_RESOLVE_COMPLAINT',
+      `Sales resolved complaint ID: ${data.complaintId}`,
+      { complaintId: data.complaintId, resolutionNotes: data.resolutionNotes, salesId: user.id }
+    )
+
+    revalidatePath('/sales')
+    revalidatePath('/dashboard')
+    revalidatePath('/admin')
+    return { success: true }
+  } catch (err) {
+    console.error('Error in resolveComplaintSales:', err)
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+

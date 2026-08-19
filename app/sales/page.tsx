@@ -79,6 +79,15 @@ export default async function SalesPage() {
     .select('id, product_name, product_type')
     .order('product_name', { ascending: true })
 
+  const { data: initialComplaints } = await adminSupabase
+    .from('oil_complaints')
+    .select(`
+      *,
+      customer:oil_customers(company_name),
+      order:oil_orders(product:oil_products(product_name))
+    `)
+    .order('created_at', { ascending: false })
+
   return (
     <SalesClient 
       user={{ id: user.id, email: user.email }}
@@ -87,6 +96,8 @@ export default async function SalesPage() {
       initialOrders={initialOrders || []}
       initialCustomers={initialCustomers || []}
       initialProducts={initialProducts || []}
+      initialComplaints={initialComplaints || []}
     />
   )
 }
+
