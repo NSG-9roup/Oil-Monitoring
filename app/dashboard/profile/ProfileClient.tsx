@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
-import { updateAnyUserProfile } from '@/app/actions/dashboardActions'
+import imageCompression from 'browser-image-compression'
+import { updateAnyUserProfile, updateUserAvatarAction } from '@/app/actions/dashboardActions'
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Nama harus minimal 2 karakter'),
@@ -33,6 +34,7 @@ interface ProfileClientProps {
     full_name?: string
     phone_number?: string
     role?: string
+    avatar_url?: string | null
     customer?: { company_name?: string; status?: string; logo_url?: string | null }
   }
   userEmail: string
@@ -48,6 +50,12 @@ export default function ProfileClient({
 }: ProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    (initialProfile.avatar_url as string) || null
+  )
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [formData, setFormData] = useState({
     full_name: initialProfile.full_name || '',
     phone_number: initialProfile.phone_number || '',
@@ -69,6 +77,85 @@ export default function ProfileClient({
       setNotifPermission(Notification.permission)
     }
   }, [])
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('File harus berupa format gambar (JPG, PNG, WebP).')
+      return
+    }
+
+    try {
+      setIsUploadingAvatar(true)
+      const toastId = toast.loading('Mengompres dan mengunggah foto profil...')
+
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+        fileType: 'image/webp',
+      })
+
+      const fileName = `${initialProfile.id || 'user'}-${Date.now()}.webp`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(fileName, compressedFile, {
+          cacheControl: '3600',
+          upsert: true,
+        })
+
+      if (uploadError) {
+        toast.dismiss(toastId)
+        throw new Error(uploadError.message)
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(uploadData.path)
+
+      const res = await updateUserAvatarAction(publicUrl)
+      toast.dismiss(toastId)
+
+      if (res.success) {
+        setAvatarUrl(publicUrl)
+        toast.success('Foto profil berhasil diperbarui!')
+      } else {
+        toast.error(res.error || 'Gagal menyimpan foto profil.')
+      }
+    } catch (err) {
+      console.error('Error uploading avatar:', err)
+      toast.error(err instanceof Error ? err.message : 'Gagal mengunggah foto profil.')
+    } finally {
+      setIsUploadingAvatar(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    try {
+      setIsUploadingAvatar(true)
+      const res = await updateUserAvatarAction(null)
+      if (res.success) {
+        setAvatarUrl(null)
+        toast.success(
+          initialProfile.role === 'customer' && initialProfile.customer?.logo_url
+            ? 'Foto profil dihapus. Otomatis menggunakan logo perusahaan.'
+            : 'Foto profil berhasil dihapus.'
+        )
+      } else {
+        toast.error(res.error || 'Gagal menghapus foto profil.')
+      }
+    } catch (err) {
+      console.error('Error removing avatar:', err)
+      toast.error('Gagal menghapus foto profil.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
 
   const handleSave = async () => {
     try {
@@ -171,85 +258,156 @@ export default function ProfileClient({
     ? 'System Administrator' 
     : 'Customer Client'
 
+  const displayAvatar = avatarUrl || (initialProfile.role === 'customer' ? initialProfile.customer?.logo_url : null)
+  const isUsingCompanyLogo = !avatarUrl && initialProfile.role === 'customer' && !!initialProfile.customer?.logo_url
+
   return (
     <div className="space-y-6 animate-pop-micro">
       {/* Profile Card Banner */}
       <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden relative">
-        <div className="h-36 bg-gradient-to-r from-slate-950 via-slate-900 to-orange-950 relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-56 h-56 bg-orange-500/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute right-1/3 -bottom-10 w-40 h-40 bg-red-500/15 rounded-full blur-2xl pointer-events-none"></div>
+        {/* Cover Banner */}
+        <div className="h-44 sm:h-48 bg-gradient-to-r from-slate-950 via-slate-900 to-orange-950 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" style={{ backgroundSize: '24px 24px' }}></div>
+          <div className="absolute -right-10 -top-10 w-64 h-64 bg-orange-500/25 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute right-1/3 -bottom-10 w-48 h-48 bg-red-500/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute left-10 top-1/2 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl pointer-events-none"></div>
         </div>
 
-        <div className="px-6 sm:px-8 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-5 -mt-14">
-          <div className="flex items-end gap-5">
-            <div className="h-24 w-24 rounded-2xl bg-white border-4 border-white shadow-xl shadow-slate-900/10 p-0.5 shrink-0 overflow-hidden">
-              {initialProfile.customer?.logo_url ? (
-                <div className="w-full h-full bg-white rounded-[12px] flex items-center justify-center p-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={initialProfile.customer.logo_url}
-                    alt="Corporate logo"
-                    className="w-full h-full object-contain"
-                  />
+        {/* Profile Card Content Details */}
+        <div className="px-6 sm:px-8 pb-6 pt-0 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
+            {/* Left: Avatar & Info */}
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+              {/* Avatar Box with overlapping offset */}
+              <div className="relative -mt-16 sm:-mt-20 shrink-0 w-28 h-28 sm:w-32 sm:h-32 group">
+                <div className="w-full h-full rounded-3xl bg-white border-4 border-white shadow-2xl shadow-slate-950/20 p-0.5 overflow-hidden flex items-center justify-center relative">
+                  {displayAvatar ? (
+                    <div className="w-full h-full bg-slate-50 rounded-[20px] flex items-center justify-center p-1 overflow-hidden relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={displayAvatar}
+                        alt={formData.full_name || 'Profile Avatar'}
+                        className={`w-full h-full ${isUsingCompanyLogo ? 'object-contain p-2' : 'object-cover'}`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-slate-800 to-slate-950 rounded-[20px] flex items-center justify-center text-white text-4xl sm:text-5xl font-black uppercase tracking-wider shadow-inner">
+                      {initialLetter}
+                    </div>
+                  )}
+
+                  {/* Uploading Spinner Overlay */}
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 bg-slate-900/75 backdrop-blur-xs rounded-3xl flex flex-col items-center justify-center text-white text-[10px] font-black z-30">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white mb-1" />
+                      <span>Upload...</span>
+                    </div>
+                  )}
                 </div>
+
+                {/* Camera Button to Change Avatar */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute bottom-0 right-0 p-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl shadow-lg shadow-orange-500/30 transition-all transform hover:scale-110 active:scale-95 border-2 border-white flex items-center justify-center z-20"
+                  title="Ganti Foto Profil"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
+
+              {/* User Name, Role & Details (Completely on white surface below cover line) */}
+              <div className="space-y-1.5 pt-2 sm:pt-0 pb-1">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                    {formData.full_name || 'Pengguna OilTrack'}
+                  </h2>
+                  <span className="px-3 py-1 bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
+                    {initialProfile.role || 'User'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <p className="font-bold text-slate-500">
+                    {initialProfile.customer?.company_name || roleDisplay}
+                  </p>
+
+                  {/* Indication tag if using corporate logo fallback */}
+                  {isUsingCompanyLogo && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200/60 px-2 py-0.5 rounded-md">
+                      <span>🏢 Logo Perusahaan</span>
+                    </span>
+                  )}
+
+                  {/* Remove custom avatar button if custom avatar is uploaded */}
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={isUploadingAvatar}
+                      className="text-[10px] font-bold text-rose-500 hover:text-rose-700 hover:underline transition-all flex items-center gap-1 ml-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      Hapus Foto
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Edit Profile Button */}
+            <div className="pb-1">
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 210.3H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  Edit Informasi Profil
+                </button>
               ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-slate-850 to-slate-950 rounded-[12px] flex items-center justify-center text-white text-3xl font-black uppercase tracking-wider shadow-inner">
-                  {initialLetter}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setIsEditing(false)
+                      setFormData({
+                        full_name: initialProfile.full_name || '',
+                        phone_number: initialProfile.phone_number || '',
+                      })
+                      setErrors({})
+                    }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </button>
                 </div>
               )}
             </div>
-            <div className="space-y-1 pb-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                  {formData.full_name || 'Pengguna OilTrack'}
-                </h2>
-                <span className="px-3 py-1 bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
-                  {initialProfile.role || 'User'}
-                </span>
-              </div>
-              <p className="text-xs font-bold text-slate-500">
-                {initialProfile.customer?.company_name || roleDisplay}
-              </p>
-            </div>
-          </div>
-
-          <div className="pb-1">
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 210.3H3v-3.572L16.732 3.732z" />
-                </svg>
-                Edit Informasi Profil
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setIsEditing(false)
-                    setFormData({
-                      full_name: initialProfile.full_name || '',
-                      phone_number: initialProfile.phone_number || '',
-                    })
-                    setErrors({})
-                  }}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
-                </button>
-              </div>
-            )}
           </div>
         </div>
+
 
         {/* Corporate Asset Statistics Summary Bar */}
         {initialProfile.role === 'customer' && (

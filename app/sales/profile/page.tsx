@@ -23,7 +23,9 @@ export default async function SalesProfilePage() {
     .select(`
       *,
       customer:customer_id (
+        id,
         company_name,
+        logo_url,
         status
       )
     `)

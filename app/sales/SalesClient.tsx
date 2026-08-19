@@ -60,6 +60,7 @@ interface SalesClientProps {
   profile: {
     id: string
     full_name?: string | null
+    avatar_url?: string | null
   }
   initialLabRequests: LabRequest[]
   initialOrders: SalesOrder[]
@@ -768,10 +769,19 @@ export default function SalesClient({
           {/* User Profile Info & Action Controls */}
           <div className="flex items-center gap-3">
             <a href="/sales/profile" className="flex items-center gap-2.5 p-1.5 sm:pr-3 hover:bg-slate-100/80 rounded-2xl transition-all border border-transparent hover:border-slate-200 group">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-orange-500 to-red-600 p-0.5 shadow-sm">
-                <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center text-white text-xs font-black uppercase">
-                  {(profile.full_name?.charAt(0) || user.email?.charAt(0) || 'S').toUpperCase()}
-                </div>
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-orange-500 to-red-600 p-0.5 shadow-sm overflow-hidden">
+                {profile.avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.full_name || 'Sales'}
+                    className="w-full h-full object-cover rounded-[10px]"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center text-white text-xs font-black uppercase">
+                    {(profile.full_name?.charAt(0) || user.email?.charAt(0) || 'S').toUpperCase()}
+                  </div>
+                )}
               </div>
               <div className="hidden sm:block text-left">
                 <span className="block text-xs font-black text-slate-800 group-hover:text-orange-600 transition-colors leading-tight">

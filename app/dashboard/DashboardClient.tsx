@@ -1700,20 +1700,29 @@ export default function DashboardClient({
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
               {/* Left Side: Logo + Divider + Welcome Text */}
               <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 w-full lg:w-auto">
-                {/* Logo Frame */}
-                <div className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm flex items-center justify-center p-2">
-                  {profile?.customer?.logo_url ? (
+                {/* Logo / Avatar Frame */}
+                <div className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm flex items-center justify-center p-1.5">
+                  {profile?.avatar_url ? (
+                    <Image
+                      src={profile.avatar_url}
+                      alt="User avatar"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover rounded-xl"
+                      unoptimized
+                    />
+                  ) : profile?.customer?.logo_url ? (
                     <Image
                       src={profile.customer.logo_url}
                       alt="Customer logo"
                       width={80}
                       height={80}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain p-1"
                       unoptimized
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-900 flex items-center justify-center text-white font-black text-xl uppercase rounded-xl">
-                      {profile?.customer?.company_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2) || 'C'}
+                      {profile?.full_name?.charAt(0) || profile?.customer?.company_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2) || 'C'}
                     </div>
                   )}
                 </div>

@@ -114,12 +114,54 @@ export async function updateAnyUserProfile(data: {
     await createAuditLog('UPDATE_PROFILE', `User updated profile info`, { userId: user.id })
 
     revalidatePath('/dashboard/profile')
+    revalidatePath('/sales/profile')
     return { success: true }
   } catch (err) {
     console.error('Error in updateAnyUserProfile:', err)
     return { success: false, error: err instanceof Error ? err.message : String(err) }
   }
 }
+
+/**
+ * Shared server action to update or remove the authenticated user's own profile avatar.
+ */
+export async function updateUserAvatarAction(avatarUrl: string | null) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { success: false, error: 'Unauthorized: Please log in' }
+    }
+
+    const supabaseService = createServiceClient()
+    const { error } = await supabaseService
+      .from('oil_profiles')
+      .update({
+        avatar_url: avatarUrl ? avatarUrl.trim() : null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+
+    if (error) {
+      console.error('Error updating avatar:', error)
+      return { success: false, error: error.message }
+    }
+
+    await createAuditLog('UPDATE_AVATAR', `User updated avatar`, { userId: user.id, hasAvatar: !!avatarUrl })
+
+    revalidatePath('/dashboard/profile')
+    revalidatePath('/sales/profile')
+    revalidatePath('/admin')
+    revalidatePath('/dashboard')
+    revalidatePath('/sales')
+    return { success: true }
+  } catch (err) {
+    console.error('Error in updateUserAvatarAction:', err)
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 
 export async function createOrderQuotation(data: {
   productId: string

@@ -15,6 +15,7 @@ export interface Profile {
   full_name: string
   email: string
   phone_number?: string | null
+  avatar_url?: string | null
   role: UserRole
   customer_id: string | null
   created_at: string
