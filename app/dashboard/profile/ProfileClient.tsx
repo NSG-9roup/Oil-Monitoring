@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
 import imageCompression from 'browser-image-compression'
-import { updateAnyUserProfile, updateUserAvatarAction } from '@/app/actions/dashboardActions'
+import { updateAnyUserProfile, updateUserAvatarAction, uploadUserAvatarServerAction } from '@/app/actions/dashboardActions'
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Nama harus minimal 2 karakter'),
@@ -98,28 +98,14 @@ export default function ProfileClient({
         fileType: 'image/webp',
       })
 
-      const fileName = `${initialProfile.id || 'user'}-${Date.now()}.webp`
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('user-avatars')
-        .upload(fileName, compressedFile, {
-          cacheControl: '3600',
-          upsert: true,
-        })
+      const formData = new FormData()
+      formData.append('avatar', compressedFile, `${initialProfile.id || 'user'}.webp`)
 
-      if (uploadError) {
-        toast.dismiss(toastId)
-        throw new Error(uploadError.message)
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(uploadData.path)
-
-      const res = await updateUserAvatarAction(publicUrl)
+      const res = await uploadUserAvatarServerAction(formData)
       toast.dismiss(toastId)
 
-      if (res.success) {
-        setAvatarUrl(publicUrl)
+      if (res.success && res.publicUrl) {
+        setAvatarUrl(res.publicUrl)
         toast.success('Foto profil berhasil diperbarui!')
       } else {
         toast.error(res.error || 'Gagal menyimpan foto profil.')

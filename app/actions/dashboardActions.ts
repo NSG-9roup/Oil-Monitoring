@@ -123,6 +123,84 @@ export async function updateAnyUserProfile(data: {
 }
 
 /**
+ * Shared server action to upload avatar using service role client (bypasses RLS)
+ * and update the user's avatar_url in oil_profiles.
+ */
+export async function uploadUserAvatarServerAction(formData: FormData) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { success: false, error: 'Unauthorized: Sesi login berakhir' }
+    }
+
+    const file = formData.get('avatar') as File | null
+    if (!file) {
+      return { success: false, error: 'File gambar tidak ditemukan' }
+    }
+
+    const supabaseService = createServiceClient()
+
+    // Ensure bucket exists
+    await supabaseService.storage.createBucket('user-avatars', {
+      public: true,
+      fileSizeLimit: 3 * 1024 * 1024,
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    }).catch(() => null)
+
+    const fileExt = file.name.split('.').pop() || 'webp'
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`
+
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    const { error: uploadError } = await supabaseService.storage
+      .from('user-avatars')
+      .upload(fileName, buffer, {
+        contentType: file.type || 'image/webp',
+        upsert: true,
+        cacheControl: '3600'
+      })
+
+    if (uploadError) {
+      console.error('Storage upload error in uploadUserAvatarServerAction:', uploadError)
+      return { success: false, error: `Gagal upload gambar: ${uploadError.message}` }
+    }
+
+    const { data: { publicUrl } } = supabaseService.storage
+      .from('user-avatars')
+      .getPublicUrl(fileName)
+
+    const { error: dbError } = await supabaseService
+      .from('oil_profiles')
+      .update({
+        avatar_url: publicUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+
+    if (dbError) {
+      console.error('Database update error in uploadUserAvatarServerAction:', dbError)
+      return { success: false, error: `Gagal memperbarui profil: ${dbError.message}` }
+    }
+
+    await createAuditLog('UPDATE_AVATAR', `User uploaded new avatar`, { userId: user.id })
+
+    revalidatePath('/dashboard/profile')
+    revalidatePath('/sales/profile')
+    revalidatePath('/admin')
+    revalidatePath('/dashboard')
+    revalidatePath('/sales')
+
+    return { success: true, publicUrl }
+  } catch (err) {
+    console.error('Error in uploadUserAvatarServerAction:', err)
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+/**
  * Shared server action to update or remove the authenticated user's own profile avatar.
  */
 export async function updateUserAvatarAction(avatarUrl: string | null) {
