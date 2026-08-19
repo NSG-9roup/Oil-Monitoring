@@ -379,7 +379,8 @@ export default function SalesClient({
       } else {
         toast.error(res.error || 'Gagal memperbarui status keluhan.')
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error processing complaint:', error)
       toast.error('Terjadi kesalahan saat memproses keluhan.')
     } finally {
       setLoadingId(null)
@@ -422,7 +423,8 @@ export default function SalesClient({
       } else {
         toast.error(res.error || 'Gagal menyelesaikan keluhan.')
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error resolving complaint:', error)
       toast.error('Terjadi kesalahan saat menyimpan resolusi keluhan.')
     } finally {
       setIsResolving(false)
@@ -1639,16 +1641,16 @@ export default function SalesClient({
 
               {/* Status Filter Chips */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 select-none">
-                {[
-                  { id: 'all', label: 'Semua', count: complaints.length },
-                  { id: 'open', label: 'Terbuka', count: complaints.filter(c => c.status === 'open').length },
-                  { id: 'in_progress', label: 'Diproses', count: complaints.filter(c => c.status === 'in_progress').length },
-                  { id: 'resolved', label: 'Selesai', count: complaints.filter(c => c.status === 'resolved').length },
-                ].map(filter => (
+                {([
+                  { id: 'all' as const, label: 'Semua', count: complaints.length },
+                  { id: 'open' as const, label: 'Terbuka', count: complaints.filter(c => c.status === 'open').length },
+                  { id: 'in_progress' as const, label: 'Diproses', count: complaints.filter(c => c.status === 'in_progress').length },
+                  { id: 'resolved' as const, label: 'Selesai', count: complaints.filter(c => c.status === 'resolved').length },
+                ]).map(filter => (
                   <button
                     key={filter.id}
                     type="button"
-                    onClick={() => setComplaintFilter(filter.id as any)}
+                    onClick={() => setComplaintFilter(filter.id)}
                     className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
                       complaintFilter === filter.id
                         ? 'bg-slate-900 text-white shadow-sm'
