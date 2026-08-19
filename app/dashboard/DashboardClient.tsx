@@ -50,6 +50,7 @@ interface DashboardProfile {
   full_name: string
   email: string
   role: string
+  avatar_url?: string | null
   customer_id: string | null
   customer?: {
     id?: string
