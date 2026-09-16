@@ -1466,7 +1466,7 @@ export default function SalesClient({
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900">Kirim Penawaran ke Admin Sales</h3>
-                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Email notifikasi penawaran akan dikirimkan langsung ke Tim Admin Sales / Sales Support</p>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Penawaran akan diteruskan langsung ke sistem Tim Admin Sales / Sales Support</p>
                   </div>
                 </div>
               </div>

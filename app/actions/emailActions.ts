@@ -2,6 +2,9 @@
 
 import { createServiceClient } from '@/lib/supabase/service'
 
+// Feature Flag: Notifikasi email dinonaktifkan sementara
+const ENABLE_EMAIL_NOTIFICATIONS = false
+
 // Configurable purchasing email via env variable with fallback
 const PURCHASING_EMAIL = process.env.PURCHASING_EMAIL || 'warehouse@nabelsakha.com'
 
@@ -14,6 +17,11 @@ export async function sendEmail({
   subject: string
   html: string
 }) {
+  if (!ENABLE_EMAIL_NOTIFICATIONS) {
+    console.log('[Resend Email] Notifikasi email sedang dinonaktifkan. Pengiriman dilewati.')
+    return { success: true, skipped: true }
+  }
+
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.warn('[Resend Email] RESEND_API_KEY is not set in .env.local. Skipping sending email.')
@@ -73,6 +81,11 @@ export async function sendEmail({
  * Fixes: fetches email from auth.users if oil_profiles.email is empty.
  */
 export async function sendLabTestResultEmailAction(testId: string) {
+  if (!ENABLE_EMAIL_NOTIFICATIONS) {
+    console.log('[Resend Email] sendLabTestResultEmailAction dinonaktifkan sementara.')
+    return { success: true, skipped: true }
+  }
+
   try {
     const supabaseService = createServiceClient()
 
@@ -271,6 +284,11 @@ export async function sendPurchasingProposalEmail({
   customerEmail?: string
   notes?: string
 }) {
+  if (!ENABLE_EMAIL_NOTIFICATIONS) {
+    console.log('[Resend Email] sendPurchasingProposalEmail dinonaktifkan sementara.')
+    return { success: true, skipped: true }
+  }
+
   const now = new Date().toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',

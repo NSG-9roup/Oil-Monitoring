@@ -297,7 +297,6 @@ export default function AdminClient({
   const [importLoading, setImportLoading] = useState(false)
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
-  const [autoSendEmail, setAutoSendEmail] = useState(true)
 
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null)
   const [products, setProducts] = useState<AdminProduct[]>(initialProducts)
@@ -740,12 +739,8 @@ export default function AdminClient({
       const payload = buildTestPayload({ ...formData, pdf_path: currentPdfPath })
 
       if (modalOpen === 'add-test') {
-        const testRes = await createTest(payload, autoSendEmail)
-        if (testRes?.emailSent) {
-          alert('Lab test recorded successfully! Laporan hasil uji lab telah otomatis dikirimkan ke email customer.')
-        } else {
-          alert('Lab test recorded successfully!')
-        }
+        await createTest(payload, false)
+        alert('Lab test recorded successfully!')
       } else if (modalOpen === 'edit-test') {
         if (!selectedItem?.id) throw new Error('No test selected')
         await updateTest(selectedItem.id, payload)
@@ -1772,21 +1767,6 @@ export default function AdminClient({
                   </p>
                 )}
               </div>
-
-              {modalOpen === 'add-test' && (
-                <label className="flex items-start gap-3 p-3.5 bg-orange-50/70 hover:bg-orange-50 rounded-2xl border border-orange-100 cursor-pointer select-none transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={autoSendEmail}
-                    onChange={(e) => setAutoSendEmail(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300 accent-orange-600"
-                  />
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-black text-slate-800 tracking-tight">Kirim Laporan Email Otomatis ke Customer</p>
-                    <p className="text-[10px] text-slate-500 leading-relaxed">Kirimkan ringkasan metrik laboratorium dan tautan unduh PDF resmi langsung ke email customer terdaftar begitu data disimpan.</p>
-                  </div>
-                </label>
-              )}
               
               <div className="flex gap-3 pt-4">
                 <button
