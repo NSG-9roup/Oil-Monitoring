@@ -14,6 +14,7 @@
     "test": "vitest run",
     "uat:regression": "node scripts/uat-regression-checklist.mjs",
     "ping": "node --env-file=.env.local scripts/keep_supabase_alive.mjs",
+    "keepalive": "node --env-file=.env.local scripts/keep_supabase_alive.mjs",
     "supabase": "supabase",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
