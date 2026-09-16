@@ -17,6 +17,8 @@ import {
 } from '@/app/actions/salesActions'
 import { sendPurchasingProposalEmail } from '@/app/actions/emailActions'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
+import NotificationBell from '@/components/NotificationBell'
+
 
 interface OfflineAction {
   type: 'COLLECT' | 'UNDO_COLLECT' | 'UPLOAD_PHOTO'
@@ -288,10 +290,10 @@ export default function SalesClient({
     }
   }, [supabase, router])
 
-  // Set up real-time subscription for lab requests and complaints
+  // Set up real-time subscription for lab requests, orders, and complaints
   useEffect(() => {
-    const requestsChannel = supabase
-      .channel('sales-requests-sync')
+    const channel = supabase
+      .channel('sales-dashboard-sync')
       .on(
         'postgres_changes',
         {
@@ -299,14 +301,27 @@ export default function SalesClient({
           schema: 'public',
           table: 'oil_lab_requests'
         },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            toast.success('Permintaan uji lab baru telah diajukan!', { duration: 6000, icon: '📋' })
+          }
           router.refresh()
         }
       )
-      .subscribe()
-
-    const complaintsChannel = supabase
-      .channel('sales-complaints-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_orders'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            toast.success('Permintaan penawaran produk baru dari customer!', { duration: 6000, icon: '📦' })
+          }
+          router.refresh()
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -314,15 +329,17 @@ export default function SalesClient({
           schema: 'public',
           table: 'oil_complaints'
         },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            toast.error('Komplain baru telah diajukan oleh customer!', { duration: 7000, icon: '⚠️' })
+          }
           router.refresh()
         }
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(requestsChannel)
-      supabase.removeChannel(complaintsChannel)
+      supabase.removeChannel(channel)
     }
   }, [supabase, router])
 
@@ -821,6 +838,8 @@ export default function SalesClient({
                 </button>
               </div>
             )}
+
+            <NotificationBell />
 
             <button onClick={handleSignOut} className="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title="Keluar Akun">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>

@@ -6,6 +6,9 @@ import toast from 'react-hot-toast'
 import { z } from 'zod'
 import imageCompression from 'browser-image-compression'
 import { updateAnyUserProfile, updateUserAvatarAction, uploadUserAvatarServerAction } from '@/app/actions/dashboardActions'
+import { urlBase64ToUint8Array } from '@/lib/push/pushUtils'
+import { sendTestPushNotificationAction } from '@/app/actions/pushActions'
+
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Nama harus minimal 2 karakter'),
@@ -215,22 +218,35 @@ export default function ProfileClient({
     setNotifPermission(permission)
     
     if (permission === 'granted') {
-      toast.success('Notifikasi push berhasil diaktifkan!')
       try {
         const reg = await navigator.serviceWorker.ready
-        const sub = await reg.pushManager.subscribe({
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        const subscribeOptions: PushSubscriptionOptionsInit = {
           userVisibleOnly: true,
-        }).catch(() => null)
+          ...(vapidPublicKey ? { applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) } : {})
+        }
+        const sub = await reg.pushManager.subscribe(subscribeOptions).catch((err) => {
+          console.error('[WebPush] Subscribe error:', err)
+          return null
+        })
         
         if (sub) {
-          await fetch('/api/push/subscribe', {
+          const res = await fetch('/api/push/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ subscription: sub })
           })
+          if (res.ok) {
+            toast.success('Notifikasi push perangkat berhasil didaftarkan!')
+          } else {
+            toast.error('Gagal menyimpan pendaftaran notifikasi push')
+          }
+        } else {
+          toast.error('Gagal membuat langganan push (cek dukungan browser)')
         }
       } catch (e) {
         console.log('Push subscribe backend error:', e)
+        toast.error('Terjadi kesalahan saat mengaktifkan push notifikasi')
       }
     } else {
       toast.error('Izin notifikasi ditolak oleh pengguna.')
@@ -527,26 +543,40 @@ export default function ProfileClient({
                     toast.error('Harap aktifkan izin notifikasi terlebih dahulu.')
                     return
                   }
+
+                  const loadToast = toast.loading('Mengirim notifikasi push dari server...')
+                  try {
+                    const serverResult = await sendTestPushNotificationAction()
+                    toast.dismiss(loadToast)
+                    if (serverResult.success) {
+                      toast.success('Notifikasi Push berhasil dikirim langsung dari server!')
+                      return
+                    }
+                  } catch {
+                    toast.dismiss(loadToast)
+                  }
+
+                  // Fallback: local browser test notification
                   try {
                     const reg = await navigator.serviceWorker.ready
-                    reg.showNotification('OilTrack System', {
+                    reg.showNotification('OilTrack System • Uji Coba', {
                       body: 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.',
                       icon: 'https://i.imgur.com/8nqsjFz.png',
                       badge: 'https://i.imgur.com/8nqsjFz.png',
                       data: '/dashboard',
                     } as unknown as NotificationOptions)
-                    toast.success('Notifikasi simulasi berhasil dikirim!')
+                    toast.success('Notifikasi simulasi lokal berhasil ditampilkan!')
                   } catch {
-                    new Notification('OilTrack System', {
+                    new Notification('OilTrack System • Uji Coba', {
                       body: 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.',
                       icon: 'https://i.imgur.com/8nqsjFz.png',
                     })
-                    toast.success('Notifikasi simulasi dikirim (fallback)!')
+                    toast.success('Notifikasi simulasi ditampilkan (browser fallback)!')
                   }
                 }}
                 className="w-full py-2.5 border border-slate-200 text-slate-600 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center justify-center gap-2"
               >
-                Simulasi Tes Notifikasi
+                Tes Notifikasi Push Server
               </button>
             </div>
           </div>

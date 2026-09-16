@@ -24,9 +24,9 @@ describe('TrendSection', () => {
       />
     )
 
-    // Component renders "VIEW DETAILS" button which calls onOpenLabDetails
-    const viewDetailsButton = screen.getByRole('button', { name: 'VIEW DETAILS' })
-    await user.click(viewDetailsButton)
+    // Component renders action button which calls onOpenLabDetails
+    const actionButton = screen.getByRole('button', { name: 'Request First Lab Test' })
+    await user.click(actionButton)
     expect(onOpenLabDetails).toHaveBeenCalledTimes(1)
 
     // Verify other props are rendered

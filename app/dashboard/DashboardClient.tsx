@@ -19,6 +19,8 @@ import type { LabRequest, TrendAlertItem } from '@/app/dashboard/components/type
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 import OrdersSection from '@/app/dashboard/components/OrdersSection'
 import { toast } from 'react-hot-toast'
+import NotificationBell from '@/components/NotificationBell'
+
 
 interface Machine {
   id: string
@@ -647,7 +649,7 @@ export default function DashboardClient({
   // SSR-safe chart height (fixes window.innerWidth crash)
   const chartHeight = useChartHeight(200, 250, 300)
 
-  // Set up real-time subscription for lab requests and tests (Saran A)
+  // Set up real-time subscription for lab requests, tests, orders, and complaints with interactive notifications
   useEffect(() => {
     const channel = supabase
       .channel('customer-dashboard-sync')
@@ -658,7 +660,10 @@ export default function DashboardClient({
           schema: 'public',
           table: 'oil_lab_requests'
         },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            toast.success('Status permintaan uji lab Anda telah diperbarui!', { icon: '📋' })
+          }
           router.refresh()
         }
       )
@@ -669,7 +674,41 @@ export default function DashboardClient({
           schema: 'public',
           table: 'oil_lab_tests'
         },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            toast.success('Laporan hasil uji lab baru telah diterbitkan!', { duration: 5000, icon: '🧪' })
+          }
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_orders'
+        },
+        (payload) => {
+          const newOrder = payload.new as any
+          if (payload.eventType === 'UPDATE' && newOrder?.status === 'processing') {
+            toast.success('Permintaan penawaran Anda telah diteruskan ke Tim Admin Sales!', { duration: 6000, icon: '📬' })
+          } else if (payload.eventType === 'UPDATE' && newOrder?.status === 'completed') {
+            toast.success('Pesanan penawaran Anda telah selesai diproses!', { duration: 5000, icon: '✅' })
+          }
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_complaints'
+        },
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            toast.success('Tanggapan status komplain Anda telah diperbarui.', { duration: 5000, icon: '💬' })
+          }
           router.refresh()
         }
       )
@@ -1600,6 +1639,9 @@ export default function DashboardClient({
                 <svg className="w-3.5 h-3.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span>{exporting ? '...' : 'PDF'}</span>
               </button>
+
+              {/* In-App Notification Center */}
+              <NotificationBell />
 
               {/* Language Switcher */}
               <div className="flex items-center rounded-xl bg-slate-100 p-0.5 text-[10px] font-bold select-none">

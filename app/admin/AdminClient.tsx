@@ -22,6 +22,8 @@ import AdminTestsTab from './components/AdminTestsTab'
 import AdminUsersTab from './components/AdminUsersTab'
 import AdminRequestsTab from './components/AdminRequestsTab'
 import AdminOrdersTab, { AdminOrder, AdminComplaint } from './components/AdminOrdersTab'
+import NotificationBell from '@/components/NotificationBell'
+
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -232,7 +234,24 @@ export default function AdminClient({
           schema: 'public',
           table: 'oil_lab_requests'
         },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            toast.success('Permintaan uji lab baru telah masuk dari customer!', { duration: 6000, icon: '📋' })
+          }
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'oil_complaints'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            toast.error('Komplain baru telah diajukan oleh customer!', { duration: 7000, icon: '⚠️' })
+          }
           router.refresh()
         }
       )
@@ -278,6 +297,8 @@ export default function AdminClient({
   const [importLoading, setImportLoading] = useState(false)
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
+  const [autoSendEmail, setAutoSendEmail] = useState(true)
+
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null)
   const [products, setProducts] = useState<AdminProduct[]>(initialProducts)
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
@@ -719,8 +740,12 @@ export default function AdminClient({
       const payload = buildTestPayload({ ...formData, pdf_path: currentPdfPath })
 
       if (modalOpen === 'add-test') {
-        await createTest(payload)
-        alert('Lab test recorded successfully!')
+        const testRes = await createTest(payload, autoSendEmail)
+        if (testRes?.emailSent) {
+          alert('Lab test recorded successfully! Laporan hasil uji lab telah otomatis dikirimkan ke email customer.')
+        } else {
+          alert('Lab test recorded successfully!')
+        }
       } else if (modalOpen === 'edit-test') {
         if (!selectedItem?.id) throw new Error('No test selected')
         await updateTest(selectedItem.id, payload)
@@ -840,7 +865,8 @@ export default function AdminClient({
               </div>
             </div>
             
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <NotificationBell />
               <button
                 onClick={handleSignOut}
                 className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center w-full sm:w-auto justify-center gap-1.5 active:scale-95"
@@ -1746,6 +1772,21 @@ export default function AdminClient({
                   </p>
                 )}
               </div>
+
+              {modalOpen === 'add-test' && (
+                <label className="flex items-start gap-3 p-3.5 bg-orange-50/70 hover:bg-orange-50 rounded-2xl border border-orange-100 cursor-pointer select-none transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={autoSendEmail}
+                    onChange={(e) => setAutoSendEmail(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300 accent-orange-600"
+                  />
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-black text-slate-800 tracking-tight">Kirim Laporan Email Otomatis ke Customer</p>
+                    <p className="text-[10px] text-slate-500 leading-relaxed">Kirimkan ringkasan metrik laboratorium dan tautan unduh PDF resmi langsung ke email customer terdaftar begitu data disimpan.</p>
+                  </div>
+                </label>
+              )}
               
               <div className="flex gap-3 pt-4">
                 <button

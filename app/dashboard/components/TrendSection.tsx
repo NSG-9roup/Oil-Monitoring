@@ -103,6 +103,7 @@ export function TrendSection({
   selectedMachineTrendAlerts,
   performanceTitle,
   performanceDesc,
+  noSampleData,
   totalAnalysisCount,
   fleetHealthIndex,
   baselineViscosity40,
@@ -236,9 +237,9 @@ export function TrendSection({
             ) : chartData.length === 0 ? (
               <EmptyChartCard
                 title={language === 'id' ? 'Belum Ada Sampel Uji Lab' : 'No Lab Sample Data'}
-                desc={language === 'id' 
+                desc={noSampleData || (language === 'id' 
                   ? 'Ajukan pengujian sampel oli pertama Anda untuk mengaktifkan pemantauan grafik tren viskositas real-time.'
-                  : 'Submit your first oil sample test to activate real-time viscosity trend monitoring.'}
+                  : 'Submit your first oil sample test to activate real-time viscosity trend monitoring.')}
                 actionText={language === 'id' ? 'Ajukan Sampel Uji Lab Pertama' : 'Request First Lab Test'}
                 onAction={handleAction}
                 colorScheme="orange"
@@ -299,9 +300,9 @@ export function TrendSection({
             ) : chartData.length === 0 ? (
               <EmptyChartCard
                 title={language === 'id' ? 'Belum Ada Data Viskositas 100°C' : 'No 100°C Viscosity Data'}
-                desc={language === 'id'
+                desc={noSampleData || (language === 'id'
                   ? 'Data stabilitas suhu tinggi akan muncul setelah sampel uji laboratorium diproses.'
-                  : 'High temperature stability data will appear once laboratory samples are processed.'}
+                  : 'High temperature stability data will appear once laboratory samples are processed.')}
                 actionText={language === 'id' ? 'Ajukan Uji Lab untuk Mesin Ini' : 'Request Lab Test for This Machine'}
                 onAction={handleAction}
                 colorScheme="indigo"
@@ -362,9 +363,9 @@ export function TrendSection({
             ) : chartData.length === 0 ? (
               <EmptyChartCard
                 title={language === 'id' ? 'Belum Ada Data Kandungan Air' : 'No Water Content Data'}
-                desc={language === 'id'
+                desc={noSampleData || (language === 'id'
                   ? 'Deteksi kontaminasi kelembapan dan air pendingin akan terplot setelah uji lab dilakukan.'
-                  : 'Moisture and coolant contamination detection will be plotted after lab tests are conducted.'}
+                  : 'Moisture and coolant contamination detection will be plotted after lab tests are conducted.')}
                 actionText={language === 'id' ? 'Ajukan Uji Lab untuk Mesin Ini' : 'Request Lab Test for This Machine'}
                 onAction={handleAction}
                 colorScheme="sky"
@@ -424,9 +425,9 @@ export function TrendSection({
             ) : chartData.length === 0 ? (
               <EmptyChartCard
                 title={language === 'id' ? 'Belum Ada Data Total Acid Number' : 'No Total Acid Number Data'}
-                desc={language === 'id'
+                desc={noSampleData || (language === 'id'
                   ? 'Tingkat oksidasi oli pelumas dan keausan aditif akan terpantau secara berkala melalui data lab.'
-                  : 'Lubricant oxidation and additive depletion levels will be tracked periodically via lab data.'}
+                  : 'Lubricant oxidation and additive depletion levels will be tracked periodically via lab data.')}
                 actionText={language === 'id' ? 'Ajukan Uji Lab untuk Mesin Ini' : 'Request Lab Test for This Machine'}
                 onAction={handleAction}
                 colorScheme="rose"

@@ -156,13 +156,30 @@ export async function deleteProduct(id: string) {
 
 // --- TESTS ---
 
-export async function createTest(data: Partial<LabTestFormData>) {
+export async function createTest(data: Partial<LabTestFormData>, sendEmailNotification: boolean = false) {
   const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_lab_tests').insert([data])
+  const { data: insertedData, error } = await supabase
+    .from('oil_lab_tests')
+    .insert([data])
+    .select('id')
+    .single()
+
   if (error) throw new Error(error.message)
   await createAuditLog('CREATE_LAB_TEST', `Recorded lab test for machine ID: ${data.machine_id}`, { data })
+
+  let emailSent = false
+  if (sendEmailNotification && insertedData?.id) {
+    try {
+      const { sendLabTestResultEmailAction } = await import('@/app/actions/emailActions')
+      const emailResult = await sendLabTestResultEmailAction(insertedData.id)
+      emailSent = !!emailResult?.success
+    } catch (e) {
+      console.error('[Admin] Auto-send lab test email error:', e)
+    }
+  }
+
   revalidatePath('/admin')
-  return { success: true }
+  return { success: true, id: insertedData?.id, emailSent }
 }
 
 export async function updateTest(id: string, data: Partial<LabTestFormData>) {
