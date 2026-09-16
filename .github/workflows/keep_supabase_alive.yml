@@ -2,21 +2,37 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    # Runs every 3 days at 00:00 UTC
-    - cron: '0 0 */3 * *'
+    # Runs every 2 days at 06:00 UTC to prevent Supabase Free Tier auto-pause (7-day inactivity)
+    - cron: '0 6 */2 * *'
   workflow_dispatch:
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API
+      - name: 1. Ping Vercel /api/ping Endpoint (Always Works Without Secrets)
+        run: |
+          echo "Pinging production endpoint: https://oil-track.vercel.app/api/ping"
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" https://oil-track.vercel.app/api/ping)
+          echo "$RESPONSE"
+          STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Warning: Vercel ping returned status $STATUS"
+          else
+            echo "✅ Vercel endpoint ping succeeded!"
+          fi
+
+      - name: 2. Ping Supabase REST API Directly (If Secrets Configured)
         run: |
           URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
           KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}"
-          if [ -z "$URL" ]; then
-            echo "NEXT_PUBLIC_SUPABASE_URL secret is not set, fallback using default env format if available"
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            echo "Pinging Supabase REST directly at $URL"
+            curl -i -X GET "${URL}/rest/v1/oil_products?select=id&limit=1" \
+              -H "apikey: ${KEY}" \
+              -H "Authorization: Bearer ${KEY}"
+            echo "✅ Direct Supabase ping succeeded!"
+          else
+            echo "ℹ️ GitHub secrets NEXT_PUBLIC_SUPABASE_URL not configured; Step 1 already kept Supabase active via Vercel."
           fi
-          curl -i -X GET "${URL}/rest/v1/oil_products?select=id&limit=1" \
-            -H "apikey: ${KEY}" \
-            -H "Authorization: Bearer ${KEY}"
+
