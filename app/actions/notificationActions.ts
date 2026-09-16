@@ -40,7 +40,7 @@ export async function getInAppNotificationsAction(): Promise<{
       .order('created_at', { ascending: false })
       .limit(20)
 
-    if (!notifErr && directNotifs) {
+    if (!notifErr && directNotifs && directNotifs.length > 0) {
       const unreadCount = directNotifs.filter((n) => !n.is_read).length
       return {
         success: true,
@@ -137,3 +137,50 @@ export async function markAllNotificationsAsReadAction() {
     return { success: false, error: errorMsg }
   }
 }
+
+/**
+ * Utility to insert an in-app notification for a specific user into oil_notifications.
+ */
+export async function createInAppNotification({
+  userId,
+  title,
+  message,
+  type = 'info',
+  linkUrl,
+}: {
+  userId: string
+  title: string
+  message: string
+  type?: 'info' | 'success' | 'warning' | 'critical'
+  linkUrl?: string
+}) {
+  try {
+    const serviceDb = createServiceClient()
+    const { data, error } = await serviceDb
+      .from('oil_notifications')
+      .insert([
+        {
+          user_id: userId,
+          title,
+          message,
+          type,
+          link_url: linkUrl || null,
+          is_read: false,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      console.warn('[Notifications] Error creating notification:', error.message)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, notification: data }
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+    console.warn('[Notifications] Failed to create in-app notification:', errorMsg)
+    return { success: false, error: errorMsg }
+  }
+}
+

@@ -178,7 +178,48 @@ export async function createTest(data: Partial<LabTestFormData>, sendEmailNotifi
     }
   }
 
+  // Notify customer profiles via In-App Notification and Web Push
+  if (data.machine_id) {
+    try {
+      const { data: machine } = await supabase
+        .from('oil_machines')
+        .select('machine_name, customer_id')
+        .eq('id', data.machine_id)
+        .single()
+
+      if (machine?.customer_id) {
+        const { data: customerProfiles } = await supabase
+          .from('oil_profiles')
+          .select('id')
+          .eq('customer_id', machine.customer_id)
+
+        if (customerProfiles && customerProfiles.length > 0) {
+          const { createInAppNotification } = await import('@/app/actions/notificationActions')
+          const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
+
+          for (const p of customerProfiles) {
+            await createInAppNotification({
+              userId: p.id,
+              title: 'Laporan Hasil Uji Lab Selesai',
+              message: `Hasil uji lab terbaru untuk mesin ${machine.machine_name || 'Anda'} telah selesai dianalisis.`,
+              type: 'success',
+              linkUrl: '/dashboard',
+            })
+            await sendPushNotificationToUser(p.id, {
+              title: 'Hasil Uji Lab Terbit • OilTrack',
+              body: `Laporan uji lab mesin ${machine.machine_name || 'Anda'} siap diunduh.`,
+              url: '/dashboard',
+            }).catch(() => null)
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.warn('[Admin] Failed to dispatch in-app/push notifications:', notifErr)
+    }
+  }
+
   revalidatePath('/admin')
+  revalidatePath('/dashboard')
   return { success: true, id: insertedData?.id, emailSent }
 }
 

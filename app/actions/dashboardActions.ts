@@ -80,7 +80,32 @@ export async function createLabRequest(data: {
     
     await createAuditLog('CREATE_LAB_REQUEST', `Created lab request: ${data.title}`, { title: data.title, is_new_machine: data.is_new_machine })
 
+    // Notify admin & sales staff
+    try {
+      const { data: staffProfiles } = await adminSupabase
+        .from('oil_profiles')
+        .select('id, role')
+        .in('role', ['admin', 'sales'])
+
+      if (staffProfiles && staffProfiles.length > 0) {
+        const { createInAppNotification } = await import('@/app/actions/notificationActions')
+        for (const s of staffProfiles) {
+          await createInAppNotification({
+            userId: s.id,
+            title: 'Permintaan Uji Lab Baru',
+            message: `Customer mengajukan permintaan uji lab baru: "${data.title}"`,
+            type: 'info',
+            linkUrl: s.role === 'admin' ? '/admin' : '/sales',
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to notify staff:', e)
+    }
+
     revalidatePath('/dashboard')
+    revalidatePath('/admin')
+    revalidatePath('/sales')
     return { success: true, data: insertedData }
   } catch (err) {
     console.error('Error in createLabRequest:', err)
@@ -320,8 +345,32 @@ export async function createCustomerComplaint(data: {
 
     await createAuditLog('CREATE_COMPLAINT', `Customer filed complaint for order ID: ${data.orderId}`, { orderId: data.orderId, description: data.description })
 
+    // Notify admin & sales staff
+    try {
+      const { data: staffProfiles } = await supabaseService
+        .from('oil_profiles')
+        .select('id, role')
+        .in('role', ['admin', 'sales'])
+
+      if (staffProfiles && staffProfiles.length > 0) {
+        const { createInAppNotification } = await import('@/app/actions/notificationActions')
+        for (const s of staffProfiles) {
+          await createInAppNotification({
+            userId: s.id,
+            title: 'Komplain Pelanggan Baru',
+            message: `Keluhan baru telah diajukan: "${descText.slice(0, 60)}..."`,
+            type: 'warning',
+            linkUrl: s.role === 'admin' ? '/admin' : '/sales',
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to notify staff of complaint:', e)
+    }
+
     revalidatePath('/dashboard')
     revalidatePath('/admin')
+    revalidatePath('/sales')
     return { success: true, data: newComplaint }
   } catch (err) {
     console.error('Error in createCustomerComplaint:', err)

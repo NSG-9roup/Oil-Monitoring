@@ -167,7 +167,40 @@ export async function acceptAndSendProposalSales(orderId: string) {
       { orderId, salesId: user.id }
     )
 
+    // 5. Notify customer profiles via In-App Notification and Web Push
+    if (order.customer_id) {
+      try {
+        const { data: custProfiles } = await supabaseService
+          .from('oil_profiles')
+          .select('id')
+          .eq('customer_id', order.customer_id)
+
+        if (custProfiles && custProfiles.length > 0) {
+          const { createInAppNotification } = await import('@/app/actions/notificationActions')
+          const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
+
+          for (const cp of custProfiles) {
+            await createInAppNotification({
+              userId: cp.id,
+              title: 'Permintaan Penawaran Diteruskan',
+              message: `Permintaan penawaran produk ${order.product?.product_name || 'oli'} telah diteruskan oleh sales ke Tim Admin Sales.`,
+              type: 'info',
+              linkUrl: '/dashboard',
+            })
+            await sendPushNotificationToUser(cp.id, {
+              title: 'Penawaran Diteruskan • OilTrack',
+              body: `Permintaan penawaran oli Anda sedang diproses oleh sales.`,
+              url: '/dashboard',
+            }).catch(() => null)
+          }
+        }
+      } catch (notifErr) {
+        console.warn('[Sales] Failed to send customer in-app notification:', notifErr)
+      }
+    }
+
     revalidatePath('/sales')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (err) {
     console.error('Error in acceptAndSendProposalSales:', err)
