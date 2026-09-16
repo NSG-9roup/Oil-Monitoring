@@ -69,6 +69,7 @@ export interface LabRequest {
   machine_id: string | null
   title: string
   description: string | null
+  notes?: string | null
   due_date: string | null
   priority: string
   status: string
@@ -90,3 +91,24 @@ export interface LabRequest {
     full_name: string
   } | null
 }
+
+export interface Machine {
+  id: string
+  machine_name: string
+  serial_number: string
+  model: string
+  location: string
+  status: string
+  customer_id: string
+}
+
+export interface MachineInsight {
+  machine: Machine
+  latestTest?: unknown
+  healthScore: number | null
+  status: { level: string; text: string; [key: string]: unknown }
+  daysSinceTest?: number | null
+  priorityScore?: number
+  nextAction?: string
+}
+

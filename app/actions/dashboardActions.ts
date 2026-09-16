@@ -32,7 +32,7 @@ async function verifyCustomer() {
 export async function createLabRequest(data: {
   machine_id?: string
   title: string
-  description: string
+  description?: string
   due_date?: string
   priority: string
   is_new_machine: boolean
@@ -63,7 +63,16 @@ export async function createLabRequest(data: {
 
     const adminSupabase = createServiceClient()
 
-    const { error } = await adminSupabase.from('oil_lab_requests').insert([insertData])
+    const { data: insertedData, error } = await adminSupabase
+      .from('oil_lab_requests')
+      .insert([insertData])
+      .select(`
+        *,
+        machine:oil_machines(machine_name, location),
+        assigned_to:oil_profiles!oil_lab_requests_assigned_to_profile_id_fkey(full_name)
+      `)
+      .single()
+
     if (error) {
       console.error('Error creating lab request:', error)
       return { success: false, error: error.message }
@@ -72,7 +81,7 @@ export async function createLabRequest(data: {
     await createAuditLog('CREATE_LAB_REQUEST', `Created lab request: ${data.title}`, { title: data.title, is_new_machine: data.is_new_machine })
 
     revalidatePath('/dashboard')
-    return { success: true }
+    return { success: true, data: insertedData }
   } catch (err) {
     console.error('Error in createLabRequest:', err)
     return { success: false, error: err instanceof Error ? err.message : String(err) }

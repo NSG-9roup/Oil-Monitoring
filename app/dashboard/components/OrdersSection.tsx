@@ -491,7 +491,7 @@ export default function OrdersSection({
                   {language === 'id' ? 'Batal' : 'Cancel'}
                 </button>
                 <button type="submit" disabled={isSubmitting} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50">
-                  {isSubmitting ? 'Memproses...' : 'Kirim Komplain'}
+                  {isSubmitting ? (language === 'id' ? 'Memproses...' : 'Processing...') : (language === 'id' ? 'Kirim Komplain' : 'Submit Complaint')}
                 </button>
               </div>
             </form>

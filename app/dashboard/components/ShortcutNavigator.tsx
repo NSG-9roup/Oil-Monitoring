@@ -14,13 +14,15 @@ interface ShortcutNavigatorProps {
 
 export function ShortcutNavigator({ items, onItemClick, ariaLabel }: ShortcutNavigatorProps) {
   return (
-    <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 w-full p-0.5 select-none" aria-label={ariaLabel}>
-      {items.map((item) => (
+    <nav className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 w-full p-1 select-none" aria-label={ariaLabel}>
+      {items.map((item, idx) => (
         <button
           key={item.id}
           type="button"
           onClick={() => onItemClick(item.id)}
           className={`w-full justify-center px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap border ${
+            idx === 4 ? 'col-span-2 sm:col-span-1' : 'col-span-1'
+          } ${
             item.isActive
               ? 'bg-slate-900 border-slate-950 text-white shadow-md shadow-slate-900/10 scale-[1.02]'
               : 'bg-white border-slate-200/80 text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300'
