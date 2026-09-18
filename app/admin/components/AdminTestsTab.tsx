@@ -250,6 +250,11 @@ export default function AdminTestsTab({
                           {test.running_hours} hrs
                         </span>
                       ) : null}
+                      {test.notes ? (
+                        <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 max-w-[160px] truncate block" title={test.notes}>
+                          💬 {test.notes}
+                        </span>
+                      ) : null}
                     </div>
                   </td>
                   {/* Test Date */}

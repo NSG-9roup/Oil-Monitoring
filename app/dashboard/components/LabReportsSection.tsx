@@ -255,11 +255,18 @@ export function LabReportsSection({
                           <span className="text-sm font-medium text-gray-800">{selectedMachineName}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
-                            status.level === 'critical' ? 'bg-red-100 text-red-800' : status.level === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                          }`}>
-                            {status.text}
-                          </span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
+                              status.level === 'critical' ? 'bg-red-100 text-red-800' : status.level === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {status.text}
+                            </span>
+                            {report.notes && (
+                              <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 flex items-center gap-1" title={report.notes}>
+                                💬 Catatan TS
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {report.viscosity_40c?.toFixed(1) || '-'} / {report.viscosity_100c?.toFixed(1) || '-'} cSt
@@ -502,6 +509,27 @@ export function LabReportsSection({
                         )}
                       </div>
                     </div>
+
+                    {/* Catatan & Rekomendasi Khusus Technical Specialist (TS) */}
+                    {report.notes && (
+                      <div className="rounded-2xl p-5 border border-amber-200/90 bg-gradient-to-r from-amber-50/90 to-orange-50/50 mb-6 shadow-xs">
+                        <div className="flex items-center gap-2 mb-2 text-amber-900">
+                          <span className="p-1 rounded-lg bg-amber-200/80 text-amber-800">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </span>
+                          <h5 className="text-xs font-black uppercase tracking-wider text-amber-900">
+                            {language === 'id' ? 'Catatan & Rekomendasi Technical Specialist (TS)' : 'Technical Specialist (TS) Assessment'}
+                          </h5>
+                        </div>
+                        <div className="pl-6 border-l-2 border-amber-400 mt-2.5">
+                          <p className="text-xs sm:text-sm font-semibold text-amber-950 leading-relaxed whitespace-pre-line">
+                            {report.notes}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     <div
                       className={`rounded-2xl p-5 border border-industrial-100 border-l-4 mb-6 ${
