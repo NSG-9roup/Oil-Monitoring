@@ -64,10 +64,7 @@ export default async function DashboardPage() {
     ? serviceSupabase
         .from('oil_lab_tests')
         .select(`
-          id, machine_id, test_date, viscosity_40c, viscosity_100c, water_content, water_content_unit,
-          tan_value, notes, pdf_path, created_at, overall_status, running_hours,
-          viscosity_40c_min, viscosity_40c_max, viscosity_100c_min, viscosity_100c_max,
-          water_content_max, tan_max,
+          *,
           product:oil_products(product_name, product_type, baseline_viscosity_40c, baseline_viscosity_100c, baseline_tan)
         `)
         .in('machine_id', machineIds)
