@@ -106,7 +106,8 @@ export default async function DashboardPage() {
         .from('oil_complaints')
         .select(`
           *,
-          order:oil_orders(id, product:oil_products(product_name))
+          order:oil_orders(id, product:oil_products(product_name)),
+          machine:oil_machines(id, machine_name)
         `)
         .eq('customer_id', profile.customer_id)
         .order('created_at', { ascending: false })

@@ -91,12 +91,15 @@ export function LabReportsSection({
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
 
-    const status = getStatus(
+    const calculatedStatus = getStatus(
       report.viscosity_40c || 0,
       report.water_content || 0,
       report.tan_value || 0,
       report.product
     )
+    const status = report.overall_status
+      ? { level: report.overall_status, text: report.overall_status }
+      : calculatedStatus
     const matchesStatus = statusFilter === 'all' || status.level === statusFilter
 
     return matchesSearch && matchesStatus
@@ -293,12 +296,15 @@ export function LabReportsSection({
         <div className="space-y-6">
           {sortedReports.map((report, index) => {
             const previousReport = index > 0 ? reports[index - 1] : null
-            const status = getStatus(
+            const calculatedStatus = getStatus(
               report.viscosity_40c || 0,
               report.water_content || 0,
               report.tan_value || 0,
               report.product
             )
+            const status = report.overall_status
+              ? { level: report.overall_status, text: report.overall_status }
+              : calculatedStatus
             const viscosity40Trend = getTrend(report.viscosity_40c || 0, previousReport?.viscosity_40c ?? null)
             const viscosity100Trend = getTrend(report.viscosity_100c || 0, previousReport?.viscosity_100c ?? null)
             const waterTrend = getTrend(
@@ -321,7 +327,7 @@ export function LabReportsSection({
                 <div onClick={() => onToggleReport(report.id)} className="cursor-pointer hover:bg-primary-50 transition-colors duration-200">
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
                         <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -345,8 +351,13 @@ export function LabReportsSection({
                             ? normalLabel
                             : unknownLabel}
                         </div>
+                        {report.running_hours ? (
+                          <span className="text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200/60 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            ⏱️ {report.running_hours} hrs
+                          </span>
+                        ) : null}
                       </div>
-                      <div className="flex items-center gap-6 text-sm">
+                      <div className="flex items-center gap-6 text-sm flex-wrap">
                         <span className="text-gray-600">
                           <span className="font-semibold text-blue-900">{viscosityLabel}:</span> {report.viscosity_40c?.toFixed(1) || notAvailableLabel} / {report.viscosity_100c?.toFixed(1) || notAvailableLabel} cSt
                         </span>
@@ -440,6 +451,11 @@ export function LabReportsSection({
                         </div>
                         <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_40c?.toFixed(1) || notAvailableLabel}</p>
                         <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
+                        {(report.viscosity_40c_min != null || report.viscosity_40c_max != null) && (
+                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
+                            Std TS: {report.viscosity_40c_min ?? '-'} ~ {report.viscosity_40c_max ?? '-'}
+                          </p>
+                        )}
                       </div>
 
                       <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -463,6 +479,11 @@ export function LabReportsSection({
                         <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%</p>
                         <p className="text-xs text-industrial-400 mt-1.5 font-semibold">by volume</p>
                         <p className="text-[10px] text-industrial-400 font-medium mt-1">≈ {report.water_content ? (report.water_content * 10000).toFixed(0) : '0'} ppm</p>
+                        {report.water_content_max != null && (
+                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
+                            Max TS: {report.water_content_max} {report.water_content_unit || 'PPM'}
+                          </p>
+                        )}
                       </div>
 
                       <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -474,6 +495,11 @@ export function LabReportsSection({
                         </div>
                         <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.tan_value?.toFixed(2) || notAvailableLabel}</p>
                         <p className="text-xs text-industrial-400 mt-1.5 font-semibold">mg KOH/g</p>
+                        {report.tan_max != null && (
+                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
+                            Max TS: {report.tan_max}
+                          </p>
+                        )}
                       </div>
                     </div>
 

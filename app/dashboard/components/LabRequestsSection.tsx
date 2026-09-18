@@ -119,9 +119,16 @@ export function LabRequestsSection({
                           ? (req.new_machine_data?.machine_name || 'Mesin Baru')
                           : (req.machine?.machine_name || 'Mesin')}
                       </h3>
-                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                        {language === 'id' ? 'Diminta' : 'Requested'}: {new Date(req.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { dateStyle: 'medium' })}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                          {language === 'id' ? 'Diminta' : 'Requested'}: {new Date(req.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { dateStyle: 'medium' })}
+                        </p>
+                        {req.running_hours ? (
+                          <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            ⏱️ {req.running_hours} hrs
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2.5 shrink-0 ml-3">
                       <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${statusColors[req.status] || statusColors['pending']}`}>

@@ -40,6 +40,12 @@ export interface LabReportItem {
   notes: string
   machine_id?: string
   pdf_path?: string
+  overall_status?: 'normal' | 'warning' | 'critical' | null
+  running_hours?: number | null
+  viscosity_40c_min?: number | null
+  viscosity_40c_max?: number | null
+  water_content_max?: number | null
+  tan_max?: number | null
   evaluation_mode?: 'oil_type_based' | 'product_specific' | 'new_oil_verification'
   product?: LabProduct
 }
@@ -70,6 +76,7 @@ export interface LabRequest {
   title: string
   description: string | null
   notes?: string | null
+  running_hours?: number | null
   due_date: string | null
   priority: string
   status: string

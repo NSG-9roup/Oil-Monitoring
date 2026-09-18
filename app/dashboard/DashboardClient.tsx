@@ -18,6 +18,8 @@ import { createLabRequest } from '@/app/actions/dashboardActions'
 import type { LabRequest, TrendAlertItem } from '@/app/dashboard/components/types'
 import { useTabAutoLogout, signOutIfTabWasClosed } from '@/lib/hooks/useTabAutoLogout'
 import OrdersSection from '@/app/dashboard/components/OrdersSection'
+import ComplaintsSection from '@/app/dashboard/components/ComplaintsSection'
+import type { Complaint } from '@/lib/types'
 import { toast } from 'react-hot-toast'
 import NotificationBell from '@/components/NotificationBell'
 
@@ -469,6 +471,8 @@ export default function DashboardClient({
   useEffect(() => { signOutIfTabWasClosed() }, [])
   const [language, setLanguage] = useState<Language>('id')
   const [labRequests, setLabRequests] = useState<LabRequest[]>(initialLabRequests)
+  const [complaints, setComplaints] = useState<Complaint[]>(initialComplaints)
+  const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false)
   const copy = dashboardCopy[language]
   const preferredMachine = useMemo(() => {
     const machineWithData = initialMachines.find((machine) =>
@@ -571,7 +575,7 @@ export default function DashboardClient({
     })
   }
 
-  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'requests' | 'orders'>('trend')
+  const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'requests' | 'orders' | 'complaints'>('trend')
 
   const handleShortcutClick = (shortcutId: string) => {
     if (shortcutId.startsWith('trend') || shortcutId === 'trend') setActiveTab('trend')
@@ -579,6 +583,7 @@ export default function DashboardClient({
     else if (shortcutId === 'lab') setActiveTab('lab')
     else if (shortcutId === 'requests') setActiveTab('requests')
     else if (shortcutId === 'orders') setActiveTab('orders')
+    else if (shortcutId === 'complaints') setActiveTab('complaints')
   }
 
   const handleSendRequest = async (formData: RequestFormData) => {
@@ -604,6 +609,7 @@ export default function DashboardClient({
         description: formData.notes || undefined,
         due_date: formData.requested_date || undefined,
         priority: formData.priority || 'medium',
+        running_hours: formData.running_hours ? Number(formData.running_hours) : undefined,
         is_new_machine: formData.is_new_machine,
         assigned_to_profile_id: formData.assigned_to_profile_id || undefined,
         new_machine_data: formData.is_new_machine ? {
@@ -1619,6 +1625,19 @@ export default function DashboardClient({
             
             {/* Right: Quick CTAs + Language + Profile + Logout */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              {/* Quick CTA: Bantuan & Komplain */}
+              <button
+                onClick={() => setIsComplaintModalOpen(true)}
+                className="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 hover:border-rose-300 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                title="Pusat Bantuan & Komplain"
+              >
+                <svg className="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="hidden md:inline">{language === 'id' ? 'Bantuan & Komplain' : 'Help / Issue'}</span>
+                <span className="md:hidden">Bantuan</span>
+              </button>
+
               {/* Quick CTA: Ajukan Uji Lab */}
               <button
                 onClick={() => setIsRequestModalOpen(true)}
@@ -1662,7 +1681,7 @@ export default function DashboardClient({
           </div>
         </header>
 
-        {/* Paten Navigator — Symmetrical 5-Column Full-Width Navbar */}
+        {/* Paten Navigator — Symmetrical Full-Width Navbar */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
           <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-2 shadow-sm select-none">
             <ShortcutNavigator
@@ -1673,6 +1692,7 @@ export default function DashboardClient({
                 { id: 'lab', label: copy.labResults },
                 { id: 'requests', label: language === 'id' ? 'Status Lab Request' : 'Lab Request Status' },
                 { id: 'orders', label: language === 'id' ? 'Penawaran Oli' : 'Oil Quotations' },
+                { id: 'complaints', label: language === 'id' ? 'Komplain & Bantuan' : 'Help & Complaints' },
               ].map((shortcut) => ({
                 id: shortcut.id,
                 label: shortcut.label,
@@ -2068,10 +2088,23 @@ export default function DashboardClient({
                 customerId={profile.customer_id || ''}
                 products={products}
                 initialOrders={initialOrders}
-                initialComplaints={initialComplaints}
+                initialComplaints={complaints}
                 language={language}
               />
             </div>
+          </div>
+
+          {/* Complaints Tab */}
+          <div className={`w-full ${activeTab === 'complaints' ? 'block animate-pop-micro' : 'hidden'}`}>
+            <ComplaintsSection
+              complaints={complaints}
+              machines={initialMachines}
+              orders={initialOrders}
+              language={language}
+              isModalOpen={isComplaintModalOpen}
+              setIsModalOpen={setIsComplaintModalOpen}
+              onComplaintAdded={(newC) => setComplaints(prev => [newC, ...prev])}
+            />
           </div>
 
         </div>

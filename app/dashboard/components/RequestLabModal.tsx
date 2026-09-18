@@ -12,6 +12,7 @@ export interface RequestFormData {
   assigned_to_profile_id?: string
   requested_date?: string
   priority: string
+  running_hours?: number | string
   notes?: string
 }
 
@@ -69,6 +70,7 @@ export function RequestLabModal({
     assigned_to_profile_id: initialData?.assigned_to_profile_id || '',
     requested_date: initialData?.requested_date || '',
     priority: initialData?.priority || 'medium',
+    running_hours: initialData?.running_hours || '',
     notes: initialData?.notes || '',
   })
 
@@ -83,6 +85,7 @@ export function RequestLabModal({
         assigned_to_profile_id: initialData?.assigned_to_profile_id || '',
         requested_date: initialData?.requested_date || '',
         priority: initialData?.priority || 'medium',
+        running_hours: initialData?.running_hours || '',
         notes: initialData?.notes || '',
       })
     }
@@ -210,6 +213,32 @@ export function RequestLabModal({
                     {p}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Running Oil Hours */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {language === 'id' ? 'Jam Operasional Oli (Running Hours)' : 'Oil Operating Hours (Running Hours)'}
+                </span>
+                <span className="text-[9px] font-bold text-slate-400">
+                  {language === 'id' ? 'Total jam kerja oli sejak ganti terakhir' : 'Total hours since last oil change'}
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder={language === 'id' ? 'Contoh: 1500 (Jam)' : 'e.g. 1500 (Hours)'}
+                  value={form.running_hours ?? ''}
+                  onChange={(e) => setForm(prev => ({ ...prev, running_hours: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                />
+                <span className="absolute right-4 top-3.5 text-[10px] font-bold text-slate-400 uppercase">
+                  Hours
+                </span>
               </div>
             </div>
 

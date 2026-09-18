@@ -82,6 +82,12 @@ export interface LabTest {
   tan_value: number | null
   notes?: string
   pdf_path: string | null
+  overall_status?: 'normal' | 'warning' | 'critical' | null
+  running_hours?: number | null
+  viscosity_40c_min?: number | null
+  viscosity_40c_max?: number | null
+  water_content_max?: number | null
+  tan_max?: number | null
   created_at: string
   updated_at: string
   updated_by: string | null
@@ -142,6 +148,12 @@ export interface LabTestFormData {
   water_content_unit?: 'PPM' | 'PERCENT'
   tan_value?: number
   notes?: string
+  overall_status?: 'normal' | 'warning' | 'critical'
+  running_hours?: number
+  viscosity_40c_min?: number
+  viscosity_40c_max?: number
+  water_content_max?: number
+  tan_max?: number
 }
 
 export interface UserFormData {
@@ -176,6 +188,7 @@ export interface LabRequest {
   description?: string | null
   priority: LabRequestPriority
   status: LabRequestStatus
+  running_hours?: number | null
   request_date: string
   due_date?: string | null
   is_new_machine: boolean
@@ -191,3 +204,30 @@ export interface LabRequest {
   requested_by?: { full_name: string; email: string } | null
   sample_photo_path?: string | null
 }
+
+export interface Complaint {
+  id: string
+  order_id?: string | null
+  customer_id: string
+  category: 'lab_test' | 'order' | 'machine' | 'service' | 'general'
+  machine_id?: string | null
+  title: string
+  description: string
+  status: 'open' | 'in_progress' | 'resolved'
+  resolution_notes?: string | null
+  created_at: string
+  updated_at: string
+  resolved_at?: string | null
+  order?: {
+    product?: {
+      product_name?: string
+    }
+  } | null
+  machine?: {
+    machine_name?: string
+  } | null
+  customer?: {
+    company_name?: string
+  } | null
+}
+

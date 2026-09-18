@@ -472,7 +472,10 @@ export default function SalesClient({
         customerEmail: proposalForm.customerEmail || undefined,
         notes: proposalForm.notes || undefined,
       })
-      if (!result.success) throw new Error(result.error)
+      if (!result.success) {
+        const errorMsg = 'error' in result && typeof result.error === 'string' ? result.error : 'Gagal memproses penawaran'
+        throw new Error(errorMsg)
+      }
       toast.success('✅ Penawaran berhasil dikirim ke Purchasing!')
       setProposalHistory(prev => {
         const next = [

@@ -122,6 +122,12 @@ const buildTestPayload = (data: FormDataState) => ({
   tan_value: toOptionalNumber(data.tan_value),
   notes: toOptionalString(data.notes),
   pdf_path: toOptionalString(data.pdf_path),
+  overall_status: toEnumValue(data.overall_status, ['normal', 'warning', 'critical'] as const) || 'normal',
+  running_hours: toOptionalNumber(data.running_hours),
+  viscosity_40c_min: toOptionalNumber(data.viscosity_40c_min),
+  viscosity_40c_max: toOptionalNumber(data.viscosity_40c_max),
+  water_content_max: toOptionalNumber(data.water_content_max),
+  tan_max: toOptionalNumber(data.tan_max),
 })
 
 const buildCreateUserPayload = (data: FormDataState) => ({
@@ -683,7 +689,14 @@ export default function AdminClient({
       water_content: '',
       water_content_unit: 'PPM',
       tan_value: '',
-      pdf_path: ''
+      pdf_path: '',
+      overall_status: 'normal',
+      running_hours: '',
+      viscosity_40c_min: '',
+      viscosity_40c_max: '',
+      water_content_max: '',
+      tan_max: '',
+      notes: ''
     })
     setPdfFile(null)
     setModalOpen('add-test')
@@ -700,7 +713,14 @@ export default function AdminClient({
       water_content: test.water_content,
       water_content_unit: test.water_content_unit || 'PPM',
       tan_value: test.tan_value,
-      pdf_path: test.pdf_path || ''
+      pdf_path: test.pdf_path || '',
+      overall_status: test.overall_status || 'normal',
+      running_hours: test.running_hours ?? '',
+      viscosity_40c_min: test.viscosity_40c_min ?? '',
+      viscosity_40c_max: test.viscosity_40c_max ?? '',
+      water_content_max: test.water_content_max ?? '',
+      tan_max: test.tan_max ?? '',
+      notes: test.notes || ''
     })
     setPdfFile(null)
     setModalOpen('edit-test')
@@ -1692,6 +1712,132 @@ export default function AdminClient({
                   className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   placeholder="e.g., 0.85"
                 />
+              </div>
+
+              {/* Running Oil Hours */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                  Running Oil Hours (Jam Operasi)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="1"
+                    value={toInputValue(formData.running_hours)}
+                    onChange={(e) => setFormData({...formData, running_hours: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., 1500 (jam kerja oli)"
+                  />
+                  <span className="absolute right-3.5 top-3 text-[10px] font-bold text-slate-400 uppercase">Hours</span>
+                </div>
+              </div>
+
+              {/* TS Evaluation Status */}
+              <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-150 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-black text-slate-700 uppercase tracking-widest">
+                    Status Evaluasi TS (Technical Specialist)
+                  </label>
+                  <span className="text-[9px] font-bold text-slate-400">Pilih kondisi oli</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, overall_status: 'normal'})}
+                    className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                      formData.overall_status === 'normal' || !formData.overall_status
+                        ? 'bg-emerald-500 text-white border-emerald-600 shadow-sm shadow-emerald-500/20'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-current"></span>
+                    Normal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, overall_status: 'warning'})}
+                    className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                      formData.overall_status === 'warning'
+                        ? 'bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/20'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-current"></span>
+                    Warning
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, overall_status: 'critical'})}
+                    className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                      formData.overall_status === 'critical'
+                        ? 'bg-rose-600 text-white border-rose-700 shadow-sm shadow-rose-600/20'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-current"></span>
+                    Critical
+                  </button>
+                </div>
+              </div>
+
+              {/* Standard Range Limits (Min - Max) for TS */}
+              <div className="p-4 bg-orange-50/40 rounded-2xl border border-orange-100/70 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-black text-orange-800 uppercase tracking-widest flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Batas Standar Parameter (Input TS)
+                  </h4>
+                  <span className="text-[8px] font-bold text-orange-600/70 uppercase">Toleransi Min - Max</span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 mb-1">Visc 40°C Min (cSt)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={toInputValue(formData.viscosity_40c_min)}
+                      onChange={(e) => setFormData({...formData, viscosity_40c_min: e.target.value})}
+                      className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
+                      placeholder="e.g., 41.4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 mb-1">Visc 40°C Max (cSt)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={toInputValue(formData.viscosity_40c_max)}
+                      onChange={(e) => setFormData({...formData, viscosity_40c_max: e.target.value})}
+                      className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
+                      placeholder="e.g., 50.6"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 mb-1">Water Max (PPM/%)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={toInputValue(formData.water_content_max)}
+                      onChange={(e) => setFormData({...formData, water_content_max: e.target.value})}
+                      className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
+                      placeholder="e.g., 500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 mb-1">TAN Max (mg KOH/g)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={toInputValue(formData.tan_max)}
+                      onChange={(e) => setFormData({...formData, tan_max: e.target.value})}
+                      className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
+                      placeholder="e.g., 2.0"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Bukti Foto Sampel Fisik (jika ada) */}

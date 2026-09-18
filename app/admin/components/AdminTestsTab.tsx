@@ -2,7 +2,6 @@
 
 import React from 'react'
 import type { AdminLabTest, Customer, AdminMachine } from '@/lib/types'
-import { toast } from 'react-hot-toast'
 
 interface AdminTestsTabProps {
   recentTests: AdminLabTest[]
@@ -204,6 +203,7 @@ export default function AdminTestsTab({
         <table className="w-full min-w-[980px] divide-y divide-slate-100">
           <thead className="bg-slate-50/70 backdrop-blur-sm sticky top-0 z-10">
             <tr>
+              <th className="px-6 py-4.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status TS</th>
               <th className="px-6 py-4.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Test Date</th>
               <th className="px-6 py-4.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Machine Name</th>
               <th className="px-6 py-4.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer Company</th>
@@ -216,13 +216,42 @@ export default function AdminTestsTab({
           <tbody className="bg-white divide-y divide-slate-100">
             {filteredTests.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-bold italic text-sm">
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-bold italic text-sm">
                   No lab test results found matching filters.
                 </td>
               </tr>
             ) : (
               filteredTests.map((test) => (
                 <tr key={test.id} className="hover:bg-indigo-50/15 transition-colors duration-200">
+                  {/* Status TS */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col items-start gap-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        test.overall_status === 'critical'
+                          ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                          : test.overall_status === 'warning'
+                          ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                          : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                          test.overall_status === 'critical'
+                            ? 'bg-rose-500'
+                            : test.overall_status === 'warning'
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                        }`}></span>
+                        {test.overall_status || 'normal'}
+                      </span>
+                      {test.running_hours ? (
+                        <span className="text-[10px] font-semibold text-slate-500 flex items-center gap-1">
+                          <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {test.running_hours} hrs
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
                   {/* Test Date */}
                   <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-slate-800">
                     {formatDate(test.test_date)}

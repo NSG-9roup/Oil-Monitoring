@@ -146,6 +146,11 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                             Mesin Baru
                           </span>
                         )}
+                        {req.running_hours ? (
+                          <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                            ⏱️ {req.running_hours} hrs
+                          </span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-6 py-4 max-w-[200px]">

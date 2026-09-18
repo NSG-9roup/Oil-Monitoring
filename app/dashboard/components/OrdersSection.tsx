@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createOrderQuotation, createCustomerComplaint } from '@/app/actions/dashboardActions'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import { toast } from 'react-hot-toast'
+import type { Complaint } from '@/lib/types'
 import {
   BarChart,
   Bar,
@@ -31,21 +32,6 @@ interface Order {
   product?: {
     product_name?: string
     product_type?: string
-  }
-}
-
-interface Complaint {
-  id: string
-  order_id: string
-  customer_id: string
-  description: string
-  status: string
-  resolution_notes?: string | null
-  created_at: string
-  order?: {
-    product?: {
-      product_name?: string
-    }
   }
 }
 
@@ -167,8 +153,8 @@ export default function OrdersSection({
 
   const handleCreateComplaint = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedOrderId || !complaintDesc.trim()) {
-      toast.error(language === 'id' ? 'Silakan pilih pesanan dan isi deskripsi keluhan' : 'Please select an order and enter complaint description')
+    if (!complaintDesc.trim()) {
+      toast.error(language === 'id' ? 'Silakan isi deskripsi keluhan' : 'Please enter complaint description')
       return
     }
     setIsSubmitting(true)
@@ -244,8 +230,7 @@ export default function OrdersSection({
                 setSelectedOrderId(orders[0]?.id || null)
                 setIsComplaintModalOpen(true)
               }}
-              disabled={orders.length === 0}
-              className="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-5 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
+              className="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-5 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 shrink-0 text-xs sm:text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />

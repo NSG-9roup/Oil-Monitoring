@@ -35,6 +35,7 @@ export async function createLabRequest(data: {
   description?: string
   due_date?: string
   priority: string
+  running_hours?: number | null
   is_new_machine: boolean
   assigned_to_profile_id?: string
   new_machine_data?: {
@@ -53,6 +54,7 @@ export async function createLabRequest(data: {
       machine_id: data.machine_id ? data.machine_id : undefined,
       title: data.title,
       description: data.description,
+      running_hours: data.running_hours ? Number(data.running_hours) : null,
       due_date: data.due_date || null,
       priority: data.priority,
       status: 'pending',
@@ -314,28 +316,39 @@ export async function createOrderQuotation(data: {
 }
 
 export async function createCustomerComplaint(data: {
-  orderId: string
+  orderId?: string | null
+  machineId?: string | null
+  category?: 'lab_test' | 'order' | 'machine' | 'service' | 'general'
+  title?: string
   description: string
 }) {
   try {
     const { profile } = await verifyCustomer()
 
-    if (!data.orderId || !data.description?.trim()) {
-      return { success: false, error: 'Pesanan dan deskripsi komplain wajib diisi' }
+    if (!data.description?.trim()) {
+      return { success: false, error: 'Deskripsi kendala / komplain wajib diisi' }
     }
 
     const supabaseService = createServiceClient()
     const descText = data.description.trim()
+    const category = data.category || (data.orderId ? 'order' : 'general')
+    const title = data.title?.trim() || 'Laporan Kendala / Komplain'
+
+    const insertPayload: Record<string, unknown> = {
+      order_id: data.orderId || null,
+      machine_id: data.machineId || null,
+      customer_id: profile.customer_id,
+      category,
+      title,
+      description: descText,
+      complaint_text: descText,
+      status: 'open'
+    }
+
     const { data: newComplaint, error } = await supabaseService
       .from('oil_complaints')
-      .insert([{
-        order_id: data.orderId,
-        customer_id: profile.customer_id,
-        description: descText,
-        complaint_text: descText,
-        status: 'open'
-      }])
-      .select(`*, order:oil_orders(id, product:oil_products(product_name))`)
+      .insert([insertPayload])
+      .select(`*, order:oil_orders(id, product:oil_products(product_name)), machine:oil_machines(id, machine_name)`)
       .single()
 
     if (error) {
@@ -343,7 +356,7 @@ export async function createCustomerComplaint(data: {
       return { success: false, error: error.message }
     }
 
-    await createAuditLog('CREATE_COMPLAINT', `Customer filed complaint for order ID: ${data.orderId}`, { orderId: data.orderId, description: data.description })
+    await createAuditLog('CREATE_COMPLAINT', `Customer filed complaint: ${title}`, { orderId: data.orderId, machineId: data.machineId, category, description: descText })
 
     // Notify admin & sales staff
     try {
