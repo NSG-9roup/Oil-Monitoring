@@ -765,11 +765,19 @@ export default function AdminClient({
       const payload = buildTestPayload({ ...formData, pdf_path: currentPdfPath })
 
       if (modalOpen === 'add-test') {
-        await createTest(payload, false)
+        const res = await createTest(payload, false)
+        if (res && !res.success) {
+          alert('Gagal menyimpan hasil uji lab: ' + (res.error || 'Terjadi kesalahan sistem.'))
+          return
+        }
         alert('Lab test recorded successfully!')
       } else if (modalOpen === 'edit-test') {
         if (!selectedItem?.id) throw new Error('No test selected')
-        await updateTest(selectedItem.id, payload)
+        const res = await updateTest(selectedItem.id, payload)
+        if (res && !res.success) {
+          alert('Gagal memperbarui hasil uji lab: ' + (res.error || 'Terjadi kesalahan sistem.'))
+          return
+        }
         alert('Lab test updated successfully!')
       }
       setPdfFile(null)

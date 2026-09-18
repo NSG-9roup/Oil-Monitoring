@@ -157,79 +157,141 @@ export async function deleteProduct(id: string) {
 // --- TESTS ---
 
 export async function createTest(data: Partial<LabTestFormData>, sendEmailNotification: boolean = false) {
-  const supabase = await verifyAdmin()
-  const { data: insertedData, error } = await supabase
-    .from('oil_lab_tests')
-    .insert([data])
-    .select('id')
-    .single()
+  try {
+    const supabase = await verifyAdmin()
 
-  if (error) throw new Error(error.message)
-  await createAuditLog('CREATE_LAB_TEST', `Recorded lab test for machine ID: ${data.machine_id}`, { data })
-
-  let emailSent = false
-  if (sendEmailNotification && insertedData?.id) {
-    try {
-      const { sendLabTestResultEmailAction } = await import('@/app/actions/emailActions')
-      const emailResult = await sendLabTestResultEmailAction(insertedData.id)
-      emailSent = !!emailResult?.success
-    } catch (e) {
-      console.error('[Admin] Auto-send lab test email error:', e)
+    // Clean undefined values
+    const cleanPayload: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        cleanPayload[key] = value
+      }
     }
-  }
 
-  // Notify customer profiles via In-App Notification and Web Push
-  if (data.machine_id) {
-    try {
-      const { data: machine } = await supabase
-        .from('oil_machines')
-        .select('machine_name, customer_id')
-        .eq('id', data.machine_id)
+    let insertRes = await supabase
+      .from('oil_lab_tests')
+      .insert([cleanPayload])
+      .select('id')
+      .single()
+
+    // Fallback if newly introduced columns are not yet applied to database schema (PGRST204)
+    if (insertRes.error && insertRes.error.code === 'PGRST204') {
+      console.warn('[Admin] Missing column in oil_lab_tests schema, attempting fallback insert:', insertRes.error.message)
+      const fallbackPayload = { ...cleanPayload }
+      delete fallbackPayload.viscosity_100c_min
+      delete fallbackPayload.viscosity_100c_max
+
+      insertRes = await supabase
+        .from('oil_lab_tests')
+        .insert([fallbackPayload])
+        .select('id')
         .single()
+    }
 
-      if (machine?.customer_id) {
-        const { data: customerProfiles } = await supabase
-          .from('oil_profiles')
-          .select('id')
-          .eq('customer_id', machine.customer_id)
+    if (insertRes.error) {
+      return { success: false, error: insertRes.error.message }
+    }
 
-        if (customerProfiles && customerProfiles.length > 0) {
-          const { createInAppNotification } = await import('@/app/actions/notificationActions')
-          const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
+    const insertedData = insertRes.data
+    await createAuditLog('CREATE_LAB_TEST', `Recorded lab test for machine ID: ${data.machine_id}`, { data })
 
-          for (const p of customerProfiles) {
-            await createInAppNotification({
-              userId: p.id,
-              title: 'Laporan Hasil Uji Lab Selesai',
-              message: `Hasil uji lab terbaru untuk mesin ${machine.machine_name || 'Anda'} telah selesai dianalisis.`,
-              type: 'success',
-              linkUrl: '/dashboard',
-            })
-            await sendPushNotificationToUser(p.id, {
-              title: 'Hasil Uji Lab Terbit • OilTrack',
-              body: `Laporan uji lab mesin ${machine.machine_name || 'Anda'} siap diunduh.`,
-              url: '/dashboard',
-            }).catch(() => null)
+    let emailSent = false
+    if (sendEmailNotification && insertedData?.id) {
+      try {
+        const { sendLabTestResultEmailAction } = await import('@/app/actions/emailActions')
+        const emailResult = await sendLabTestResultEmailAction(insertedData.id)
+        emailSent = !!emailResult?.success
+      } catch (e) {
+        console.error('[Admin] Auto-send lab test email error:', e)
+      }
+    }
+
+    // Notify customer profiles via In-App Notification and Web Push
+    if (data.machine_id) {
+      try {
+        const { data: machine } = await supabase
+          .from('oil_machines')
+          .select('machine_name, customer_id')
+          .eq('id', data.machine_id)
+          .single()
+
+        if (machine?.customer_id) {
+          const { data: customerProfiles } = await supabase
+            .from('oil_profiles')
+            .select('id')
+            .eq('customer_id', machine.customer_id)
+
+          if (customerProfiles && customerProfiles.length > 0) {
+            const { createInAppNotification } = await import('@/app/actions/notificationActions')
+            const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
+
+            for (const p of customerProfiles) {
+              await createInAppNotification({
+                userId: p.id,
+                title: 'Laporan Hasil Uji Lab Selesai',
+                message: `Hasil uji lab terbaru untuk mesin ${machine.machine_name || 'Anda'} telah selesai dianalisis.`,
+                type: 'success',
+                linkUrl: '/dashboard',
+              })
+              await sendPushNotificationToUser(p.id, {
+                title: 'Hasil Uji Lab Terbit • OilTrack',
+                body: `Laporan uji lab mesin ${machine.machine_name || 'Anda'} siap diunduh.`,
+                url: '/dashboard',
+              }).catch(() => null)
+            }
           }
         }
+      } catch (notifErr) {
+        console.warn('[Admin] Failed to dispatch in-app/push notifications:', notifErr)
       }
-    } catch (notifErr) {
-      console.warn('[Admin] Failed to dispatch in-app/push notifications:', notifErr)
     }
-  }
 
-  revalidatePath('/admin')
-  revalidatePath('/dashboard')
-  return { success: true, id: insertedData?.id, emailSent }
+    revalidatePath('/admin')
+    revalidatePath('/dashboard')
+    return { success: true, id: insertedData?.id, emailSent }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Terjadi kesalahan sistem saat menyimpan data hasil uji lab.'
+    console.error('[createTest] Unhandled error:', err)
+    return { success: false, error: message }
+  }
 }
 
 export async function updateTest(id: string, data: Partial<LabTestFormData>) {
-  const supabase = await verifyAdmin()
-  const { error } = await supabase.from('oil_lab_tests').update(data).eq('id', id)
-  if (error) throw new Error(error.message)
-  await createAuditLog('UPDATE_LAB_TEST', `Updated lab test ID: ${id}`, { id, data })
-  revalidatePath('/admin')
-  return { success: true }
+  try {
+    const supabase = await verifyAdmin()
+
+    // Clean undefined values
+    const cleanPayload: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        cleanPayload[key] = value
+      }
+    }
+
+    let updateRes = await supabase.from('oil_lab_tests').update(cleanPayload).eq('id', id)
+
+    // Fallback if newly introduced columns are not yet applied to database schema (PGRST204)
+    if (updateRes.error && updateRes.error.code === 'PGRST204') {
+      console.warn('[Admin] Missing column in oil_lab_tests schema, attempting fallback update:', updateRes.error.message)
+      const fallbackPayload = { ...cleanPayload }
+      delete fallbackPayload.viscosity_100c_min
+      delete fallbackPayload.viscosity_100c_max
+
+      updateRes = await supabase.from('oil_lab_tests').update(fallbackPayload).eq('id', id)
+    }
+
+    if (updateRes.error) {
+      return { success: false, error: updateRes.error.message }
+    }
+
+    await createAuditLog('UPDATE_LAB_TEST', `Updated lab test ID: ${id}`, { id, data })
+    revalidatePath('/admin')
+    return { success: true }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Terjadi kesalahan sistem saat memperbarui data hasil uji lab.'
+    console.error('[updateTest] Unhandled error:', err)
+    return { success: false, error: message }
+  }
 }
 
 export async function deleteTest(id: string) {
