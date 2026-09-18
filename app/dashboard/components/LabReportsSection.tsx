@@ -474,6 +474,11 @@ export function LabReportsSection({
                         </div>
                         <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_100c?.toFixed(1) || notAvailableLabel}</p>
                         <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
+                        {(report.viscosity_100c_min != null || report.viscosity_100c_max != null) && (
+                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
+                            Std TS: {report.viscosity_100c_min ?? '-'} ~ {report.viscosity_100c_max ?? '-'}
+                          </p>
+                        )}
                       </div>
 
                       <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">

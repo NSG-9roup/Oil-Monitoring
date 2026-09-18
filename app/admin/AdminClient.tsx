@@ -126,6 +126,8 @@ const buildTestPayload = (data: FormDataState) => ({
   running_hours: toOptionalNumber(data.running_hours),
   viscosity_40c_min: toOptionalNumber(data.viscosity_40c_min),
   viscosity_40c_max: toOptionalNumber(data.viscosity_40c_max),
+  viscosity_100c_min: toOptionalNumber(data.viscosity_100c_min),
+  viscosity_100c_max: toOptionalNumber(data.viscosity_100c_max),
   water_content_max: toOptionalNumber(data.water_content_max),
   tan_max: toOptionalNumber(data.tan_max),
 })
@@ -694,6 +696,8 @@ export default function AdminClient({
       running_hours: '',
       viscosity_40c_min: '',
       viscosity_40c_max: '',
+      viscosity_100c_min: '',
+      viscosity_100c_max: '',
       water_content_max: '',
       tan_max: '',
       notes: ''
@@ -718,6 +722,8 @@ export default function AdminClient({
       running_hours: test.running_hours ?? '',
       viscosity_40c_min: test.viscosity_40c_min ?? '',
       viscosity_40c_max: test.viscosity_40c_max ?? '',
+      viscosity_100c_min: test.viscosity_100c_min ?? '',
+      viscosity_100c_max: test.viscosity_100c_max ?? '',
       water_content_max: test.water_content_max ?? '',
       tan_max: test.tan_max ?? '',
       notes: test.notes || ''
@@ -1584,7 +1590,7 @@ export default function AdminClient({
       {/* Lab Test Add/Edit Modal */}
       {(modalOpen === 'add-test' || modalOpen === 'edit-test') && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 sm:p-6 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-2xl w-full border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col animate-pop-micro">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col animate-pop-micro">
             
             {/* Modal Header */}
             <div className="bg-white px-6 py-4.5 border-b border-slate-100 flex items-center justify-between select-none shrink-0">
@@ -1715,129 +1721,203 @@ export default function AdminClient({
               </div>
 
               {/* SEKSI 2: HASIL ANALISA UJI LAB & STANDAR TOLERANSI TS */}
-              <div className="space-y-3.5 pt-1">
+              <div className="space-y-4 pt-1">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                   <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
                   <h4 className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                    2. Parameter Analisa Uji Lab
+                    2. Parameter Uji Lab & Standar Toleransi TS
                   </h4>
                 </div>
 
-                {/* Viskositas 40°C & Viskositas 100°C */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
-                      Viscosity 40°C (cSt) <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={toInputValue(formData.viscosity_40c)}
-                      onChange={(e) => setFormData({...formData, viscosity_40c: e.target.value})}
-                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none"
-                      placeholder="e.g., 46.5"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
-                      Viscosity 100°C (cSt)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={toInputValue(formData.viscosity_100c)}
-                      onChange={(e) => setFormData({...formData, viscosity_100c: e.target.value})}
-                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none"
-                      placeholder="e.g., 6.8"
-                    />
-                  </div>
-                </div>
-
-                {/* TOLERANSI MIN - MAX TEPAT DI BAWAH VISKOSITI (Permintaan User) */}
-                <div className="p-3.5 bg-orange-50/50 border border-orange-200/80 rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-orange-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <span>📐</span> Batas Toleransi Viscosity 40°C (Input TS)
-                    </span>
-                    <span className="text-[9px] font-bold text-orange-600 uppercase bg-orange-100/70 px-2 py-0.5 rounded-md">
-                      Range Standar
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
+                {/* BARIS VISKOSITAS: 40°C & 100°C MASING-MASING PUNYA MIN-MAX */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* KARTU VISKOSITAS 40°C */}
+                  <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                        Min Toleransi (cSt)
+                      <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                        Viscosity 40°C (cSt) <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="number"
                         step="0.1"
-                        value={toInputValue(formData.viscosity_40c_min)}
-                        onChange={(e) => setFormData({...formData, viscosity_40c_min: e.target.value})}
-                        className="w-full bg-white border border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
-                        placeholder="Contoh: 41.4"
+                        value={toInputValue(formData.viscosity_40c)}
+                        onChange={(e) => setFormData({...formData, viscosity_40c: e.target.value})}
+                        className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
+                        placeholder="e.g., 46.5"
                       />
                     </div>
+
+                    {/* Toleransi Min - Max 40°C Tepat di Bawahnya */}
+                    <div className="p-2.5 bg-orange-50/60 border border-orange-200/70 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-orange-800 uppercase tracking-wide flex items-center gap-1">
+                          <span>📐</span> Toleransi 40°C (TS)
+                        </span>
+                        <span className="text-[8px] font-bold text-orange-600/80 uppercase">Batas Aman</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Min (cSt)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={toInputValue(formData.viscosity_40c_min)}
+                            onChange={(e) => setFormData({...formData, viscosity_40c_min: e.target.value})}
+                            className="w-full bg-white border border-orange-200 focus:border-orange-500 rounded-lg px-2 py-1 text-xs font-semibold text-slate-900 outline-none"
+                            placeholder="Min 41.4"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Max (cSt)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={toInputValue(formData.viscosity_40c_max)}
+                            onChange={(e) => setFormData({...formData, viscosity_40c_max: e.target.value})}
+                            className="w-full bg-white border border-orange-200 focus:border-orange-500 rounded-lg px-2 py-1 text-xs font-semibold text-slate-900 outline-none"
+                            placeholder="Max 50.6"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* KARTU VISKOSITAS 100°C */}
+                  <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                        Max Toleransi (cSt)
+                      <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                        Viscosity 100°C (cSt)
                       </label>
                       <input
                         type="number"
                         step="0.1"
-                        value={toInputValue(formData.viscosity_40c_max)}
-                        onChange={(e) => setFormData({...formData, viscosity_40c_max: e.target.value})}
-                        className="w-full bg-white border border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
-                        placeholder="Contoh: 50.6"
+                        value={toInputValue(formData.viscosity_100c)}
+                        onChange={(e) => setFormData({...formData, viscosity_100c: e.target.value})}
+                        className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
+                        placeholder="e.g., 6.8"
                       />
+                    </div>
+
+                    {/* Toleransi Min - Max 100°C Tepat di Bawahnya */}
+                    <div className="p-2.5 bg-orange-50/60 border border-orange-200/70 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-orange-800 uppercase tracking-wide flex items-center gap-1">
+                          <span>📐</span> Toleransi 100°C (TS)
+                        </span>
+                        <span className="text-[8px] font-bold text-orange-600/80 uppercase">Batas Aman</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Min (cSt)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={toInputValue(formData.viscosity_100c_min)}
+                            onChange={(e) => setFormData({...formData, viscosity_100c_min: e.target.value})}
+                            className="w-full bg-white border border-orange-200 focus:border-orange-500 rounded-lg px-2 py-1 text-xs font-semibold text-slate-900 outline-none"
+                            placeholder="Min 6.0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Max (cSt)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={toInputValue(formData.viscosity_100c_max)}
+                            onChange={(e) => setFormData({...formData, viscosity_100c_max: e.target.value})}
+                            className="w-full bg-white border border-orange-200 focus:border-orange-500 rounded-lg px-2 py-1 text-xs font-semibold text-slate-900 outline-none"
+                            placeholder="Max 7.8"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Water Content & TAN Value (Tanpa Max Toleransi sesuai instruksi user) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {/* Water Content dengan Unit terpadu tanpa overlap */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
-                      Water Content <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="flex items-center rounded-xl border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 bg-slate-50/70 focus-within:bg-white overflow-hidden transition-all">
+                {/* BARIS WATER CONTENT & TAN VALUE DENGAN MAX TOLERANSI */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* KARTU WATER CONTENT */}
+                  <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                        Water Content <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="flex items-center rounded-xl border border-slate-250 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 bg-white overflow-hidden transition-all">
+                        <input
+                          type="number"
+                          step="1"
+                          value={toInputValue(formData.water_content)}
+                          onChange={(e) => setFormData({...formData, water_content: e.target.value})}
+                          className="flex-1 px-3 py-2 text-xs font-bold text-slate-900 outline-none bg-transparent"
+                          placeholder="e.g., 198"
+                        />
+                        <select
+                          value={toInputValue(formData.water_content_unit)}
+                          onChange={(e) => setFormData({...formData, water_content_unit: e.target.value})}
+                          className="bg-slate-100 border-l border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 outline-none hover:bg-slate-200 transition-colors"
+                        >
+                          <option value="PPM">PPM</option>
+                          <option value="PERCENT">%</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Max Toleransi Air TS */}
+                    <div className="p-2.5 bg-slate-100/80 border border-slate-200/80 rounded-xl space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-slate-700 uppercase tracking-wide">
+                          Max Toleransi Air (TS)
+                        </span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase">Batas Maksimal</span>
+                      </div>
                       <input
                         type="number"
                         step="1"
-                        value={toInputValue(formData.water_content)}
-                        onChange={(e) => setFormData({...formData, water_content: e.target.value})}
-                        className="flex-1 px-3 py-2.5 text-xs font-bold text-slate-900 outline-none bg-transparent"
-                        placeholder="Contoh: 198"
+                        value={toInputValue(formData.water_content_max)}
+                        onChange={(e) => setFormData({...formData, water_content_max: e.target.value})}
+                        className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-900 outline-none"
+                        placeholder="Contoh: 500 (PPM)"
                       />
-                      <select
-                        value={toInputValue(formData.water_content_unit)}
-                        onChange={(e) => setFormData({...formData, water_content_unit: e.target.value})}
-                        className="bg-slate-200/60 border-l border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 outline-none hover:bg-slate-200 transition-colors"
-                      >
-                        <option value="PPM">PPM</option>
-                        <option value="PERCENT">%</option>
-                      </select>
                     </div>
                   </div>
 
-                  {/* TAN Value */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
-                      TAN Value (Total Acid Number) <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
+                  {/* KARTU TAN VALUE */}
+                  <div className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                        TAN Value (Total Acid Number) <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={toInputValue(formData.tan_value)}
+                          onChange={(e) => setFormData({...formData, tan_value: e.target.value})}
+                          className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none pr-24"
+                          placeholder="e.g., 0.85"
+                        />
+                        <span className="absolute right-2.5 top-2 text-[9px] font-bold text-slate-400 uppercase bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                          mg KOH/g
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Max Toleransi TAN TS */}
+                    <div className="p-2.5 bg-slate-100/80 border border-slate-200/80 rounded-xl space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-slate-700 uppercase tracking-wide">
+                          Max Toleransi TAN (TS)
+                        </span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase">Batas Maksimal</span>
+                      </div>
                       <input
                         type="number"
                         step="0.01"
-                        value={toInputValue(formData.tan_value)}
-                        onChange={(e) => setFormData({...formData, tan_value: e.target.value})}
-                        className="w-full bg-slate-50/70 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none pr-24"
-                        placeholder="Contoh: 0.85"
+                        value={toInputValue(formData.tan_max)}
+                        onChange={(e) => setFormData({...formData, tan_max: e.target.value})}
+                        className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-900 outline-none"
+                        placeholder="Contoh: 2.0 (mg KOH/g)"
                       />
-                      <span className="absolute right-2.5 top-2 text-[9px] font-bold text-slate-400 uppercase bg-slate-200/60 px-1.5 py-0.5 rounded">
-                        mg KOH/g
-                      </span>
                     </div>
                   </div>
                 </div>

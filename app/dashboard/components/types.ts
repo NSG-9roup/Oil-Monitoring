@@ -44,6 +44,8 @@ export interface LabReportItem {
   running_hours?: number | null
   viscosity_40c_min?: number | null
   viscosity_40c_max?: number | null
+  viscosity_100c_min?: number | null
+  viscosity_100c_max?: number | null
   water_content_max?: number | null
   tan_max?: number | null
   evaluation_mode?: 'oil_type_based' | 'product_specific' | 'new_oil_verification'
