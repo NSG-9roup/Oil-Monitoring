@@ -1584,27 +1584,28 @@ export default function AdminClient({
       {/* Lab Test Add/Edit Modal */}
       {(modalOpen === 'add-test' || modalOpen === 'edit-test') && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 sm:p-6 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col animate-pop-micro">
+          <div className="bg-white rounded-[2rem] shadow-2xl max-w-2xl w-full border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col animate-pop-micro">
+            
             {/* Modal Header */}
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none shrink-0">
+            <div className="bg-white px-6 py-4.5 border-b border-slate-100 flex items-center justify-between select-none shrink-0">
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0 shadow-inner">
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 uppercase tracking-wider">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
                     {modalOpen === 'add-test' ? 'Input Hasil Uji Lab (Add Test)' : 'Edit Hasil Uji Lab'}
                   </h3>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    Konfigurasi Hasil Analisa Uji Pelumas & Standar Toleransi TS
+                    Formulir Hasil Analisa Pelumas & Evaluasi TS
                   </p>
                 </div>
               </div>
               <button 
                 onClick={() => { setFormData({}); setModalOpen(null); }} 
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
                 title="Tutup"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1613,408 +1614,384 @@ export default function AdminClient({
               </button>
             </div>
 
-            {/* Modal Body: 2-Column Responsive Grid */}
-            <div className="p-6 overflow-y-auto space-y-6 flex-1">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                
-                {/* KOLOM KIRI: Identitas Mesin, Produk & Sampel (5 dari 12) */}
-                <div className="lg:col-span-5 space-y-4">
-                  <div className="p-4 bg-slate-50/70 border border-slate-100 rounded-2xl space-y-3.5">
-                    <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
-                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                      <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
-                        1. Data Mesin & Pelumas
-                      </h4>
-                    </div>
+            {/* Modal Body: Clean, High-Class Organized Form */}
+            <div className="p-6 overflow-y-auto space-y-5 flex-1 text-slate-800">
 
-                    {/* Mesin Target */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+              {/* SEKSI 1: IDENTITAS MESIN & SAMPEL */}
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  <h4 className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    1. Data Mesin & Pelumas
+                  </h4>
+                </div>
+
+                {/* Baris 1: Mesin & Produk Pelumas */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Mesin Target */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                         Mesin & Customer <span className="text-rose-500">*</span>
                       </label>
-                      <div className="flex gap-2">
-                        <select
-                          value={toInputValue(formData.machine_id)}
-                          onChange={(e) => setFormData({...formData, machine_id: e.target.value})}
-                          className="flex-1 bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
-                        >
-                          {machines.map(m => (
-                            <option key={m.id} value={m.id}>{m.machine_name} ({m.customer?.company_name})</option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={openQuickAddMachine}
-                          className="px-3 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-95 font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm shadow-orange-500/20"
-                          title="Tambah Mesin Baru"
-                        >
-                          <span>+</span> Mesin
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={openQuickAddMachine}
+                        className="text-[9.5px] font-bold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-0.5"
+                      >
+                        + Tambah Mesin
+                      </button>
                     </div>
+                    <select
+                      value={toInputValue(formData.machine_id)}
+                      onChange={(e) => setFormData({...formData, machine_id: e.target.value})}
+                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    >
+                      {machines.map(m => (
+                        <option key={m.id} value={m.id}>{m.machine_name} ({m.customer?.company_name})</option>
+                      ))}
+                    </select>
+                  </div>
 
-                    {/* Produk Pelumas */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                  {/* Produk Pelumas */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                         Produk Pelumas <span className="text-rose-500">*</span>
                       </label>
-                      <div className="flex gap-2">
-                        <select
-                          value={toInputValue(formData.product_id)}
-                          onChange={(e) => setFormData({...formData, product_id: e.target.value})}
-                          className="flex-1 bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
-                        >
-                          {products.map(p => (
-                            <option key={p.id} value={p.id}>{p.product_name}</option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={openQuickAddProduct}
-                          className="px-3 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-95 font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm shadow-orange-500/20"
-                          title="Tambah Produk Baru"
-                        >
-                          <span>+</span> Produk
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={openQuickAddProduct}
+                        className="text-[9.5px] font-bold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-0.5"
+                      >
+                        + Tambah Produk
+                      </button>
                     </div>
+                    <select
+                      value={toInputValue(formData.product_id)}
+                      onChange={(e) => setFormData({...formData, product_id: e.target.value})}
+                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    >
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>{p.product_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-                    {/* Tanggal Pengujian */}
+                {/* Baris 2: Tanggal Uji Lab & Jam Operasional Oli */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                      Tanggal Uji Lab <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={String(formData.test_date ?? '')}
+                      onChange={(e) => setFormData({...formData, test_date: e.target.value})}
+                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                      Jam Operasi Oli (Running Hours)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="1"
+                        value={toInputValue(formData.running_hours)}
+                        onChange={(e) => setFormData({...formData, running_hours: e.target.value})}
+                        className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none pr-16"
+                        placeholder="Contoh: 1500"
+                      />
+                      <span className="absolute right-3 top-2.5 text-[9.5px] font-bold text-slate-400 uppercase bg-slate-200/60 px-1.5 py-0.5 rounded">
+                        Hours
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEKSI 2: HASIL ANALISA UJI LAB & STANDAR TOLERANSI TS */}
+              <div className="space-y-3.5 pt-1">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                  <h4 className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    2. Parameter Analisa Uji Lab
+                  </h4>
+                </div>
+
+                {/* Viskositas 40°C & Viskositas 100°C */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                      Viscosity 40°C (cSt) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={toInputValue(formData.viscosity_40c)}
+                      onChange={(e) => setFormData({...formData, viscosity_40c: e.target.value})}
+                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none"
+                      placeholder="e.g., 46.5"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                      Viscosity 100°C (cSt)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={toInputValue(formData.viscosity_100c)}
+                      onChange={(e) => setFormData({...formData, viscosity_100c: e.target.value})}
+                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none"
+                      placeholder="e.g., 6.8"
+                    />
+                  </div>
+                </div>
+
+                {/* TOLERANSI MIN - MAX TEPAT DI BAWAH VISKOSITI (Permintaan User) */}
+                <div className="p-3.5 bg-orange-50/50 border border-orange-200/80 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-orange-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>📐</span> Batas Toleransi Viscosity 40°C (Input TS)
+                    </span>
+                    <span className="text-[9px] font-bold text-orange-600 uppercase bg-orange-100/70 px-2 py-0.5 rounded-md">
+                      Range Standar
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                        Tanggal Uji Lab <span className="text-rose-500">*</span>
+                      <label className="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Min Toleransi (cSt)
                       </label>
                       <input
-                        type="date"
-                        value={String(formData.test_date ?? '')}
-                        onChange={(e) => setFormData({...formData, test_date: e.target.value})}
-                        className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                        type="number"
+                        step="0.1"
+                        value={toInputValue(formData.viscosity_40c_min)}
+                        onChange={(e) => setFormData({...formData, viscosity_40c_min: e.target.value})}
+                        className="w-full bg-white border border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
+                        placeholder="Contoh: 41.4"
                       />
                     </div>
-
-                    {/* Running Hours */}
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                        Jam Operasi Oli (Running Hours)
+                      <label className="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Max Toleransi (cSt)
                       </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="1"
-                          value={toInputValue(formData.running_hours)}
-                          onChange={(e) => setFormData({...formData, running_hours: e.target.value})}
-                          className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none pr-16"
-                          placeholder="e.g., 1500"
-                        />
-                        <span className="absolute right-3 top-2.5 text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
-                          Hours
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={toInputValue(formData.viscosity_40c_max)}
+                        onChange={(e) => setFormData({...formData, viscosity_40c_max: e.target.value})}
+                        className="w-full bg-white border border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
+                        placeholder="Contoh: 50.6"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Water Content & TAN Value (Tanpa Max Toleransi sesuai instruksi user) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Water Content dengan Unit terpadu tanpa overlap */}
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                      Water Content <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex items-center rounded-xl border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 bg-slate-50/70 focus-within:bg-white overflow-hidden transition-all">
+                      <input
+                        type="number"
+                        step="1"
+                        value={toInputValue(formData.water_content)}
+                        onChange={(e) => setFormData({...formData, water_content: e.target.value})}
+                        className="flex-1 px-3 py-2.5 text-xs font-bold text-slate-900 outline-none bg-transparent"
+                        placeholder="Contoh: 198"
+                      />
+                      <select
+                        value={toInputValue(formData.water_content_unit)}
+                        onChange={(e) => setFormData({...formData, water_content_unit: e.target.value})}
+                        className="bg-slate-200/60 border-l border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 outline-none hover:bg-slate-200 transition-colors"
+                      >
+                        <option value="PPM">PPM</option>
+                        <option value="PERCENT">%</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* TAN Value */}
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                      TAN Value (Total Acid Number) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={toInputValue(formData.tan_value)}
+                        onChange={(e) => setFormData({...formData, tan_value: e.target.value})}
+                        className="w-full bg-slate-50/70 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none pr-24"
+                        placeholder="Contoh: 0.85"
+                      />
+                      <span className="absolute right-2.5 top-2 text-[9px] font-bold text-slate-400 uppercase bg-slate-200/60 px-1.5 py-0.5 rounded">
+                        mg KOH/g
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEKSI 3: EVALUASI KONDISI & CATATAN KHUSUS TS */}
+              <div className="space-y-3.5 pt-1">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <h4 className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    3. Evaluasi & Catatan Analisa TS
+                  </h4>
+                </div>
+
+                {/* Status Evaluasi Segmented Buttons */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
+                      Status Evaluasi Kondisi Oli
+                    </label>
+                    <span className="text-[9px] font-bold text-slate-400">Pilih status resmi</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, overall_status: 'normal'})}
+                      className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                        formData.overall_status === 'normal' || !formData.overall_status
+                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm shadow-emerald-500/20'
+                          : 'bg-slate-50/70 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-current"></span>
+                      Normal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, overall_status: 'warning'})}
+                      className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                        formData.overall_status === 'warning'
+                          ? 'bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/20'
+                          : 'bg-slate-50/70 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-current"></span>
+                      Warning
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, overall_status: 'critical'})}
+                      className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                        formData.overall_status === 'critical'
+                          ? 'bg-rose-600 text-white border-rose-700 shadow-sm shadow-rose-600/20'
+                          : 'bg-slate-50/70 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-current"></span>
+                      Critical
+                    </button>
+                  </div>
+                </div>
+
+                {/* Textarea Catatan & Rekomendasi TS */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Catatan & Rekomendasi Technical Specialist (TS)
+                    </label>
+                    <span className="text-[8.5px] font-bold text-slate-400 uppercase">Akan Dilihat Customer</span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={toInputValue(formData.notes)}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    className="w-full bg-slate-50/70 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs font-medium text-slate-900 transition-all outline-none resize-y"
+                    placeholder="Contoh: Kondisi pelumas masih dalam batas toleransi baik. Disarankan pemeriksaan saringan oli pada running hours 2.000 jam."
+                  />
+                </div>
+              </div>
+
+              {/* SEKSI 4: BERKAS LAPORAN PDF & BUKTI SAMPEL AKTIF */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                  <h4 className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    4. Lampiran Laporan (Opsional)
+                  </h4>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                    Berkas Laporan PDF (Maksimal 2MB)
+                  </label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      if (file && file.size > 2 * 1024 * 1024) {
+                        alert('Berkas PDF terlalu besar! Batas maksimal adalah 2MB agar hemat ruang penyimpanan.')
+                        e.target.value = ''
+                        setPdfFile(null)
+                      } else {
+                        setPdfFile(file)
+                      }
+                    }}
+                    className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[9px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                  />
+                  {formData.pdf_path && typeof formData.pdf_path === 'string' && (
+                    <p className="text-[9.5px] text-slate-500 mt-1 font-mono truncate">
+                      📄 Berkas terpasang: {formData.pdf_path.split('/').pop()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Bukti Foto Sampel Fisik (HANYA jika ada sampel aktif) */}
+                {(() => {
+                  const selectedMachineId = formData.machine_id
+                  if (!selectedMachineId) return null
+                  
+                  const activeReqWithPhoto = labRequests.find(r => 
+                    r.machine_id === selectedMachineId && 
+                    r.sample_photo_path && 
+                    (r.status === 'sampling' || r.status === 'assigned')
+                  )
+                  
+                  if (!activeReqWithPhoto || !activeReqWithPhoto.sample_photo_path) return null
+                  
+                  const url = supabase.storage.from('sample-photos').getPublicUrl(activeReqWithPhoto.sample_photo_path).data.publicUrl
+                  
+                  return (
+                    <div className="bg-orange-50/60 border border-orange-200/80 p-3 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse shrink-0"></span>
+                        <span className="text-[10.5px] font-bold text-orange-900">
+                          Foto Sampel Botol Tersedia ({activeReqWithPhoto.requested_by?.full_name || 'Sales'})
                         </span>
                       </div>
+                      <a 
+                        href={url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-[9.5px] font-black text-orange-600 hover:text-orange-800 uppercase tracking-wider bg-white px-2.5 py-1 rounded-lg border border-orange-200 shadow-xs"
+                      >
+                        Buka Foto ↗
+                      </a>
                     </div>
-
-                    {/* Berkas Laporan PDF */}
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                        Berkas Laporan PDF (Opsional, Max 2MB)
-                      </label>
-                      <input
-                        type="file"
-                        accept="application/pdf"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null
-                          if (file && file.size > 2 * 1024 * 1024) {
-                            alert('Berkas PDF terlalu besar! Batas maksimal adalah 2MB agar hemat ruang penyimpanan.')
-                            e.target.value = ''
-                            setPdfFile(null)
-                          } else {
-                            setPdfFile(file)
-                          }
-                        }}
-                        className="w-full bg-white border border-slate-250 focus:border-orange-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[9px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
-                      />
-                      {formData.pdf_path && typeof formData.pdf_path === 'string' && (
-                        <p className="text-[9px] text-slate-500 mt-1 font-mono truncate">
-                          📄 Berkas saat ini: {formData.pdf_path.split('/').pop()}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Bukti Foto Sampel Fisik (Hanya tampil jika ada sampel aktif berstatus sampling/assigned) */}
-                    {(() => {
-                      const selectedMachineId = formData.machine_id
-                      if (!selectedMachineId) return null
-                      
-                      const activeReqWithPhoto = labRequests.find(r => 
-                        r.machine_id === selectedMachineId && 
-                        r.sample_photo_path && 
-                        (r.status === 'sampling' || r.status === 'assigned')
-                      )
-                      
-                      if (!activeReqWithPhoto || !activeReqWithPhoto.sample_photo_path) return null
-                      
-                      const url = supabase.storage.from('sample-photos').getPublicUrl(activeReqWithPhoto.sample_photo_path).data.publicUrl
-                      
-                      return (
-                        <div className="bg-orange-50/60 border border-orange-200/80 p-3 rounded-xl space-y-2">
-                          <div className="flex justify-between items-center select-none">
-                            <div className="flex items-center gap-1.5">
-                              <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse"></span>
-                              <span className="text-[10px] font-black text-orange-800 uppercase tracking-wide">
-                                Sampel Botol Terkait
-                              </span>
-                            </div>
-                            <a 
-                              href={url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-[9px] font-black text-orange-600 hover:text-orange-800 uppercase tracking-wider"
-                            >
-                              Buka Penuh ↗
-                            </a>
-                          </div>
-                          <div className="relative w-full h-28 rounded-lg overflow-hidden border border-orange-200/80 shadow-inner bg-white">
-                            <Image 
-                              src={url} 
-                              alt="Foto Botol Sampel" 
-                              fill
-                              className="object-cover" 
-                              unoptimized
-                            />
-                          </div>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                </div>
-
-                {/* KOLOM KANAN: Parameter Uji Lab, Toleransi Min/Max, Evaluasi & Catatan TS (7 dari 12) */}
-                <div className="lg:col-span-7 space-y-4">
-                  <div className="p-4 bg-slate-50/70 border border-slate-100 rounded-2xl space-y-4">
-                    <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
-                      <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                      <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
-                        2. Hasil Uji & Toleransi Parameter (Input TS)
-                      </h4>
-                    </div>
-
-                    {/* SEKSI VISKOSITAS & TOLERANSI TEPAT DI BAWAHNYA */}
-                    <div className="p-3.5 bg-white border border-slate-200/80 rounded-2xl space-y-3 shadow-xs">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">
-                            Viscosity 40°C (cSt) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={toInputValue(formData.viscosity_40c)}
-                            onChange={(e) => setFormData({...formData, viscosity_40c: e.target.value})}
-                            className="w-full bg-slate-50/80 border border-slate-250 focus:border-indigo-500 focus:bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
-                            placeholder="e.g., 46.5"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">
-                            Viscosity 100°C (cSt)
-                          </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={toInputValue(formData.viscosity_100c)}
-                            onChange={(e) => setFormData({...formData, viscosity_100c: e.target.value})}
-                            className="w-full bg-slate-50/80 border border-slate-250 focus:border-indigo-500 focus:bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
-                            placeholder="e.g., 6.8"
-                          />
-                        </div>
-                      </div>
-
-                      {/* TOLERANSI MIN - MAX TEPAT DI BAWAH VISKOSITI (Permintaan User) */}
-                      <div className="p-2.5 bg-orange-50/50 border border-orange-200/60 rounded-xl">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[9px] font-black text-orange-800 uppercase tracking-widest flex items-center gap-1">
-                            <span>📐</span> Batas Toleransi Viscosity 40°C (Standar TS)
-                          </span>
-                          <span className="text-[8px] font-bold text-orange-600/80 uppercase">Batas Aman</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <div>
-                            <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">
-                              Min Toleransi (cSt)
-                            </label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={toInputValue(formData.viscosity_40c_min)}
-                              onChange={(e) => setFormData({...formData, viscosity_40c_min: e.target.value})}
-                              className="w-full bg-white border border-orange-200 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-900 outline-none"
-                              placeholder="Contoh: 41.4"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">
-                              Max Toleransi (cSt)
-                            </label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={toInputValue(formData.viscosity_40c_max)}
-                              onChange={(e) => setFormData({...formData, viscosity_40c_max: e.target.value})}
-                              className="w-full bg-white border border-orange-200 focus:border-orange-500 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-900 outline-none"
-                              placeholder="Contoh: 50.6"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* WATER CONTENT & BATAS MAKSIMUM */}
-                    <div className="p-3.5 bg-white border border-slate-200/80 rounded-2xl space-y-2 shadow-xs">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">
-                            Water Content <span className="text-rose-500">*</span>
-                          </label>
-                          <div className="flex gap-1.5">
-                            <input
-                              type="number"
-                              step="1"
-                              value={toInputValue(formData.water_content)}
-                              onChange={(e) => setFormData({...formData, water_content: e.target.value})}
-                              className="flex-1 bg-slate-50/80 border border-slate-250 focus:border-indigo-500 focus:bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
-                              placeholder="e.g., 198"
-                            />
-                            <select
-                              value={toInputValue(formData.water_content_unit)}
-                              onChange={(e) => setFormData({...formData, water_content_unit: e.target.value})}
-                              className="bg-slate-100 border border-slate-250 focus:border-indigo-500 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 outline-none"
-                            >
-                              <option value="PPM">PPM</option>
-                              <option value="PERCENT">%</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">
-                            Max Toleransi Air (TS)
-                          </label>
-                          <input
-                            type="number"
-                            step="1"
-                            value={toInputValue(formData.water_content_max)}
-                            onChange={(e) => setFormData({...formData, water_content_max: e.target.value})}
-                            className="w-full bg-slate-50/80 border border-slate-250 focus:border-orange-500 focus:bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
-                            placeholder="Contoh: 500 (PPM)"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* TAN VALUE & BATAS MAKSIMUM */}
-                    <div className="p-3.5 bg-white border border-slate-200/80 rounded-2xl space-y-2 shadow-xs">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">
-                            TAN Value (mg KOH/g) <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={toInputValue(formData.tan_value)}
-                            onChange={(e) => setFormData({...formData, tan_value: e.target.value})}
-                            className="w-full bg-slate-50/80 border border-slate-250 focus:border-indigo-500 focus:bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
-                            placeholder="e.g., 0.85"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1">
-                            Max Toleransi TAN (TS)
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={toInputValue(formData.tan_max)}
-                            onChange={(e) => setFormData({...formData, tan_max: e.target.value})}
-                            className="w-full bg-slate-50/80 border border-slate-250 focus:border-orange-500 focus:bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
-                            placeholder="Contoh: 2.0"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* EVALUASI STATUS OLEH TS */}
-                    <div className="p-3.5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider">
-                          Status Evaluasi TS (Kondisi Keseluruhan)
-                        </label>
-                        <span className="text-[9px] font-bold text-slate-400">Pilih status resmi</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, overall_status: 'normal'})}
-                          className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                            formData.overall_status === 'normal' || !formData.overall_status
-                              ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm shadow-emerald-500/20'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-current"></span>
-                          Normal
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, overall_status: 'warning'})}
-                          className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                            formData.overall_status === 'warning'
-                              ? 'bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/20'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-current"></span>
-                          Warning
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, overall_status: 'critical'})}
-                          className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                            formData.overall_status === 'critical'
-                              ? 'bg-rose-600 text-white border-rose-700 shadow-sm shadow-rose-600/20'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-current"></span>
-                          Critical
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* TEXTBOX CATATAN / NOTE DARI TS (Permintaan User) */}
-                    <div className="p-3.5 bg-white border border-slate-200/80 rounded-2xl space-y-1.5 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          Catatan & Rekomendasi Technical Specialist (TS)
-                        </label>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase">Akan Dilihat Customer</span>
-                      </div>
-                      <textarea
-                        rows={3}
-                        value={toInputValue(formData.notes)}
-                        onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                        className="w-full bg-slate-50/80 border border-slate-250 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs font-medium text-slate-900 transition-all outline-none resize-y"
-                        placeholder="Contoh: Hasil uji menunjukkan viskositas mendekati batas toleransi atas akibat degradasi termal. Disarankan penjadwalan penggantian oli dan pembersihan strainer mesin dalam 200 jam kerja berikutnya."
-                      />
-                    </div>
-
-                  </div>
-                </div>
-
+                  )
+                })()}
               </div>
+
             </div>
 
             {/* Modal Footer: Action Buttons */}
@@ -2046,6 +2023,7 @@ export default function AdminClient({
                 )}
               </button>
             </div>
+
           </div>
         </div>
       )}
