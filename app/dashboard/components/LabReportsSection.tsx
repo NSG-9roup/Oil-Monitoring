@@ -389,7 +389,7 @@ export function LabReportsSection({
                           <span className="font-semibold text-blue-900">{viscosityLabel}:</span> {report.viscosity_40c?.toFixed(1) || notAvailableLabel} / {report.viscosity_100c?.toFixed(1) || notAvailableLabel} cSt
                         </span>
                         <span className="text-gray-600">
-                          <span className="font-semibold text-cyan-900">{waterContentLabel}:</span> {report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%
+                          <span className="font-semibold text-cyan-900">{waterContentLabel}:</span> {report.water_content ? (report.water_content < 0.01 ? report.water_content.toFixed(4) : report.water_content.toFixed(2)) : '0.00'}%
                         </span>
                         <span className="text-gray-600">
                           <span className="font-semibold text-purple-900">{tanValueLabel}:</span> {report.tan_value?.toFixed(2) || notAvailableLabel} mg KOH/g
@@ -434,7 +434,13 @@ export function LabReportsSection({
                               : 'bg-emerald-100 text-emerald-800'
                           }`}
                         >
-                          {status.text.toUpperCase()}
+                          {(status.level === 'critical'
+                            ? criticalLabel
+                            : status.level === 'warning'
+                            ? warningLabel
+                            : status.level === 'normal'
+                            ? normalLabel
+                            : unknownLabel).toUpperCase()}
                         </span>
                       </div>
                       <p className="text-industrial-500 text-xs mt-1 font-medium">{evaluationLabel}</p>
@@ -575,7 +581,7 @@ export function LabReportsSection({
                         <div>
                           {report.water_content_max != null ? (
                             <span className="inline-block text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg mt-2.5">
-                              Max TS: {report.water_content_max} {report.water_content_unit || 'PPM'}
+                              Max TS: {report.water_content_max}{report.water_content_unit === 'PERCENT' ? '%' : ` ${report.water_content_unit || 'PPM'}`}
                             </span>
                           ) : (
                             <span className="inline-block text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg mt-2.5">
