@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Machine, DashboardLanguage } from '@/app/dashboard/components/types'
+import { SearchableSelect } from '@/app/components/SearchableSelect'
 
 export interface RequestFormData {
   machine_id?: string
@@ -146,16 +147,16 @@ export function RequestLabModal({
               </div>
 
               {!form.is_new_machine ? (
-                <select
-                  value={form.machine_id}
-                  onChange={(e) => setForm(prev => ({ ...prev, machine_id: e.target.value }))}
-                  className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  <option value="">{copy.requestLab.registeredMachinePlaceholder}</option>
-                  {initialMachines.map(m => (
-                    <option key={m.id} value={m.id}>{m.machine_name} - {m.location || copy.requestLab.noLocation}</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  options={initialMachines.map(m => ({
+                    value: m.id,
+                    label: m.machine_name,
+                    sublabel: m.location || copy.requestLab.noLocation
+                  }))}
+                  value={form.machine_id || ''}
+                  onChange={(val) => setForm(prev => ({ ...prev, machine_id: val }))}
+                  placeholder={copy.requestLab.registeredMachinePlaceholder}
+                />
               ) : (
                 <div className="space-y-3 animate-pop-micro">
                   <input

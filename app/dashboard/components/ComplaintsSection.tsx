@@ -5,6 +5,7 @@ import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import { createCustomerComplaint } from '@/app/actions/dashboardActions'
 import { toast } from 'react-hot-toast'
 import type { Complaint } from '@/lib/types'
+import { SearchableSelect } from '@/app/components/SearchableSelect'
 
 interface MachineItem {
   id: string
@@ -343,16 +344,15 @@ export default function ComplaintsSection({
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
                     {language === 'id' ? 'Pilih Mesin Terkait (Opsional)' : 'Select Related Machine (Optional)'}
                   </label>
-                  <select
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: language === 'id' ? '-- Semua / Tidak Terikat Mesin Tertentu --' : '-- All / General --' },
+                      ...machines.map((m) => ({ value: m.id, label: m.machine_name }))
+                    ]}
                     value={selectedMachineId}
-                    onChange={(e) => setSelectedMachineId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs rounded-xl focus:ring-rose-500 focus:border-rose-500 block p-3 outline-none"
-                  >
-                    <option value="">{language === 'id' ? '-- Semua / Tidak Terikat Mesin Tertentu --' : '-- All / General --'}</option>
-                    {machines.map((m) => (
-                      <option key={m.id} value={m.id}>{m.machine_name}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedMachineId(val)}
+                    placeholder={language === 'id' ? 'Cari / pilih mesin...' : 'Search / select machine...'}
+                  />
                 </div>
               )}
 
@@ -362,18 +362,19 @@ export default function ComplaintsSection({
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
                     {language === 'id' ? 'Pilih Pesanan Terkait (Opsional)' : 'Select Related Order (Optional)'}
                   </label>
-                  <select
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: language === 'id' ? '-- Semua / Tidak Terikat Pesanan Tertentu --' : '-- All / General --' },
+                      ...orders.map((o) => ({
+                        value: o.id,
+                        label: `${new Date(o.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')} — ${o.product?.product_name || 'Produk'}`,
+                        sublabel: `${o.quantity} Pcs`
+                      }))
+                    ]}
                     value={selectedOrderId}
-                    onChange={(e) => setSelectedOrderId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs rounded-xl focus:ring-rose-500 focus:border-rose-500 block p-3 outline-none"
-                  >
-                    <option value="">{language === 'id' ? '-- Pilih Pesanan --' : '-- Select Order --'}</option>
-                    {orders.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {new Date(o.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')} — {o.product?.product_name || 'Produk'} ({o.quantity} Pcs)
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedOrderId(val)}
+                    placeholder={language === 'id' ? 'Cari / pilih pesanan...' : 'Search / select order...'}
+                  />
                 </div>
               )}
 

@@ -23,6 +23,8 @@ import AdminUsersTab from './components/AdminUsersTab'
 import AdminRequestsTab from './components/AdminRequestsTab'
 import AdminOrdersTab, { AdminOrder, AdminComplaint } from './components/AdminOrdersTab'
 import NotificationBell from '@/components/NotificationBell'
+import { SearchableSelect } from '@/app/components/SearchableSelect'
+import { ConfirmModal } from '@/app/components/ConfirmModal'
 
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -287,6 +289,42 @@ export default function AdminClient({
   const labRequests = initialLabRequests
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const [selectedCustomerIdForTest, setSelectedCustomerIdForTest] = useState<string>('')
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    confirmText?: string
+    confirmVariant?: 'danger' | 'warning' | 'primary'
+    onConfirm: () => Promise<void> | void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  })
+
+  // URL sync for active tab
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const tabParam = params.get('tab') as TabKey | null
+      const validTabs: TabKey[] = ['overview', 'customers', 'machines', 'products', 'tests', 'users', 'requests', 'orders']
+      if (tabParam && validTabs.includes(tabParam)) {
+        setActiveTab(tabParam)
+      }
+    }
+  }, [])
+
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('tab', tab)
+      window.history.replaceState(null, '', url.toString())
+    }
+  }
+
   const [modalOpen, setModalOpen] = useState<ModalType>(null)
   const [selectedItem, setSelectedItem] = useState<SelectedItemType>(null)
   const [formData, setFormData] = useState<FormDataState>({})
@@ -371,17 +409,28 @@ export default function AdminClient({
     setModalOpen('edit-customer')
   }
 
-  const handleDeleteCustomer = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this customer?')) return
-    setLoading(true)
-    try {
-      await deleteCustomer(id)
-      router.refresh()
-    } catch (error) {
-      alert('Error deleting customer: ' + getErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
+  const handleDeleteCustomer = (id: string) => {
+    const cust = customers.find(c => c.id === id)
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Data Customer',
+      message: `Apakah Anda yakin ingin menghapus data customer ${cust ? `"${cust.company_name}"` : ''}? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: 'Hapus Customer',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          await deleteCustomer(id)
+          alert('Customer deleted successfully!')
+          router.refresh()
+        } catch (error) {
+          alert('Error deleting customer: ' + getErrorMessage(error))
+        } finally {
+          setLoading(false)
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        }
+      },
+    })
   }
 
   const handleSaveCustomer = async () => {
@@ -531,17 +580,28 @@ export default function AdminClient({
     }
   }
 
-  const handleDeleteMachine = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this machine?')) return
-    setLoading(true)
-    try {
-      await deleteMachine(id)
-      router.refresh()
-    } catch (error: any) {
-      alert('Error: ' + getErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
+  const handleDeleteMachine = (id: string) => {
+    const mach = machines.find(m => m.id === id)
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Data Mesin',
+      message: `Apakah Anda yakin ingin menghapus mesin ${mach ? `"${mach.machine_name}"` : ''}? Seluruh riwayat uji lab mesin ini akan terhapus.`,
+      confirmText: 'Hapus Mesin',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          await deleteMachine(id)
+          alert('Machine deleted successfully!')
+          router.refresh()
+        } catch (error: any) {
+          alert('Error: ' + getErrorMessage(error))
+        } finally {
+          setLoading(false)
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        }
+      },
+    })
   }
 
   // Quick Add Machine (from Lab Test modal)
@@ -660,17 +720,28 @@ export default function AdminClient({
     }
   }
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return
-    setLoading(true)
-    try {
-      await deleteProduct(id)
-      router.refresh()
-    } catch (error: any) {
-      alert('Error: ' + getErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
+  const handleDeleteProduct = (id: string) => {
+    const prod = products.find(p => p.id === id)
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Produk Pelumas',
+      message: `Apakah Anda yakin ingin menghapus produk pelumas ${prod ? `"${prod.product_name}"` : ''}?`,
+      confirmText: 'Hapus Produk',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          await deleteProduct(id)
+          alert('Product deleted successfully!')
+          router.refresh()
+        } catch (error: any) {
+          alert('Error: ' + getErrorMessage(error))
+        } finally {
+          setLoading(false)
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        }
+      },
+    })
   }
 
   // Lab Test CRUD
@@ -682,8 +753,12 @@ export default function AdminClient({
     
     setProducts(productsData || [])
     
+    const defaultCustId = customers[0]?.id || ''
+    setSelectedCustomerIdForTest(defaultCustId)
+    const matchingMachines = machines.filter(m => m.customer_id === defaultCustId)
+
     setFormData({
-      machine_id: machines[0]?.id || '',
+      machine_id: matchingMachines[0]?.id || machines[0]?.id || '',
       product_id: productsData?.[0]?.id || '',
       test_date: new Date().toISOString().split('T')[0],
       viscosity_40c: '',
@@ -708,6 +783,9 @@ export default function AdminClient({
 
   const openEditTest = (test: AdminLabTest) => {
     setSelectedItem(test)
+    const currentMachine = machines.find(m => m.id === test.machine_id)
+    setSelectedCustomerIdForTest(currentMachine?.customer_id || customers[0]?.id || '')
+
     setFormData({
       machine_id: test.machine_id,
       product_id: test.product_id,
@@ -790,17 +868,27 @@ export default function AdminClient({
     }
   }
 
-  const handleDeleteTest = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this test?')) return
-    setLoading(true)
-    try {
-      await deleteTest(id)
-      router.refresh()
-    } catch (error) {
-      alert('Error: ' + getErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
+  const handleDeleteTest = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Hasil Uji Lab',
+      message: 'Apakah Anda yakin ingin menghapus hasil uji laboratorium ini secara permanen dari sistem?',
+      confirmText: 'Hapus Hasil Lab',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          await deleteTest(id)
+          alert('Lab test deleted successfully!')
+          router.refresh()
+        } catch (error) {
+          alert('Error: ' + getErrorMessage(error))
+        } finally {
+          setLoading(false)
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        }
+      },
+    })
   }
 
   // User CRUD
@@ -847,17 +935,28 @@ export default function AdminClient({
     }
   }
 
-  const handleDeleteUser = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return
-    setLoading(true)
-    try {
-      await deleteUser(id)
-      router.refresh()
-    } catch (error) {
-      alert('Error: ' + getErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
+  const handleDeleteUser = (id: string) => {
+    const usr = users.find(u => u.id === id)
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Pengguna',
+      message: `Apakah Anda yakin ingin menghapus user ${usr ? `"${usr.full_name || usr.email}"` : ''}?`,
+      confirmText: 'Hapus User',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          await deleteUser(id)
+          alert('User deleted successfully!')
+          router.refresh()
+        } catch (error) {
+          alert('Error: ' + getErrorMessage(error))
+        } finally {
+          setLoading(false)
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        }
+      },
+    })
   }
 
   const selectedCustomerForLogo =
@@ -999,7 +1098,7 @@ export default function AdminClient({
                 <button
                   key={tab.key}
                   onClick={() => {
-                    setActiveTab(tab.key as TabKey)
+                    handleTabChange(tab.key as TabKey)
                     setSearchQuery('')
                     setDateFilter('all')
                     setCustomDateFrom('')
@@ -1038,7 +1137,7 @@ export default function AdminClient({
                 totalTests={totalTests}
                 products={products}
                 recentTests={recentTests}
-                setActiveTab={(tab) => setActiveTab(tab)}
+                setActiveTab={(tab) => handleTabChange(tab)}
                 formatDate={formatDate}
               />
             )}
@@ -1640,13 +1739,33 @@ export default function AdminClient({
                   </h4>
                 </div>
 
-                {/* Baris 1: Mesin & Produk Pelumas */}
+                {/* Baris 1: Perusahaan (PT) & Mesin Target (Cascading Searchable Dropdown) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Perusahaan / Customer (PT) */}
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                      Perusahaan / Customer (PT) <span className="text-rose-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      options={customers.map(c => ({ value: c.id, label: c.company_name }))}
+                      value={selectedCustomerIdForTest}
+                      onChange={(newCustId) => {
+                        setSelectedCustomerIdForTest(newCustId)
+                        const matchingMachines = machines.filter(m => m.customer_id === newCustId)
+                        setFormData({
+                          ...formData,
+                          machine_id: matchingMachines[0]?.id || ''
+                        })
+                      }}
+                      placeholder="Pilih Perusahaan..."
+                    />
+                  </div>
+
                   {/* Mesin Target */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        Mesin & Customer <span className="text-rose-500">*</span>
+                        Mesin Target <span className="text-rose-500">*</span>
                       </label>
                       <button
                         type="button"
@@ -1656,17 +1775,28 @@ export default function AdminClient({
                         + Tambah Mesin
                       </button>
                     </div>
-                    <select
-                      value={toInputValue(formData.machine_id)}
-                      onChange={(e) => setFormData({...formData, machine_id: e.target.value})}
-                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
-                    >
-                      {machines.map(m => (
-                        <option key={m.id} value={m.id}>{m.machine_name} ({m.customer?.company_name})</option>
-                      ))}
-                    </select>
+                    <SearchableSelect
+                      options={machines
+                        .filter(m => !selectedCustomerIdForTest || m.customer_id === selectedCustomerIdForTest)
+                        .map(m => ({
+                          value: m.id,
+                          label: m.machine_name,
+                          sublabel: m.location || m.model || undefined
+                        }))}
+                      value={String(formData.machine_id || '')}
+                      onChange={(val) => setFormData({ ...formData, machine_id: val })}
+                      placeholder={
+                        machines.filter(m => m.customer_id === selectedCustomerIdForTest).length === 0
+                          ? "Belum ada mesin untuk PT ini"
+                          : "Pilih Mesin..."
+                      }
+                      disabled={machines.filter(m => m.customer_id === selectedCustomerIdForTest).length === 0}
+                    />
                   </div>
+                </div>
 
+                {/* Baris 2: Produk Pelumas & Tanggal Uji Lab */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {/* Produk Pelumas */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
@@ -1681,20 +1811,18 @@ export default function AdminClient({
                         + Tambah Produk
                       </button>
                     </div>
-                    <select
-                      value={toInputValue(formData.product_id)}
-                      onChange={(e) => setFormData({...formData, product_id: e.target.value})}
-                      className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
-                    >
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>{p.product_name}</option>
-                      ))}
-                    </select>
+                    <SearchableSelect
+                      options={products.map(p => ({
+                        value: p.id,
+                        label: p.product_name,
+                        sublabel: p.product_type || undefined
+                      }))}
+                      value={String(formData.product_id || '')}
+                      onChange={(val) => setFormData({ ...formData, product_id: val })}
+                      placeholder="Pilih Produk Pelumas..."
+                    />
                   </div>
-                </div>
 
-                {/* Baris 2: Tanggal Uji Lab & Jam Operasional Oli */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                       Tanggal Uji Lab <span className="text-rose-500">*</span>
@@ -1706,7 +1834,10 @@ export default function AdminClient({
                       className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
                     />
                   </div>
+                </div>
 
+                {/* Baris 3: Jam Operasional Oli */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                       Jam Operasi Oli (Running Hours)
@@ -1853,14 +1984,14 @@ export default function AdminClient({
                       <div className="flex items-center rounded-xl border border-slate-250 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 bg-white overflow-hidden transition-all">
                         <input
                           type="number"
-                          step="1"
+                          step={formData.water_content_unit === 'PERCENT' ? '0.01' : '1'}
                           value={toInputValue(formData.water_content)}
                           onChange={(e) => setFormData({...formData, water_content: e.target.value})}
                           className="flex-1 px-3 py-2 text-xs font-bold text-slate-900 outline-none bg-transparent"
-                          placeholder="e.g., 198"
+                          placeholder={formData.water_content_unit === 'PERCENT' ? 'e.g., 0.10' : 'e.g., 198'}
                         />
                         <select
-                          value={toInputValue(formData.water_content_unit)}
+                          value={toInputValue(formData.water_content_unit) || 'PPM'}
                           onChange={(e) => setFormData({...formData, water_content_unit: e.target.value})}
                           className="bg-slate-100 border-l border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 outline-none hover:bg-slate-200 transition-colors"
                         >
@@ -1876,16 +2007,23 @@ export default function AdminClient({
                         <span className="text-[9px] font-black text-slate-700 uppercase tracking-wide">
                           Max Toleransi Air (TS)
                         </span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase">Batas Maksimal</span>
+                        <span className="text-[8px] font-bold text-orange-700 uppercase bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200/60">
+                          {formData.water_content_unit === 'PERCENT' ? 'Satuan %' : 'Satuan PPM'}
+                        </span>
                       </div>
-                      <input
-                        type="number"
-                        step="1"
-                        value={toInputValue(formData.water_content_max)}
-                        onChange={(e) => setFormData({...formData, water_content_max: e.target.value})}
-                        className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-900 outline-none"
-                        placeholder="Contoh: 500 (PPM)"
-                      />
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step={formData.water_content_unit === 'PERCENT' ? '0.01' : '1'}
+                          value={toInputValue(formData.water_content_max)}
+                          onChange={(e) => setFormData({...formData, water_content_max: e.target.value})}
+                          className="w-full bg-white border border-slate-200 focus:border-orange-500 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-900 outline-none pr-14"
+                          placeholder={formData.water_content_unit === 'PERCENT' ? 'Contoh: 0.20 (%)' : 'Contoh: 500 (PPM)'}
+                        />
+                        <span className="absolute right-2 top-1 text-[9px] font-bold text-slate-400 uppercase bg-slate-100 px-1 py-0.5 rounded">
+                          {formData.water_content_unit === 'PERCENT' ? '%' : 'PPM'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -2922,6 +3060,18 @@ export default function AdminClient({
           </div>
         </div>
       )}
+
+      {/* Reusable Styled Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        confirmVariant={confirmModal.confirmVariant}
+        isLoading={loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

@@ -37,11 +37,23 @@ interface Machine {
 interface OilSample {
   id: string
   test_date: string
+  test_type?: string
   viscosity_40c: number
   viscosity_100c: number
   water_content: number
   water_content_unit?: 'PPM' | 'PERCENT'
   tan_value: number
+  notes?: string
+  machine_id?: string
+  pdf_path?: string
+  overall_status?: 'normal' | 'warning' | 'critical' | null
+  running_hours?: number | null
+  viscosity_40c_min?: number | null
+  viscosity_40c_max?: number | null
+  viscosity_100c_min?: number | null
+  viscosity_100c_max?: number | null
+  water_content_max?: number | null
+  tan_max?: number | null
   evaluation_mode?: 'oil_type_based' | 'product_specific' | 'new_oil_verification'
   product?: {
     product_name: string
@@ -74,10 +86,19 @@ interface LabReport {
   viscosity_40c: number
   viscosity_100c: number
   water_content: number
+  water_content_unit?: 'PPM' | 'PERCENT'
   tan_value: number
   notes: string
   machine_id?: string
   pdf_path?: string
+  overall_status?: 'normal' | 'warning' | 'critical' | null
+  running_hours?: number | null
+  viscosity_40c_min?: number | null
+  viscosity_40c_max?: number | null
+  viscosity_100c_min?: number | null
+  viscosity_100c_max?: number | null
+  water_content_max?: number | null
+  tan_max?: number | null
   evaluation_mode?: 'oil_type_based' | 'product_specific' | 'new_oil_verification'
   product?: {
     product_name: string
@@ -100,7 +121,6 @@ interface DashboardClientProps {
   initialComplaints: any[]
 }
 
-type TimeRange = '7d' | '30d' | '90d' | '6m' | 'custom' | 'all'
 type TrendSeverity = 'Low' | 'Medium' | 'High'
 type Language = 'id' | 'en'
 
@@ -531,9 +551,29 @@ export default function DashboardClient({
     }
   }, [chartMachine, oilSamples])
 
+  const activeTolerances = useMemo(() => {
+    if (!chartMachine || oilSamples.length === 0) return null
+    const latestWithTolerances = [...oilSamples].reverse().find(s => 
+      s.viscosity_40c_min != null || 
+      s.viscosity_40c_max != null || 
+      s.viscosity_100c_min != null || 
+      s.viscosity_100c_max != null || 
+      s.water_content_max != null || 
+      s.tan_max != null
+    )
+    if (!latestWithTolerances) return null
+    return {
+      viscosity40Min: latestWithTolerances.viscosity_40c_min,
+      viscosity40Max: latestWithTolerances.viscosity_40c_max,
+      viscosity100Min: latestWithTolerances.viscosity_100c_min,
+      viscosity100Max: latestWithTolerances.viscosity_100c_max,
+      waterContentMax: latestWithTolerances.water_content_max,
+      waterContentUnit: latestWithTolerances.water_content_unit,
+      tanMax: latestWithTolerances.tan_max,
+    }
+  }, [chartMachine, oilSamples])
+
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set())
-  const [timeRange, setTimeRange] = useState<TimeRange>('all')
-  const [customDateRange, setCustomDateRange] = useState<{ start: string | null; end: string | null }>({ start: null, end: null })
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | undefined>()
 
@@ -577,13 +617,47 @@ export default function DashboardClient({
 
   const [activeTab, setActiveTab] = useState<'trend' | 'analysis' | 'lab' | 'requests' | 'orders' | 'complaints'>('trend')
 
+  // URL Query Sync for tab and selected machine
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam && ['trend', 'analysis', 'lab', 'requests', 'orders', 'complaints'].includes(tabParam)) {
+      setActiveTab(tabParam as any)
+    }
+    const machineParam = params.get('machine')
+    if (machineParam) {
+      const found = initialMachines.find(m => m.id === machineParam)
+      if (found) setSelectedMachine(found)
+    }
+  }, [initialMachines])
+
+  const syncUrlParams = (newTab: string, machineId?: string) => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    params.set('tab', newTab)
+    if (machineId) {
+      params.set('machine', machineId)
+    }
+    const newUrl = `${window.location.pathname}?${params.toString()}`
+    window.history.replaceState(null, '', newUrl)
+  }
+
   const handleShortcutClick = (shortcutId: string) => {
-    if (shortcutId.startsWith('trend') || shortcutId === 'trend') setActiveTab('trend')
-    else if (shortcutId === 'analysis') setActiveTab('analysis')
-    else if (shortcutId === 'lab') setActiveTab('lab')
-    else if (shortcutId === 'requests') setActiveTab('requests')
-    else if (shortcutId === 'orders') setActiveTab('orders')
-    else if (shortcutId === 'complaints') setActiveTab('complaints')
+    let nextTab: 'trend' | 'analysis' | 'lab' | 'requests' | 'orders' | 'complaints' = 'trend'
+    if (shortcutId.startsWith('trend') || shortcutId === 'trend') nextTab = 'trend'
+    else if (shortcutId === 'analysis') nextTab = 'analysis'
+    else if (shortcutId === 'lab') nextTab = 'lab'
+    else if (shortcutId === 'requests') nextTab = 'requests'
+    else if (shortcutId === 'orders') nextTab = 'orders'
+    else if (shortcutId === 'complaints') nextTab = 'complaints'
+    setActiveTab(nextTab)
+    syncUrlParams(nextTab, selectedMachine?.id)
+  }
+
+  const handleSelectMachine = (machine: Machine) => {
+    setSelectedMachine(machine)
+    syncUrlParams(activeTab, machine.id)
   }
 
   const handleSendRequest = async (formData: RequestFormData) => {
@@ -970,56 +1044,71 @@ export default function DashboardClient({
     else if (daysSinceTest > 60) score -= 10
     else if (daysSinceTest > 30) score -= 5
     
+    // ============================================================
+    // TS OVERALL STATUS OVERRIDE
+    // ============================================================
+    if (test.overall_status === 'critical') {
+      score = Math.min(score, 50)
+    } else if (test.overall_status === 'warning') {
+      score = Math.min(score, 75)
+    }
+
     return Math.max(0, score)
   }
 
   /**
    * Calculate status badge for user communication (Critical/Warning/Normal)
-   * 
-   * EVALUATION MODE: ALWAYS oil_type_based
-   * ====================================
-   * This function ONLY uses industry-standard thresholds based on oil TYPE.
-   * NEVER uses product-specific baselines.
-   * Status is for user communication and must be consistent regardless of evaluation mode.
-   * 
-   * Logic Flow:
-   * 1. Extract oil_type from product_type string via classifyOilType()
-   * 2. Get water thresholds for that oil_type
-   * 3. Evaluate test results against OIL-TYPE thresholds ONLY
-   * 4. Return status badge (critical/warning/normal)
-   * 
-   * No fallback logic. No string matching. Deterministic.
    */
   const getStatus = (
     viscosity40c: number,
     waterContent: number,
     tanValue: number,
-    product?: { product_type?: string; baseline_viscosity_40c?: number }
+    product?: { product_type?: string; baseline_viscosity_40c?: number },
+    testObj?: any
   ): { level: FleetReportRow['statusLevel']; color: string; text: string } => {
+    // 1. TS explicit status override (ALWAYS respect TS judgment!)
+    if (testObj?.overall_status === 'critical') {
+      return { level: 'critical', color: 'red', text: 'Critical' }
+    }
+    if (testObj?.overall_status === 'warning') {
+      return { level: 'warning', color: 'yellow', text: 'Warning' }
+    }
+    if (testObj?.overall_status === 'normal') {
+      return { level: 'normal', color: 'green', text: 'Normal' }
+    }
+
+    // 2. TS Manual tolerance limits if provided on testObj
+    if (testObj?.water_content_max != null && testObj.water_content_max > 0) {
+      const maxWaterPct = testObj.water_content_unit === 'PPM' ? testObj.water_content_max / 10000 : testObj.water_content_max
+      if (waterContent > maxWaterPct) {
+        return { level: 'critical', color: 'red', text: 'Critical' }
+      }
+    }
+    if (testObj?.tan_max != null && testObj.tan_max > 0 && tanValue > testObj.tan_max) {
+      return { level: 'critical', color: 'red', text: 'Critical' }
+    }
+    if (testObj?.viscosity_40c_max != null && testObj.viscosity_40c_max > 0 && viscosity40c > testObj.viscosity_40c_max) {
+      return { level: 'warning', color: 'yellow', text: 'Warning' }
+    }
+    if (testObj?.viscosity_40c_min != null && testObj.viscosity_40c_min > 0 && viscosity40c < testObj.viscosity_40c_min) {
+      return { level: 'warning', color: 'yellow', text: 'Warning' }
+    }
+
     // ============================================================
-    // SETUP: Oil-type-based thresholds
+    // SETUP: Oil-type-based thresholds fallback
     // ============================================================
     const productType = product?.product_type || ''
     const waterThresholds = getWaterThresholds(productType)
     const oilTypeThresholds = getOilTypeThresholds(productType)
-    
-    // Generic TAN baseline for all oils (not product-specific)
     const baselineTan = 0.05
     
-    // ============================================================
     // CRITICAL STATUS CHECKS
-    // ============================================================
-    // Water content exceeds critical threshold
     if (waterContent > waterThresholds.critical) {
       return { level: 'critical', color: 'red', text: 'Critical' }
     }
-    
-    // TAN increased significantly (SysLab oil-type based thresholds)
     if (tanValue - baselineTan > oilTypeThresholds.tanIncrease.critical) {
       return { level: 'critical', color: 'red', text: 'Critical' }
     }
-    
-    // Viscosity is abnormal (percent change from baseline)
     if (product?.baseline_viscosity_40c && viscosity40c) {
       const viscChange = Math.abs(((viscosity40c - product.baseline_viscosity_40c) / product.baseline_viscosity_40c) * 100)
       if (viscChange > oilTypeThresholds.viscosityChange.critical) {
@@ -1027,20 +1116,13 @@ export default function DashboardClient({
       }
     }
     
-    // ============================================================
     // WARNING STATUS CHECKS
-    // ============================================================
-    // Water content between warning and critical
     if (waterContent > waterThresholds.warning) {
       return { level: 'warning', color: 'yellow', text: 'Warning' }
     }
-    
-    // TAN increased moderately (SysLab oil-type based thresholds)
     if (tanValue - baselineTan > oilTypeThresholds.tanIncrease.normal) {
       return { level: 'warning', color: 'yellow', text: 'Warning' }
     }
-    
-    // Viscosity elevated but not critical (percent change from baseline)
     if (product?.baseline_viscosity_40c && viscosity40c) {
       const viscChange = Math.abs(((viscosity40c - product.baseline_viscosity_40c) / product.baseline_viscosity_40c) * 100)
       if (viscChange > oilTypeThresholds.viscosityChange.normal) {
@@ -1048,9 +1130,6 @@ export default function DashboardClient({
       }
     }
     
-    // ============================================================
-    // NORMAL STATUS
-    // ============================================================
     return { level: 'normal', color: 'green', text: 'Normal' }
   }
 
@@ -1392,47 +1471,9 @@ export default function DashboardClient({
     router.refresh()
   }
 
-  // Filter data based on time range
-  const filterByTimeRange = <T extends { test_date: string }>(data: T[]) => {
-    if (timeRange === 'all') return data
-
-    if (timeRange === 'custom') {
-      const startDate = customDateRange.start ? new Date(`${customDateRange.start}T00:00:00`) : null
-      const endDate = customDateRange.end ? new Date(`${customDateRange.end}T23:59:59.999`) : null
-
-      if (!startDate && !endDate) return data
-
-      return data.filter((item) => {
-        const itemDate = new Date(item.test_date)
-        if (startDate && itemDate < startDate) return false
-        if (endDate && itemDate > endDate) return false
-        return true
-      })
-    }
-    
-    const now = new Date()
-    const cutoffDate = new Date()
-    
-    switch (timeRange) {
-      case '7d':
-        cutoffDate.setDate(now.getDate() - 7)
-        break
-      case '30d':
-        cutoffDate.setDate(now.getDate() - 30)
-        break
-      case '90d':
-        cutoffDate.setDate(now.getDate() - 90)
-        break
-      case '6m':
-        cutoffDate.setMonth(now.getMonth() - 6)
-        break
-    }
-    
-    return data.filter(item => new Date(item.test_date) >= cutoffDate)
-  }
-
-  const filteredSamples = filterByTimeRange(oilSamples)
-  const filteredReports = filterByTimeRange(labReports)
+  // Use full history per machine so sampling trends over long periods (months/years) are never cut off
+  const filteredSamples = oilSamples
+  const filteredReports = labReports
 
   const machineInsights = initialMachines
     .map((machine) => {
@@ -1454,7 +1495,8 @@ export default function DashboardClient({
         latestTest.viscosity_40c || 0,
         latestTest.water_content || 0,
         latestTest.tan_value || 0,
-        latestTest.product
+        latestTest.product,
+        latestTest
       )
       const daysSinceTest = Math.floor((Date.now() - new Date(latestTest.test_date).getTime()) / (1000 * 60 * 60 * 24))
 
@@ -1766,9 +1808,22 @@ export default function DashboardClient({
                     })()} 🌟
                   </h2>
                   <p className="text-slate-500 font-semibold text-xs sm:text-sm mt-2">
-                    {language === 'id' 
-                      ? `Sistem monitoring oli pelumas untuk ${profile?.customer?.company_name || 'perusahaan Anda'} terpantau stabil hari ini.` 
-                      : `Lubricant oil monitoring system for ${profile?.customer?.company_name || 'your company'} is running stable today.`}
+                    {(() => {
+                      const company = profile?.customer?.company_name || (language === 'id' ? 'perusahaan Anda' : 'your company');
+                      if (criticalCount > 0) {
+                        return language === 'id'
+                          ? `Perhatian: Terdapat ${criticalCount} unit mesin dalam kondisi kritis yang memerlukan tindakan segera untuk ${company}.`
+                          : `Attention: ${criticalCount} critical machine(s) require immediate inspection for ${company}.`;
+                      }
+                      if (warningCount > 0) {
+                        return language === 'id'
+                          ? `Perhatian: Terdapat ${warningCount} mesin dalam status waspada yang membutuhkan pemantauan untuk ${company}.`
+                          : `Notice: ${warningCount} machine(s) in warning status requiring attention for ${company}.`;
+                      }
+                      return language === 'id'
+                        ? `Seluruh sistem pemantauan oli armada ${company} terpantau prima & normal hari ini.`
+                        : `All fleet lubricant systems for ${company} are running prime & stable today.`;
+                    })()}
                   </p>
                 </div>
               </div>
@@ -1821,12 +1876,12 @@ export default function DashboardClient({
                     const isActive = selectedMachine?.id === machine.id
                     const latestTest = latestTestByMachineId[machine.id] || null
                     const healthScore = latestTest ? calculateHealthScore(latestTest) : null
-                    const statusInfo = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product) : { text: 'Unknown', color: 'gray' }
+                    const statusInfo = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product, latestTest) : { text: 'Unknown', color: 'gray' }
                     
                     return (
                       <div
                         key={machine.id}
-                        onClick={() => setSelectedMachine(machine)}
+                        onClick={() => handleSelectMachine(machine)}
                         className={`flex-shrink-0 w-[190px] snap-start cursor-pointer transition-all duration-700 rounded-[1.5rem] p-5 border relative ${
                           isActive 
                           ? 'bg-slate-900 border-slate-900 shadow-xl scale-[1.05] -translate-y-1.5 z-10' 
@@ -1854,59 +1909,67 @@ export default function DashboardClient({
               <div className="w-full lg:w-[340px] bg-white p-5 sm:p-8 flex items-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-slate-50 rounded-full blur-[60px] -mr-24 -mt-24 opacity-60"></div>
                 
-                {selectedMachine ? (
-                  <div key={selectedMachine.id} className="w-full relative z-10 animate-pop-micro">
-                    <div className="flex flex-col mb-6">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.15em] mb-3 w-fit ${
-                        latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical'
-                        ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                      }`}>
-                        <div className={`w-1 h-1 rounded-full ${latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                        {latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical' 
-                          ? 'Critical' : 'Stable'}
-                      </span>
-                      
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-lg font-black text-slate-900 tracking-tighter leading-tight break-words">{selectedMachine.machine_name}</h4>
-                          <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em]">{selectedMachine.location || 'Factory Floor'}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-0.5">Health</p>
-                          <div className="flex items-baseline justify-end gap-0.5">
-                            <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
-                              {latestTestByMachineId[selectedMachine.id] ? calculateHealthScore(latestTestByMachineId[selectedMachine.id]) : '--'}
-                            </span>
-                            <span className="text-[9px] font-bold text-slate-300">/100</span>
+                {selectedMachine ? (() => {
+                  const selectedLatestTest = latestTestByMachineId[selectedMachine.id] || null
+                  const selectedStatus = selectedLatestTest
+                    ? getStatus(selectedLatestTest.viscosity_40c || 0, selectedLatestTest.water_content || 0, selectedLatestTest.tan_value || 0, selectedLatestTest.product, selectedLatestTest)
+                    : { level: 'unknown' as const, text: 'N/A', color: 'gray' }
+
+                  return (
+                    <div key={selectedMachine.id} className="w-full relative z-10 animate-pop-micro">
+                      <div className="flex flex-col mb-6">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.15em] mb-3 w-fit ${
+                          selectedStatus.level === 'critical'
+                            ? 'bg-red-50 text-red-600 border border-red-100'
+                            : selectedStatus.level === 'warning'
+                            ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                            : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                        }`}>
+                          <div className={`w-1 h-1 rounded-full ${
+                            selectedStatus.level === 'critical' ? 'bg-red-500' : selectedStatus.level === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
+                          }`}></div>
+                          {selectedStatus.text}
+                        </span>
+                        
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-lg font-black text-slate-900 tracking-tighter leading-tight break-words">{selectedMachine.machine_name}</h4>
+                            <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em]">{selectedMachine.location || 'Factory Floor'}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-0.5">Health</p>
+                            <div className="flex items-baseline justify-end gap-0.5">
+                              <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
+                                {selectedLatestTest ? calculateHealthScore(selectedLatestTest) : '--'}
+                              </span>
+                              <span className="text-[9px] font-bold text-slate-300">/100</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Last Analysis</p>
-                        <p className="text-xl font-black text-slate-900 tracking-tight">
-                          {latestTestByMachineId[selectedMachine.id]
-                            ? `${Math.floor((Date.now() - new Date(latestTestByMachineId[selectedMachine.id].test_date).getTime()) / (1000 * 60 * 60 * 24))}d`
-                            : '--'}
-                          <span className="text-[8px] font-bold text-slate-400 ml-0.5">ago</span>
-                        </p>
-                      </div>
-                      <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Overall Status</p>
-                        <p className={`text-xl font-black tracking-tight ${
-                          latestTestByMachineId[selectedMachine.id] && getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text === 'Critical' 
-                            ? 'text-red-600' : 'text-emerald-600'
-                        }`}>
-                          {latestTestByMachineId[selectedMachine.id] 
-                            ? getStatus(latestTestByMachineId[selectedMachine.id].viscosity_40c, latestTestByMachineId[selectedMachine.id].water_content, latestTestByMachineId[selectedMachine.id].tan_value, latestTestByMachineId[selectedMachine.id].product).text 
-                            : 'N/A'}
-                        </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Last Analysis</p>
+                          <p className="text-xl font-black text-slate-900 tracking-tight">
+                            {selectedLatestTest
+                              ? `${Math.floor((Date.now() - new Date(selectedLatestTest.test_date).getTime()) / (1000 * 60 * 60 * 24))}d`
+                              : '--'}
+                            <span className="text-[8px] font-bold text-slate-400 ml-0.5">ago</span>
+                          </p>
+                        </div>
+                        <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Overall Status</p>
+                          <p className={`text-xl font-black tracking-tight ${
+                            selectedStatus.level === 'critical' ? 'text-red-600' : selectedStatus.level === 'warning' ? 'text-amber-600' : 'text-emerald-600'
+                          }`}>
+                            {selectedStatus.text}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
+                  )
+                })() : (
                   <div className="w-full text-center py-12">
                     <div className="w-12 h-12 bg-slate-50 rounded-[1.25rem] flex items-center justify-center mx-auto mb-3 border border-slate-100">
                       <svg className="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -1924,63 +1987,24 @@ export default function DashboardClient({
           {/* Trend Tab */}
           <div className={`w-full ${activeTab === 'trend' ? 'block animate-pop-micro' : 'hidden'}`}>
             <div key="trend" className="w-full space-y-4">
-              {/* Contextual Time Range Filter Bar for Trend Analytics */}
-              <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-3 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-800">{copy.timeRangeTitle}</span>
-                  <span className="text-slate-400 text-xs hidden sm:inline">•</span>
-                  <span className="text-[10px] font-bold text-slate-500 hidden sm:inline">
-                    {timeRange === 'all' ? (language === 'id' ? 'Semua Riwayat Pengujian' : 'All Test History') : 
-                     timeRange === 'custom' ? (language === 'id' ? 'Periode Kustom' : 'Custom Period') : 
-                     `${language === 'id' ? 'Periode Terakhir' : 'Last Period'}: ${timeRange.toUpperCase()}`}
+              {/* Complete Machine Trend Banner (Historical without clipping) */}
+              <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-3.5 shadow-sm flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse"></div>
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    {language === 'id' ? `Tren Riwayat Lengkap: ${selectedMachine?.machine_name || 'Semua Mesin'}` : `Full Trend History: ${selectedMachine?.machine_name || 'All Machines'}`}
+                  </span>
+                  <span className="text-slate-300 text-xs">•</span>
+                  <span className="text-[11px] font-bold text-slate-500">
+                    {language === 'id' ? 'Menampilkan riwayat uji lab dari sampel awal hingga terbaru' : 'Displaying lab test trend from initial to latest sample'}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {['7d', '30d', '90d', '6m', 'custom', 'all'].map((range) => (
-                    <button 
-                      key={range}
-                      onClick={() => setTimeRange(range as any)} 
-                      className={`px-3 py-1.5 rounded-xl font-black text-[10px] tracking-wider uppercase transition-all duration-200 border ${
-                        timeRange === range 
-                          ? 'bg-slate-900 border-slate-950 text-white shadow-sm scale-[1.02]' 
-                          : 'bg-slate-50 border-slate-200/70 text-slate-500 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300'
-                      }`}
-                    >
-                      {range === 'custom' ? copy.customRange.toUpperCase() : range.toUpperCase()}
-                    </button>
-                  ))}
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60">
+                    {chartData.length} {language === 'id' ? 'Titik Data' : 'Data Points'}
+                  </span>
                 </div>
               </div>
-
-              {/* Custom Date Range Picker UI */}
-              {timeRange === 'custom' && (
-                <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 px-5 py-3.5 flex flex-wrap items-center gap-4 animate-pop-micro shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{copy.startDate}</span>
-                    <input 
-                      type="date" 
-                      value={customDateRange.start || ''} 
-                      onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all shadow-sm"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{copy.endDate}</span>
-                    <input 
-                      type="date" 
-                      value={customDateRange.end || ''} 
-                      onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all shadow-sm"
-                    />
-                  </div>
-                  {(!customDateRange.start || !customDateRange.end) && (
-                    <p className="text-[10px] font-bold text-amber-600 animate-pulse">
-                      {language === 'id' ? 'Silakan pilih rentang tanggal' : 'Please select a date range'}
-                    </p>
-                  )}
-                </div>
-              )}
 
               <TrendSection
                 language={language}
@@ -1997,7 +2021,11 @@ export default function DashboardClient({
                 baselineViscosity40={activeBaselines?.viscosity40}
                 baselineViscosity100={activeBaselines?.viscosity100}
                 baselineTan={activeBaselines?.tan}
-                onOpenLabDetails={() => setActiveTab('lab')}
+                tolerances={activeTolerances}
+                onOpenLabDetails={() => {
+                  setActiveTab('lab')
+                  syncUrlParams('lab', selectedMachine?.id)
+                }}
                 onRequestLab={() => {
                   setModalInitialData({ machine_id: selectedMachine?.id })
                   setIsRequestModalOpen(true)

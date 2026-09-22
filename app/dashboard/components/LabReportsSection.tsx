@@ -43,7 +43,8 @@ interface LabReportsSectionProps {
     tanValue: number,
     product?: LabProduct,
     previousReport?: LabReportItem | null,
-    evaluationMode?: string
+    evaluationMode?: string,
+    currentReport?: LabReportItem
   ) => RecommendationResult[]
 }
 
@@ -234,12 +235,15 @@ export function LabReportsSection({
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {sortedReports.map((report) => {
-                    const status = getStatus(
+                    const calculatedStatus = getStatus(
                       report.viscosity_40c || 0,
                       report.water_content || 0,
                       report.tan_value || 0,
                       report.product
                     )
+                    const status = report.overall_status
+                      ? { level: report.overall_status, text: report.overall_status }
+                      : calculatedStatus
                     return (
                       <tr key={report.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4">
@@ -319,14 +323,34 @@ export function LabReportsSection({
               previousReport?.water_content ? previousReport.water_content * 100 : null
             )
             const tanTrend = getTrend(report.tan_value || 0, previousReport?.tan_value ?? null)
-            const recommendations = getRecommendations(
+            const rawRecommendations = getRecommendations(
               report.viscosity_40c || 0,
               report.water_content || 0,
               report.tan_value || 0,
               report.product,
               previousReport,
-              report.evaluation_mode
+              report.evaluation_mode,
+              report
             )
+            // If report has warning or critical status, prevent generic "normal/optimal" recommendation
+            const recommendations = (status.level === 'warning' || status.level === 'critical') && rawRecommendations.every(r => r.severity === 'normal')
+              ? [
+                  {
+                    icon: status.level === 'critical' ? '🚨' : '⚠️',
+                    severity: status.level as 'critical' | 'warning',
+                    text: report.notes 
+                      ? (language === 'id' ? 'Tindakan Sesuai Evaluasi Technical Specialist (TS)' : 'Action per Technical Specialist Assessment')
+                      : (status.level === 'critical' 
+                          ? (language === 'id' ? 'Kondisi Kritis Terdeteksi pada Pelumas Mesin' : 'Critical Lubricant Condition Detected')
+                          : (language === 'id' ? 'Status Waspada Memerlukan Pemantauan Lebih Lanjut' : 'Warning Condition Requiring Follow-up')),
+                    action: report.notes 
+                      ? report.notes 
+                      : (status.level === 'critical'
+                          ? (language === 'id' ? 'Lakukan evaluasi mesin mendalam dan persiapkan pergantian oli segera.' : 'Inspect equipment thoroughly and prepare immediate oil change.')
+                          : (language === 'id' ? 'Lakukan pemantauan berkala dan jadwalkan uji lab verifikasi dalam 14 hari.' : 'Perform periodic monitoring and schedule verification test within 14 days.')),
+                  }
+                ]
+              : rawRecommendations
             const isExpanded = expandedReports.has(report.id)
 
             return (

@@ -1,7 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot, ReferenceArea, ReferenceLine, Label } from 'recharts'
 import { GlossaryTooltip } from '@/app/components/GlossaryTooltip'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
-import type { ChartPoint, DashboardLanguage, TrendAlertItem } from '@/app/dashboard/components/types'
+import type { ChartPoint, DashboardLanguage, MachineTolerances, TrendAlertItem } from '@/app/dashboard/components/types'
 
 interface TrendSectionProps {
   language: DashboardLanguage
@@ -18,6 +18,7 @@ interface TrendSectionProps {
   baselineViscosity40?: number | null
   baselineViscosity100?: number | null
   baselineTan?: number | null
+  tolerances?: MachineTolerances | null
   isLoading?: boolean
   onOpenLabDetails: () => void
   onRequestLab?: () => void
@@ -109,6 +110,7 @@ export function TrendSection({
   baselineViscosity40,
   baselineViscosity100,
   baselineTan,
+  tolerances,
   isLoading = false,
   onOpenLabDetails,
   onRequestLab,
@@ -127,7 +129,18 @@ export function TrendSection({
   }
 
   const maxTan = chartData.length > 0 ? Math.max(...chartData.map((d) => d.tan || 0)) : 0
-  const tanDomain: [number, number | 'auto'] = maxTan > 0.5 ? [0, 'auto'] : [0, 0.5]
+  const effectiveMaxTan = Math.max(maxTan, tolerances?.tanMax || 0)
+  const tanDomain: [number, number | 'auto'] = effectiveMaxTan > 0.5 ? [0, 'auto'] : [0, 0.5]
+
+  const v40Min = tolerances?.viscosity40Min ?? null
+  const v40Max = tolerances?.viscosity40Max ?? null
+  const hasV40Tolerances = v40Min !== null && v40Max !== null && v40Max > v40Min
+  const hasV40Limits = v40Min !== null && v40Max !== null
+
+  const v100Min = tolerances?.viscosity100Min ?? null
+  const v100Max = tolerances?.viscosity100Max ?? null
+  const hasV100Tolerances = v100Min !== null && v100Max !== null && v100Max > v100Min
+  const hasV100Limits = v100Min !== null && v100Max !== null
 
   const handleAction = onRequestLab || onOpenLabDetails
 
@@ -256,18 +269,34 @@ export function TrendSection({
                   />
                   <Legend verticalAlign="top" height={36}/>
                   
-                  {/* Healthy Band (±10%) */}
-                  {Boolean(baselineViscosity40 && baselineViscosity40 > 0 && !isNaN(baselineViscosity40)) && (
+                  {/* Healthy Band (TS Tolerance or ±10%) */}
+                  {hasV40Tolerances && v40Min !== null && v40Max !== null ? (
+                    <ReferenceArea 
+                      y1={v40Min} 
+                      y2={v40Max} 
+                      fill="#10b981" 
+                      fillOpacity={0.12} 
+                    />
+                  ) : Boolean(baselineViscosity40 && baselineViscosity40 > 0 && !isNaN(baselineViscosity40)) ? (
                     <ReferenceArea 
                       y1={baselineViscosity40! * 0.9} 
                       y2={baselineViscosity40! * 1.1} 
                       fill="#10b981" 
                       fillOpacity={0.08} 
                     />
-                  )}
+                  ) : null}
                   
-                  {/* Warning Limits (±20%) */}
-                  {Boolean(baselineViscosity40 && baselineViscosity40 > 0 && !isNaN(baselineViscosity40)) && (
+                  {/* Warning Limits (TS Tolerance or ±20%) */}
+                  {hasV40Limits && v40Min !== null && v40Max !== null ? (
+                    <>
+                      <ReferenceLine y={v40Max} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value={language === 'id' ? `Batas TS Maks (${v40Max})` : `TS Max (${v40Max})`} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                      <ReferenceLine y={v40Min} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value={language === 'id' ? `Batas TS Min (${v40Min})` : `TS Min (${v40Min})`} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                    </>
+                  ) : Boolean(baselineViscosity40 && baselineViscosity40 > 0 && !isNaN(baselineViscosity40)) ? (
                     <>
                       <ReferenceLine y={baselineViscosity40! * 1.2} stroke="#ef4444" strokeDasharray="3 3">
                         <Label value={language === 'id' ? 'Batas Maks (+20%)' : 'Max (+20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
@@ -276,7 +305,7 @@ export function TrendSection({
                         <Label value={language === 'id' ? 'Batas Min (-20%)' : 'Min (-20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
                     </>
-                  )}
+                  ) : null}
 
                   <Line type="monotone" dataKey="viscosity_40c" name={language === 'id' ? 'Viskositas @40°C' : 'Viscosity @40°C'} stroke="#ea580c" strokeWidth={4} dot={{ fill: '#ea580c', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   {selectedMachineTrendAlerts
@@ -319,18 +348,34 @@ export function TrendSection({
                   />
                   <Legend verticalAlign="top" height={36}/>
                   
-                  {/* Healthy Band (±10%) */}
-                  {Boolean(baselineViscosity100 && baselineViscosity100 > 0 && !isNaN(baselineViscosity100)) && (
+                  {/* Healthy Band (TS Tolerance or ±10%) */}
+                  {hasV100Tolerances && v100Min !== null && v100Max !== null ? (
+                    <ReferenceArea 
+                      y1={v100Min} 
+                      y2={v100Max} 
+                      fill="#10b981" 
+                      fillOpacity={0.12} 
+                    />
+                  ) : Boolean(baselineViscosity100 && baselineViscosity100 > 0 && !isNaN(baselineViscosity100)) ? (
                     <ReferenceArea 
                       y1={baselineViscosity100! * 0.9} 
                       y2={baselineViscosity100! * 1.1} 
                       fill="#10b981" 
                       fillOpacity={0.08} 
                     />
-                  )}
+                  ) : null}
                   
-                  {/* Warning Limits (±20%) */}
-                  {Boolean(baselineViscosity100 && baselineViscosity100 > 0 && !isNaN(baselineViscosity100)) && (
+                  {/* Warning Limits (TS Tolerance or ±20%) */}
+                  {hasV100Limits && v100Min !== null && v100Max !== null ? (
+                    <>
+                      <ReferenceLine y={v100Max} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value={language === 'id' ? `Batas TS Maks (${v100Max})` : `TS Max (${v100Max})`} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                      <ReferenceLine y={v100Min} stroke="#ef4444" strokeDasharray="3 3">
+                        <Label value={language === 'id' ? `Batas TS Min (${v100Min})` : `TS Min (${v100Min})`} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                    </>
+                  ) : Boolean(baselineViscosity100 && baselineViscosity100 > 0 && !isNaN(baselineViscosity100)) ? (
                     <>
                       <ReferenceLine y={baselineViscosity100! * 1.2} stroke="#ef4444" strokeDasharray="3 3">
                         <Label value={language === 'id' ? 'Batas Maks (+20%)' : 'Max (+20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
@@ -339,7 +384,7 @@ export function TrendSection({
                         <Label value={language === 'id' ? 'Batas Min (-20%)' : 'Min (-20%)'} position="right" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 'bold' }} />
                       </ReferenceLine>
                     </>
-                  )}
+                  ) : null}
 
                   <Line type="monotone" dataKey="viscosity_100c" name={language === 'id' ? 'Viskositas @100°C' : 'Viscosity @100°C'} stroke="#6366f1" strokeWidth={4} dot={{ fill: '#6366f1', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   {selectedMachineTrendAlerts
@@ -395,13 +440,30 @@ export function TrendSection({
                   />
                   <Legend verticalAlign="top" height={36} />
                   
-                  {/* Water Critical Limit (0.2% or 2000 PPM) */}
-                  <ReferenceLine y={0.2} stroke="#dc2626" strokeWidth={2} strokeDasharray="5 5">
-                    <Label value="CRITICAL (0.2%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#dc2626', fontWeight: 'bold' }} />
-                  </ReferenceLine>
-                  <ReferenceLine y={0.05} stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3">
-                    <Label value="WARNING (0.05%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#f59e0b', fontWeight: 'bold' }} />
-                  </ReferenceLine>
+                  {/* Water TS Limit or Default Limits */}
+                  {tolerances?.waterContentMax != null && tolerances.waterContentMax > 0 ? (
+                    <ReferenceLine 
+                      y={tolerances.waterContentUnit === 'PPM' ? tolerances.waterContentMax / 10000 : tolerances.waterContentMax} 
+                      stroke="#dc2626" 
+                      strokeWidth={2} 
+                      strokeDasharray="5 5"
+                    >
+                      <Label 
+                        value={`TS MAX (${tolerances.waterContentUnit === 'PPM' ? `${tolerances.waterContentMax} PPM` : `${tolerances.waterContentMax}%`})`} 
+                        position="insideBottomRight" 
+                        style={{ fontSize: '10px', fill: '#dc2626', fontWeight: 'bold' }} 
+                      />
+                    </ReferenceLine>
+                  ) : (
+                    <>
+                      <ReferenceLine y={0.2} stroke="#dc2626" strokeWidth={2} strokeDasharray="5 5">
+                        <Label value="CRITICAL (0.2%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#dc2626', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                      <ReferenceLine y={0.05} stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3">
+                        <Label value="WARNING (0.05%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#f59e0b', fontWeight: 'bold' }} />
+                      </ReferenceLine>
+                    </>
+                  )}
 
                   <Line type="monotone" dataKey="water" name={language === 'id' ? 'Kandungan Air (%)' : 'Water Content (%)'} stroke="#0284c7" strokeWidth={4} dot={{ fill: '#0284c7', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   {selectedMachineTrendAlerts
@@ -449,10 +511,16 @@ export function TrendSection({
                   />
                   <Legend verticalAlign="top" height={36} />
                   
-                  {/* TAN Critical Limit (2.0) */}
-                  <ReferenceLine y={2.0} stroke="#b91c1c" strokeWidth={2} strokeDasharray="5 5">
-                    <Label value="LIMIT (2.0)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#b91c1c', fontWeight: 'bold' }} />
-                  </ReferenceLine>
+                  {/* TAN TS Limit or Default Critical Limit */}
+                  {tolerances?.tanMax != null && tolerances.tanMax > 0 ? (
+                    <ReferenceLine y={tolerances.tanMax} stroke="#b91c1c" strokeWidth={2} strokeDasharray="5 5">
+                      <Label value={`TS MAX (${tolerances.tanMax})`} position="insideBottomRight" style={{ fontSize: '10px', fill: '#b91c1c', fontWeight: 'bold' }} />
+                    </ReferenceLine>
+                  ) : (
+                    <ReferenceLine y={2.0} stroke="#b91c1c" strokeWidth={2} strokeDasharray="5 5">
+                      <Label value="LIMIT (2.0)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#b91c1c', fontWeight: 'bold' }} />
+                    </ReferenceLine>
+                  )}
                   
                   {/* Baseline Line */}
                   {baselineTan && (

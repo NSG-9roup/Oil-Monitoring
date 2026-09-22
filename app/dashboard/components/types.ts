@@ -1,5 +1,15 @@
 export type DashboardLanguage = 'id' | 'en'
 
+export interface MachineTolerances {
+  viscosity40Min?: number | null
+  viscosity40Max?: number | null
+  viscosity100Min?: number | null
+  viscosity100Max?: number | null
+  waterContentMax?: number | null
+  waterContentUnit?: string | null
+  tanMax?: number | null
+}
+
 export interface ChartPoint {
   date: string
   isoDate?: string
