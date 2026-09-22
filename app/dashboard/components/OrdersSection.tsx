@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { createOrderQuotation, createCustomerComplaint } from '@/app/actions/dashboardActions'
+import { createOrderQuotation } from '@/app/actions/dashboardActions'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import { Portal } from '@/app/components/Portal'
 import { toast } from 'react-hot-toast'
-import type { Complaint } from '@/lib/types'
 import {
   BarChart,
   Bar,
@@ -37,41 +36,33 @@ interface Order {
 }
 
 interface OrdersSectionProps {
-  customerId: string
+  customerId?: string
   products: Product[]
   initialOrders: Order[]
-  initialComplaints: Complaint[]
+  initialComplaints?: any[]
   language: 'id' | 'en'
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800 border-amber-200',
-  processing: 'bg-blue-100 text-blue-800 border-blue-200',
-  completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  cancelled: 'bg-rose-100 text-rose-800 border-rose-200',
+  pending: 'bg-amber-50 text-amber-800 border-amber-200/80',
+  processing: 'bg-blue-50 text-blue-800 border-blue-200/80',
+  completed: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+  cancelled: 'bg-rose-50 text-rose-800 border-rose-200/80',
 }
 
 const STATUS_LABELS: Record<string, { id: string; en: string }> = {
   pending: { id: 'Menunggu Review Sales', en: 'Pending Sales Review' },
-  processing: { id: 'Diteruskan ke Admin Sales (Email Terkirim)', en: 'Forwarded to Admin Sales (Email Sent)' },
-  completed: { id: 'Selesai / Penawaran Diterbitkan', en: 'Completed / Quotation Issued' },
+  processing: { id: 'Diteruskan ke Admin Sales', en: 'Forwarded to Admin Sales' },
+  completed: { id: 'Penawaran Diterbitkan', en: 'Quotation Issued' },
   cancelled: { id: 'Dibatalkan', en: 'Cancelled' },
-}
-
-const COMPLAINT_STATUS_STYLES: Record<string, string> = {
-  open: 'bg-red-100 text-red-700',
-  in_progress: 'bg-orange-100 text-orange-700',
-  resolved: 'bg-emerald-100 text-emerald-700',
 }
 
 export default function OrdersSection({
   products,
   initialOrders,
-  initialComplaints,
   language,
 }: OrdersSectionProps) {
   const [orders, setOrders] = useState(initialOrders)
-  const [complaints, setComplaints] = useState(initialComplaints)
 
   // Process orders data for monthly analytics
   const getMonthlyAnalytics = () => {
@@ -119,12 +110,9 @@ export default function OrdersSection({
 
   // Modals
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
-  const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false)
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
 
   // Form states
   const [orderForm, setOrderForm] = useState({ productId: '', quantity: 1 })
-  const [complaintDesc, setComplaintDesc] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCreateOrder = async (e: React.FormEvent) => {
@@ -146,37 +134,6 @@ export default function OrdersSection({
     } catch (err: unknown) {
       console.error(err)
       const errMsg = err instanceof Error ? err.message : 'Failed to create quotation request'
-      toast.error(errMsg)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleCreateComplaint = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!complaintDesc.trim()) {
-      toast.error(language === 'id' ? 'Silakan isi deskripsi keluhan' : 'Please enter complaint description')
-      return
-    }
-    setIsSubmitting(true)
-    try {
-      const res = await createCustomerComplaint({
-        orderId: selectedOrderId,
-        description: complaintDesc,
-      })
-
-      if (!res.success || !res.data) {
-        throw new Error(res.error || 'Gagal membuat komplain')
-      }
-
-      setComplaints([res.data, ...complaints])
-      setIsComplaintModalOpen(false)
-      setComplaintDesc('')
-      setSelectedOrderId(null)
-      toast.success(language === 'id' ? 'Komplain berhasil dikirim!' : 'Complaint submitted successfully!')
-    } catch (err: unknown) {
-      console.error('Error submitting complaint:', err)
-      const errMsg = err instanceof Error ? err.message : 'Gagal mengirim komplain'
       toast.error(errMsg)
     } finally {
       setIsSubmitting(false)
@@ -227,22 +184,12 @@ export default function OrdersSection({
           />
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
-              onClick={() => {
-                setSelectedOrderId(orders[0]?.id || null)
-                setIsComplaintModalOpen(true)
-              }}
-              className="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-5 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 shrink-0 text-xs sm:text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              {language === 'id' ? 'Ajukan Komplain' : 'File Complaint'}
-            </button>
-            <button
               onClick={() => setIsOrderModalOpen(true)}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-md active:scale-95 shrink-0 text-xs sm:text-sm"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-md shadow-orange-500/15 active:scale-95 shrink-0 text-xs sm:text-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
               {language === 'id' ? 'Minta Penawaran' : 'Request Quotation'}
             </button>
           </div>
@@ -260,116 +207,145 @@ export default function OrdersSection({
               </h4>
               <p className="text-xs text-blue-800 font-medium mt-0.5 leading-relaxed">
                 {language === 'id'
-                  ? 'Permintaan penawaran Anda telah diteruskan oleh Sales ke Tim Admin Sales. Anda akan segera dihubungi oleh tim kami via Email / WhatsApp resmi untuk pengiriman Penawaran.'
+                  ? 'Permintaan penawaran Anda telah diteruskan oleh Sales ke Tim Admin Sales. Anda akan segera dihubungi oleh tim kami via Email / WhatsApp resmi untuk pengiriman dokumen Penawaran.'
                   : 'Your price quotation request has been forwarded by Sales to the Admin Sales team. Our team will contact you shortly via official Email / WhatsApp for the quotation.'}
               </p>
             </div>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4">{language === 'id' ? 'Tanggal' : 'Date'}</th>
-                  <th className="px-6 py-4">{language === 'id' ? 'Produk' : 'Product'}</th>
-                  <th className="px-6 py-4">{language === 'id' ? 'Kuantitas' : 'Quantity'}</th>
-                  <th className="px-6 py-4">{language === 'id' ? 'Status' : 'Status'}</th>
-                  <th className="px-6 py-4 text-right">{language === 'id' ? 'Aksi' : 'Action'}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {orders.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">
-                      {language === 'id' ? 'Belum ada riwayat permintaan penawaran.' : 'No quotation request history yet.'}
-                    </td>
-                  </tr>
-                ) : (
-                  orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="font-bold text-gray-900 text-sm">
-                          {new Date(order.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-medium text-gray-800">{order.product?.product_name || '-'}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{order.quantity} Pcs</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${STATUS_STYLES[order.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                          {STATUS_LABELS[order.status]?.[language] || order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedOrderId(order.id)
-                            setIsComplaintModalOpen(true)
-                          }}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl border border-rose-200/80 transition-all shadow-sm active:scale-95"
-                          title="Laporkan kendala / ajukan keluhan pada pesanan penawaran ini"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                          {language === 'id' ? 'Komplain' : 'Complain'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        {orders.length === 0 ? (
+          <div className="py-12 text-center">
+            <div className="w-16 h-16 bg-orange-50/80 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-orange-200/60 shadow-xs">
+              <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-slate-800">
+              {language === 'id' ? 'Belum Ada Permintaan Penawaran Harga' : 'No Quotation Requests Yet'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-6 max-w-md mx-auto">
+              {language === 'id' 
+                ? 'Dapatkan penawaran harga resmi distributor pelumas TotalEnergies dengan spesifikasi yang tepat untuk kebutuhan armada mesin Anda.' 
+                : 'Get official TotalEnergies lubricant distributor price quotations with exact specs for your machinery.'}
+            </p>
+            <button
+              onClick={() => setIsOrderModalOpen(true)}
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-orange-500/20 active:scale-95 transition-all mb-10"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              {language === 'id' ? 'Minta Penawaran Oli Sekarang' : 'Request Oil Quotation Now'}
+            </button>
 
-      {/* Complaints Section */}
-      {complaints.length > 0 && (
-        <div className="w-full bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 sm:p-10">
-          <SectionHeader
-            title={language === 'id' ? 'Riwayat Komplain' : 'Complaint History'}
-            description={language === 'id' ? 'Pantau status komplain pesanan Anda' : 'Track your order complaints status'}
-            titleClassName="text-2xl lg:text-3xl"
-          />
-          <div className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* 3-Step Quotation Flow Guide */}
+            <div className="border-t border-slate-100 pt-8 mt-2 text-left">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  {language === 'id' ? 'Alur & Proses Permintaan Penawaran Harga' : 'Quotation Request Process'}
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/50 flex flex-col justify-between hover:bg-orange-50/40 hover:border-orange-200/60 transition-colors">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xl">🛢️</span>
+                      <span className="text-[10px] font-black text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-200/50">
+                        {language === 'id' ? 'Tahap 01' : 'Step 01'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">
+                      {language === 'id' ? 'Pilih Produk Dari Katalog' : 'Select Product from Catalog'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                      {language === 'id' 
+                        ? 'Tentukan jenis oli industri (Hydraulic, Gear, Engine, Turbine) dan kuantitas drum yang dibutuhkan.' 
+                        : 'Choose industrial oil type and required drum quantity.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/50 flex flex-col justify-between hover:bg-orange-50/40 hover:border-orange-200/60 transition-colors">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xl">📄</span>
+                      <span className="text-[10px] font-black text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-200/50">
+                        {language === 'id' ? 'Tahap 02' : 'Step 02'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">
+                      {language === 'id' ? 'Review & Terbit Penawaran' : 'Review & Quotation Issued'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                      {language === 'id' 
+                        ? 'Tim Sales kami akan mereview dan mengirimkan dokumen penawaran harga resmi via Email / WhatsApp.' 
+                        : 'Our sales team reviews and sends official quotation documents via Email / WhatsApp.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/50 flex flex-col justify-between hover:bg-orange-50/40 hover:border-orange-200/60 transition-colors">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xl">🚚</span>
+                      <span className="text-[10px] font-black text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-200/50">
+                        {language === 'id' ? 'Tahap 03' : 'Step 03'}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">
+                      {language === 'id' ? 'Konfirmasi PO & Pengiriman' : 'PO Confirmation & Delivery'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                      {language === 'id' 
+                        ? 'Setelah PO disetujui, oli original langsung dikirim ke fasilitas Anda disertai CoA & dokumen lab resmi.' 
+                        : 'Once PO is confirmed, genuine oil is delivered directly to your site with official CoA.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">
                   <tr>
                     <th className="px-6 py-4">{language === 'id' ? 'Tanggal' : 'Date'}</th>
-                    <th className="px-6 py-4">{language === 'id' ? 'Produk Terkait' : 'Related Product'}</th>
-                    <th className="px-6 py-4">{language === 'id' ? 'Deskripsi' : 'Description'}</th>
-                    <th className="px-6 py-4">{language === 'id' ? 'Status' : 'Status'}</th>
-                    <th className="px-6 py-4">{language === 'id' ? 'Tanggapan' : 'Resolution'}</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Produk' : 'Product'}</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Kuantitas' : 'Quantity'}</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Status Penawaran' : 'Quotation Status'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {complaints.map((comp) => (
-                    <tr key={comp.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                  {orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4">
                         <span className="font-bold text-gray-900 text-sm">
-                          {new Date(comp.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')}
+                          {new Date(order.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-800">{comp.order?.product?.product_name || '-'}</span>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-bold text-gray-900">{order.product?.product_name || '-'}</span>
+                        {order.product?.product_type && (
+                          <span className="block text-[11px] text-gray-500 mt-0.5">{order.product.product_type}</span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 max-w-xs">
-                        <p className="text-sm text-gray-600 line-clamp-2" title={comp.description}>{comp.description}</p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${COMPLAINT_STATUS_STYLES[comp.status] || 'bg-gray-100 text-gray-600'}`}>
-                          {comp.status}
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-extrabold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
+                          {order.quantity} Drum
                         </span>
                       </td>
-                      <td className="px-6 py-4 max-w-xs">
-                        <p className="text-sm text-gray-600 line-clamp-2" title={comp.resolution_notes || '-'}>{comp.resolution_notes || '-'}</p>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border ${STATUS_STYLES[order.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                          {STATUS_LABELS[order.status]?.[language] || order.status}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -377,8 +353,8 @@ export default function OrdersSection({
               </table>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Order Modal */}
       {isOrderModalOpen && (
@@ -455,94 +431,6 @@ export default function OrdersSection({
                       <>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                         <span>{language === 'id' ? 'Kirim Permintaan' : 'Submit Request'}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </Portal>
-      )}
-
-      {/* Complaint Modal */}
-      {isComplaintModalOpen && (
-        <Portal>
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-fade-fast" onClick={() => setIsComplaintModalOpen(false)}>
-            <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 animate-pop-micro" onClick={(e) => e.stopPropagation()}>
-              <div className="bg-white px-8 py-6 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">{language === 'id' ? 'Buat Tiket Bantuan & Komplain' : 'Submit Support & Complaint'}</h3>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">{language === 'id' ? 'Sampaikan kendala terkait penawaran atau pesanan Anda' : 'Submit issues regarding your quotation or order'}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setIsComplaintModalOpen(false)} 
-                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
-                >
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateComplaint} className="p-8 space-y-6">
-                <div className="space-y-4 rounded-[1.5rem] border border-slate-150 bg-slate-50/50 p-6 shadow-sm">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                      {language === 'id' ? 'Pilih Pesanan / Penawaran' : 'Select Order / Quotation'}
-                    </label>
-                    <select
-                      value={selectedOrderId || ''}
-                      onChange={(e) => setSelectedOrderId(e.target.value)}
-                      required
-                      className="w-full bg-white border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-rose-100 focus:border-rose-500 block p-3.5 transition-colors shadow-sm outline-none"
-                    >
-                      {orders.map((o) => (
-                        <option key={o.id} value={o.id}>
-                          {new Date(o.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')} — {o.product?.product_name || 'Produk'} ({o.quantity} Pcs)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{language === 'id' ? 'Deskripsi Kendala / Komplain' : 'Issue Description'}</label>
-                    <textarea
-                      required
-                      rows={4}
-                      value={complaintDesc}
-                      onChange={(e) => setComplaintDesc(e.target.value)}
-                      placeholder={language === 'id' ? 'Jelaskan kendala, keterlambatan, atau masalah pada penawaran/pesanan Anda...' : 'Describe the issue or delay with your quotation/order...'}
-                      className="w-full bg-white border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-rose-100 focus:border-rose-500 block p-3.5 transition-colors shadow-sm outline-none resize-none"
-                    ></textarea>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button 
-                    type="button" 
-                    onClick={() => setIsComplaintModalOpen(false)} 
-                    className="flex-1 px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition-all active:scale-95"
-                  >
-                    {language === 'id' ? 'Batal' : 'Cancel'}
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting} 
-                    className="flex-1 px-5 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? (
-                      <span>{language === 'id' ? 'Memproses...' : 'Processing...'}</span>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                        <span>{language === 'id' ? 'Kirim Komplain' : 'Submit Complaint'}</span>
                       </>
                     )}
                   </button>
