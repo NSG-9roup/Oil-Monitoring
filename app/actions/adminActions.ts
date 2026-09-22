@@ -225,17 +225,32 @@ export async function createTest(data: Partial<LabTestFormData>, sendEmailNotifi
             const { createInAppNotification } = await import('@/app/actions/notificationActions')
             const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
 
+            // Evaluate if parameters exceed tolerances for intelligent alert severity
+            const isWaterCritical = data.water_content_max && data.water_content && (Number(data.water_content) > Number(data.water_content_max))
+            const isViscCritical = (data.viscosity_40c_max && data.viscosity_40c && Number(data.viscosity_40c) > Number(data.viscosity_40c_max)) || 
+                                   (data.viscosity_40c_min && data.viscosity_40c && Number(data.viscosity_40c) < Number(data.viscosity_40c_min))
+            const isTanCritical = data.tan_max && data.tan_value && (Number(data.tan_value) > Number(data.tan_max))
+            const isCritical = Boolean(isWaterCritical || isViscCritical || isTanCritical)
+
+            const notifTitle = isCritical
+              ? `🚨 PERHATIAN: Status Kritis Mesin ${machine.machine_name || ''}`
+              : 'Laporan Hasil Uji Lab Selesai'
+            const notifMessage = isCritical
+              ? `Uji lab terbaru mesin ${machine.machine_name || 'Anda'} mendeteksi parameter melebihi batas aman! Segera tinjau rekomendasi tindakan.`
+              : `Hasil uji lab terbaru untuk mesin ${machine.machine_name || 'Anda'} telah selesai dianalisis.`
+            const notifType = isCritical ? 'critical' : 'success'
+
             for (const p of customerProfiles) {
               await createInAppNotification({
                 userId: p.id,
-                title: 'Laporan Hasil Uji Lab Selesai',
-                message: `Hasil uji lab terbaru untuk mesin ${machine.machine_name || 'Anda'} telah selesai dianalisis.`,
-                type: 'success',
+                title: notifTitle,
+                message: notifMessage,
+                type: notifType,
                 linkUrl: '/dashboard',
               })
               await sendPushNotificationToUser(p.id, {
-                title: 'Hasil Uji Lab Terbit • OilTrack',
-                body: `Laporan uji lab mesin ${machine.machine_name || 'Anda'} siap diunduh.`,
+                title: isCritical ? `🚨 Kritis: Mesin ${machine.machine_name || ''}` : 'Hasil Uji Lab Terbit • OilTrack',
+                body: notifMessage,
                 url: '/dashboard',
               }).catch(() => null)
             }

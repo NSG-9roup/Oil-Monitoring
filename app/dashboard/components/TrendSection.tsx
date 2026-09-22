@@ -1,5 +1,4 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot, ReferenceArea, ReferenceLine, Label } from 'recharts'
-import { GlossaryTooltip } from '@/app/components/GlossaryTooltip'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
 import type { ChartPoint, DashboardLanguage, MachineTolerances, TrendAlertItem } from '@/app/dashboard/components/types'
 
@@ -93,6 +92,134 @@ function EmptyChartCard({
         </svg>
         {actionText}
       </button>
+    </div>
+  )
+}
+
+interface CustomChartTooltipProps {
+  active?: boolean
+  payload?: Array<{ value?: number | string }>
+  label?: string
+  parameter: 'viscosity_40c' | 'viscosity_100c' | 'water' | 'tan'
+  language: DashboardLanguage
+  toleranceMin?: number | null
+  toleranceMax?: number | null
+  baseline?: number | null
+}
+
+function CustomChartTooltip({
+  active,
+  payload,
+  label,
+  parameter,
+  language,
+  toleranceMin,
+  toleranceMax,
+  baseline,
+}: CustomChartTooltipProps) {
+  if (!active || !payload || !payload.length) return null
+
+  const rawValue = payload[0]?.value as number | undefined
+  if (rawValue == null || Number.isNaN(Number(rawValue))) return null
+  const numVal = Number(rawValue)
+
+  const parsedDate = new Date(label || '')
+  const formattedDate = !Number.isNaN(parsedDate.getTime())
+    ? parsedDate.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : label || '-'
+
+  let paramTitle = ''
+  let displayValue = ''
+  let subValue = ''
+  let unit = ''
+
+  if (parameter === 'viscosity_40c') {
+    paramTitle = language === 'id' ? 'Viskositas @40°C' : 'Viscosity @40°C'
+    displayValue = numVal.toFixed(1)
+    unit = 'cSt'
+  } else if (parameter === 'viscosity_100c') {
+    paramTitle = language === 'id' ? 'Viskositas @100°C' : 'Viscosity @100°C'
+    displayValue = numVal.toFixed(1)
+    unit = 'cSt'
+  } else if (parameter === 'water') {
+    paramTitle = language === 'id' ? 'Kandungan Air' : 'Water Content'
+    const ppm = Math.round(numVal * 10000)
+    displayValue = `${numVal.toFixed(4)}%`
+    subValue = `≈ ${ppm.toLocaleString()} PPM`
+  } else if (parameter === 'tan') {
+    paramTitle = 'Total Acid Number'
+    displayValue = numVal.toFixed(2)
+    unit = 'mg KOH/g'
+  }
+
+  // Evaluate status against tolerance / baseline limits
+  let statusBadge = {
+    text: language === 'id' ? 'Kondisi Aman / Dalam Toleransi' : 'Within Normal Range',
+    dot: 'bg-emerald-400',
+    textColor: 'text-emerald-300',
+  }
+
+  if (toleranceMax != null && numVal > toleranceMax) {
+    statusBadge = {
+      text: language === 'id' ? `Melebihi Batas Maks (${toleranceMax})` : `Exceeds Max Limit (${toleranceMax})`,
+      dot: 'bg-rose-400',
+      textColor: 'text-rose-300',
+    }
+  } else if (toleranceMin != null && numVal < toleranceMin) {
+    statusBadge = {
+      text: language === 'id' ? `Di Bawah Batas Min (${toleranceMin})` : `Below Min Limit (${toleranceMin})`,
+      dot: 'bg-rose-400',
+      textColor: 'text-rose-300',
+    }
+  }
+
+  return (
+    <div className="bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/60 min-w-[210px] pointer-events-none animate-fade-fast">
+      {/* Date Header */}
+      <div className="flex items-center justify-between gap-3 pb-2 mb-2 border-b border-slate-800">
+        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-orange-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          {formattedDate}
+        </span>
+      </div>
+
+      {/* Parameter & Main Value */}
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs font-semibold text-slate-300">{paramTitle}</span>
+        <div className="text-right">
+          <span className="text-base font-black text-white tracking-tight">
+            {displayValue}
+          </span>
+          {unit && <span className="text-[10px] font-bold text-slate-400 ml-1">{unit}</span>}
+          {subValue && (
+            <div className="text-[10px] font-black text-cyan-300 mt-0.5">
+              {subValue}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Baseline delta note if available */}
+      {baseline && parameter !== 'water' && (
+        <div className="mt-1 text-[9px] text-slate-400 flex justify-between">
+          <span>Baseline: {baseline}</span>
+          <span>Δ {numVal >= baseline ? `+${(numVal - baseline).toFixed(2)}` : (numVal - baseline).toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Tolerance Status Badge */}
+      <div className="mt-2.5 pt-2 border-t border-slate-800 flex items-center gap-1.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dot} animate-pulse`} />
+        <span className={`text-[9px] font-bold ${statusBadge.textColor}`}>
+          {statusBadge.text}
+        </span>
+      </div>
     </div>
   )
 }
@@ -243,7 +370,7 @@ export function TrendSection({
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
               <span className="w-3 h-3 bg-orange-500 rounded-full mr-3 animate-pulse"></span>
-              <GlossaryTooltip termKey="viscosity40c" language={language} label={language === 'id' ? 'Viskositas @40°C' : 'Viscosity @40°C'} />
+              <span>{language === 'id' ? 'Viskositas @40°C' : 'Viscosity @40°C'}</span>
             </h3>
             {isLoading ? (
               <ChartSkeleton />
@@ -264,8 +391,15 @@ export function TrendSection({
                   <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
-                    labelFormatter={(value) => formatDateLabel(String(value))}
-                    contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}
+                    content={
+                      <CustomChartTooltip
+                        parameter="viscosity_40c"
+                        language={language}
+                        toleranceMin={v40Min}
+                        toleranceMax={v40Max}
+                        baseline={baselineViscosity40}
+                      />
+                    }
                   />
                   <Legend verticalAlign="top" height={36}/>
                   
@@ -322,7 +456,7 @@ export function TrendSection({
           <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="w-3 h-3 bg-indigo-500 rounded-full mr-3 animate-pulse"></span>
-              <GlossaryTooltip termKey="viscosity100c" language={language} label={language === 'id' ? 'Viskositas @100°C' : 'Viscosity @100°C'} />
+              <span>{language === 'id' ? 'Viskositas @100°C' : 'Viscosity @100°C'}</span>
             </h3>
             {isLoading ? (
               <ChartSkeleton />
@@ -343,8 +477,15 @@ export function TrendSection({
                   <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
-                    labelFormatter={(value) => formatDateLabel(String(value))}
-                    contentStyle={{ backgroundColor: 'white', border: '0', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}
+                    content={
+                      <CustomChartTooltip
+                        parameter="viscosity_100c"
+                        language={language}
+                        toleranceMin={v100Min}
+                        toleranceMax={v100Max}
+                        baseline={baselineViscosity100}
+                      />
+                    }
                   />
                   <Legend verticalAlign="top" height={36}/>
                   
@@ -401,7 +542,7 @@ export function TrendSection({
           <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="w-3 h-3 bg-sky-500 rounded-full mr-3 animate-pulse"></span>
-              <GlossaryTooltip termKey="waterContent" language={language} label={language === 'id' ? 'Kandungan Air' : 'Water Content'} />
+              <span>{language === 'id' ? 'Kandungan Air' : 'Water Content'}</span>
             </h3>
             {isLoading ? (
               <ChartSkeleton />
@@ -422,21 +563,17 @@ export function TrendSection({
                   <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <Tooltip
-                    labelFormatter={(value) => formatDateLabel(String(value))}
-                    formatter={(value: unknown, name: string) => {
-                      if (name.includes('Kandungan Air') || name.includes('Water Content')) {
-                        const pct = Number(value)
-                        const ppm = Math.round(pct * 10000)
-                        return [`${pct.toFixed(4)}% (≈ ${ppm} ppm)`, name]
-                      }
-                      return [value as string | number, name]
-                    }}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '0',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-                    }}
+                    content={
+                      <CustomChartTooltip
+                        parameter="water"
+                        language={language}
+                        toleranceMax={
+                          tolerances?.waterContentMax != null && tolerances.waterContentMax > 0
+                            ? (tolerances.waterContentUnit === 'PPM' ? tolerances.waterContentMax / 10000 : tolerances.waterContentMax)
+                            : 0.2
+                        }
+                      />
+                    }
                   />
                   <Legend verticalAlign="top" height={36} />
                   
@@ -480,7 +617,7 @@ export function TrendSection({
           <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="w-3 h-3 bg-red-700 rounded-full mr-3 animate-pulse"></span>
-              <GlossaryTooltip termKey="tan" language={language} label="Total Acid Number (TAN)" />
+              <span>Total Acid Number (TAN)</span>
             </h3>
             {isLoading ? (
               <ChartSkeleton />
@@ -501,13 +638,14 @@ export function TrendSection({
                   <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} domain={tanDomain} />
                   <Tooltip
-                    labelFormatter={(value) => formatDateLabel(String(value))}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '0',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-                    }}
+                    content={
+                      <CustomChartTooltip
+                        parameter="tan"
+                        language={language}
+                        toleranceMax={tolerances?.tanMax != null && tolerances.tanMax > 0 ? tolerances.tanMax : 2.0}
+                        baseline={baselineTan}
+                      />
+                    }
                   />
                   <Legend verticalAlign="top" height={36} />
                   

@@ -53,6 +53,56 @@ export async function updateLabRequestStatusSales(requestId: string, status: str
       { requestId, status, salesId: user.id }
     )
 
+    // Notify customer profiles of the status change
+    try {
+      const { data: request } = await supabaseService
+        .from('oil_lab_requests')
+        .select('id, title, customer_id, machine:oil_machines(machine_name)')
+        .eq('id', requestId)
+        .single()
+
+      if (request?.customer_id) {
+        const { data: customerProfiles } = await supabaseService
+          .from('oil_profiles')
+          .select('id')
+          .eq('customer_id', request.customer_id)
+
+        if (customerProfiles && customerProfiles.length > 0) {
+          const { createInAppNotification } = await import('@/app/actions/notificationActions')
+          const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
+
+          const statusTitle = status === 'sampling'
+            ? 'Pengambilan Sampel Sedang Berjalan'
+            : status === 'completed'
+            ? 'Permintaan Uji Lab Selesai'
+            : 'Update Status Permintaan Lab'
+
+          const statusMsg = status === 'sampling'
+            ? `Tim teknis sedang menjadwalkan/mengambil sampel oli untuk "${request.title}".`
+            : status === 'completed'
+            ? `Proses pengujian sampel untuk "${request.title}" telah rampung.`
+            : `Status permintaan "${request.title}" telah diperbarui.`
+
+          for (const p of customerProfiles) {
+            await createInAppNotification({
+              userId: p.id,
+              title: statusTitle,
+              message: statusMsg,
+              type: status === 'completed' ? 'success' : 'info',
+              linkUrl: '/dashboard',
+            })
+            await sendPushNotificationToUser(p.id, {
+              title: `${statusTitle} • OilTrack`,
+              body: statusMsg,
+              url: '/dashboard',
+            }).catch(() => null)
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.warn('[Sales] Failed to dispatch request status notification to customer:', notifErr)
+    }
+
     revalidatePath('/sales')
     return { success: true }
   } catch (err) {
@@ -234,6 +284,47 @@ export async function updateComplaintStatusSales(complaintId: string, status: 'o
       { complaintId, status, salesId: user.id }
     )
 
+    // Notify customer profiles
+    try {
+      const { data: complaint } = await supabaseService
+        .from('oil_complaints')
+        .select('id, title, customer_id')
+        .eq('id', complaintId)
+        .single()
+
+      if (complaint?.customer_id) {
+        const { data: custProfiles } = await supabaseService
+          .from('oil_profiles')
+          .select('id')
+          .eq('customer_id', complaint.customer_id)
+
+        if (custProfiles && custProfiles.length > 0) {
+          const { createInAppNotification } = await import('@/app/actions/notificationActions')
+          const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
+
+          const compTitle = status === 'in_progress' ? 'Komplain Sedang Ditindaklanjuti' : 'Status Komplain Diperbarui'
+          const compMsg = `Tiket kendala "${complaint.title || 'Layanan'}" kini berstatus: ${status === 'in_progress' ? 'Sedang Ditindaklanjuti' : status}.`
+
+          for (const cp of custProfiles) {
+            await createInAppNotification({
+              userId: cp.id,
+              title: compTitle,
+              message: compMsg,
+              type: 'info',
+              linkUrl: '/dashboard',
+            })
+            await sendPushNotificationToUser(cp.id, {
+              title: `${compTitle} • OilTrack`,
+              body: compMsg,
+              url: '/dashboard',
+            }).catch(() => null)
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.warn('[Sales] Failed to notify customer of complaint update:', notifErr)
+    }
+
     revalidatePath('/sales')
     revalidatePath('/dashboard')
     revalidatePath('/admin')
@@ -274,6 +365,47 @@ export async function resolveComplaintSales(data: {
       `Sales resolved complaint ID: ${data.complaintId}`,
       { complaintId: data.complaintId, resolutionNotes: data.resolutionNotes, salesId: user.id }
     )
+
+    // Notify customer profiles that complaint is resolved
+    try {
+      const { data: complaint } = await supabaseService
+        .from('oil_complaints')
+        .select('id, title, customer_id')
+        .eq('id', data.complaintId)
+        .single()
+
+      if (complaint?.customer_id) {
+        const { data: custProfiles } = await supabaseService
+          .from('oil_profiles')
+          .select('id')
+          .eq('customer_id', complaint.customer_id)
+
+        if (custProfiles && custProfiles.length > 0) {
+          const { createInAppNotification } = await import('@/app/actions/notificationActions')
+          const { sendPushNotificationToUser } = await import('@/lib/push/pushService')
+
+          const resolveTitle = 'Komplain Selesai / Teratasi'
+          const resolveMsg = `Laporan kendala "${complaint.title || 'Layanan'}" telah diselesaikan oleh tim sales/teknis.`
+
+          for (const cp of custProfiles) {
+            await createInAppNotification({
+              userId: cp.id,
+              title: resolveTitle,
+              message: resolveMsg,
+              type: 'success',
+              linkUrl: '/dashboard',
+            })
+            await sendPushNotificationToUser(cp.id, {
+              title: `${resolveTitle} • OilTrack`,
+              body: resolveMsg,
+              url: '/dashboard',
+            }).catch(() => null)
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.warn('[Sales] Failed to notify customer of complaint resolution:', notifErr)
+    }
 
     revalidatePath('/sales')
     revalidatePath('/dashboard')

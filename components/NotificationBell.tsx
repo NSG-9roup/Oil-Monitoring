@@ -9,6 +9,7 @@ import {
   InAppNotification,
 } from '@/app/actions/notificationActions'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 interface NotificationBellProps {
   className?: string
@@ -33,6 +34,17 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
     }
   }
 
+  // Update browser tab title with unread count
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const originalTitle = document.title.replace(/^\(\d+\+?\)\s*/, '')
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount > 9 ? '9+' : unreadCount}) ${originalTitle}`
+    } else {
+      document.title = originalTitle
+    }
+  }, [unreadCount])
+
   useEffect(() => {
     fetchNotifications()
 
@@ -42,8 +54,44 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'oil_notifications' },
-        () => {
+        (payload) => {
           fetchNotifications()
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newNotif = payload.new as InAppNotification
+            const icon = newNotif.type === 'critical' ? '🚨' : newNotif.type === 'warning' ? '⚠️' : newNotif.type === 'success' ? '🧪' : '🔔'
+            toast(
+              (t) => (
+                <div
+                  className="flex items-start gap-3 cursor-pointer select-none"
+                  onClick={() => {
+                    toast.dismiss(t.id)
+                    if (newNotif.link_url) window.location.href = newNotif.link_url
+                  }}
+                >
+                  <span className="text-xl shrink-0 mt-0.5">{icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black text-slate-800 tracking-tight">{newNotif.title}</p>
+                    <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-relaxed">{newNotif.message}</p>
+                    <span className="inline-block mt-1 text-[9px] font-black uppercase tracking-wider text-orange-600">
+                      Klik untuk melihat detail →
+                    </span>
+                  </div>
+                </div>
+              ),
+              {
+                duration: 6000,
+                position: 'top-right',
+                style: {
+                  borderRadius: '20px',
+                  background: '#ffffff',
+                  boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #e2e8f0',
+                  padding: '14px 18px',
+                  maxWidth: '380px',
+                },
+              }
+            )
+          }
         }
       )
       .on(
