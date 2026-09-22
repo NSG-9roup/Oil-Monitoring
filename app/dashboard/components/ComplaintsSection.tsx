@@ -239,7 +239,7 @@ export default function ComplaintsSection({
           </div>
         </div>
         <a
-          href="https://wa.me/6281234567890?text=Halo%20Tim%20Support%20OilTrack,%20saya%20ingin%20konsultasi%20kendala%20oli%20mesin%20kami"
+          href="https://wa.me/6281114405183?text=Halo%20Tim%20Support%20OilTrack,%20saya%20ingin%20konsultasi%20kendala%20oli%20mesin%20kami"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 shrink-0"
@@ -603,7 +603,7 @@ export default function ComplaintsSection({
               {/* Modal Footer */}
               <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                 <a
-                  href={`https://wa.me/6281234567890?text=Halo%20Tim%20Support,%20saya%20ingin%20follow%20up%20tiket%20${encodeURIComponent(getTicketCode(selectedComplaint.id))}`}
+                  href={`https://wa.me/6281114405183?text=Halo%20Tim%20Support,%20saya%20ingin%20follow%20up%20tiket%20${encodeURIComponent(getTicketCode(selectedComplaint.id))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800"
