@@ -14,15 +14,13 @@ interface ShortcutNavigatorProps {
 
 export function ShortcutNavigator({ items, onItemClick, ariaLabel }: ShortcutNavigatorProps) {
   return (
-    <nav className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 w-full p-1 select-none" aria-label={ariaLabel}>
-      {items.map((item, idx) => (
+    <nav className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-2 w-full p-1 select-none" aria-label={ariaLabel}>
+      {items.map((item) => (
         <button
           key={item.id}
           type="button"
           onClick={() => onItemClick(item.id)}
-          className={`w-full justify-center px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap border ${
-            idx === 4 ? 'col-span-2 sm:col-span-1' : 'col-span-1'
-          } ${
+          className={`w-full justify-center px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap border col-span-1 ${
             item.isActive
               ? 'bg-slate-900 border-slate-950 text-white shadow-md shadow-slate-900/10 scale-[1.02]'
               : 'bg-white border-slate-200/80 text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300'
@@ -51,6 +49,11 @@ export function ShortcutNavigator({ items, onItemClick, ariaLabel }: ShortcutNav
           {item.id === 'orders' && (
             <svg className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? 'text-orange-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          )}
+          {item.id === 'complaints' && (
+            <svg className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? 'text-orange-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           )}
           <span>{item.label}</span>
