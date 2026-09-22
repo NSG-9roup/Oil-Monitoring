@@ -464,25 +464,41 @@ export default function OrdersSection({
 
       {/* Complaint Modal */}
       {isComplaintModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-pop-micro">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-black text-gray-900">{language === 'id' ? 'Buat Komplain' : 'File Complaint'}</h3>
-              <button onClick={() => setIsComplaintModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast" onClick={() => setIsComplaintModalOpen(false)}>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 animate-pop-micro" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white px-8 py-6 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">{language === 'id' ? 'Buat Tiket Bantuan & Komplain' : 'Submit Support & Complaint'}</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">{language === 'id' ? 'Sampaikan kendala terkait penawaran atau pesanan Anda' : 'Submit issues regarding your quotation or order'}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsComplaintModalOpen(false)} 
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
+              >
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <form onSubmit={handleCreateComplaint} className="p-6">
-              <div className="space-y-4">
+
+            <form onSubmit={handleCreateComplaint} className="p-8 space-y-6">
+              <div className="space-y-4 rounded-[1.5rem] border border-slate-150 bg-slate-50/50 p-6 shadow-sm">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
                     {language === 'id' ? 'Pilih Pesanan / Penawaran' : 'Select Order / Quotation'}
                   </label>
                   <select
                     value={selectedOrderId || ''}
                     onChange={(e) => setSelectedOrderId(e.target.value)}
                     required
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-red-500 focus:border-red-500 block p-3 transition-colors font-medium"
+                    className="w-full bg-white border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-rose-100 focus:border-rose-500 block p-3.5 transition-colors shadow-sm outline-none"
                   >
                     {orders.map((o) => (
                       <option key={o.id} value={o.id}>
@@ -492,23 +508,39 @@ export default function OrdersSection({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-gray-500 mb-2">{language === 'id' ? 'Deskripsi Komplain' : 'Complaint Description'}</label>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{language === 'id' ? 'Deskripsi Kendala / Komplain' : 'Issue Description'}</label>
                   <textarea
                     required
                     rows={4}
                     value={complaintDesc}
                     onChange={(e) => setComplaintDesc(e.target.value)}
                     placeholder={language === 'id' ? 'Jelaskan kendala, keterlambatan, atau masalah pada penawaran/pesanan Anda...' : 'Describe the issue or delay with your quotation/order...'}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-red-500 focus:border-red-500 block p-3 transition-colors resize-none"
+                    className="w-full bg-white border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-rose-100 focus:border-rose-500 block p-3.5 transition-colors shadow-sm outline-none resize-none"
                   ></textarea>
                 </div>
               </div>
-              <div className="mt-8 flex gap-3">
-                <button type="button" onClick={() => setIsComplaintModalOpen(false)} className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-bold rounded-xl transition-colors">
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsComplaintModalOpen(false)} 
+                  className="flex-1 px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition-all active:scale-95"
+                >
                   {language === 'id' ? 'Batal' : 'Cancel'}
                 </button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50">
-                  {isSubmitting ? (language === 'id' ? 'Memproses...' : 'Processing...') : (language === 'id' ? 'Kirim Komplain' : 'Submit Complaint')}
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting} 
+                  className="flex-1 px-5 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <span>{language === 'id' ? 'Memproses...' : 'Processing...'}</span>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                      <span>{language === 'id' ? 'Kirim Komplain' : 'Submit Complaint'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
