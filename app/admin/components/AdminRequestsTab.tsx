@@ -6,6 +6,7 @@ import type { LabRequest } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { approveNewMachine } from '@/app/actions/adminActions'
 import { toast } from 'react-hot-toast'
+import { Portal } from '@/app/components/Portal'
 
 interface AdminRequestsTabProps {
   labRequests: LabRequest[]
@@ -241,83 +242,87 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
 
       {/* Modal Preview Foto Botol Sampel */}
       {previewPhoto && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4 select-none animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Foto Bukti Sampel</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{previewPhoto.title}</p>
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 select-none animate-fade-fast" onClick={() => setPreviewPhoto(null)}>
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Foto Bukti Sampel</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{previewPhoto.title}</p>
+                </div>
+                <button
+                  onClick={() => setPreviewPhoto(null)}
+                  className="p-2 hover:bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-all active:scale-95"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button
-                onClick={() => setPreviewPhoto(null)}
-                className="p-2 hover:bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-all active:scale-95"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 bg-slate-50 flex items-center justify-center">
-              <div className="relative w-full aspect-square rounded-[1.5rem] overflow-hidden border border-slate-200/60 shadow-lg bg-white p-2">
-                <div className="relative w-full h-full">
-                  <Image
-                    src={previewPhoto.url}
-                    alt="Bukti Foto Botol"
-                    fill
-                    className="object-cover rounded-[1rem]"
-                    unoptimized
-                  />
+              <div className="p-6 bg-slate-50 flex items-center justify-center">
+                <div className="relative w-full aspect-square rounded-[1.5rem] overflow-hidden border border-slate-200/60 shadow-lg bg-white p-2">
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={previewPhoto.url}
+                      alt="Bukti Foto Botol"
+                      fill
+                      className="object-cover rounded-[1rem]"
+                      unoptimized
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="px-6 py-4.5 bg-white border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setPreviewPhoto(null)}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
-              >
-                Tutup
-              </button>
+              <div className="px-6 py-4.5 bg-white border-t border-slate-100 flex justify-end">
+                <button
+                  onClick={() => setPreviewPhoto(null)}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Confirmation Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110] p-4 select-none animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-pop-micro">
-            <div className="p-6 text-center space-y-4">
-              <div className="h-12 w-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 select-none animate-fade-fast" onClick={() => setConfirmAction(null)}>
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
+              <div className="p-6 text-center space-y-4">
+                <div className="h-12 w-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Konfirmasi Tindakan</h3>
+                  <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                    {confirmAction.message}
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Konfirmasi Tindakan</h3>
-                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                  {confirmAction.message}
-                </p>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    confirmAction.onConfirm()
+                    setConfirmAction(null)
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-750 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
+                >
+                  Ya, Lanjutkan
+                </button>
               </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-              <button
-                onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => {
-                  confirmAction.onConfirm()
-                  setConfirmAction(null)
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-750 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
-              >
-                Ya, Lanjutkan
-              </button>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   )

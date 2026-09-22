@@ -22,6 +22,7 @@ import ComplaintsSection from '@/app/dashboard/components/ComplaintsSection'
 import type { Complaint } from '@/lib/types'
 import { toast } from 'react-hot-toast'
 import NotificationBell from '@/components/NotificationBell'
+import { Portal } from '@/app/components/Portal'
 
 
 interface Machine {
@@ -1964,7 +1965,7 @@ export default function DashboardClient({
         {/* Tabbed Content Section */}
         <div className="flex-1 w-full relative min-h-[600px] space-y-8">
           {/* Trend Tab */}
-          <div className={`w-full ${activeTab === 'trend' ? 'block animate-pop-micro' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'trend' ? 'block animate-fade-fast' : 'hidden'}`}>
             <div key="trend" className="w-full space-y-4">
               {/* Complete Machine Trend Banner (Historical without clipping) */}
               <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-3.5 shadow-sm flex items-center justify-between gap-3">
@@ -2014,7 +2015,7 @@ export default function DashboardClient({
           </div>
 
           {/* Analysis Tab */}
-          <div className={`w-full ${activeTab === 'analysis' ? 'block animate-pop-micro' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'analysis' ? 'block animate-fade-fast' : 'hidden'}`}>
             <AnalysisSection
               language={language}
               selectedMachine={selectedMachine}
@@ -2034,7 +2035,7 @@ export default function DashboardClient({
           </div>
 
           {/* Lab Tab */}
-          <div className={`w-full ${activeTab === 'lab' ? 'block animate-pop-micro' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'lab' ? 'block animate-fade-fast' : 'hidden'}`}>
             <div key="lab" className="w-full">
               <LabReportsSection
                 title={copy.labReportsTitle}
@@ -2076,7 +2077,7 @@ export default function DashboardClient({
           </div>
 
           {/* Requests Tab */}
-          <div className={`w-full ${activeTab === 'requests' ? 'block animate-pop-micro' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'requests' ? 'block animate-fade-fast' : 'hidden'}`}>
             <LabRequestsSection
               labRequests={labRequests}
               language={language}
@@ -2089,7 +2090,7 @@ export default function DashboardClient({
             />
           </div>
           {/* Orders Tab */}
-          <div className={`w-full ${activeTab === 'orders' ? 'block animate-pop-micro' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'orders' ? 'block animate-fade-fast' : 'hidden'}`}>
             <div key="orders" className="w-full">
               <OrdersSection
                 customerId={profile.customer_id || ''}
@@ -2102,7 +2103,7 @@ export default function DashboardClient({
           </div>
 
           {/* Complaints Tab */}
-          <div className={`w-full ${activeTab === 'complaints' ? 'block animate-pop-micro' : 'hidden'}`}>
+          <div className={`w-full ${activeTab === 'complaints' ? 'block animate-fade-fast' : 'hidden'}`}>
             <ComplaintsSection
               complaints={complaints}
               machines={initialMachines}
@@ -2155,38 +2156,40 @@ export default function DashboardClient({
 
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && currentPdfUrl && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-fade-fast" onClick={() => setPdfViewerOpen(false)}>
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4 z-[120] animate-fade-fast" onClick={() => setPdfViewerOpen(false)}>
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">{language === 'id' ? 'Penampil PDF' : 'PDF Viewer'}</h2>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{language === 'id' ? 'Analisis Laporan Uji Lab' : 'Lab Test Report Analysis'}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setPdfViewerOpen(false)} 
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
+                >
+                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">{language === 'id' ? 'Penampil PDF' : 'PDF Viewer'}</h2>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{language === 'id' ? 'Analisis Laporan Uji Lab' : 'Lab Test Report Analysis'}</p>
-                </div>
+                </button>
               </div>
-              <button 
-                onClick={() => setPdfViewerOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
-              >
-                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden bg-slate-900">
-              <iframe
-                src={currentPdfUrl}
-                className="w-full h-full border-0"
-                title="PDF Viewer"
-              />
+              <div className="flex-1 overflow-hidden bg-slate-900">
+                <iframe
+                  src={currentPdfUrl}
+                  className="w-full h-full border-0"
+                  title="PDF Viewer"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Request Lab Modal */}

@@ -6,6 +6,7 @@ import { createCustomerComplaint } from '@/app/actions/dashboardActions'
 import { toast } from 'react-hot-toast'
 import type { Complaint } from '@/lib/types'
 import { SearchableSelect } from '@/app/components/SearchableSelect'
+import { Portal } from '@/app/components/Portal'
 
 interface MachineItem {
   id: string
@@ -281,7 +282,8 @@ export default function ComplaintsSection({
 
       {/* Universal Complaint Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast">
+        <Portal>
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-fade-fast">
           <div className="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden animate-pop-micro border border-slate-100">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -427,6 +429,7 @@ export default function ComplaintsSection({
             </form>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   )

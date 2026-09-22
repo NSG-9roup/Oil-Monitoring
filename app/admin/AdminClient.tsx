@@ -25,6 +25,7 @@ import AdminOrdersTab, { AdminOrder, AdminComplaint } from './components/AdminOr
 import NotificationBell from '@/components/NotificationBell'
 import { SearchableSelect } from '@/app/components/SearchableSelect'
 import { ConfirmModal } from '@/app/components/ConfirmModal'
+import { Portal } from '@/app/components/Portal'
 
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -1269,34 +1270,229 @@ export default function AdminClient({
       
       {/* Customer Add/Edit Modal */}
       {(modalOpen === 'add-customer' || modalOpen === 'edit-customer') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                      {modalOpen === 'add-customer' ? 'Add New Customer' : 'Edit Customer'}
+                    </h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Corporate Client Configuration</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                    {modalOpen === 'add-customer' ? 'Add New Customer' : 'Edit Customer'}
-                  </h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Corporate Client Configuration</p>
+                <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Company Name</label>
+                    <input
+                      type="text"
+                      value={toInputValue(formData.company_name)}
+                      onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                      placeholder="PT Contoh Indonesia"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                    <select
+                      value={toInputValue(formData.status)}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={handleSaveCustomer}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                  >
+                    {loading ? (
+                      <OilDropLoader compact label="Saving..." className="text-white" />
+                    ) : (
+                      <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setModalOpen(null)}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
-              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            <div className="p-6">
-              <div className="space-y-4">
+          </div>
+        </Portal>
+      )}
+
+
+      {/* Logo Upload Modal */}
+      {selectedCustomerForLogo && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Upload Company Logo</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{selectedCustomerForLogo.company_name}</p>
+                  </div>
+                </div>
+                <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              <div className="p-6">
+                <div className="mb-6 flex justify-center">
+                  <div className="relative w-64 h-48 rounded-[1.5rem] overflow-hidden bg-white border border-slate-200 flex items-center justify-center shadow-md">
+                    {logoPreview ? (
+                      <Image
+                        src={logoPreview}
+                        alt="Logo preview"
+                        fill
+                        className="object-contain p-6"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-center">
+                        <span className="text-white font-black text-4xl">
+                          {selectedCustomerForLogo.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                    Select Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoFileChange}
+                    className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                  />
+                  <p className="text-[10px] font-medium text-slate-400 mt-2">
+                    Max 5MB • PNG, JPG, WebP • Auto-compressed to 400x400px
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleUploadLogo}
+                    disabled={!logoFile || uploadingLogo}
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                  >
+                    {uploadingLogo ? (
+                      <OilDropLoader compact label="Uploading..." className="text-white" />
+                    ) : (
+                      <>
+                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Upload
+                      </>
+                    )}
+                  </button>
+                  
+                  {selectedCustomerForLogo.logo_url && (
+                    <button
+                      onClick={handleDeleteLogo}
+                      disabled={uploadingLogo}
+                      className="px-4 py-3 bg-slate-100 hover:bg-red-500 hover:text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-250 flex items-center justify-center active:scale-95 shadow-sm text-slate-700"
+                      title="Delete Logo"
+                    >
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => setModalOpen(null)}
+                    disabled={uploadingLogo}
+                    className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Machine Add/Edit Modal */}
+      {(modalOpen === 'add-machine' || modalOpen === 'edit-machine') && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                      {modalOpen === 'add-machine' ? 'Add New Machine' : 'Edit Machine'}
+                    </h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Mechanical Asset Profile</p>
+                  </div>
+                </div>
+                <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Company Name</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine Name *</label>
                   <input
                     type="text"
-                    value={toInputValue(formData.company_name)}
-                    onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                    value={String(formData.machine_name ?? '')}
+                    onChange={(e) => setFormData({...formData, machine_name: e.target.value})}
                     className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                    placeholder="PT Contoh Indonesia"
+                    placeholder="e.g., Compressor BCU 12"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer *</label>
+                  <select
+                    value={toInputValue(formData.customer_id)}
+                    onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  >
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>{c.company_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={String(formData.location ?? '')}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., Plant B"
                   />
                 </div>
                 <div>
@@ -1307,397 +1503,211 @@ export default function AdminClient({
                     className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   >
                     <option value="active">Active</option>
+                    <option value="maintenance">Maintenance</option>
                     <option value="inactive">Inactive</option>
                   </select>
                 </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleSaveCustomer}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
-                >
-                  {loading ? (
-                    <OilDropLoader compact label="Saving..." className="text-white" />
-                  ) : (
-                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
-                  )}
-                </button>
-                <button
-                  onClick={() => setModalOpen(null)}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {/* Logo Upload Modal */}
-      {selectedCustomerForLogo && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Upload Company Logo</h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{selectedCustomerForLogo.company_name}</p>
-                </div>
-              </div>
-              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6">
-              <div className="mb-6 flex justify-center">
-                <div className="relative w-64 h-48 rounded-[1.5rem] overflow-hidden bg-white border border-slate-200 flex items-center justify-center shadow-md">
-                  {logoPreview ? (
-                    <Image
-                      src={logoPreview}
-                      alt="Logo preview"
-                      fill
-                      className="object-contain p-6"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-center">
-                      <span className="text-white font-black text-4xl">
-                        {selectedCustomerForLogo.company_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                  Select Image
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoFileChange}
-                  className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
-                />
-                <p className="text-[10px] font-medium text-slate-400 mt-2">
-                  Max 5MB • PNG, JPG, WebP • Auto-compressed to 400x400px
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={handleUploadLogo}
-                  disabled={!logoFile || uploadingLogo}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
-                >
-                  {uploadingLogo ? (
-                    <OilDropLoader compact label="Uploading..." className="text-white" />
-                  ) : (
-                    <>
-                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      Upload
-                    </>
-                  )}
-                </button>
                 
-                {selectedCustomerForLogo.logo_url && (
+                <div className="flex gap-3 pt-4">
                   <button
-                    onClick={handleDeleteLogo}
-                    disabled={uploadingLogo}
-                    className="px-4 py-3 bg-slate-100 hover:bg-red-500 hover:text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-250 flex items-center justify-center active:scale-95 shadow-sm text-slate-700"
-                    title="Delete Logo"
+                    onClick={handleSaveMachine}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
                   >
-                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    {loading ? (
+                      <OilDropLoader compact label="Saving..." className="text-white" />
+                    ) : (
+                      <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                    )}
                   </button>
-                )}
-                
-                <button
-                  onClick={() => setModalOpen(null)}
-                  disabled={uploadingLogo}
-                  className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                >
-                  Close
-                </button>
+                  <button
+                    onClick={() => setModalOpen(null)}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Machine Add/Edit Modal */}
-      {(modalOpen === 'add-machine' || modalOpen === 'edit-machine') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                    {modalOpen === 'add-machine' ? 'Add New Machine' : 'Edit Machine'}
-                  </h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Mechanical Asset Profile</p>
-                </div>
-              </div>
-              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine Name *</label>
-                <input
-                  type="text"
-                  value={String(formData.machine_name ?? '')}
-                  onChange={(e) => setFormData({...formData, machine_name: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Compressor BCU 12"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer *</label>
-                <select
-                  value={toInputValue(formData.customer_id)}
-                  onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.company_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</label>
-                <input
-                  type="text"
-                  value={String(formData.location ?? '')}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Plant B"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
-                <select
-                  value={toInputValue(formData.status)}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  <option value="active">Active</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleSaveMachine}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
-                >
-                  {loading ? (
-                    <OilDropLoader compact label="Saving..." className="text-white" />
-                  ) : (
-                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
-                  )}
-                </button>
-                <button
-                  onClick={() => setModalOpen(null)}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </Portal>
       )}
 
       {/* Product Add/Edit Modal */}
       {(modalOpen === 'add-product' || modalOpen === 'edit-product') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                      {modalOpen === 'add-product' ? 'Add New Product' : 'Edit Product'}
+                    </h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Lubricant Product Catalog</p>
+                  </div>
+                </div>
+                <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
+                  <input
+                    type="text"
+                    value={String(formData.product_name ?? '')}
+                    onChange={(e) => setFormData({...formData, product_name: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., Mobil DTE 25"
+                  />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                    {modalOpen === 'add-product' ? 'Add New Product' : 'Edit Product'}
-                  </h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Lubricant Product Catalog</p>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Type *</label>
+                  <input
+                    type="text"
+                    list="product-types-list"
+                    value={String(formData.product_type ?? '')}
+                    onChange={(e) => setFormData({...formData, product_type: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., Hydraulic Oil, Engine Oil"
+                  />
+                  <datalist id="product-types-list">
+                    {uniqueProductTypes.map(type => (
+                      <option key={type} value={type} />
+                    ))}
+                  </datalist>
                 </div>
-              </div>
-              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
-                <input
-                  type="text"
-                  value={String(formData.product_name ?? '')}
-                  onChange={(e) => setFormData({...formData, product_name: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Mobil DTE 25"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Type *</label>
-                <input
-                  type="text"
-                  list="product-types-list"
-                  value={String(formData.product_type ?? '')}
-                  onChange={(e) => setFormData({...formData, product_type: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Hydraulic Oil, Engine Oil"
-                />
-                <datalist id="product-types-list">
-                  {uniqueProductTypes.map(type => (
-                    <option key={type} value={type} />
-                  ))}
-                </datalist>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Base Oil</label>
-                <select
-                  value={toInputValue(formData.base_oil)}
-                  onChange={(e) => setFormData({...formData, base_oil: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  <option value="">Select Base Oil</option>
-                  <option value="Mineral">Mineral</option>
-                  <option value="Synthetic">Synthetic</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity Grade</label>
-                {!useCustomViscosity ? (
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Base Oil</label>
                   <select
-                    value={toInputValue(formData.viscosity_grade)}
-                    onChange={(e) => {
-                      if (e.target.value === 'OTHER') {
-                        setUseCustomViscosity(true)
-                        setFormData({...formData, viscosity_grade: ''})
-                      } else {
-                        setFormData({...formData, viscosity_grade: e.target.value})
-                      }
-                    }}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-pop-micro"
+                    value={toInputValue(formData.base_oil)}
+                    onChange={(e) => setFormData({...formData, base_oil: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   >
-                    <option value="">Select Viscosity Grade</option>
-                    <optgroup label="ISO VG (Industrial)">
-                      <option value="ISO VG 10">ISO VG 10</option>
-                      <option value="ISO VG 15">ISO VG 15</option>
-                      <option value="ISO VG 22">ISO VG 22</option>
-                      <option value="ISO VG 32">ISO VG 32</option>
-                      <option value="ISO VG 46">ISO VG 46</option>
-                      <option value="ISO VG 68">ISO VG 68</option>
-                      <option value="ISO VG 100">ISO VG 100</option>
-                      <option value="ISO VG 150">ISO VG 150</option>
-                      <option value="ISO VG 220">ISO VG 220</option>
-                      <option value="ISO VG 320">ISO VG 320</option>
-                      <option value="ISO VG 460">ISO VG 460</option>
-                      <option value="ISO VG 680">ISO VG 680</option>
-                      <option value="ISO VG 1000">ISO VG 1000</option>
-                      <option value="ISO VG 1500">ISO VG 1500</option>
-                    </optgroup>
-                    <optgroup label="SAE (Engine)">
-                      <option value="SAE 0W-20">SAE 0W-20</option>
-                      <option value="SAE 5W-20">SAE 5W-20</option>
-                      <option value="SAE 5W-30">SAE 5W-30</option>
-                      <option value="SAE 10W-30">SAE 10W-30</option>
-                      <option value="SAE 10W-40">SAE 10W-40</option>
-                      <option value="SAE 15W-40">SAE 15W-40</option>
-                      <option value="SAE 20W-50">SAE 20W-50</option>
-                      <option value="SAE 10">SAE 10</option>
-                      <option value="SAE 20">SAE 20</option>
-                      <option value="SAE 30">SAE 30</option>
-                      <option value="SAE 40">SAE 40</option>
-                      <option value="SAE 50">SAE 50</option>
-                    </optgroup>
-                    <optgroup label="NLGI (Grease)">
-                      <option value="NLGI 000">NLGI 000 (Semi-fluid)</option>
-                      <option value="NLGI 00">NLGI 00 (Very Soft)</option>
-                      <option value="NLGI 0">NLGI 0 (Soft)</option>
-                      <option value="NLGI 1">NLGI 1 (Soft - Low Temp)</option>
-                      <option value="NLGI 2">NLGI 2 (Medium - Most Common)</option>
-                      <option value="NLGI 3">NLGI 3 (Firm)</option>
-                      <option value="NLGI 4">NLGI 4 (Hard)</option>
-                      <option value="NLGI 5">NLGI 5 (Very Hard)</option>
-                      <option value="NLGI 6">NLGI 6 (Block)</option>
-                    </optgroup>
-                    <option value="OTHER">🔧 Other (Type Manually)</option>
+                    <option value="">Select Base Oil</option>
+                    <option value="Mineral">Mineral</option>
+                    <option value="Synthetic">Synthetic</option>
                   </select>
-                ) : (
-                  <div className="flex gap-2 animate-pop-micro">
-                    <input
-                      type="text"
-                      value={String(formData.viscosity_grade ?? '')}
-                      onChange={(e) => setFormData({...formData, viscosity_grade: e.target.value})}
-                      className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                      placeholder="e.g., Custom HD 50"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUseCustomViscosity(false)
-                        setFormData({...formData, viscosity_grade: ''})
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity Grade</label>
+                  {!useCustomViscosity ? (
+                    <select
+                      value={toInputValue(formData.viscosity_grade)}
+                      onChange={(e) => {
+                        if (e.target.value === 'OTHER') {
+                          setUseCustomViscosity(true)
+                          setFormData({...formData, viscosity_grade: ''})
+                        } else {
+                          setFormData({...formData, viscosity_grade: e.target.value})
+                        }
                       }}
-                      className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-pop-micro"
                     >
-                      Back
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleSaveProduct}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
-                >
-                  {loading ? (
-                    <OilDropLoader compact label="Saving..." className="text-white" />
+                      <option value="">Select Viscosity Grade</option>
+                      <optgroup label="ISO VG (Industrial)">
+                        <option value="ISO VG 10">ISO VG 10</option>
+                        <option value="ISO VG 15">ISO VG 15</option>
+                        <option value="ISO VG 22">ISO VG 22</option>
+                        <option value="ISO VG 32">ISO VG 32</option>
+                        <option value="ISO VG 46">ISO VG 46</option>
+                        <option value="ISO VG 68">ISO VG 68</option>
+                        <option value="ISO VG 100">ISO VG 100</option>
+                        <option value="ISO VG 150">ISO VG 150</option>
+                        <option value="ISO VG 220">ISO VG 220</option>
+                        <option value="ISO VG 320">ISO VG 320</option>
+                        <option value="ISO VG 460">ISO VG 460</option>
+                        <option value="ISO VG 680">ISO VG 680</option>
+                        <option value="ISO VG 1000">ISO VG 1000</option>
+                        <option value="ISO VG 1500">ISO VG 1500</option>
+                      </optgroup>
+                      <optgroup label="SAE (Engine)">
+                        <option value="SAE 0W-20">SAE 0W-20</option>
+                        <option value="SAE 5W-20">SAE 5W-20</option>
+                        <option value="SAE 5W-30">SAE 5W-30</option>
+                        <option value="SAE 10W-30">SAE 10W-30</option>
+                        <option value="SAE 10W-40">SAE 10W-40</option>
+                        <option value="SAE 15W-40">SAE 15W-40</option>
+                        <option value="SAE 20W-50">SAE 20W-50</option>
+                        <option value="SAE 10">SAE 10</option>
+                        <option value="SAE 20">SAE 20</option>
+                        <option value="SAE 30">SAE 30</option>
+                        <option value="SAE 40">SAE 40</option>
+                        <option value="SAE 50">SAE 50</option>
+                      </optgroup>
+                      <optgroup label="NLGI (Grease)">
+                        <option value="NLGI 000">NLGI 000 (Semi-fluid)</option>
+                        <option value="NLGI 00">NLGI 00 (Very Soft)</option>
+                        <option value="NLGI 0">NLGI 0 (Soft)</option>
+                        <option value="NLGI 1">NLGI 1 (Soft - Low Temp)</option>
+                        <option value="NLGI 2">NLGI 2 (Medium - Most Common)</option>
+                        <option value="NLGI 3">NLGI 3 (Firm)</option>
+                        <option value="NLGI 4">NLGI 4 (Hard)</option>
+                        <option value="NLGI 5">NLGI 5 (Very Hard)</option>
+                        <option value="NLGI 6">NLGI 6 (Block)</option>
+                      </optgroup>
+                      <option value="OTHER">🔧 Other (Type Manually)</option>
+                    </select>
                   ) : (
-                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                    <div className="flex gap-2 animate-pop-micro">
+                      <input
+                        type="text"
+                        value={String(formData.viscosity_grade ?? '')}
+                        onChange={(e) => setFormData({...formData, viscosity_grade: e.target.value})}
+                        className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                        placeholder="e.g., Custom HD 50"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseCustomViscosity(false)
+                          setFormData({...formData, viscosity_grade: ''})
+                        }}
+                        className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
+                      >
+                        Back
+                      </button>
+                    </div>
                   )}
-                </button>
-                <button
-                  onClick={() => setModalOpen(null)}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                >
-                  Cancel
-                </button>
+                </div>
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleSaveProduct}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                  >
+                    {loading ? (
+                      <OilDropLoader compact label="Saving..." className="text-white" />
+                    ) : (
+                      <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setModalOpen(null)}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Lab Test Add/Edit Modal */}
       {(modalOpen === 'add-test' || modalOpen === 'edit-test') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 sm:p-6 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col animate-pop-micro">
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 sm:p-6 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col animate-pop-micro">
             
             {/* Modal Header */}
             <div className="bg-white px-6 py-4.5 border-b border-slate-100 flex items-center justify-between select-none shrink-0">
@@ -2252,101 +2262,557 @@ export default function AdminClient({
 
           </div>
         </div>
+        </Portal>
       )}
 
       {/* User Add/Edit Modal */}
       {(modalOpen === 'add-user' || modalOpen === 'edit-user') && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                    {modalOpen === 'add-user' ? 'Add New User' : 'Edit User'}
-                  </h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Access Control Profile</p>
-                </div>
-              </div>
-              <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6 space-y-4">
-              {modalOpen === 'add-user' && (
-                <>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
-                    <input
-                      type="email"
-                      value={String(formData.email ?? '')}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                      placeholder="user@example.com"
-                    />
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
-                    <input
-                      type="password"
-                      value={String(formData.password ?? '')}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                      placeholder="Minimum 6 characters"
-                    />
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                      {modalOpen === 'add-user' ? 'Add New User' : 'Edit User'}
+                    </h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Access Control Profile</p>
                   </div>
-                </>
-              )}
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={String(formData.full_name ?? '')}
-                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="Nama Lengkap"
-                />
+                </div>
+                <button onClick={() => setModalOpen(null)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email (Optional)</label>
-                <input
-                  type="email"
-                  value={String(formData.contact_email ?? '')}
-                  onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="john@company.com"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Phone Number (Optional)</label>
-                <input
-                  type="tel"
-                  value={String(formData.phone_number ?? '')}
-                  onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="+62 812-xxxx-xxxx"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</label>
-                <select
-                  value={toInputValue(formData.role)}
-                  onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  <option value="customer">Customer</option>
-                  <option value="sales">Sales</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              {formData.role === 'customer' && (
+              <div className="p-6 space-y-4">
+                {modalOpen === 'add-user' && (
+                  <>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
+                      <input
+                        type="email"
+                        value={String(formData.email ?? '')}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                        placeholder="user@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                      <input
+                        type="password"
+                        value={String(formData.password ?? '')}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                        placeholder="Minimum 6 characters"
+                      />
+                    </div>
+                  </>
+                )}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Company</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={String(formData.full_name ?? '')}
+                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="Nama Lengkap"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email (Optional)</label>
+                  <input
+                    type="email"
+                    value={String(formData.contact_email ?? '')}
+                    onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="john@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Phone Number (Optional)</label>
+                  <input
+                    type="tel"
+                    value={String(formData.phone_number ?? '')}
+                    onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="+62 812-xxxx-xxxx"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</label>
                   <select
-                    value={toInputValue(formData.customer_id)}
-                    onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
+                    value={toInputValue(formData.role)}
+                    onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  >
+                    <option value="customer">Customer</option>
+                    <option value="sales">Sales</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                {formData.role === 'customer' && (
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Company</label>
+                    <select
+                      value={toInputValue(formData.customer_id)}
+                      onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    >
+                      {customers.map(c => (
+                        <option key={c.id} value={c.id}>{c.company_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleSaveUser}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                  >
+                    {loading ? (
+                      <OilDropLoader compact label="Saving..." className="text-white" />
+                    ) : (
+                      <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setModalOpen(null)}
+                    disabled={loading}
+                    className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Import Customers CSV Modal */}
+      {modalOpen === 'import-customers' && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4 z-[120] animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Import Customers</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Upload corporate client CSV file</p>
+                  </div>
+                </div>
+                <button onClick={() => { setModalOpen(null); setCsvData([]); setImportResult(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              <div className="p-6">
+                {!importResult ? (
+                  <>
+                    <div className="mb-6">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CSV File Format Guidance</label>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-mono select-all">
+                        <div className="font-black text-slate-700 mb-1">Option 1 - Plain (One company name per line):</div>
+                        <div className="text-slate-500">PT Nabel Sakha Gemilang</div>
+                        <div className="text-slate-500">PT Astra Agro Lestari</div>
+                        <div className="text-slate-500">PT United Tractors</div>
+                        <div className="font-black text-slate-700 mt-3 mb-1">Option 2 - Column structure with header:</div>
+                        <div className="text-slate-650 font-bold">company_name</div>
+                        <div className="text-slate-500">PT Nabel Sakha Gemilang</div>
+                        <div className="text-slate-500">PT Astra Agro Lestari</div>
+                      </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Select CSV File</label>
+                      <input
+                        type="file"
+                        accept=".csv,.txt"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onload = (event) => {
+                              const text = event.target?.result as string
+                              const lines = text.split('\n').filter(line => line.trim())
+                              if (lines.length === 0) return
+                              
+                              const startIdx = lines[0].toLowerCase().trim() === 'company_name' ? 1 : 0
+                              
+                              const data = lines.slice(startIdx).map(line => {
+                                const companyName = line.split(',')[0].trim()
+                                return {
+                                  company_name: companyName,
+                                  status: 'active'
+                                }
+                              }).filter(row => row.company_name)
+                              setCsvData(data)
+                            }
+                            reader.readAsText(file)
+                          }
+                        }}
+                        className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                      />
+                    </div>
+
+                    {csvData.length > 0 && (
+                      <div className="mb-6">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Import Preview ({csvData.length} records)</label>
+                        <div className="overflow-x-auto border border-slate-100 rounded-2xl max-h-60 shadow-inner bg-slate-50/50">
+                          <table className="min-w-full divide-y divide-slate-100">
+                            <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">#</th>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Company Name</th>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Default Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-100 text-xs font-bold">
+                              {csvData.map((row, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50/50">
+                                  <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
+                                  <td className="px-3 py-2 text-slate-800">{row.company_name}</td>
+                                  <td className="px-3 py-2 text-emerald-600">{row.status}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setModalOpen(null)
+                          setCsvData([])
+                          setImportResult(null)
+                        }}
+                        className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                        disabled={importLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (csvData.length === 0) return
+                          setImportLoading(true)
+                          
+                          const results = { success: 0, failed: 0, errors: [] as string[] }
+                          
+                          for (const row of csvData) {
+                            if (!row.company_name) {
+                              results.failed++
+                              results.errors.push(`Row missing company_name`)
+                              continue
+                            }
+                            
+                            const { error } = await supabase
+                              .from('oil_customers')
+                              .insert([row])
+                            
+                            if (error) {
+                              results.failed++
+                              results.errors.push(`${row.company_name}: ${error.message}`)
+                            } else {
+                              results.success++
+                            }
+                          }
+                          
+                          setImportResult(results)
+                          setImportLoading(false)
+                          if (results.success > 0) router.refresh()
+                        }}
+                        disabled={csvData.length === 0 || importLoading}
+                        className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
+                      >
+                        {importLoading ? 'Importing...' : `Import ${csvData.length} Customers`}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-6">
+                      <div className={`p-4.5 rounded-2xl ${importResult.failed === 0 ? 'bg-emerald-50/50 border border-emerald-100' : 'bg-amber-50/50 border border-amber-100'}`}>
+                        <h3 className="font-black text-slate-800 text-sm mb-2">Import completed successfully</h3>
+                        <p className="text-xs font-bold text-slate-600 mb-1">
+                          🟢 <span className="text-emerald-700">{importResult.success} customers</span> successfully imported.
+                        </p>
+                        {importResult.failed > 0 && (
+                          <>
+                            <p className="text-xs font-bold text-slate-600 mb-3">
+                              🔴 <span className="text-red-600">{importResult.failed} customers</span> failed to process.
+                            </p>
+                            <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
+                              <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
+                              {importResult.errors.map((err, idx) => (
+                                <p key={idx} className="text-slate-500">• {err}</p>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => {
+                          setModalOpen(null)
+                          setCsvData([])
+                          setImportResult(null)
+                        }}
+                        className="px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                      >
+                        Close Window
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Import Products CSV Modal */}
+      {modalOpen === 'import-products' && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4 z-[120] animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Import Products</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Upload lubricant product CSV file</p>
+                  </div>
+                </div>
+                <button onClick={() => { setModalOpen(null); setCsvData([]); setImportResult(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              <div className="p-6">
+                {!importResult ? (
+                  <>
+                    <div className="mb-6">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CSV File Format Guidance</label>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-mono select-all">
+                        <div className="font-black text-slate-700 mb-1">Required format with column headers:</div>
+                        <div className="text-slate-650 font-bold">product_name,product_type,base_oil,viscosity_grade</div>
+                        <div className="font-black text-slate-750 mt-3 mb-1">Example Rows:</div>
+                        <div className="text-slate-500">Mobil DTE 25,Industrial Oil,Mineral,ISO VG 46</div>
+                        <div className="text-slate-500">Shell Tellus S2 M 46,Hydraulic Oil,Mineral,ISO VG 46</div>
+                        <div className="text-[10px] text-amber-700 font-bold mt-3">⚠️ Note: product_name and product_type columns must be filled for every row.</div>
+                      </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Select CSV File</label>
+                      <input
+                        type="file"
+                        accept=".csv,.txt"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onload = (event) => {
+                              const text = event.target?.result as string
+                              const lines = text.split('\n').filter(line => line.trim())
+                              if (lines.length < 2) return
+                              
+                              const startIdx = lines[0].toLowerCase().includes('product_name') ? 1 : 0
+                              
+                              const data = lines.slice(startIdx).map(line => {
+                                const values = line.split(',').map(v => v.trim())
+                                return {
+                                  product_name: values[0] || '',
+                                  product_type: values[1] || '',
+                                  base_oil: values[2] || '',
+                                  viscosity_grade: values[3] || ''
+                                }
+                              }).filter(row => row.product_name && row.product_type)
+                              setCsvData(data)
+                            }
+                            reader.readAsText(file)
+                          }
+                        }}
+                        className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                      />
+                    </div>
+
+                    {csvData.length > 0 && (
+                      <div className="mb-6">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Import Preview ({csvData.length} records)</label>
+                        <div className="overflow-x-auto border border-slate-100 rounded-2xl max-h-60 shadow-inner bg-slate-50/50">
+                          <table className="min-w-full divide-y divide-slate-100">
+                            <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">#</th>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product Name</th>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product Type</th>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Base Oil</th>
+                                <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Viscosity</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-100 text-xs font-bold">
+                              {csvData.map((row, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50/50">
+                                  <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
+                                  <td className="px-3 py-2 text-slate-800">{row.product_name}</td>
+                                  <td className="px-3 py-2 text-orange-600">{row.product_type}</td>
+                                  <td className="px-3 py-2 text-slate-500">{row.base_oil || '-'}</td>
+                                  <td className="px-3 py-2 text-slate-500">{row.viscosity_grade || '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setModalOpen(null)
+                          setCsvData([])
+                          setImportResult(null)
+                        }}
+                        className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                        disabled={importLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (csvData.length === 0) return
+                          setImportLoading(true)
+                          
+                          const results = { success: 0, failed: 0, errors: [] as string[] }
+                          
+                          for (const row of csvData) {
+                            if (!row.product_name || !row.product_type) {
+                              results.failed++
+                              results.errors.push(`Row missing required fields`)
+                              continue
+                            }
+                            
+                            const { error } = await supabase
+                              .from('oil_products')
+                              .insert([row])
+                            
+                            if (error) {
+                              results.failed++
+                              results.errors.push(`${row.product_name}: ${error.message}`)
+                            } else {
+                              results.success++
+                            }
+                          }
+                          
+                          setImportResult(results)
+                          setImportLoading(false)
+                          if (results.success > 0) {
+                            const { data: productsData } = await supabase
+                              .from('oil_products')
+                              .select('*')
+                              .order('id')
+                            setProducts(productsData || [])
+                          }
+                        }}
+                        disabled={csvData.length === 0 || importLoading}
+                        className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
+                      >
+                        {importLoading ? 'Importing...' : `Import ${csvData.length} Products`}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-6">
+                      <div className={`p-4.5 rounded-2xl ${importResult.failed === 0 ? 'bg-emerald-50/50 border border-emerald-100' : 'bg-amber-50/50 border border-amber-100'}`}>
+                        <h3 className="font-black text-slate-800 text-sm mb-2">Import completed successfully</h3>
+                        <p className="text-xs font-bold text-slate-600 mb-1">
+                          🟢 <span className="text-emerald-700">{importResult.success} products</span> successfully imported.
+                        </p>
+                        {importResult.failed > 0 && (
+                          <>
+                            <p className="text-xs font-bold text-slate-600 mb-3">
+                              🔴 <span className="text-red-600">{importResult.failed} products</span> failed to process.
+                            </p>
+                            <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
+                              <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
+                              {importResult.errors.map((err, idx) => (
+                                <p key={idx} className="text-slate-500">• {err}</p>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => {
+                          setModalOpen(null)
+                          setCsvData([])
+                          setImportResult(null)
+                        }}
+                        className="px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                      >
+                        Close Window
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Quick Add Machine Modal */}
+      {quickAddModal === 'machine' && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Quick Add Machine</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Configure assets directly from lab form</p>
+                  </div>
+                </div>
+                <button onClick={cancelQuickAddMachine} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine Name *</label>
+                  <input
+                    type="text"
+                    value={String(quickAddData.machine_name ?? '')}
+                    onChange={(e) => setQuickAddData({...quickAddData, machine_name: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., Compressor BCU 12"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer *</label>
+                  <select
+                    value={toInputValue(quickAddData.customer_id)}
+                    onChange={(e) => setQuickAddData({...quickAddData, customer_id: e.target.value})}
                     className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                   >
                     {customers.map(c => (
@@ -2354,490 +2820,209 @@ export default function AdminClient({
                     ))}
                   </select>
                 </div>
-              )}
+
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={String(quickAddData.location ?? '')}
+                    onChange={(e) => setQuickAddData({...quickAddData, location: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., Plant B"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                  <select
+                    value={toInputValue(quickAddData.status)}
+                    onChange={(e) => setQuickAddData({...quickAddData, status: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  >
+                    <option value="active">Active</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleQuickSaveMachine}
+                    disabled={loading || !quickAddData.machine_name || !quickAddData.customer_id}
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
+                  >
+                    {loading ? 'Saving...' : 'Save & Select'}
+                  </button>
+                  <button
+                    onClick={cancelQuickAddMachine}
+                    className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Quick Add Product Modal */}
+      {quickAddModal === 'product' && (
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
+              <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Quick Add Product</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Configure products directly from lab form</p>
+                  </div>
+                </div>
+                <button onClick={cancelQuickAddProduct} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
               
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleSaveUser}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
-                >
-                  {loading ? (
-                    <OilDropLoader compact label="Saving..." className="text-white" />
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
+                  <input
+                    type="text"
+                    value={String(quickAddData.product_name ?? '')}
+                    onChange={(e) => setQuickAddData({...quickAddData, product_name: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., Azolla ZS 46"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Type *</label>
+                  <input
+                    type="text"
+                    list="quick-product-types-list"
+                    value={String(quickAddData.product_type ?? '')}
+                    onChange={(e) => setQuickAddData({...quickAddData, product_type: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                    placeholder="e.g., Hydraulic Oil, Compressor Oil"
+                  />
+                  <datalist id="quick-product-types-list">
+                    {uniqueProductTypes.map(type => (
+                      <option key={type} value={type} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Base Oil</label>
+                  <select
+                    value={toInputValue(quickAddData.base_oil)}
+                    onChange={(e) => setQuickAddData({...quickAddData, base_oil: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  >
+                    <option value="">Select Base Oil</option>
+                    <option value="Mineral">Mineral</option>
+                    <option value="Synthetic">Synthetic</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity Grade</label>
+                  {!useCustomViscosityQuick ? (
+                    <select
+                      value={toInputValue(quickAddData.viscosity_grade)}
+                      onChange={(e) => {
+                        if (e.target.value === 'OTHER') {
+                          setUseCustomViscosityQuick(true)
+                          setQuickAddData({...quickAddData, viscosity_grade: ''})
+                        } else {
+                          setQuickAddData({...quickAddData, viscosity_grade: e.target.value})
+                        }
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-pop-micro"
+                    >
+                      <option value="">Select Viscosity Grade</option>
+                      <optgroup label="ISO VG (Industrial)">
+                        <option value="ISO VG 10">ISO VG 10</option>
+                        <option value="ISO VG 15">ISO VG 15</option>
+                        <option value="ISO VG 22">ISO VG 22</option>
+                        <option value="ISO VG 32">ISO VG 32</option>
+                        <option value="ISO VG 46">ISO VG 46</option>
+                        <option value="ISO VG 68">ISO VG 68</option>
+                        <option value="ISO VG 100">ISO VG 100</option>
+                        <option value="ISO VG 150">ISO VG 150</option>
+                        <option value="ISO VG 220">ISO VG 220</option>
+                        <option value="ISO VG 320">ISO VG 320</option>
+                        <option value="ISO VG 460">ISO VG 460</option>
+                        <option value="ISO VG 680">ISO VG 680</option>
+                        <option value="ISO VG 1000">ISO VG 1000</option>
+                        <option value="ISO VG 1500">ISO VG 1500</option>
+                      </optgroup>
+                      <optgroup label="SAE (Engine)">
+                        <option value="SAE 0W-20">SAE 0W-20</option>
+                        <option value="SAE 5W-20">SAE 5W-25</option>
+                        <option value="SAE 5W-30">SAE 5W-30</option>
+                        <option value="SAE 10W-30">SAE 10W-30</option>
+                        <option value="SAE 10W-40">SAE 10W-40</option>
+                        <option value="SAE 15W-40">SAE 15W-40</option>
+                        <option value="SAE 20W-50">SAE 20W-50</option>
+                        <option value="SAE 10">SAE 10</option>
+                        <option value="SAE 20">SAE 20</option>
+                        <option value="SAE 30">SAE 30</option>
+                        <option value="SAE 40">SAE 40</option>
+                        <option value="SAE 50">SAE 50</option>
+                      </optgroup>
+                      <optgroup label="NLGI (Grease)">
+                        <option value="NLGI 000">NLGI 000 (Semi-fluid)</option>
+                        <option value="NLGI 00">NLGI 00 (Very Soft)</option>
+                        <option value="NLGI 0">NLGI 0 (Soft)</option>
+                        <option value="NLGI 1">NLGI 1 (Soft - Low Temp)</option>
+                        <option value="NLGI 2">NLGI 2 (Medium - Most Common)</option>
+                        <option value="NLGI 3">NLGI 3 (Firm)</option>
+                        <option value="NLGI 4">NLGI 4 (Hard)</option>
+                        <option value="NLGI 5">NLGI 5 (Very Hard)</option>
+                        <option value="NLGI 6">NLGI 6 (Block)</option>
+                      </optgroup>
+                      <option value="OTHER">🔧 Other (Type Manually)</option>
+                    </select>
                   ) : (
-                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Save</>
+                    <div className="flex gap-2 animate-pop-micro">
+                      <input
+                        type="text"
+                        value={String(quickAddData.viscosity_grade ?? '')}
+                        onChange={(e) => setQuickAddData({...quickAddData, viscosity_grade: e.target.value})}
+                        className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                        placeholder="e.g., Custom HD 50"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseCustomViscosityQuick(false)
+                          setQuickAddData({...quickAddData, viscosity_grade: ''})
+                        }}
+                        className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
+                      >
+                        Back
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3 p-6 pt-0">
                 <button
-                  onClick={() => setModalOpen(null)}
-                  disabled={loading}
-                  className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Import Customers CSV Modal */}
-      {modalOpen === 'import-customers' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Import Customers</h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Upload corporate client CSV file</p>
-                </div>
-              </div>
-              <button onClick={() => { setModalOpen(null); setCsvData([]); setImportResult(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6">
-              {!importResult ? (
-                <>
-                  <div className="mb-6">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CSV File Format Guidance</label>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-mono select-all">
-                      <div className="font-black text-slate-700 mb-1">Option 1 - Plain (One company name per line):</div>
-                      <div className="text-slate-500">PT Nabel Sakha Gemilang</div>
-                      <div className="text-slate-500">PT Astra Agro Lestari</div>
-                      <div className="text-slate-500">PT United Tractors</div>
-                      <div className="font-black text-slate-700 mt-3 mb-1">Option 2 - Column structure with header:</div>
-                      <div className="text-slate-650 font-bold">company_name</div>
-                      <div className="text-slate-500">PT Nabel Sakha Gemilang</div>
-                      <div className="text-slate-500">PT Astra Agro Lestari</div>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Select CSV File</label>
-                    <input
-                      type="file"
-                      accept=".csv,.txt"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          const reader = new FileReader()
-                          reader.onload = (event) => {
-                            const text = event.target?.result as string
-                            const lines = text.split('\n').filter(line => line.trim())
-                            if (lines.length === 0) return
-                            
-                            const startIdx = lines[0].toLowerCase().trim() === 'company_name' ? 1 : 0
-                            
-                            const data = lines.slice(startIdx).map(line => {
-                              const companyName = line.split(',')[0].trim()
-                              return {
-                                company_name: companyName,
-                                status: 'active'
-                              }
-                            }).filter(row => row.company_name)
-                            setCsvData(data)
-                          }
-                          reader.readAsText(file)
-                        }
-                      }}
-                      className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
-                    />
-                  </div>
-
-                  {csvData.length > 0 && (
-                    <div className="mb-6">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Import Preview ({csvData.length} records)</label>
-                      <div className="overflow-x-auto border border-slate-100 rounded-2xl max-h-60 shadow-inner bg-slate-50/50">
-                        <table className="min-w-full divide-y divide-slate-100">
-                          <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0">
-                            <tr>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">#</th>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Company Name</th>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Default Status</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-slate-100 text-xs font-bold">
-                            {csvData.map((row, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/50">
-                                <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
-                                <td className="px-3 py-2 text-slate-800">{row.company_name}</td>
-                                <td className="px-3 py-2 text-emerald-600">{row.status}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => {
-                        setModalOpen(null)
-                        setCsvData([])
-                        setImportResult(null)
-                      }}
-                      className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                      disabled={importLoading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (csvData.length === 0) return
-                        setImportLoading(true)
-                        
-                        const results = { success: 0, failed: 0, errors: [] as string[] }
-                        
-                        for (const row of csvData) {
-                          if (!row.company_name) {
-                            results.failed++
-                            results.errors.push(`Row missing company_name`)
-                            continue
-                          }
-                          
-                          const { error } = await supabase
-                            .from('oil_customers')
-                            .insert([row])
-                          
-                          if (error) {
-                            results.failed++
-                            results.errors.push(`${row.company_name}: ${error.message}`)
-                          } else {
-                            results.success++
-                          }
-                        }
-                        
-                        setImportResult(results)
-                        setImportLoading(false)
-                        if (results.success > 0) router.refresh()
-                      }}
-                      disabled={csvData.length === 0 || importLoading}
-                      className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
-                    >
-                      {importLoading ? 'Importing...' : `Import ${csvData.length} Customers`}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <div className={`p-4.5 rounded-2xl ${importResult.failed === 0 ? 'bg-emerald-50/50 border border-emerald-100' : 'bg-amber-50/50 border border-amber-100'}`}>
-                      <h3 className="font-black text-slate-800 text-sm mb-2">Import completed successfully</h3>
-                      <p className="text-xs font-bold text-slate-600 mb-1">
-                        🟢 <span className="text-emerald-700">{importResult.success} customers</span> successfully imported.
-                      </p>
-                      {importResult.failed > 0 && (
-                        <>
-                          <p className="text-xs font-bold text-slate-600 mb-3">
-                            🔴 <span className="text-red-600">{importResult.failed} customers</span> failed to process.
-                          </p>
-                          <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
-                            <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
-                            {importResult.errors.map((err, idx) => (
-                              <p key={idx} className="text-slate-500">• {err}</p>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => {
-                        setModalOpen(null)
-                        setCsvData([])
-                        setImportResult(null)
-                      }}
-                      className="px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                    >
-                      Close Window
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Import Products CSV Modal */}
-      {modalOpen === 'import-products' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Import Products</h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Upload lubricant product CSV file</p>
-                </div>
-              </div>
-              <button onClick={() => { setModalOpen(null); setCsvData([]); setImportResult(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6">
-              {!importResult ? (
-                <>
-                  <div className="mb-6">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CSV File Format Guidance</label>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-mono select-all">
-                      <div className="font-black text-slate-700 mb-1">Required format with column headers:</div>
-                      <div className="text-slate-650 font-bold">product_name,product_type,base_oil,viscosity_grade</div>
-                      <div className="font-black text-slate-750 mt-3 mb-1">Example Rows:</div>
-                      <div className="text-slate-500">Mobil DTE 25,Industrial Oil,Mineral,ISO VG 46</div>
-                      <div className="text-slate-500">Shell Tellus S2 M 46,Hydraulic Oil,Mineral,ISO VG 46</div>
-                      <div className="text-[10px] text-amber-700 font-bold mt-3">⚠️ Note: product_name and product_type columns must be filled for every row.</div>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Select CSV File</label>
-                    <input
-                      type="file"
-                      accept=".csv,.txt"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          const reader = new FileReader()
-                          reader.onload = (event) => {
-                            const text = event.target?.result as string
-                            const lines = text.split('\n').filter(line => line.trim())
-                            if (lines.length < 2) return
-                            
-                            const startIdx = lines[0].toLowerCase().includes('product_name') ? 1 : 0
-                            
-                            const data = lines.slice(startIdx).map(line => {
-                              const values = line.split(',').map(v => v.trim())
-                              return {
-                                product_name: values[0] || '',
-                                product_type: values[1] || '',
-                                base_oil: values[2] || '',
-                                viscosity_grade: values[3] || ''
-                              }
-                            }).filter(row => row.product_name && row.product_type)
-                            setCsvData(data)
-                          }
-                          reader.readAsText(file)
-                        }
-                      }}
-                      className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
-                    />
-                  </div>
-
-                  {csvData.length > 0 && (
-                    <div className="mb-6">
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Import Preview ({csvData.length} records)</label>
-                      <div className="overflow-x-auto border border-slate-100 rounded-2xl max-h-60 shadow-inner bg-slate-50/50">
-                        <table className="min-w-full divide-y divide-slate-100">
-                          <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0">
-                            <tr>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">#</th>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product Name</th>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product Type</th>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Base Oil</th>
-                              <th className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Viscosity</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-slate-100 text-xs font-bold">
-                            {csvData.map((row, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/50">
-                                <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
-                                <td className="px-3 py-2 text-slate-800">{row.product_name}</td>
-                                <td className="px-3 py-2 text-orange-600">{row.product_type}</td>
-                                <td className="px-3 py-2 text-slate-500">{row.base_oil || '-'}</td>
-                                <td className="px-3 py-2 text-slate-500">{row.viscosity_grade || '-'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => {
-                        setModalOpen(null)
-                        setCsvData([])
-                        setImportResult(null)
-                      }}
-                      className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                      disabled={importLoading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (csvData.length === 0) return
-                        setImportLoading(true)
-                        
-                        const results = { success: 0, failed: 0, errors: [] as string[] }
-                        
-                        for (const row of csvData) {
-                          if (!row.product_name || !row.product_type) {
-                            results.failed++
-                            results.errors.push(`Row missing required fields`)
-                            continue
-                          }
-                          
-                          const { error } = await supabase
-                            .from('oil_products')
-                            .insert([row])
-                          
-                          if (error) {
-                            results.failed++
-                            results.errors.push(`${row.product_name}: ${error.message}`)
-                          } else {
-                            results.success++
-                          }
-                        }
-                        
-                        setImportResult(results)
-                        setImportLoading(false)
-                        if (results.success > 0) {
-                          const { data: productsData } = await supabase
-                            .from('oil_products')
-                            .select('*')
-                            .order('id')
-                          setProducts(productsData || [])
-                        }
-                      }}
-                      disabled={csvData.length === 0 || importLoading}
-                      className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm"
-                    >
-                      {importLoading ? 'Importing...' : `Import ${csvData.length} Products`}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <div className={`p-4.5 rounded-2xl ${importResult.failed === 0 ? 'bg-emerald-50/50 border border-emerald-100' : 'bg-amber-50/50 border border-amber-100'}`}>
-                      <h3 className="font-black text-slate-800 text-sm mb-2">Import completed successfully</h3>
-                      <p className="text-xs font-bold text-slate-600 mb-1">
-                        🟢 <span className="text-emerald-700">{importResult.success} products</span> successfully imported.
-                      </p>
-                      {importResult.failed > 0 && (
-                        <>
-                          <p className="text-xs font-bold text-slate-600 mb-3">
-                            🔴 <span className="text-red-600">{importResult.failed} products</span> failed to process.
-                          </p>
-                          <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
-                            <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
-                            {importResult.errors.map((err, idx) => (
-                              <p key={idx} className="text-slate-500">• {err}</p>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => {
-                        setModalOpen(null)
-                        setCsvData([])
-                        setImportResult(null)
-                      }}
-                      className="px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:opacity-90 font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-                    >
-                      Close Window
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Add Machine Modal */}
-      {quickAddModal === 'machine' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Quick Add Machine</h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Configure assets directly from lab form</p>
-                </div>
-              </div>
-              <button onClick={cancelQuickAddMachine} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Machine Name *</label>
-                <input
-                  type="text"
-                  value={String(quickAddData.machine_name ?? '')}
-                  onChange={(e) => setQuickAddData({...quickAddData, machine_name: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Compressor BCU 12"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Customer *</label>
-                <select
-                  value={toInputValue(quickAddData.customer_id)}
-                  onChange={(e) => setQuickAddData({...quickAddData, customer_id: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.company_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Location</label>
-                <input
-                  type="text"
-                  value={String(quickAddData.location ?? '')}
-                  onChange={(e) => setQuickAddData({...quickAddData, location: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Plant B"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
-                <select
-                  value={toInputValue(quickAddData.status)}
-                  onChange={(e) => setQuickAddData({...quickAddData, status: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  <option value="active">Active</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleQuickSaveMachine}
-                  disabled={loading || !quickAddData.machine_name || !quickAddData.customer_id}
+                  onClick={handleQuickSaveProduct}
+                  disabled={loading || !quickAddData.product_name || !quickAddData.product_type}
                   className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
                 >
                   {loading ? 'Saving...' : 'Save & Select'}
                 </button>
                 <button
-                  onClick={cancelQuickAddMachine}
+                  onClick={cancelQuickAddProduct}
                   className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
                 >
                   Cancel
@@ -2845,220 +3030,58 @@ export default function AdminClient({
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Quick Add Product Modal */}
-      {quickAddModal === 'product' && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-100 animate-pop-micro">
-            <div className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between select-none">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Quick Add Product</h3>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Configure products directly from lab form</p>
-                </div>
-              </div>
-              <button onClick={cancelQuickAddProduct} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
-                <input
-                  type="text"
-                  value={String(quickAddData.product_name ?? '')}
-                  onChange={(e) => setQuickAddData({...quickAddData, product_name: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Azolla ZS 46"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Product Type *</label>
-                <input
-                  type="text"
-                  list="quick-product-types-list"
-                  value={String(quickAddData.product_type ?? '')}
-                  onChange={(e) => setQuickAddData({...quickAddData, product_type: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                  placeholder="e.g., Hydraulic Oil, Compressor Oil"
-                />
-                <datalist id="quick-product-types-list">
-                  {uniqueProductTypes.map(type => (
-                    <option key={type} value={type} />
-                  ))}
-                </datalist>
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Base Oil</label>
-                <select
-                  value={toInputValue(quickAddData.base_oil)}
-                  onChange={(e) => setQuickAddData({...quickAddData, base_oil: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                >
-                  <option value="">Select Base Oil</option>
-                  <option value="Mineral">Mineral</option>
-                  <option value="Synthetic">Synthetic</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Viscosity Grade</label>
-                {!useCustomViscosityQuick ? (
-                  <select
-                    value={toInputValue(quickAddData.viscosity_grade)}
-                    onChange={(e) => {
-                      if (e.target.value === 'OTHER') {
-                        setUseCustomViscosityQuick(true)
-                        setQuickAddData({...quickAddData, viscosity_grade: ''})
-                      } else {
-                        setQuickAddData({...quickAddData, viscosity_grade: e.target.value})
-                      }
-                    }}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none animate-pop-micro"
-                  >
-                    <option value="">Select Viscosity Grade</option>
-                    <optgroup label="ISO VG (Industrial)">
-                      <option value="ISO VG 10">ISO VG 10</option>
-                      <option value="ISO VG 15">ISO VG 15</option>
-                      <option value="ISO VG 22">ISO VG 22</option>
-                      <option value="ISO VG 32">ISO VG 32</option>
-                      <option value="ISO VG 46">ISO VG 46</option>
-                      <option value="ISO VG 68">ISO VG 68</option>
-                      <option value="ISO VG 100">ISO VG 100</option>
-                      <option value="ISO VG 150">ISO VG 150</option>
-                      <option value="ISO VG 220">ISO VG 220</option>
-                      <option value="ISO VG 320">ISO VG 320</option>
-                      <option value="ISO VG 460">ISO VG 460</option>
-                      <option value="ISO VG 680">ISO VG 680</option>
-                      <option value="ISO VG 1000">ISO VG 1000</option>
-                      <option value="ISO VG 1500">ISO VG 1500</option>
-                    </optgroup>
-                    <optgroup label="SAE (Engine)">
-                      <option value="SAE 0W-20">SAE 0W-20</option>
-                      <option value="SAE 5W-20">SAE 5W-25</option>
-                      <option value="SAE 5W-30">SAE 5W-30</option>
-                      <option value="SAE 10W-30">SAE 10W-30</option>
-                      <option value="SAE 10W-40">SAE 10W-40</option>
-                      <option value="SAE 15W-40">SAE 15W-40</option>
-                      <option value="SAE 20W-50">SAE 20W-50</option>
-                      <option value="SAE 10">SAE 10</option>
-                      <option value="SAE 20">SAE 20</option>
-                      <option value="SAE 30">SAE 30</option>
-                      <option value="SAE 40">SAE 40</option>
-                      <option value="SAE 50">SAE 50</option>
-                    </optgroup>
-                    <optgroup label="NLGI (Grease)">
-                      <option value="NLGI 000">NLGI 000 (Semi-fluid)</option>
-                      <option value="NLGI 00">NLGI 00 (Very Soft)</option>
-                      <option value="NLGI 0">NLGI 0 (Soft)</option>
-                      <option value="NLGI 1">NLGI 1 (Soft - Low Temp)</option>
-                      <option value="NLGI 2">NLGI 2 (Medium - Most Common)</option>
-                      <option value="NLGI 3">NLGI 3 (Firm)</option>
-                      <option value="NLGI 4">NLGI 4 (Hard)</option>
-                      <option value="NLGI 5">NLGI 5 (Very Hard)</option>
-                      <option value="NLGI 6">NLGI 6 (Block)</option>
-                    </optgroup>
-                    <option value="OTHER">🔧 Other (Type Manually)</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-2 animate-pop-micro">
-                    <input
-                      type="text"
-                      value={String(quickAddData.viscosity_grade ?? '')}
-                      onChange={(e) => setQuickAddData({...quickAddData, viscosity_grade: e.target.value})}
-                      className="flex-1 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                      placeholder="e.g., Custom HD 50"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUseCustomViscosityQuick(false)
-                        setQuickAddData({...quickAddData, viscosity_grade: ''})
-                      }}
-                      className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
-                    >
-                      Back
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3 p-6 pt-0">
-              <button
-                onClick={handleQuickSaveProduct}
-                disabled={loading || !quickAddData.product_name || !quickAddData.product_type}
-                className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl disabled:opacity-50 font-black text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-orange-500/10 hover:shadow-lg hover:shadow-orange-500/20"
-              >
-                {loading ? 'Saving...' : 'Save & Select'}
-              </button>
-              <button
-                onClick={cancelQuickAddProduct}
-                className="flex-1 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 active:scale-95"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        </Portal>
       )}
 
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && currentPdfUrl && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-fade-fast" onClick={() => setPdfViewerOpen(false)}>
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
+        <Portal>
+          <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4 z-[120] animate-fade-fast" onClick={() => setPdfViewerOpen(false)}>
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-100 overflow-hidden animate-pop-micro" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between text-slate-900 select-none">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">PDF Viewer</h2>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Lab Test Report Analysis</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">PDF Viewer</h2>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Lab Test Report Analysis</p>
+                <div className="flex items-center gap-3">
+                  <a
+                    href={currentPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Open In New Tab
+                  </a>
+                  <button
+                    onClick={() => setPdfViewerOpen(false)}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
+                  >
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <a
-                  href={currentPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  Open In New Tab
-                </a>
-                <button
-                  onClick={() => setPdfViewerOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all active:scale-95"
-                >
-                  <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              <div className="flex-1 overflow-hidden bg-slate-900">
+                <iframe
+                  src={currentPdfUrl}
+                  className="w-full h-full border-0"
+                  title="PDF Viewer"
+                />
               </div>
-            </div>
-            <div className="flex-1 overflow-hidden bg-slate-900">
-              <iframe
-                src={currentPdfUrl}
-                className="w-full h-full border-0"
-                title="PDF Viewer"
-              />
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Reusable Styled Confirmation Modal */}

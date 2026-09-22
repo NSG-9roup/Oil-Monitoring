@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Portal } from '@/app/components/Portal'
 
 const supabase = createClient()
 
@@ -55,7 +56,8 @@ export function SessionWarning() {
   const seconds = countdownSeconds % 60
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <Portal>
+      <div className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-fade-fast">
       <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900 mb-2">
@@ -86,5 +88,6 @@ export function SessionWarning() {
         </div>
       </div>
     </div>
+    </Portal>
   )
 }

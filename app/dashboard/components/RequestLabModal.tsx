@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import type { Machine, DashboardLanguage } from '@/app/dashboard/components/types'
 import { SearchableSelect } from '@/app/components/SearchableSelect'
+import { Portal } from '@/app/components/Portal'
 
 export interface RequestFormData {
   machine_id?: string
@@ -99,10 +100,11 @@ export function RequestLabModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-fade-fast"
-      onClick={onClose}
-    >
+    <Portal>
+      <div
+        className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4 z-[120] animate-fade-fast"
+        onClick={onClose}
+      >
       <div
         className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-100 overflow-hidden animate-pop-micro"
         onClick={(e) => e.stopPropagation()}
@@ -292,6 +294,7 @@ export function RequestLabModal({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Portal>
   )
 }

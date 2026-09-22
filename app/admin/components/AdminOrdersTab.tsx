@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveComplaintAction, updateComplaintStatusAction } from '@/app/actions/adminActions'
 import { toast } from 'react-hot-toast'
+import { Portal } from '@/app/components/Portal'
 
 export interface AdminOrder {
   id: string
@@ -81,6 +82,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
   const [editingOrder, setEditingOrder] = useState<AdminOrder | null>(null)
   const [editProductId, setEditProductId] = useState('')
   const [editQuantity, setEditQuantity] = useState(1)
+  const [editStatus, setEditStatus] = useState('pending')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Complaint resolve modal state
@@ -110,6 +112,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
     setEditingOrder(order)
     setEditProductId(order.product_id)
     setEditQuantity(order.quantity)
+    setEditStatus(order.status)
     setIsEditModalOpen(true)
   }
 
@@ -123,6 +126,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
         .update({
           product_id: editProductId,
           quantity: editQuantity,
+          status: editStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingOrder.id)
@@ -463,140 +467,158 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
 
       {/* Edit Order Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-pop-micro">
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Edit Permintaan Penawaran</h3>
-              <button 
-                onClick={() => { setIsEditModalOpen(false); setEditingOrder(null) }} 
-                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <form onSubmit={handleUpdateOrder} className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Pilih Produk</label>
-                  <select
-                    required
-                    value={editProductId}
-                    onChange={(e) => setEditProductId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
-                  >
-                    <option value="">-- Pilih Produk --</option>
-                    {products.map(p => (
-                      <option key={p.id} value={p.id}>{p.product_name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Kuantitas (Pcs)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={editQuantity}
-                    onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
-                  />
-                </div>
-              </div>
-              <div className="mt-8 flex gap-3">
+        <Portal>
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-pop-micro">
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Edit Permintaan Penawaran</h3>
                 <button 
-                  type="button" 
                   onClick={() => { setIsEditModalOpen(false); setEditingOrder(null) }} 
-                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition-colors"
+                  className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors"
                 >
-                  Batal
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting} 
-                  className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
-            </form>
+              <form onSubmit={handleUpdateOrder} className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Pilih Produk</label>
+                    <select
+                      required
+                      value={editProductId}
+                      onChange={(e) => setEditProductId(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
+                    >
+                      <option value="">-- Pilih Produk --</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>{p.product_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Kuantitas (Pcs)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={editQuantity}
+                      onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Status</label>
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="processing">Processing</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="mt-8 flex gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => { setIsEditModalOpen(false); setEditingOrder(null) }} 
+                    className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Complaint Resolution Modal Card */}
       {resolvingComplaint && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-fast">
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden animate-pop-micro">
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-sm">
-                  ✓
+        <Portal>
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-fade-fast">
+            <div className="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden animate-pop-micro">
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold text-sm">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Selesaikan Keluhan Pelanggan</h3>
+                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">
+                      {resolvingComplaint.customer?.company_name || 'Customer'} • {resolvingComplaint.order?.product?.product_name || 'Produk'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Selesaikan Keluhan Pelanggan</h3>
-                  <p className="text-[10px] font-bold text-slate-400 mt-0.5">
-                    {resolvingComplaint.customer?.company_name || 'Customer'} • {resolvingComplaint.order?.product?.product_name || 'Produk'}
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setResolvingComplaint(null)} 
-                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <form onSubmit={handleConfirmResolve} className="p-6">
-              <div className="space-y-4">
-                {/* Keluhan Customer (Readonly info bubble) */}
-                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">Pesan Keluhan dari Customer:</span>
-                  <p className="text-xs font-bold text-slate-800 italic">
-                    &ldquo;{resolvingComplaint.description}&rdquo;
-                  </p>
-                </div>
-
-                {/* Input Balasan / Catatan Resolusi */}
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-2">
-                    Catatan Balasan / Tindak Lanjut Resolusi
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={resolutionNotes}
-                    onChange={(e) => setResolutionNotes(e.target.value)}
-                    placeholder="Tuliskan penjelasan, solusi, atau nomor resi pengiriman untuk customer..."
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 block p-3 transition-colors outline-none resize-none"
-                  ></textarea>
-                  <span className="text-[10px] text-slate-400 font-medium mt-1 block">
-                    Catatan ini akan langsung terbaca oleh customer di tabel Riwayat Komplain mereka.
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-3">
                 <button 
-                  type="button" 
                   onClick={() => setResolvingComplaint(null)} 
-                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition-colors"
+                  className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition-colors"
                 >
-                  Batal
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting} 
-                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
-                >
-                  {isSubmitting ? 'Menyimpan...' : '✓ Selesaikan Keluhan'}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
-            </form>
+              <form onSubmit={handleConfirmResolve} className="p-6">
+                <div className="space-y-4">
+                  {/* Keluhan Customer (Readonly info bubble) */}
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">Pesan Keluhan dari Customer:</span>
+                    <p className="text-xs font-bold text-slate-800 italic">
+                      &ldquo;{resolvingComplaint.description}&rdquo;
+                    </p>
+                  </div>
+
+                  {/* Input Balasan / Catatan Resolusi */}
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-700 mb-2">
+                      Catatan Balasan / Tindak Lanjut Resolusi
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={resolutionNotes}
+                      onChange={(e) => setResolutionNotes(e.target.value)}
+                      placeholder="Tuliskan penjelasan, solusi, atau nomor resi pengiriman untuk customer..."
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 block p-3 transition-colors outline-none resize-none"
+                    ></textarea>
+                    <span className="text-[10px] text-slate-400 font-medium mt-1 block">
+                      Catatan ini akan langsung terbaca oleh customer di tabel Riwayat Komplain mereka.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => setResolvingComplaint(null)} 
+                    className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider rounded-xl transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+                  >
+                    {isSubmitting ? 'Menyimpan...' : '✓ Selesaikan Keluhan'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   )

@@ -1,5 +1,7 @@
 'use client'
 
+import { Portal } from '@/app/components/Portal'
+
 interface ConfirmModalProps {
   isOpen: boolean
   title: string
@@ -38,8 +40,9 @@ export function ConfirmModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 transform animate-pop-micro space-y-4">
+    <Portal>
+      <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-fade-fast" onClick={onCancel}>
+        <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 transform animate-pop-micro space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3.5">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${iconVariants[confirmVariant]}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +79,8 @@ export function ConfirmModal({
             {confirmText}
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </Portal>
   )
 }
