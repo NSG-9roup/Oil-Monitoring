@@ -572,9 +572,6 @@ export function LabReportsSection({
                             {report.water_content ? (report.water_content < 0.01 ? report.water_content.toFixed(4) : report.water_content.toFixed(2)) : '0.00'}%
                           </p>
                           <p className="text-xs text-industrial-400 mt-1.5 font-semibold">
-                            {language === 'id' ? 'berdasarkan volume' : 'by volume'}
-                          </p>
-                          <p className="text-[10px] text-slate-500 font-bold mt-1">
                             ≈ {report.water_content ? Math.round(report.water_content * 10000).toLocaleString() : '0'} ppm
                           </p>
                         </div>
