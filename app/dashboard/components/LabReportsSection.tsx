@@ -276,7 +276,7 @@ export function LabReportsSection({
                           {report.viscosity_40c?.toFixed(1) || '-'} / {report.viscosity_100c?.toFixed(1) || '-'} cSt
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
-                          {report.water_content ? (report.water_content * 100).toFixed(2) : '0'}%
+                          {report.water_content ? (report.water_content < 0.01 ? report.water_content.toFixed(4) : report.water_content.toFixed(2)) : '0.00'}%
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {report.tan_value?.toFixed(2) || '-'}
@@ -293,7 +293,7 @@ export function LabReportsSection({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            View
+                            {language === 'id' ? 'Lihat' : 'View'}
                           </button>
                         </td>
                       </tr>
@@ -319,8 +319,8 @@ export function LabReportsSection({
             const viscosity40Trend = getTrend(report.viscosity_40c || 0, previousReport?.viscosity_40c ?? null)
             const viscosity100Trend = getTrend(report.viscosity_100c || 0, previousReport?.viscosity_100c ?? null)
             const waterTrend = getTrend(
-              report.water_content ? report.water_content * 100 : 0,
-              previousReport?.water_content ? previousReport.water_content * 100 : null
+              report.water_content || 0,
+              previousReport?.water_content ?? null
             )
             const tanTrend = getTrend(report.tan_value || 0, previousReport?.tan_value ?? null)
             const rawRecommendations = getRecommendations(
@@ -332,22 +332,18 @@ export function LabReportsSection({
               report.evaluation_mode,
               report
             )
-            // If report has warning or critical status, prevent generic "normal/optimal" recommendation
+            // If report has warning or critical status, provide actionable non-duplicated recommendations
             const recommendations = (status.level === 'warning' || status.level === 'critical') && rawRecommendations.every(r => r.severity === 'normal')
               ? [
                   {
                     icon: status.level === 'critical' ? '🚨' : '⚠️',
                     severity: status.level as 'critical' | 'warning',
-                    text: report.notes 
-                      ? (language === 'id' ? 'Tindakan Sesuai Evaluasi Technical Specialist (TS)' : 'Action per Technical Specialist Assessment')
-                      : (status.level === 'critical' 
-                          ? (language === 'id' ? 'Kondisi Kritis Terdeteksi pada Pelumas Mesin' : 'Critical Lubricant Condition Detected')
-                          : (language === 'id' ? 'Status Waspada Memerlukan Pemantauan Lebih Lanjut' : 'Warning Condition Requiring Follow-up')),
-                    action: report.notes 
-                      ? report.notes 
-                      : (status.level === 'critical'
-                          ? (language === 'id' ? 'Lakukan evaluasi mesin mendalam dan persiapkan pergantian oli segera.' : 'Inspect equipment thoroughly and prepare immediate oil change.')
-                          : (language === 'id' ? 'Lakukan pemantauan berkala dan jadwalkan uji lab verifikasi dalam 14 hari.' : 'Perform periodic monitoring and schedule verification test within 14 days.')),
+                    text: status.level === 'critical' 
+                      ? (language === 'id' ? 'Tindakan Kritis Berdasarkan Evaluasi TS' : 'Critical Action per TS Assessment')
+                      : (language === 'id' ? 'Tindakan Pencegahan Berdasarkan Evaluasi TS' : 'Preventive Action per TS Assessment'),
+                    action: status.level === 'critical'
+                      ? (language === 'id' ? 'Lakukan inspeksi komponen mesin mendalam dan persiapkan pergantian oli segera.' : 'Inspect equipment thoroughly and prepare immediate oil change.')
+                      : (language === 'id' ? 'Lakukan pemantauan berkala dan jadwalkan uji lab verifikasi dalam 14 hari.' : 'Perform periodic monitoring and schedule verification test within 14 days.'),
                   }
                 ]
               : rawRecommendations
@@ -473,69 +469,155 @@ export function LabReportsSection({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{viscosityLabel} 40°C</p>
-                          <span className={`text-base font-bold ${viscosity40Trend.direction === 'up' ? 'text-red-500' : viscosity40Trend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
-                            {viscosity40Trend.icon}
-                          </span>
+                      {/* Card 1: Viscosity 40 */}
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{viscosityLabel} 40°C</p>
+                            {viscosity40Trend.direction === 'up' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md">
+                                ↑ {language === 'id' ? 'Naik' : 'Up'}
+                              </span>
+                            ) : viscosity40Trend.direction === 'down' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                                ↓ {language === 'id' ? 'Turun' : 'Down'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                — {language === 'id' ? 'Stabil' : 'Stable'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_40c?.toFixed(1) || notAvailableLabel}</p>
+                          <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
                         </div>
-                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_40c?.toFixed(1) || notAvailableLabel}</p>
-                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
-                        {(report.viscosity_40c_min != null || report.viscosity_40c_max != null) && (
-                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
-                            Std TS: {report.viscosity_40c_min ?? '-'} ~ {report.viscosity_40c_max ?? '-'}
-                          </p>
-                        )}
+                        <div>
+                          {(report.viscosity_40c_min != null || report.viscosity_40c_max != null) ? (
+                            <span className="inline-block text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg mt-2.5">
+                              Std TS: {report.viscosity_40c_min ?? '-'} ~ {report.viscosity_40c_max ?? '-'}
+                            </span>
+                          ) : report.product?.baseline_viscosity_40c != null ? (
+                            <span className="inline-block text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg mt-2.5">
+                              Baseline: {report.product.baseline_viscosity_40c} cSt (±10%)
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
 
-                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{viscosityLabel} 100°C</p>
-                          <span className={`text-base font-bold ${viscosity100Trend.direction === 'up' ? 'text-red-500' : viscosity100Trend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
-                            {viscosity100Trend.icon}
-                          </span>
+                      {/* Card 2: Viscosity 100 */}
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{viscosityLabel} 100°C</p>
+                            {viscosity100Trend.direction === 'up' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md">
+                                ↑ {language === 'id' ? 'Naik' : 'Up'}
+                              </span>
+                            ) : viscosity100Trend.direction === 'down' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                                ↓ {language === 'id' ? 'Turun' : 'Down'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                — {language === 'id' ? 'Stabil' : 'Stable'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_100c?.toFixed(1) || notAvailableLabel}</p>
+                          <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
                         </div>
-                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.viscosity_100c?.toFixed(1) || notAvailableLabel}</p>
-                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">cSt</p>
-                        {(report.viscosity_100c_min != null || report.viscosity_100c_max != null) && (
-                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
-                            Std TS: {report.viscosity_100c_min ?? '-'} ~ {report.viscosity_100c_max ?? '-'}
-                          </p>
-                        )}
+                        <div>
+                          {(report.viscosity_100c_min != null || report.viscosity_100c_max != null) ? (
+                            <span className="inline-block text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg mt-2.5">
+                              Std TS: {report.viscosity_100c_min ?? '-'} ~ {report.viscosity_100c_max ?? '-'}
+                            </span>
+                          ) : report.product?.baseline_viscosity_100c != null ? (
+                            <span className="inline-block text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg mt-2.5">
+                              Baseline: {report.product.baseline_viscosity_100c} cSt (±10%)
+                            </span>
+                          ) : (
+                            <span className="inline-block text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg mt-2.5">
+                              Std ISO: ~{report.viscosity_100c?.toFixed(1) || '-'} cSt
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{waterContentLabel}</p>
-                          <span className={`text-base font-bold ${waterTrend.direction === 'up' ? 'text-red-500' : waterTrend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
-                            {waterTrend.icon}
-                          </span>
-                        </div>
-                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.water_content ? (report.water_content * 100).toFixed(2) : '0.00'}%</p>
-                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">by volume</p>
-                        <p className="text-[10px] text-industrial-400 font-medium mt-1">≈ {report.water_content ? (report.water_content * 10000).toFixed(0) : '0'} ppm</p>
-                        {report.water_content_max != null && (
-                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
-                            Max TS: {report.water_content_max} {report.water_content_unit || 'PPM'}
+                      {/* Card 3: Water Content */}
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{waterContentLabel}</p>
+                            {waterTrend.direction === 'up' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md">
+                                ↑ {language === 'id' ? 'Naik' : 'Up'}
+                              </span>
+                            ) : waterTrend.direction === 'down' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                                ↓ {language === 'id' ? 'Turun' : 'Down'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                — {language === 'id' ? 'Stabil' : 'Stable'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-3xl font-black text-industrial-800 tracking-tight">
+                            {report.water_content ? (report.water_content < 0.01 ? report.water_content.toFixed(4) : report.water_content.toFixed(2)) : '0.00'}%
                           </p>
-                        )}
+                          <p className="text-xs text-industrial-400 mt-1.5 font-semibold">
+                            {language === 'id' ? 'berdasarkan volume' : 'by volume'}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-bold mt-1">
+                            ≈ {report.water_content ? Math.round(report.water_content * 10000).toLocaleString() : '0'} ppm
+                          </p>
+                        </div>
+                        <div>
+                          {report.water_content_max != null ? (
+                            <span className="inline-block text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg mt-2.5">
+                              Max TS: {report.water_content_max} {report.water_content_unit || 'PPM'}
+                            </span>
+                          ) : (
+                            <span className="inline-block text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg mt-2.5">
+                              Limit ISO: 0.05% (500 PPM)
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{tanValueLabel}</p>
-                          <span className={`text-base font-bold ${tanTrend.direction === 'up' ? 'text-red-500' : tanTrend.direction === 'down' ? 'text-emerald-500' : 'text-industrial-400'}`}>
-                            {tanTrend.icon}
-                          </span>
+                      {/* Card 4: TAN */}
+                      <div className="bg-white rounded-2xl p-5 border border-industrial-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-xs font-bold text-industrial-500 uppercase tracking-wider">{tanValueLabel}</p>
+                            {tanTrend.direction === 'up' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-200/60 px-2 py-0.5 rounded-md">
+                                ↑ {language === 'id' ? 'Naik' : 'Up'}
+                              </span>
+                            ) : tanTrend.direction === 'down' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                                ↓ {language === 'id' ? 'Turun' : 'Down'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                — {language === 'id' ? 'Stabil' : 'Stable'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.tan_value?.toFixed(2) || notAvailableLabel}</p>
+                          <p className="text-xs text-industrial-400 mt-1.5 font-semibold">mg KOH/g</p>
                         </div>
-                        <p className="text-3xl font-black text-industrial-800 tracking-tight">{report.tan_value?.toFixed(2) || notAvailableLabel}</p>
-                        <p className="text-xs text-industrial-400 mt-1.5 font-semibold">mg KOH/g</p>
-                        {report.tan_max != null && (
-                          <p className="text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md mt-2">
-                            Max TS: {report.tan_max}
-                          </p>
-                        )}
+                        <div>
+                          {report.tan_max != null ? (
+                            <span className="inline-block text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg mt-2.5">
+                              Max TS: {report.tan_max} mg KOH/g
+                            </span>
+                          ) : (
+                            <span className="inline-block text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg mt-2.5">
+                              Limit Umum: 2.00 mg KOH/g
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -573,11 +655,17 @@ export function LabReportsSection({
                         <svg className="w-4 h-4 mr-2 text-industrial-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
-                        Recommendations
+                        {language === 'id' ? 'Rekomendasi Tindakan' : 'Recommendations'}
                       </h5>
                       <ul className="space-y-3">
                         {recommendations.map((rec, idx) => {
                           const actionPriority = rec.severity === 'critical' ? 'Immediate Action' : rec.severity === 'warning' ? 'Plan Maintenance' : 'Monitor'
+                          const priorityLabel = actionPriority === 'Immediate Action'
+                            ? (language === 'id' ? 'Tindakan Segera' : 'Immediate Action')
+                            : actionPriority === 'Plan Maintenance'
+                            ? (language === 'id' ? 'Jadwalkan Perawatan' : 'Plan Maintenance')
+                            : (language === 'id' ? 'Pemantauan' : 'Monitor')
+
                           return (
                             <li
                               key={`${report.id}-${idx}`}
@@ -609,7 +697,7 @@ export function LabReportsSection({
                                           : 'bg-emerald-100 text-emerald-800'
                                       }`}
                                     >
-                                      {actionPriority}
+                                      {priorityLabel}
                                     </span>
                                   </div>
                                   <p
@@ -659,20 +747,20 @@ export function LabReportsSection({
                     </div>
 
                     {report.pdf_path && (
-                      <div className="flex gap-3">
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             if (!report.pdf_path) return
                             onOpenReportPdf(report.pdf_path)
                           }}
-                          className="flex-1 bg-industrial-100 text-industrial-800 px-4 py-3 rounded-xl hover:bg-industrial-200 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
+                          className="flex-1 bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          View Report
+                          {language === 'id' ? 'Lihat Laporan' : 'View Report'}
                         </button>
                         <button
                           onClick={(e) => {
@@ -680,12 +768,12 @@ export function LabReportsSection({
                             if (!report.pdf_path) return
                             onDownloadReportPdf(report.pdf_path, report.test_date)
                           }}
-                          className="flex-1 bg-primary-600 text-white px-4 py-3 rounded-xl hover:bg-primary-700 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 transform"
+                          className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          Download PDF
+                          {language === 'id' ? 'Unduh PDF' : 'Download PDF'}
                         </button>
                       </div>
                     )}
