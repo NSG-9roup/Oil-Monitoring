@@ -39,7 +39,6 @@ interface OrdersSectionProps {
   customerId?: string
   products: Product[]
   initialOrders: Order[]
-  initialComplaints?: any[]
   language: 'id' | 'en'
 }
 

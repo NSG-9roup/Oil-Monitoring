@@ -2100,7 +2100,6 @@ export default function DashboardClient({
                 customerId={profile.customer_id || ''}
                 products={products}
                 initialOrders={initialOrders}
-                initialComplaints={complaints}
                 language={language}
               />
             </div>
