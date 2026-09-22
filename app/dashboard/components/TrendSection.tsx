@@ -246,7 +246,11 @@ export function TrendSection({
   const formatDateLabel = (value: string) => {
     const parsed = new Date(value)
     if (Number.isNaN(parsed.getTime())) return value
-    return parsed.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')
+    return parsed.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
   }
 
   const resolveAlertX = (alertDate: string) => {
@@ -256,8 +260,15 @@ export function TrendSection({
   }
 
   const maxTan = chartData.length > 0 ? Math.max(...chartData.map((d) => d.tan || 0)) : 0
-  const effectiveMaxTan = Math.max(maxTan, tolerances?.tanMax || 0)
-  const tanDomain: [number, number | 'auto'] = effectiveMaxTan > 0.5 ? [0, 'auto'] : [0, 0.5]
+  const effectiveMaxTan = Math.max(maxTan, baselineTan || 0, 0.5)
+  const tanDomain: [number, number] = [0, Number((effectiveMaxTan * 1.25).toFixed(2))]
+
+  const normalizedWaterMax = tolerances?.waterContentMax != null && tolerances.waterContentMax > 0
+    ? (tolerances.waterContentUnit === 'PPM' ? tolerances.waterContentMax / 10000 : tolerances.waterContentMax)
+    : 0.2
+  const maxWaterData = chartData.length > 0 ? Math.max(...chartData.map((d) => d.water || 0)) : 0
+  const effectiveWaterMax = Math.max(maxWaterData * 1.2, normalizedWaterMax * 1.1, 0.12)
+  const waterDomain: [number, number] = [0, Number(effectiveWaterMax.toFixed(2))]
 
   const v40Min = tolerances?.viscosity40Min ?? null
   const v40Max = tolerances?.viscosity40Max ?? null
@@ -386,10 +397,10 @@ export function TrendSection({
               />
             ) : (
               <ResponsiveContainer width="100%" height={chartHeight}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <LineChart data={chartData} margin={{ top: 12, right: 30, left: -10, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} padding={{ left: 28, right: 28 }} />
+                  <YAxis stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} />
                   <Tooltip
                     content={
                       <CustomChartTooltip
@@ -472,10 +483,10 @@ export function TrendSection({
               />
             ) : (
               <ResponsiveContainer width="100%" height={chartHeight}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <LineChart data={chartData} margin={{ top: 12, right: 30, left: -10, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} padding={{ left: 28, right: 28 }} />
+                  <YAxis stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} />
                   <Tooltip
                     content={
                       <CustomChartTooltip
@@ -558,49 +569,53 @@ export function TrendSection({
               />
             ) : (
               <ResponsiveContainer width="100%" height={chartHeight}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <LineChart data={chartData} margin={{ top: 12, right: 30, left: -10, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} padding={{ left: 28, right: 28 }} />
+                  <YAxis stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} domain={waterDomain} />
                   <Tooltip
                     content={
                       <CustomChartTooltip
                         parameter="water"
                         language={language}
-                        toleranceMax={
-                          tolerances?.waterContentMax != null && tolerances.waterContentMax > 0
-                            ? (tolerances.waterContentUnit === 'PPM' ? tolerances.waterContentMax / 10000 : tolerances.waterContentMax)
-                            : 0.2
-                        }
+                        toleranceMax={normalizedWaterMax}
                       />
                     }
                   />
                   <Legend verticalAlign="top" height={36} />
                   
-                  {/* Water TS Limit or Default Limits */}
-                  {tolerances?.waterContentMax != null && tolerances.waterContentMax > 0 ? (
-                    <ReferenceLine 
-                      y={tolerances.waterContentUnit === 'PPM' ? tolerances.waterContentMax / 10000 : tolerances.waterContentMax} 
-                      stroke="#dc2626" 
-                      strokeWidth={2} 
-                      strokeDasharray="5 5"
-                    >
-                      <Label 
-                        value={`TS MAX (${tolerances.waterContentUnit === 'PPM' ? `${tolerances.waterContentMax} PPM` : `${tolerances.waterContentMax}%`})`} 
-                        position="insideBottomRight" 
-                        style={{ fontSize: '10px', fill: '#dc2626', fontWeight: 'bold' }} 
-                      />
-                    </ReferenceLine>
-                  ) : (
-                    <>
-                      <ReferenceLine y={0.2} stroke="#dc2626" strokeWidth={2} strokeDasharray="5 5">
-                        <Label value="CRITICAL (0.2%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#dc2626', fontWeight: 'bold' }} />
-                      </ReferenceLine>
-                      <ReferenceLine y={0.05} stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3">
-                        <Label value="WARNING (0.05%)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#f59e0b', fontWeight: 'bold' }} />
-                      </ReferenceLine>
-                    </>
-                  )}
+                  {/* Healthy Band (Safe zone < 0.05% = < 500 PPM) */}
+                  <ReferenceArea 
+                    y1={0} 
+                    y2={0.05} 
+                    fill="#10b981" 
+                    fillOpacity={0.08} 
+                  />
+
+                  {/* Warning Limit (0.05% = 500 PPM) */}
+                  <ReferenceLine y={0.05} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="3 3">
+                    <Label 
+                      value={language === 'id' ? 'Batas Waspada (0.05%)' : 'Warning Limit (0.05%)'} 
+                      position="insideBottomRight" 
+                      style={{ fontSize: '10px', fill: '#d97706', fontWeight: 'bold' }} 
+                    />
+                  </ReferenceLine>
+
+                  {/* Water TS Limit */}
+                  <ReferenceLine 
+                    y={normalizedWaterMax} 
+                    stroke="#dc2626" 
+                    strokeWidth={2} 
+                    strokeDasharray="5 5"
+                  >
+                    <Label 
+                      value={language === 'id' 
+                        ? `Batas TS Maks (${tolerances?.waterContentUnit === 'PPM' ? `${tolerances.waterContentMax} PPM` : `${normalizedWaterMax}%`})` 
+                        : `TS Max (${tolerances?.waterContentUnit === 'PPM' ? `${tolerances.waterContentMax} PPM` : `${normalizedWaterMax}%`})`} 
+                      position="insideBottomRight" 
+                      style={{ fontSize: '10px', fill: '#dc2626', fontWeight: 'bold' }} 
+                    />
+                  </ReferenceLine>
 
                   <Line type="monotone" dataKey="water" name={language === 'id' ? 'Kandungan Air (%)' : 'Water Content (%)'} stroke="#0284c7" strokeWidth={4} dot={{ fill: '#0284c7', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
                   {selectedMachineTrendAlerts
@@ -633,10 +648,10 @@ export function TrendSection({
               />
             ) : (
               <ResponsiveContainer width="100%" height={chartHeight}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} domain={tanDomain} />
+                <LineChart data={chartData} margin={{ top: 12, right: 30, left: -10, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey={xAxisKey} tickFormatter={formatDateLabel} stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} padding={{ left: 28, right: 28 }} />
+                  <YAxis stroke="#94a3b8" style={{ fontSize: '11px', fontWeight: 600 }} domain={tanDomain} />
                   <Tooltip
                     content={
                       <CustomChartTooltip
@@ -649,25 +664,26 @@ export function TrendSection({
                   />
                   <Legend verticalAlign="top" height={36} />
                   
-                  {/* TAN TS Limit or Default Critical Limit */}
-                  {tolerances?.tanMax != null && tolerances.tanMax > 0 ? (
-                    <ReferenceLine y={tolerances.tanMax} stroke="#b91c1c" strokeWidth={2} strokeDasharray="5 5">
-                      <Label value={`TS MAX (${tolerances.tanMax})`} position="insideBottomRight" style={{ fontSize: '10px', fill: '#b91c1c', fontWeight: 'bold' }} />
-                    </ReferenceLine>
-                  ) : (
-                    <ReferenceLine y={2.0} stroke="#b91c1c" strokeWidth={2} strokeDasharray="5 5">
-                      <Label value="LIMIT (2.0)" position="insideBottomRight" style={{ fontSize: '10px', fill: '#b91c1c', fontWeight: 'bold' }} />
-                    </ReferenceLine>
-                  )}
-                  
                   {/* Baseline Line */}
                   {baselineTan && (
-                    <ReferenceLine y={baselineTan} stroke="#9ca3af" strokeDasharray="3 3">
-                      <Label value="New Oil Baseline" position="insideTopRight" style={{ fontSize: '10px', fill: '#9ca3af' }} />
+                    <ReferenceLine y={baselineTan} stroke="#94a3b8" strokeDasharray="3 3">
+                      <Label 
+                        value={language === 'id' ? `Baseline Oli Baru (${baselineTan})` : `New Oil Baseline (${baselineTan})`} 
+                        position="insideTopRight" 
+                        style={{ fontSize: '10px', fill: '#64748b', fontWeight: 'bold' }} 
+                      />
                     </ReferenceLine>
                   )}
 
-                  <Line type="monotone" dataKey="tan" name="Acid Number (mg KOH/g)" stroke="#b91c1c" strokeWidth={4} dot={{ fill: '#b91c1c', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="tan" 
+                    name={language === 'id' ? 'Nilai TAN (mg KOH/g)' : 'Acid Number (mg KOH/g)'} 
+                    stroke="#b91c1c" 
+                    strokeWidth={4} 
+                    dot={{ fill: '#b91c1c', r: 6 }} 
+                    activeDot={{ r: 8, strokeWidth: 0 }} 
+                  />
                   {selectedMachineTrendAlerts
                     .filter((alert) => alert.parameter === 'TAN')
                     .map((alert) => (
