@@ -1619,7 +1619,7 @@ export default function DashboardClient({
   return (
     <div className="clean-ui customer-panel min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 bg-grid-pattern flex flex-col" style={{ backgroundSize: '40px 40px' }}>
       {/* Paten Header (Sticky) */}
-      <div className="sticky top-0 z-[60] bg-white/85 backdrop-blur-xl shadow-sm border-b border-gray-100">
+      <div className="w-full sticky top-0 z-[60] bg-white/85 backdrop-blur-xl shadow-sm border-b border-gray-100">
         <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex justify-between items-center gap-4">
             {/* Left: NSG Logo + OilTrack Brand */}
@@ -1702,7 +1702,7 @@ export default function DashboardClient({
         </header>
 
         {/* Paten Navigator — Symmetrical Full-Width Navbar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
           <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/80 p-2 shadow-sm select-none">
             <ShortcutNavigator
               ariaLabel={language === 'id' ? 'Navigasi dashboard cepat' : 'Quick dashboard navigation'}
@@ -1782,7 +1782,11 @@ export default function DashboardClient({
                       } else {
                         timeGreeting = language === 'id' ? 'Selamat Malam' : 'Good Night';
                       }
-                      return `${timeGreeting}, ${profile?.full_name?.split(' ')[0] || 'User'}`;
+                      const rawName = (profile?.full_name || profile?.customer?.company_name || 'User').trim();
+                      const displayName = /^(PT|CV|UD|PD|KOP|YAYASAN)\b/i.test(rawName)
+                        ? rawName
+                        : rawName.split(' ')[0];
+                      return `${timeGreeting}, ${displayName}`;
                     })()} 🌟
                   </h2>
                   <p className="text-slate-500 font-semibold text-xs sm:text-sm mt-2">

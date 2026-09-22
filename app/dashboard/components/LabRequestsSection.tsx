@@ -64,40 +64,70 @@ export function LabRequestsSection({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onOpenRequestModal}
-            className="self-start sm:self-center px-5 py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-black uppercase tracking-wider border border-orange-200 shadow-sm transition-all active:scale-95 flex items-center gap-2"
-          >
-            <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-            {language === 'id' ? 'Ajukan Uji Baru' : 'New Lab Request'}
-          </button>
+          {activeRequests.length > 0 && (
+            <button
+              type="button"
+              onClick={onOpenRequestModal}
+              className="self-start sm:self-center px-5 py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-black uppercase tracking-wider border border-orange-200 shadow-sm transition-all active:scale-95 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              {language === 'id' ? 'Ajukan Uji Lab' : 'Request Lab Test'}
+            </button>
+          )}
         </div>
 
         {activeRequests.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200">
-              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          <div className="py-10 text-center">
+            <div className="w-16 h-16 bg-orange-50/80 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-orange-200/60 shadow-xs">
+              <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <p className="text-sm font-bold text-slate-400">
-              {language === 'id' ? 'Belum ada lab request aktif' : 'No active lab requests'}
-            </p>
-            <p className="text-xs text-slate-300 mt-1 mb-5">
-              {language === 'id' ? 'Klik tombol di bawah untuk mengajukan uji laboratorium baru' : 'Click below to submit a new laboratory test'}
+            <h3 className="text-base font-bold text-slate-800">
+              {language === 'id' ? 'Belum Ada Permintaan Uji Lab Aktif' : 'No Active Lab Requests'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-6 max-w-md mx-auto">
+              {language === 'id' 
+                ? 'Jadwalkan pengambilan sampel oli mesin Anda sekarang. Tim teknis dan sales kami siap melayani.' 
+                : 'Schedule an oil sample test for your machines now. Our technical and sales teams are ready to assist.'}
             </p>
             <button
               onClick={onOpenRequestModal}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-orange-500/10 active:scale-95 transition-all"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-orange-500/20 active:scale-95 transition-all mb-10"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
               </svg>
-              {language === 'id' ? 'Ajukan Lab Request' : 'Request Lab Test'}
+              {language === 'id' ? 'Ajukan Uji Lab Sekarang' : 'Request Lab Test Now'}
             </button>
+
+            {/* Workflow Guide (Alur Kerja Pengujian Sampel) */}
+            <div className="border-t border-slate-100 pt-8 mt-2 text-left">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  {language === 'id' ? 'Alur & Tahapan Pengujian Sampel Lab' : 'Lab Sample Testing Workflow'}
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {steps.map((step, idx) => (
+                  <div key={step.key} className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/50 flex flex-col justify-between hover:bg-orange-50/40 hover:border-orange-200/60 transition-colors">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xl">{step.icon}</span>
+                        <span className="text-[10px] font-black text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-200/50">
+                          {language === 'id' ? `Tahap 0${idx + 1}` : `Step 0${idx + 1}`}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-800">{step.label}</p>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
