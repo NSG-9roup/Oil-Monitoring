@@ -1667,16 +1667,6 @@ export default function DashboardClient({
             
             {/* Right: Quick CTAs + Language + Profile + Logout */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* Quick CTA: Ajukan Uji Lab */}
-              <button
-                onClick={() => setIsRequestModalOpen(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md shadow-orange-500/15 active:scale-95"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                <span className="hidden sm:inline">{copy.requestLab.openButton}</span>
-                <span className="sm:hidden">Uji Lab</span>
-              </button>
-
               {/* Quick CTA: Ekspor PDF */}
               <button
                 onClick={handleExportFleetReport}
@@ -1831,8 +1821,9 @@ export default function DashboardClient({
           </div>
         </div>
 
-        {/* Global Machine Health Overview */}
-        <div className="w-full animate-pop-micro">
+        {/* Machine Health Overview (Hanya tampil pada tab armada & analisis mesin) */}
+        {['trend', 'analysis', 'lab'].includes(activeTab) && (
+          <div className="w-full animate-pop-micro">
           <div className="mb-4 flex items-end justify-between px-2">
             <div>
               <h2 className="text-lg font-black text-slate-900 tracking-tight">Machine Health Overview</h2>
@@ -1968,6 +1959,7 @@ export default function DashboardClient({
             </div>
           </div>
         </div>
+      )}
 
         {/* Tabbed Content Section */}
         <div className="flex-1 w-full relative min-h-[600px] space-y-8">

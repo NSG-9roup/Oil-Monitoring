@@ -53,6 +53,7 @@ export function AnalysisSection({
     : null
   const selectedMachineHealth = selectedMachineInsight?.healthScore ?? null
   const selectedMachineStatus = selectedMachineInsight?.status
+  const selectedMachineStatusLevel = selectedMachineInsight?.status?.level
 
   const snapshotTitles = {
     executiveSummary: language === 'id' ? 'Ringkasan Eksekutif' : 'Executive Summary',
@@ -155,15 +156,15 @@ export function AnalysisSection({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <div className="flex items-center gap-2.5">
-                  {selectedMachineTrendAlerts.length > 0 ? (
+                  {selectedMachineTrendAlerts.length > 0 || selectedMachineStatusLevel === 'critical' || selectedMachineStatusLevel === 'warning' ? (
                     <span className="relative flex h-3 w-3 shrink-0">
                       <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                        selectedMachineTrendAlerts.some(a => a.severity === 'High') 
+                        selectedMachineTrendAlerts.some(a => a.severity === 'High') || selectedMachineStatusLevel === 'critical'
                           ? 'bg-red-400' 
                           : 'bg-amber-400'
                       }`}></span>
                       <span className={`relative inline-flex rounded-full h-3 w-3 ${
-                        selectedMachineTrendAlerts.some(a => a.severity === 'High') 
+                        selectedMachineTrendAlerts.some(a => a.severity === 'High') || selectedMachineStatusLevel === 'critical'
                           ? 'bg-red-500 animate-pulse' 
                           : 'bg-amber-500 animate-pulse'
                       }`}></span>
@@ -184,17 +185,51 @@ export function AnalysisSection({
             </div>
 
             {selectedMachineTrendAlerts.length === 0 ? (
-              <div className="rounded-[2rem] border border-emerald-100 bg-emerald-50/20 p-8 text-emerald-850 flex items-center gap-4 shadow-sm">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-100/50 flex items-center justify-center text-emerald-600 shrink-0">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
+              selectedMachineStatusLevel === 'critical' ? (
+                <div className="rounded-[2rem] border border-red-200 bg-red-50/40 p-8 text-red-950 flex items-center gap-4 shadow-sm">
+                  <div className="h-12 w-12 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-red-950 mb-0.5">{language === 'id' ? 'Perhatian: Status Pelumas Kritis' : 'Attention: Critical Lubricant Status'}</h4>
+                    <p className="text-sm font-medium text-red-800/90 leading-relaxed">
+                      {language === 'id'
+                        ? 'Meskipun tren riwayat stabil tanpa lonjakan mendadak, hasil uji lab terakhir menunjukkan parameter pelumas berada pada level kritis. Segera lakukan inspeksi fisik atau penggantian oli.'
+                        : 'Although trend history is stable without sudden spikes, latest lab test indicates parameters are at a critical level. Immediate inspection or oil change is required.'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-base font-black text-emerald-950 mb-0.5">{language === 'id' ? 'Kondisi Pelumas Optimal' : 'Lubricant Condition Optimal'}</h4>
-                  <p className="text-sm font-medium text-emerald-700/90 leading-relaxed">{copy.noTrendAlerts}</p>
+              ) : selectedMachineStatusLevel === 'warning' ? (
+                <div className="rounded-[2rem] border border-amber-200 bg-amber-50/40 p-8 text-amber-950 flex items-center gap-4 shadow-sm">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-amber-950 mb-0.5">{language === 'id' ? 'Kondisi Memerlukan Pemantauan' : 'Condition Requires Monitoring'}</h4>
+                    <p className="text-sm font-medium text-amber-800/90 leading-relaxed">
+                      {language === 'id'
+                        ? 'Tidak ditemukan anomali lonjakan tren mendadak, namun parameter uji laboratorium terakhir berada pada batas toleransi peringatan (warning). Tetap lakukan pengawasan berkala.'
+                        : 'No sudden trend spikes detected, but latest lab test parameters are at warning threshold. Continue regular monitoring.'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-[2rem] border border-emerald-100 bg-emerald-50/20 p-8 text-emerald-850 flex items-center gap-4 shadow-sm">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-100/50 flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-emerald-950 mb-0.5">{language === 'id' ? 'Kondisi Pelumas Optimal' : 'Lubricant Condition Optimal'}</h4>
+                    <p className="text-sm font-medium text-emerald-700/90 leading-relaxed">{copy.noTrendAlerts}</p>
+                  </div>
+                </div>
+              )
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
                 {selectedMachineTrendAlerts.map((alert) => (
