@@ -84,6 +84,7 @@ export interface LabTest {
   pdf_path: string | null
   overall_status?: 'normal' | 'warning' | 'critical' | null
   running_hours?: number | null
+  running_hours_unit?: 'hours' | 'months' | 'years' | string | null
   viscosity_40c_min?: number | null
   viscosity_40c_max?: number | null
   viscosity_100c_min?: number | null
@@ -193,6 +194,7 @@ export interface LabRequest {
   priority: LabRequestPriority
   status: LabRequestStatus
   running_hours?: number | null
+  running_hours_unit?: 'hours' | 'months' | 'years' | string | null
   request_date: string
   due_date?: string | null
   is_new_machine: boolean

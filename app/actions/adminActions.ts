@@ -180,6 +180,7 @@ export async function createTest(data: Partial<LabTestFormData>, sendEmailNotifi
       const fallbackPayload = { ...cleanPayload }
       delete fallbackPayload.viscosity_100c_min
       delete fallbackPayload.viscosity_100c_max
+      delete fallbackPayload.running_hours_unit
 
       insertRes = await supabase
         .from('oil_lab_tests')
@@ -291,6 +292,7 @@ export async function updateTest(id: string, data: Partial<LabTestFormData>) {
       const fallbackPayload = { ...cleanPayload }
       delete fallbackPayload.viscosity_100c_min
       delete fallbackPayload.viscosity_100c_max
+      delete fallbackPayload.running_hours_unit
 
       updateRes = await supabase.from('oil_lab_tests').update(fallbackPayload).eq('id', id)
     }

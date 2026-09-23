@@ -52,6 +52,7 @@ export interface LabReportItem {
   pdf_path?: string
   overall_status?: 'normal' | 'warning' | 'critical' | null
   running_hours?: number | null
+  running_hours_unit?: 'hours' | 'months' | 'years' | string | null
   viscosity_40c_min?: number | null
   viscosity_40c_max?: number | null
   viscosity_100c_min?: number | null
@@ -89,6 +90,7 @@ export interface LabRequest {
   description: string | null
   notes?: string | null
   running_hours?: number | null
+  running_hours_unit?: 'hours' | 'months' | 'years' | string | null
   due_date: string | null
   priority: string
   status: string

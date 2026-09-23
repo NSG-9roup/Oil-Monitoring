@@ -49,6 +49,7 @@ interface OilSample {
   pdf_path?: string
   overall_status?: 'normal' | 'warning' | 'critical' | null
   running_hours?: number | null
+  running_hours_unit?: 'hours' | 'months' | 'years' | string | null
   viscosity_40c_min?: number | null
   viscosity_40c_max?: number | null
   viscosity_100c_min?: number | null
@@ -94,6 +95,7 @@ interface LabReport {
   pdf_path?: string
   overall_status?: 'normal' | 'warning' | 'critical' | null
   running_hours?: number | null
+  running_hours_unit?: 'hours' | 'months' | 'years' | string | null
   viscosity_40c_min?: number | null
   viscosity_40c_max?: number | null
   viscosity_100c_min?: number | null
@@ -685,6 +687,7 @@ export default function DashboardClient({
         due_date: formData.requested_date || undefined,
         priority: formData.priority || 'medium',
         running_hours: formData.running_hours ? Number(formData.running_hours) : undefined,
+        running_hours_unit: formData.running_hours_unit || 'hours',
         is_new_machine: formData.is_new_machine,
         assigned_to_profile_id: formData.assigned_to_profile_id || undefined,
         new_machine_data: formData.is_new_machine ? {

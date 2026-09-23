@@ -380,7 +380,7 @@ export function LabReportsSection({
                         </div>
                         {report.running_hours ? (
                           <span className="text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200/60 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                            ⏱️ {report.running_hours} hrs
+                            ⏱️ {report.running_hours} {report.running_hours_unit === 'months' ? (language === 'id' ? 'Bulan' : 'mos') : report.running_hours_unit === 'years' ? (language === 'id' ? 'Tahun' : 'yrs') : (language === 'id' ? 'Jam' : 'hrs')}
                           </span>
                         ) : null}
                       </div>

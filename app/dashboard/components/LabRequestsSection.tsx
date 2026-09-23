@@ -155,7 +155,7 @@ export function LabRequestsSection({
                         </p>
                         {req.running_hours ? (
                           <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                            ⏱️ {req.running_hours} hrs
+                            ⏱️ {req.running_hours} {req.running_hours_unit === 'months' ? (language === 'id' ? 'Bulan' : 'mos') : req.running_hours_unit === 'years' ? (language === 'id' ? 'Tahun' : 'yrs') : (language === 'id' ? 'Jam' : 'hrs')}
                           </span>
                         ) : null}
                       </div>

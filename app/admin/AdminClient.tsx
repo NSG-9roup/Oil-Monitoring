@@ -127,6 +127,7 @@ const buildTestPayload = (data: FormDataState) => ({
   pdf_path: toOptionalString(data.pdf_path),
   overall_status: toEnumValue(data.overall_status, ['normal', 'warning', 'critical'] as const) || 'normal',
   running_hours: toOptionalNumber(data.running_hours),
+  running_hours_unit: toEnumValue(data.running_hours_unit, ['hours', 'months', 'years'] as const) || 'hours',
   viscosity_40c_min: toOptionalNumber(data.viscosity_40c_min),
   viscosity_40c_max: toOptionalNumber(data.viscosity_40c_max),
   viscosity_100c_min: toOptionalNumber(data.viscosity_100c_min),
@@ -770,6 +771,7 @@ export default function AdminClient({
       pdf_path: '',
       overall_status: 'normal',
       running_hours: '',
+      running_hours_unit: 'hours',
       viscosity_40c_min: '',
       viscosity_40c_max: '',
       viscosity_100c_min: '',
@@ -799,6 +801,7 @@ export default function AdminClient({
       pdf_path: test.pdf_path || '',
       overall_status: test.overall_status || 'normal',
       running_hours: test.running_hours ?? '',
+      running_hours_unit: (test as any).running_hours_unit || 'hours',
       viscosity_40c_min: test.viscosity_40c_min ?? '',
       viscosity_40c_max: test.viscosity_40c_max ?? '',
       viscosity_100c_min: test.viscosity_100c_min ?? '',
@@ -1850,20 +1853,35 @@ export default function AdminClient({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                      Jam Operasi Oli (Running Hours)
+                      Masa Pakai / Jam Operasi Oli
                     </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="1"
-                        value={toInputValue(formData.running_hours)}
-                        onChange={(e) => setFormData({...formData, running_hours: e.target.value})}
-                        className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none pr-16"
-                        placeholder="Contoh: 1500"
-                      />
-                      <span className="absolute right-3 top-2.5 text-[9.5px] font-bold text-slate-400 uppercase bg-slate-200/60 px-1.5 py-0.5 rounded">
-                        Hours
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          value={toInputValue(formData.running_hours)}
+                          onChange={(e) => setFormData({...formData, running_hours: e.target.value})}
+                          className="w-full bg-slate-50/70 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                          placeholder={
+                            formData.running_hours_unit === 'months'
+                              ? 'Contoh: 6 (Bulan)'
+                              : formData.running_hours_unit === 'years'
+                              ? 'Contoh: 1 (Tahun)'
+                              : 'Contoh: 1500 (Jam)'
+                          }
+                        />
+                      </div>
+                      <select
+                        value={String(formData.running_hours_unit || 'hours')}
+                        onChange={(e) => setFormData({...formData, running_hours_unit: e.target.value})}
+                        className="bg-slate-100 hover:bg-slate-200/80 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 transition-all outline-none cursor-pointer shrink-0"
+                      >
+                        <option value="hours">Hours (Jam)</option>
+                        <option value="months">Bulan (Bln)</option>
+                        <option value="years">Tahun (Thn)</option>
+                      </select>
                     </div>
                   </div>
                 </div>

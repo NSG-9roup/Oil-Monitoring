@@ -36,6 +36,7 @@ export async function createLabRequest(data: {
   due_date?: string
   priority: string
   running_hours?: number | null
+  running_hours_unit?: 'hours' | 'months' | 'years' | string | null
   is_new_machine: boolean
   assigned_to_profile_id?: string
   new_machine_data?: {
@@ -48,13 +49,14 @@ export async function createLabRequest(data: {
     const { profile } = await verifyCustomer()
 
     // Store lab request in oil_lab_requests table
-    const insertData = {
+    const insertData: Record<string, unknown> = {
       customer_id: profile.customer_id,
       requested_by_profile_id: profile.id,
       machine_id: data.machine_id ? data.machine_id : undefined,
       title: data.title,
       description: data.description,
       running_hours: data.running_hours ? Number(data.running_hours) : null,
+      running_hours_unit: data.running_hours_unit || 'hours',
       due_date: data.due_date || null,
       priority: data.priority,
       status: 'pending',
@@ -65,7 +67,7 @@ export async function createLabRequest(data: {
 
     const adminSupabase = createServiceClient()
 
-    const { data: insertedData, error } = await adminSupabase
+    let { data: insertedData, error } = await adminSupabase
       .from('oil_lab_requests')
       .insert([insertData])
       .select(`
@@ -74,6 +76,22 @@ export async function createLabRequest(data: {
         assigned_to:oil_profiles!oil_lab_requests_assigned_to_profile_id_fkey(full_name)
       `)
       .single()
+
+    if (error && error.code === 'PGRST204') {
+      const fallbackData = { ...insertData }
+      delete fallbackData.running_hours_unit
+      const retry = await adminSupabase
+        .from('oil_lab_requests')
+        .insert([fallbackData])
+        .select(`
+          *,
+          machine:oil_machines(machine_name, location),
+          assigned_to:oil_profiles!oil_lab_requests_assigned_to_profile_id_fkey(full_name)
+        `)
+        .single()
+      insertedData = retry.data
+      error = retry.error
+    }
 
     if (error) {
       console.error('Error creating lab request:', error)

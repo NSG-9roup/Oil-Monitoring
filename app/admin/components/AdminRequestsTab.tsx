@@ -149,7 +149,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                         )}
                         {req.running_hours ? (
                           <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                            ⏱️ {req.running_hours} hrs
+                            ⏱️ {req.running_hours} {req.running_hours_unit === 'months' ? 'Bulan' : req.running_hours_unit === 'years' ? 'Tahun' : 'hrs'}
                           </span>
                         ) : null}
                       </div>

@@ -15,6 +15,7 @@ export interface RequestFormData {
   requested_date?: string
   priority: string
   running_hours?: number | string
+  running_hours_unit?: 'hours' | 'months' | 'years' | string
   notes?: string
 }
 
@@ -73,6 +74,7 @@ export function RequestLabModal({
     requested_date: initialData?.requested_date || '',
     priority: initialData?.priority || 'medium',
     running_hours: initialData?.running_hours || '',
+    running_hours_unit: initialData?.running_hours_unit || 'hours',
     notes: initialData?.notes || '',
   })
 
@@ -88,6 +90,7 @@ export function RequestLabModal({
         requested_date: initialData?.requested_date || '',
         priority: initialData?.priority || 'medium',
         running_hours: initialData?.running_hours || '',
+        running_hours_unit: initialData?.running_hours_unit || 'hours',
         notes: initialData?.notes || '',
       })
     }
@@ -223,25 +226,37 @@ export function RequestLabModal({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {language === 'id' ? 'Jam Operasional Oli (Running Hours)' : 'Oil Operating Hours (Running Hours)'}
+                  {language === 'id' ? 'Durasi Pemakaian Oli (Running Hours)' : 'Oil Operating Duration'}
                 </span>
                 <span className="text-[9px] font-bold text-slate-400">
-                  {language === 'id' ? 'Total jam kerja oli sejak ganti terakhir' : 'Total hours since last oil change'}
+                  {language === 'id' ? 'Total waktu pakai sejak ganti terakhir' : 'Total operation since last change'}
                 </span>
               </div>
-              <div className="relative">
+              <div className="flex gap-2">
                 <input
                   type="number"
                   min="0"
                   step="1"
-                  placeholder={language === 'id' ? 'Contoh: 1500 (Jam)' : 'e.g. 1500 (Hours)'}
+                  placeholder={
+                    form.running_hours_unit === 'months'
+                      ? (language === 'id' ? 'Contoh: 6 (Bulan)' : 'e.g. 6 (Months)')
+                      : form.running_hours_unit === 'years'
+                      ? (language === 'id' ? 'Contoh: 2 (Tahun)' : 'e.g. 2 (Years)')
+                      : (language === 'id' ? 'Contoh: 1500 (Jam)' : 'e.g. 1500 (Hours)')
+                  }
                   value={form.running_hours ?? ''}
                   onChange={(e) => setForm(prev => ({ ...prev, running_hours: e.target.value }))}
-                  className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3.5 text-xs font-semibold text-slate-900 transition-all outline-none"
+                  className="flex-1 bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
                 />
-                <span className="absolute right-4 top-3.5 text-[10px] font-bold text-slate-400 uppercase">
-                  Hours
-                </span>
+                <select
+                  value={form.running_hours_unit || 'hours'}
+                  onChange={(e) => setForm(prev => ({ ...prev, running_hours_unit: e.target.value }))}
+                  className="w-36 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-3 text-xs font-bold text-slate-700 transition-all outline-none cursor-pointer"
+                >
+                  <option value="hours">{language === 'id' ? 'Hours (Jam)' : 'Hours'}</option>
+                  <option value="months">{language === 'id' ? 'Bulan (Mos)' : 'Months'}</option>
+                  <option value="years">{language === 'id' ? 'Tahun (Yrs)' : 'Years'}</option>
+                </select>
               </div>
             </div>
 
