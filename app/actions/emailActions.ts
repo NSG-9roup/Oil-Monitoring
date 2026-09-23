@@ -325,7 +325,7 @@ export async function sendPurchasingProposalEmail({
             </tr>
             <tr>
               <td style="padding: 7px 0; color: #64748b; font-weight: 600; border-top: 1px solid #f1f5f9;">Jumlah</td>
-              <td style="padding: 7px 0; color: #0f172a; font-weight: 700; border-top: 1px solid #f1f5f9;">${quantity} unit / liter</td>
+              <td style="padding: 7px 0; color: #0f172a; font-weight: 700; border-top: 1px solid #f1f5f9;">${quantity} Drum</td>
             </tr>
           </table>
         </div>

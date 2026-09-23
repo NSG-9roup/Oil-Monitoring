@@ -35,7 +35,7 @@ export default async function SalesPage() {
 
 
 
-  if (profile.role !== 'sales') {
+  if (profile.role !== 'sales' && profile.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

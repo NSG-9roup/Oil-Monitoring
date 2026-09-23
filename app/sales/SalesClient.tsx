@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { createClient, uploadWithRetry } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import type { LabRequest } from '@/lib/types'
 import imageCompression from 'browser-image-compression'
 import Image from 'next/image'
@@ -95,6 +96,23 @@ export default function SalesClient({
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [showManualForm, setShowManualForm] = useState(false)
+  const [language, setLanguage] = useState<'id' | 'en'>('id')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('oiltrack_lang')
+      if (savedLang === 'id' || savedLang === 'en') {
+        setLanguage(savedLang)
+      }
+    }
+  }, [])
+
+  const handleLanguageChange = (lang: 'id' | 'en') => {
+    setLanguage(lang)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oiltrack_lang', lang)
+    }
+  }
 
   // Purchasing proposal form state
   const [proposalForm, setProposalForm] = useState({
@@ -788,15 +806,17 @@ export default function SalesClient({
           </div>
 
           {/* User Profile Info & Action Controls */}
-          <div className="flex items-center gap-3">
-            <a href="/sales/profile" className="flex items-center gap-2.5 p-1.5 sm:pr-3 hover:bg-slate-100/80 rounded-2xl transition-all border border-transparent hover:border-slate-200 group">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-orange-500 to-red-600 p-0.5 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/sales/profile" className="flex items-center gap-2.5 p-1.5 sm:pr-3 hover:bg-slate-100/80 rounded-2xl transition-all border border-transparent hover:border-slate-200 group">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-orange-500 to-red-600 p-0.5 shadow-sm overflow-hidden flex items-center justify-center">
                 {profile.avatar_url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <Image
                     src={profile.avatar_url}
                     alt={profile.full_name || 'Sales'}
+                    width={32}
+                    height={32}
                     className="w-full h-full object-cover rounded-[10px]"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center text-white text-xs font-black uppercase">
@@ -812,7 +832,7 @@ export default function SalesClient({
                   {user.email || 'Sales'}
                 </span>
               </div>
-            </a>
+            </Link>
 
             {(activeTab === 'queue' || activeTab === 'transit') && (
               <div className="hidden sm:flex bg-slate-100 rounded-xl p-0.5">
@@ -838,14 +858,21 @@ export default function SalesClient({
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 3v18M14 3v18" />
                   </svg>
-                  <span>Tabel</span>
+                  <span>{language === 'id' ? 'Tabel' : 'Table'}</span>
                 </button>
               </div>
             )}
 
-            <NotificationBell />
+            {/* Notification Bell */}
+            <NotificationBell language={language} />
 
-            <button onClick={handleSignOut} className="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title="Keluar Akun">
+            {/* Language Switcher */}
+            <div className="flex items-center rounded-xl bg-slate-100 p-0.5 text-[10px] font-bold select-none">
+              <button onClick={() => handleLanguageChange('id')} className={`px-2 py-1 rounded-lg transition-all ${language === 'id' ? 'bg-white text-slate-900 shadow-sm font-black' : 'text-slate-500 hover:text-slate-800'}`}>ID</button>
+              <button onClick={() => handleLanguageChange('en')} className={`px-2 py-1 rounded-lg transition-all ${language === 'en' ? 'bg-white text-slate-900 shadow-sm font-black' : 'text-slate-500 hover:text-slate-800'}`}>EN</button>
+            </div>
+
+            <button onClick={handleSignOut} className="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title={language === 'id' ? 'Keluar Akun' : 'Sign Out'}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
@@ -874,52 +901,87 @@ export default function SalesClient({
       {/* KPI Stats Overview Cards Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 select-none">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
-          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+          <div 
+            onClick={() => setActiveTab('queue')}
+            className={`bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border transition-all cursor-pointer active:scale-95 flex items-center gap-3 ${
+              activeTab === 'queue' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-slate-100 hover:border-orange-200'
+            }`}
+          >
             <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
             </div>
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Antrean Sampling</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                {language === 'id' ? 'Antrean Sampling' : 'Sampling Queue'}
+              </span>
               <span className="text-lg font-black text-slate-900">{pendingCount}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+          <div 
+            onClick={() => setActiveTab('transit')}
+            className={`bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border transition-all cursor-pointer active:scale-95 flex items-center gap-3 ${
+              activeTab === 'transit' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-100 hover:border-blue-200'
+            }`}
+          >
             <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Dalam Transit</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                {language === 'id' ? 'Dalam Transit' : 'In-Transit'}
+              </span>
               <span className="text-lg font-black text-blue-600">{transitCount}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+          <div 
+            onClick={() => setActiveTab('orders')}
+            className={`bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border transition-all cursor-pointer active:scale-95 flex items-center gap-3 ${
+              activeTab === 'orders' ? 'border-amber-500 ring-2 ring-amber-200' : 'border-slate-100 hover:border-amber-200'
+            }`}
+          >
             <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Pending ACC</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                {language === 'id' ? 'Pending ACC' : 'Pending ACC'}
+              </span>
               <span className="text-lg font-black text-amber-600">{orders.filter(o => o.status === 'pending').length}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3">
+          <div 
+            onClick={() => setActiveTab('orders')}
+            className={`bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border transition-all cursor-pointer active:scale-95 flex items-center gap-3 ${
+              activeTab === 'orders' ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-slate-100 hover:border-emerald-200'
+            }`}
+          >
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Purchasing</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                {language === 'id' ? 'Purchasing' : 'Purchasing'}
+              </span>
               <span className="text-lg font-black text-emerald-600">{orders.filter(o => o.status === 'processing').length}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 flex items-center gap-3 col-span-2 sm:col-span-1">
+          <div 
+            onClick={() => setActiveTab('complaints')}
+            className={`bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border transition-all cursor-pointer active:scale-95 flex items-center gap-3 col-span-2 sm:col-span-1 ${
+              activeTab === 'complaints' ? 'border-rose-500 ring-2 ring-rose-200' : 'border-slate-100 hover:border-rose-200'
+            }`}
+          >
             <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
             </div>
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Keluhan Terbuka</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                {language === 'id' ? 'Keluhan Terbuka' : 'Open Complaints'}
+              </span>
               <span className="text-lg font-black text-rose-600">{complaints.filter(c => c.status === 'open').length}</span>
             </div>
           </div>
@@ -947,7 +1009,7 @@ export default function SalesClient({
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>Antrean</span>
+              <span>{language === 'id' ? 'Antrean' : 'Queue'}</span>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'queue' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{pendingCount}</span>
             </button>
             
@@ -959,7 +1021,7 @@ export default function SalesClient({
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>In-Transit</span>
+              <span>{language === 'id' ? 'In-Transit' : 'In-Transit'}</span>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'transit' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{transitCount}</span>
             </button>
             
@@ -971,7 +1033,7 @@ export default function SalesClient({
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>Penawaran</span>
+              <span>{language === 'id' ? 'Penawaran' : 'Quotations'}</span>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${activeTab === 'orders' ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>{orders.filter(o => o.status === 'pending').length}</span>
             </button>
 
@@ -983,7 +1045,7 @@ export default function SalesClient({
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>Keluhan</span>
+              <span>{language === 'id' ? 'Keluhan' : 'Complaints'}</span>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black transition-all duration-300 ${
                 complaints.filter(c => c.status === 'open').length > 0
                   ? 'bg-rose-600 text-white animate-pulse'
@@ -996,14 +1058,14 @@ export default function SalesClient({
         </div>
       </div>
 
-      {/* Mesin Pencari & Filter Chips */}
-      <div className={`bg-white px-4 sm:px-6 lg:px-8 py-3.5 border-b border-slate-100 ${activeTab !== 'orders' ? 'block' : 'hidden'}`}>
+      {/* Mesin Pencari & Filter Chips untuk Antrean & Transit */}
+      <div className={`bg-white px-4 sm:px-6 lg:px-8 py-3.5 border-b border-slate-100 ${(activeTab === 'queue' || activeTab === 'transit') ? 'block' : 'hidden'}`}>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Bar Pencarian */}
           <div className="relative w-full sm:max-w-md">
             <input
               type="text"
-              placeholder={activeTab === 'complaints' ? "Cari Customer, Keluhan, atau Catatan Solusi..." : "Cari Customer, Mesin, atau Area..."}
+              placeholder={language === 'id' ? "Cari Customer, Mesin, atau Area..." : "Search Customer, Machine, or Location..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50/80 border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 rounded-2xl px-4 py-2.5 pl-10 text-xs font-bold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
@@ -1034,7 +1096,7 @@ export default function SalesClient({
                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}
                   >
-                    <span>Semua</span>
+                    <span>{language === 'id' ? 'Semua' : 'All'}</span>
                     <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
                       {currentRequests.length}
                     </span>
@@ -1047,7 +1109,7 @@ export default function SalesClient({
                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}
                   >
-                    <span>Tugas Saya</span>
+                    <span>{language === 'id' ? 'Tugas Saya' : 'My Tasks'}</span>
                     <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'mine' ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-700'}`}>
                       {mineCount}
                     </span>
@@ -1060,7 +1122,7 @@ export default function SalesClient({
                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}
                   >
-                    <span>Mesin Baru 🟡</span>
+                    <span>{language === 'id' ? 'Mesin Baru 🟡' : 'New Machine 🟡'}</span>
                     <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'new' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>
                       {newCount}
                     </span>
@@ -1073,7 +1135,7 @@ export default function SalesClient({
                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}
                   >
-                    <span>Prioritas 🔴</span>
+                    <span>{language === 'id' ? 'Prioritas 🔴' : 'High Priority 🔴'}</span>
                     <span className={`px-1.5 py-0.2 rounded-md text-[8px] font-black ${filterMode === 'high' ? 'bg-white/20 text-white' : 'bg-red-100 text-red-700'}`}>
                       {highCount}
                     </span>
@@ -1088,10 +1150,12 @@ export default function SalesClient({
       {/* Main List & Grid Section */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 z-10">
         {/* Requests List wrapper */}
-        <div className={`space-y-4 ${activeTab !== 'orders' ? 'block animate-pop-micro' : 'hidden'}`}>
+        <div className={`space-y-4 ${(activeTab === 'queue' || activeTab === 'transit') ? 'block animate-pop-micro' : 'hidden'}`}>
           <div className="flex items-center justify-between px-1 mb-1">
           <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-            {activeTab === 'queue' ? 'Daftar Pengambilan Sampel' : 'Daftar Sampel Dalam Transit'}
+            {activeTab === 'queue' 
+              ? (language === 'id' ? 'Daftar Pengambilan Sampel' : 'Sample Collection Queue') 
+              : (language === 'id' ? 'Daftar Sampel Dalam Transit' : 'In-Transit Samples')}
           </h2>
           <span className="bg-slate-200 text-slate-700 text-[9px] font-black px-2 py-0.5 rounded-full">{filteredRequests.length} ITEM</span>
         </div>
@@ -1417,14 +1481,14 @@ export default function SalesClient({
                               order.status === 'cancelled' ? 'bg-red-50 text-red-800 border-red-200' :
                               'bg-slate-50 text-slate-600 border-slate-200'
                             }`}>
-                              {order.status === 'pending' ? 'Menunggu Review Sales' :
-                               order.status === 'processing' ? 'Diteruskan ke Admin Sales' :
-                               order.status === 'completed' ? 'Selesai / Penawaran Diterbitkan' :
-                               order.status === 'cancelled' ? 'Dibatalkan' : order.status}
+                              {order.status === 'pending' ? (language === 'id' ? 'Menunggu Review Sales' : 'Awaiting Sales Review') :
+                               order.status === 'processing' ? (language === 'id' ? 'Diteruskan ke Admin Sales' : 'Forwarded to Sales Admin') :
+                               order.status === 'completed' ? (language === 'id' ? 'Selesai / Penawaran Diterbitkan' : 'Completed / Quotation Issued') :
+                               order.status === 'cancelled' ? (language === 'id' ? 'Dibatalkan' : 'Cancelled') : order.status}
                             </span>
                           </div>
                           <div className="text-xs font-bold text-slate-700">
-                            {order.product?.product_name || 'Produk N/A'} &bull; <span className="text-slate-500">{order.quantity} Pcs</span>
+                            {order.product?.product_name || 'Produk N/A'} &bull; <span className="text-slate-500">{order.quantity} {language === 'id' ? 'Drum' : (order.quantity > 1 ? 'Drums' : 'Drum')}</span>
                           </div>
                           <p className="text-[10px] text-slate-400 font-semibold">
                             Diminta pada: {new Date(order.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -1436,7 +1500,7 @@ export default function SalesClient({
                             disabled={isLoading}
                             className="sm:self-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50"
                           >
-                            {isLoading ? 'Memproses...' : '✓ ACC & Teruskan ke Admin Sales'}
+                            {isLoading ? 'Memproses...' : (language === 'id' ? '✓ ACC & Teruskan ke Admin Sales' : '✓ ACC & Forward to Sales Admin')}
                           </button>
                         )}
                       </div>
@@ -1452,7 +1516,7 @@ export default function SalesClient({
                 onClick={() => setShowManualForm(!showManualForm)}
                 className="text-xs font-bold text-slate-400 hover:text-orange-500 transition-colors uppercase tracking-wider flex items-center gap-1.5"
               >
-                <span>{showManualForm ? 'Sembunyikan Form Manual' : 'Buat Penawaran Manual Baru'}</span>
+                <span>{showManualForm ? (language === 'id' ? 'Sembunyikan Form Manual' : 'Hide Manual Form') : (language === 'id' ? 'Buat Penawaran Manual Baru' : 'Create New Manual Proposal')}</span>
                 <svg className={`w-4 h-4 transition-transform duration-300 ${showManualForm ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -1469,8 +1533,8 @@ export default function SalesClient({
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-slate-900">Kirim Penawaran ke Admin Sales</h3>
-                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Penawaran akan diteruskan langsung ke sistem Tim Admin Sales / Sales Support</p>
+                    <h3 className="text-sm font-black text-slate-900">{language === 'id' ? 'Kirim Penawaran ke Admin Sales' : 'Send Proposal to Sales Admin'}</h3>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">{language === 'id' ? 'Penawaran akan diteruskan langsung ke sistem Tim Admin Sales / Sales Support' : 'Proposals will be forwarded directly to the Sales Admin / Sales Support team system'}</p>
                   </div>
                 </div>
               </div>
@@ -1478,22 +1542,22 @@ export default function SalesClient({
               <div className="p-5 space-y-4">
                 {/* Nama Customer */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Customer <span className="text-red-500">*</span></label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{language === 'id' ? 'Nama Customer' : 'Customer Contact Person'} <span className="text-red-500">*</span></label>
                   <input
                     type="text"
-                    placeholder="Nama contact person customer"
+                    placeholder={language === 'id' ? 'Nama contact person customer' : 'Customer contact person name'}
                     value={proposalForm.customerName}
                     onChange={e => setProposalForm(p => ({ ...p, customerName: e.target.value }))}
                     className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
                   />
                 </div>
 
-                {/* Nama PT */}
+                {/* Perusahaan PT Customer */}
                 <div className="relative" ref={customerDropdownRef}>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Perusahaan (PT) <span className="text-red-500">*</span></label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{language === 'id' ? 'Nama Perusahaan (PT)' : 'Company Name (PT)'} <span className="text-red-500">*</span></label>
                   <input
                     type="text"
-                    placeholder="Ketik untuk mencari perusahaan..."
+                    placeholder={language === 'id' ? 'Ketik untuk mencari / isi nama perusahaan...' : 'Search or enter company name...'}
                     value={customerSearch || proposalForm.companyPT}
                     onChange={e => {
                       setCustomerSearch(e.target.value)
@@ -1523,44 +1587,43 @@ export default function SalesClient({
                   )}
                 </div>
 
-                {/* Produk + Jumlah inline */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative" ref={productDropdownRef}>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Produk <span className="text-red-500">*</span></label>
+                {/* Produk Oli & Jumlah */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 relative" ref={productDropdownRef}>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{language === 'id' ? 'Pilih Produk Oli' : 'Select Oil Product'} <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      placeholder="Ketik nama oli..."
-                      value={productSearch || proposalForm.productName}
+                      placeholder={language === 'id' ? 'Ketik nama / cari oli...' : 'Search oil product...'}
+                      value={proposalForm.productName}
+                      onFocus={() => setShowProductDropdown(true)}
                       onChange={e => {
-                        setProductSearch(e.target.value)
                         setProposalForm(p => ({ ...p, productName: e.target.value }))
+                        setProductSearch(e.target.value)
                         setShowProductDropdown(true)
                       }}
-                      onFocus={() => setShowProductDropdown(true)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-3 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
                     />
                     {showProductDropdown && filteredProducts.length > 0 && (
-                      <div className="absolute z-40 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl animate-pop-micro divide-y divide-slate-50">
-                        {filteredProducts.map(p => (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-slate-100">
+                        {filteredProducts.map(prod => (
                           <button
-                            key={p.id}
+                            key={prod.id}
                             type="button"
                             onClick={() => {
-                              setProposalForm(form => ({ ...form, productName: p.product_name }))
-                              setProductSearch(p.product_name)
+                              setProposalForm(p => ({ ...p, productName: prod.product_name, productId: prod.id }))
                               setShowProductDropdown(false)
                             }}
-                            className="w-full text-left px-3 py-2.5 hover:bg-orange-50 text-xs font-bold text-slate-700 hover:text-orange-600 transition-colors"
+                            className="w-full text-left px-4 py-2.5 hover:bg-orange-50 text-xs font-semibold text-slate-800 transition-all flex items-center justify-between"
                           >
-                            <span className="block font-bold">{p.product_name}</span>
-                            <span className="block text-[9px] text-slate-400 uppercase font-medium mt-0.5">{p.product_type}</span>
+                            <span>{prod.product_name}</span>
+                            <span className="text-[10px] text-slate-400 font-normal">{prod.product_type}</span>
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jumlah <span className="text-red-500">*</span></label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{language === 'id' ? 'Jumlah (Drum)' : 'Quantity (Drums)'} <span className="text-red-500">*</span></label>
                     <input
                       type="number"
                       placeholder="0"
@@ -1575,7 +1638,7 @@ export default function SalesClient({
                 {/* Kontak Customer */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">No. Telepon</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{language === 'id' ? 'No. Telepon' : 'Phone Number'}</label>
                     <input
                       type="tel"
                       placeholder="08xx-xxxx-xxxx"
@@ -1585,7 +1648,7 @@ export default function SalesClient({
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Email Customer</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{language === 'id' ? 'Email Customer' : 'Customer Email'}</label>
                     <input
                       type="email"
                       placeholder="customer@email.com"
@@ -1598,9 +1661,9 @@ export default function SalesClient({
 
                 {/* Catatan */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Catatan Tambahan</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{language === 'id' ? 'Catatan Tambahan' : 'Additional Notes'}</label>
                   <textarea
-                    placeholder="Spesifikasi khusus, urgensi, atau keterangan lainnya..."
+                    placeholder={language === 'id' ? 'Spesifikasi khusus, urgensi, atau keterangan lainnya...' : 'Special specifications, urgency, or other notes...'}
                     value={proposalForm.notes}
                     onChange={e => setProposalForm(p => ({ ...p, notes: e.target.value }))}
                     rows={3}
@@ -1617,14 +1680,14 @@ export default function SalesClient({
                   {sendingProposal ? (
                     <>
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                      Mengirim...
+                      {language === 'id' ? 'Mengirim...' : 'Sending...'}
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
-                      Kirim ke Purchasing
+                      {language === 'id' ? 'Kirim ke Admin Sales' : 'Send to Sales Admin'}
                     </>
                   )}
                 </button>
@@ -1635,17 +1698,19 @@ export default function SalesClient({
             {/* History Penawaran yang Terkirim */}
             {proposalHistory.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Riwayat Penawaran Terkirim (Sesi Ini)</h3>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                  {language === 'id' ? 'Riwayat Penawaran Terkirim (Sesi Ini)' : 'Sent Proposals History (This Session)'}
+                </h3>
                 {proposalHistory.map(h => (
                   <div key={h.id} className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center justify-between shadow-sm">
                     <div className="min-w-0">
                       <p className="text-xs font-black text-slate-900 truncate">{h.productName}</p>
-                      <p className="text-[10px] text-slate-500 font-medium truncate">{h.companyPT} • {h.quantity} unit</p>
+                      <p className="text-[10px] text-slate-500 font-medium truncate">{h.companyPT} • {h.quantity} {language === 'id' ? 'Drum' : (h.quantity > 1 ? 'Drums' : 'Drum')}</p>
                     </div>
                     <div className="text-right shrink-0 ml-3">
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded-lg border border-emerald-100">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                        Terkirim
+                        {language === 'id' ? 'Terkirim' : 'Sent'}
                       </span>
                       <p className="text-[9px] text-slate-400 mt-1">{new Date(h.sentAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
@@ -1659,7 +1724,7 @@ export default function SalesClient({
         <div className={`space-y-5 ${activeTab === 'complaints' ? 'block animate-pop-micro' : 'hidden'}`}>
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
             {/* Header with Title & Filter Chips */}
-            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-rose-50/50 via-slate-50 to-orange-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-rose-50/50 via-slate-50 to-orange-50/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-rose-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-rose-200">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1667,37 +1732,55 @@ export default function SalesClient({
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Kelola Keluhan & Komplain Pelanggan</h3>
-                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Tindak lanjuti kendala pelanggan, ubah status, dan berikan catatan solusi resmi.</p>
+                  <h3 className="text-sm font-black text-slate-900">
+                    {language === 'id' ? 'Kelola Keluhan & Komplain Pelanggan' : 'Manage Customer Complaints'}
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                    {language === 'id' ? 'Tindak lanjuti kendala pelanggan, ubah status, dan berikan catatan solusi resmi.' : 'Follow up customer issues, update status, and provide official resolution notes.'}
+                  </p>
                 </div>
               </div>
 
-              {/* Status Filter Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 select-none">
-                {([
-                  { id: 'all' as const, label: 'Semua', count: complaints.length },
-                  { id: 'open' as const, label: 'Terbuka', count: complaints.filter(c => c.status === 'open').length },
-                  { id: 'in_progress' as const, label: 'Diproses', count: complaints.filter(c => c.status === 'in_progress').length },
-                  { id: 'resolved' as const, label: 'Selesai', count: complaints.filter(c => c.status === 'resolved').length },
-                ]).map(filter => (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => setComplaintFilter(filter.id)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                      complaintFilter === filter.id
-                        ? 'bg-slate-900 text-white shadow-sm'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/70'
-                    }`}
-                  >
-                    <span>{filter.label}</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
-                      complaintFilter === filter.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {filter.count}
-                    </span>
-                  </button>
-                ))}
+              {/* Status Filter Chips & Search Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder={language === 'id' ? 'Cari keluhan / customer...' : 'Search complaints / customer...'}
+                    className="w-full sm:w-56 pl-8 pr-3 py-1.5 bg-white border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 transition-all shadow-sm"
+                  />
+                  <svg className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 select-none">
+                  {([
+                    { id: 'all' as const, label: language === 'id' ? 'Semua' : 'All', count: complaints.length },
+                    { id: 'open' as const, label: language === 'id' ? 'Terbuka' : 'Open', count: complaints.filter(c => c.status === 'open').length },
+                    { id: 'in_progress' as const, label: language === 'id' ? 'Diproses' : 'In Progress', count: complaints.filter(c => c.status === 'in_progress').length },
+                    { id: 'resolved' as const, label: language === 'id' ? 'Selesai' : 'Resolved', count: complaints.filter(c => c.status === 'resolved').length },
+                  ]).map(filter => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setComplaintFilter(filter.id)}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                        complaintFilter === filter.id
+                          ? 'bg-slate-900 text-white shadow-sm'
+                          : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/70'
+                      }`}
+                    >
+                      <span>{filter.label}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
+                        complaintFilter === filter.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {filter.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import ProfileClient from '@/app/dashboard/profile/ProfileClient'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -63,7 +64,7 @@ export default async function SalesProfilePage() {
             <p className="text-xs text-slate-500 font-semibold">Kelola informasi diri, nomor kontak, dan keamanan akun Sales Executive.</p>
           </div>
           
-          <a
+          <Link
             href="/sales"
             className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-2xl transition-all shadow-md shadow-slate-900/10 flex items-center justify-center gap-2 active:scale-95 shrink-0"
           >
@@ -71,7 +72,7 @@ export default async function SalesProfilePage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Kembali ke Dasbor
-          </a>
+          </Link>
         </div>
 
         {/* Profile Content */}
