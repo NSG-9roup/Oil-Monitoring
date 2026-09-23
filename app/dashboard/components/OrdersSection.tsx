@@ -65,7 +65,9 @@ export default function OrdersSection({
 
   // Process orders data for monthly analytics
   const getMonthlyAnalytics = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+    const monthsId = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+    const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const months = language === 'id' ? monthsId : monthsEn
     const currentMonth = new Date().getMonth()
     const currentYear = new Date().getFullYear()
 
@@ -99,9 +101,10 @@ export default function OrdersSection({
       }
     })
 
+    const volumeKey = language === 'id' ? 'Volume (Drum)' : 'Volume (Drums)'
     return last6Months.map(item => ({
       name: item.name,
-      'Volume (Unit)': item.total
+      [volumeKey]: item.total
     }))
   }
 
@@ -166,7 +169,7 @@ export default function OrdersSection({
                   itemStyle={{ color: '#fb923c' }}
                   cursor={{ fill: '#f8fafc' }}
                 />
-                <Bar dataKey="Volume (Unit)" fill="url(#colorVolume)" radius={[8, 8, 0, 0]} />
+                <Bar dataKey={language === 'id' ? 'Volume (Drum)' : 'Volume (Drums)'} fill="url(#colorVolume)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

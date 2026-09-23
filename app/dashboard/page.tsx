@@ -132,6 +132,8 @@ export default async function DashboardPage() {
     full_name: profile.full_name,
     email: profile.email,
     role: profile.role,
+    avatar_url: profile.avatar_url,
+    phone_number: profile.phone_number,
     customer_id: profile.customer_id,
     customer: {
       id: profile.customer?.id,

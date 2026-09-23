@@ -24,7 +24,7 @@ interface AnalysisSectionProps {
   handleQuickLabRequest: (machineId: string, notes?: string, priority?: string) => void
   handleExportFleetReport: () => void
   exporting: boolean
-  setActiveTab: (tab: 'trend' | 'analysis' | 'lab' | 'requests' | 'orders') => void
+  setActiveTab: (tab: 'trend' | 'analysis' | 'lab' | 'requests' | 'orders' | 'complaints') => void
   avgHealthScore: number | null
   healthyCount: number
   warningCount: number
@@ -116,7 +116,7 @@ export function AnalysisSection({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
             </span>
-            CRITICAL
+            {language === 'id' ? 'KRITIS' : 'CRITICAL'}
           </div>
         )
       case 'Medium':
@@ -126,7 +126,7 @@ export function AnalysisSection({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
             </span>
-            WARNING
+            {language === 'id' ? 'WASPADA' : 'WARNING'}
           </div>
         )
       case 'Low':
@@ -137,7 +137,7 @@ export function AnalysisSection({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
             </span>
-            MONITOR
+            {language === 'id' ? 'PANTAU' : 'MONITOR'}
           </div>
         )
     }
@@ -473,7 +473,7 @@ export function AnalysisSection({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-xs font-black leading-tight uppercase tracking-wider text-white truncate">
-                    {exporting ? 'Generating PDF...' : copy.exportFleetPdf}
+                    {exporting ? (language === 'id' ? 'Membuat Dokumen PDF...' : 'Generating PDF...') : copy.exportFleetPdf}
                   </h3>
                   <span className="text-white/60 text-sm leading-none transition-transform duration-300 group-hover:translate-x-0.5 shrink-0">→</span>
                 </div>

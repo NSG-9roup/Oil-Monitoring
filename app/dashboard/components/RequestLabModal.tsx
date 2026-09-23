@@ -205,18 +205,22 @@ export function RequestLabModal({
             <div className="space-y-3 select-none">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{copy.requestLab.priorityLabel}</span>
               <div className="flex gap-3">
-                {['low', 'medium', 'high'].map(p => (
+                {[
+                  { key: 'low', label: language === 'id' ? 'Rendah' : 'Low' },
+                  { key: 'medium', label: language === 'id' ? 'Sedang' : 'Medium' },
+                  { key: 'high', label: language === 'id' ? 'Tinggi' : 'High' },
+                ].map(({ key, label }) => (
                   <button
-                    key={p}
+                    key={key}
                     type="button"
-                    onClick={() => setForm(prev => ({ ...prev, priority: p }))}
+                    onClick={() => setForm(prev => ({ ...prev, priority: key }))}
                     className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all duration-200 active:scale-95 ${
-                      form.priority === p 
+                      form.priority === key 
                         ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
                     }`}
                   >
-                    {p}
+                    {label}
                   </button>
                 ))}
               </div>

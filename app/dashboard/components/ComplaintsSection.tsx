@@ -201,7 +201,7 @@ export default function ComplaintsSection({
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">{language === 'id' ? 'Terselesaikan' : 'Resolved'}</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">{language === 'id' ? 'Selesai / Teratasi' : 'Resolved'}</p>
                 <p className="text-2xl font-black text-emerald-900 mt-1">{resolvedCount}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -716,7 +716,7 @@ export default function ComplaintsSection({
                       ...orders.map((o) => ({
                         value: o.id,
                         label: `${new Date(o.created_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')} — ${o.product?.product_name || 'Produk'}`,
-                        sublabel: `${o.quantity} Pcs`
+                        sublabel: `${o.quantity} ${language === 'id' ? 'Drum' : (o.quantity > 1 ? 'Drums' : 'Drum')}`
                       }))
                     ]}
                     value={selectedOrderId}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { getOilTypeWaterThresholds, getOilTypeThresholds, classifyOilType, type OilType } from '@/lib/constants/oilTypeThresholds'
@@ -1754,9 +1755,24 @@ export default function DashboardClient({
               </div>
 
               {/* Profile Link */}
-              <a href="/dashboard/profile" className="p-2 bg-slate-100 hover:bg-orange-50 text-slate-500 hover:text-orange-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title={language === 'id' ? 'Profil Saya' : 'My Profile'}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              </a>
+              <Link
+                href="/dashboard/profile"
+                className="p-1.5 sm:p-2 bg-slate-100 hover:bg-orange-50 text-slate-500 hover:text-orange-600 rounded-xl transition-all border border-slate-200/60 active:scale-95 flex items-center justify-center overflow-hidden"
+                title={language === 'id' ? 'Profil Saya' : 'My Profile'}
+              >
+                {profile?.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt="Profile"
+                    width={20}
+                    height={20}
+                    className="w-5 h-5 rounded-lg object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                )}
+              </Link>
 
               {/* Logout Button */}
               <button onClick={handleSignOut} className="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title={language === 'id' ? 'Keluar Akun' : 'Sign Out'}>
@@ -1924,7 +1940,7 @@ export default function DashboardClient({
                     const isActive = selectedMachine?.id === machine.id
                     const latestTest = latestTestByMachineId[machine.id] || null
                     const healthScore = latestTest ? calculateHealthScore(latestTest) : null
-                    const statusInfo = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product, latestTest) : { text: 'Unknown', color: 'gray' }
+                    const statusInfo = latestTest ? getStatus(latestTest.viscosity_40c || 0, latestTest.water_content, latestTest.tan_value, latestTest.product, latestTest) : { level: 'unknown' as const, text: 'Unknown', color: 'gray' }
                     
                     return (
                       <div
@@ -1937,7 +1953,7 @@ export default function DashboardClient({
                         }`}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.text === 'Critical' ? 'bg-red-500' : statusInfo.text === 'Warning' ? 'bg-amber-500' : statusInfo.text === 'Normal' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                          <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.level === 'critical' ? 'bg-red-500' : statusInfo.level === 'warning' ? 'bg-amber-500' : statusInfo.level === 'normal' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
                           <span className={`text-[7px] font-black uppercase tracking-[0.15em] truncate ${isActive ? 'text-slate-400' : 'text-slate-300'}`}>{machine.location || 'AREA 01'}</span>
                         </div>
                         

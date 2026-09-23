@@ -103,13 +103,13 @@ export default function ProfileClient({
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      toast.error('File harus berupa format gambar (JPG, PNG, WebP).')
+      toast.error(language === 'id' ? 'File harus berupa format gambar (JPG, PNG, WebP).' : 'File must be an image (JPG, PNG, WebP).')
       return
     }
 
     try {
       setIsUploadingAvatar(true)
-      const toastId = toast.loading('Mengompres dan mengunggah foto profil...')
+      const toastId = toast.loading(language === 'id' ? 'Mengompres dan mengunggah foto profil...' : 'Compressing and uploading profile photo...')
 
       const compressedFile = await imageCompression(file, {
         maxSizeMB: 0.5,
@@ -126,13 +126,13 @@ export default function ProfileClient({
 
       if (res.success && res.publicUrl) {
         setAvatarUrl(res.publicUrl)
-        toast.success('Foto profil berhasil diperbarui!')
+        toast.success(language === 'id' ? 'Foto profil berhasil diperbarui!' : 'Profile photo updated successfully!')
       } else {
-        toast.error(res.error || 'Gagal menyimpan foto profil.')
+        toast.error(res.error || (language === 'id' ? 'Gagal menyimpan foto profil.' : 'Failed to save profile photo.'))
       }
     } catch (err) {
       console.error('Error uploading avatar:', err)
-      toast.error(err instanceof Error ? err.message : 'Gagal mengunggah foto profil.')
+      toast.error(err instanceof Error ? err.message : (language === 'id' ? 'Gagal mengunggah foto profil.' : 'Failed to upload profile photo.'))
     } finally {
       setIsUploadingAvatar(false)
       if (fileInputRef.current) {
@@ -149,15 +149,15 @@ export default function ProfileClient({
         setAvatarUrl(null)
         toast.success(
           initialProfile.role === 'customer' && initialProfile.customer?.logo_url
-            ? 'Foto profil dihapus. Otomatis menggunakan logo perusahaan.'
-            : 'Foto profil berhasil dihapus.'
+            ? (language === 'id' ? 'Foto profil dihapus. Otomatis menggunakan logo perusahaan.' : 'Profile photo removed. Automatically using company logo.')
+            : (language === 'id' ? 'Foto profil berhasil dihapus.' : 'Profile photo deleted successfully.')
         )
       } else {
-        toast.error(res.error || 'Gagal menghapus foto profil.')
+        toast.error(res.error || (language === 'id' ? 'Gagal menghapus foto profil.' : 'Failed to delete profile photo.'))
       }
     } catch (err) {
       console.error('Error removing avatar:', err)
-      toast.error('Gagal menghapus foto profil.')
+      toast.error(language === 'id' ? 'Gagal menghapus foto profil.' : 'Failed to delete profile photo.')
     } finally {
       setIsUploadingAvatar(false)
     }
@@ -182,11 +182,13 @@ export default function ProfileClient({
       if (result.emailChanged && result.newEmail) {
         setCurrentEmail(result.newEmail)
         toast.success(
-          `Profil & email login berhasil diperbarui! Gunakan ${result.newEmail} untuk login selanjutnya.`,
+          language === 'id'
+            ? `Profil & email login berhasil diperbarui! Gunakan ${result.newEmail} untuk login selanjutnya.`
+            : `Profile & login email updated successfully! Use ${result.newEmail} for your next login.`,
           { duration: 6000 }
         )
       } else {
-        toast.success('Profil berhasil diperbarui!')
+        toast.success(language === 'id' ? 'Profil berhasil diperbarui!' : 'Profile updated successfully!')
       }
       setIsEditing(false)
     } catch (err: unknown) {
@@ -196,10 +198,10 @@ export default function ProfileClient({
           if (e.path[0]) fieldErrors[e.path[0].toString()] = e.message
         })
         setErrors(fieldErrors)
-        toast.error('Silakan periksa kembali form pengisian')
+        toast.error(language === 'id' ? 'Silakan periksa kembali form pengisian' : 'Please check the form inputs')
       } else {
         console.error(err)
-        toast.error((err as Error).message || 'Gagal memperbarui profil')
+        toast.error((err as Error).message || (language === 'id' ? 'Gagal memperbarui profil' : 'Failed to update profile'))
       }
     } finally {
       setIsSaving(false)
@@ -208,11 +210,11 @@ export default function ProfileClient({
 
   const handleDirectPasswordChange = async () => {
     if (passwordData.new_password.length < 6) {
-      toast.error('Kata sandi minimal 6 karakter')
+      toast.error(language === 'id' ? 'Kata sandi minimal 6 karakter' : 'Password must be at least 6 characters')
       return
     }
     if (passwordData.new_password !== passwordData.confirm_password) {
-      toast.error('Konfirmasi kata sandi tidak cocok')
+      toast.error(language === 'id' ? 'Konfirmasi kata sandi tidak cocok' : 'Password confirmation does not match')
       return
     }
 
@@ -224,12 +226,12 @@ export default function ProfileClient({
 
       if (error) throw error
 
-      toast.success('Kata sandi berhasil diperbarui!')
+      toast.success(language === 'id' ? 'Kata sandi berhasil diperbarui!' : 'Password updated successfully!')
       setPasswordData({ new_password: '', confirm_password: '' })
       setShowPasswordForm(false)
     } catch (err: unknown) {
       console.error(err)
-      toast.error((err as Error).message || 'Gagal memperbarui kata sandi')
+      toast.error((err as Error).message || (language === 'id' ? 'Gagal memperbarui kata sandi' : 'Failed to update password'))
     } finally {
       setIsUpdatingPassword(false)
     }
@@ -237,7 +239,7 @@ export default function ProfileClient({
 
   const handleEnablePushNotification = async () => {
     if (!('Notification' in window)) {
-      toast.error('Browser Anda tidak mendukung notifikasi push.')
+      toast.error(language === 'id' ? 'Browser Anda tidak mendukung notifikasi push.' : 'Your browser does not support push notifications.')
       return
     }
     const permission = await Notification.requestPermission()
@@ -263,19 +265,19 @@ export default function ProfileClient({
             body: JSON.stringify({ subscription: sub })
           })
           if (res.ok) {
-            toast.success('Notifikasi push perangkat berhasil didaftarkan!')
+            toast.success(language === 'id' ? 'Notifikasi push perangkat berhasil didaftarkan!' : 'Device push notification registered successfully!')
           } else {
-            toast.error('Gagal menyimpan pendaftaran notifikasi push')
+            toast.error(language === 'id' ? 'Gagal menyimpan pendaftaran notifikasi push' : 'Failed to save push notification registration')
           }
         } else {
-          toast.error('Gagal membuat langganan push (cek dukungan browser)')
+          toast.error(language === 'id' ? 'Gagal membuat langganan push (cek dukungan browser)' : 'Failed to subscribe push notification')
         }
       } catch (e) {
         console.log('Push subscribe backend error:', e)
-        toast.error('Terjadi kesalahan saat mengaktifkan push notifikasi')
+        toast.error(language === 'id' ? 'Terjadi kesalahan saat mengaktifkan push notifikasi' : 'An error occurred while enabling push notifications')
       }
     } else {
-      toast.error('Izin notifikasi ditolak oleh pengguna.')
+      toast.error(language === 'id' ? 'Izin notifikasi ditolak oleh pengguna.' : 'Notification permission was denied.')
     }
   }
 
