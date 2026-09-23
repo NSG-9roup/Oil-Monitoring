@@ -76,19 +76,19 @@ const pdfCopy = {
   },
 } as const
 
-const formatDateTime = (date: Date) => {
-  return new Intl.DateTimeFormat('id-ID', {
+const formatDateTime = (date: Date, language: ReportLanguage = 'en') => {
+  return new Intl.DateTimeFormat(language === 'id' ? 'id-ID' : 'en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date)
 }
 
-const formatDate = (value?: string) => {
+const formatDate = (value?: string, language: ReportLanguage = 'en') => {
   if (!value) return '-'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
 
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat(language === 'id' ? 'id-ID' : 'en-US', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -236,7 +236,7 @@ export async function generateFleetReportPdfServer(
       String(index + 1),
       row.machineName,
       row.location || '-',
-      `${formatDate(row.lastTestDate)}${row.daysSinceTest !== null ? ` (${row.daysSinceTest}d)` : ''}`,
+      `${formatDate(row.lastTestDate, language)}${row.daysSinceTest !== null ? ` (${row.daysSinceTest}d)` : ''}`,
       row.statusText.toUpperCase(),
       row.healthScore !== null ? `${row.healthScore}` : '-',
       row.nextAction,
@@ -307,7 +307,7 @@ export async function generateFleetReportPdfServer(
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8)
       doc.setTextColor(255, 255, 255, 0.8)
-      doc.text(`${copy.generated}: ${formatDateTime(generatedDate)}`, 40, 60)
+      doc.text(`${copy.generated}: ${formatDateTime(generatedDate, language)}`, 40, 60)
     }
 
     // Draw Footer

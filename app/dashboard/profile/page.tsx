@@ -112,7 +112,8 @@ export default async function ProfilePage() {
             <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Kembali ke Dasbor
+            <span className="hidden sm:inline">Kembali ke Dasbor / Back to Dashboard</span>
+            <span className="sm:hidden">Kembali / Back</span>
           </a>
         </div>
 

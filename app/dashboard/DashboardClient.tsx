@@ -1170,7 +1170,8 @@ export default function DashboardClient({
       baseline_tan?: number
     },
     previousTest?: LabReport | null,
-    evaluationMode?: string
+    evaluationMode?: string,
+    currentReport?: LabReport | null
   ) => {
     const recommendations: Array<{ icon: string; severity: 'critical' | 'warning' | 'normal'; text: string; action: string }> = []
     
@@ -1201,22 +1202,34 @@ export default function DashboardClient({
         recommendations.push({
           icon: '⚠️',
           severity: 'critical',
-          text: `High viscosity increase: +${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil oxidation or contamination`,
-          action: 'Replace oil immediately and check operating temperature'
+          text: language === 'id'
+            ? `Kenaikan viskositas tinggi: +${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Terjadi oksidasi oli atau kontaminasi`
+            : `High viscosity increase: +${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil oxidation or contamination`,
+          action: language === 'id'
+            ? 'Ganti oli segera dan periksa temperatur kerja mesin'
+            : 'Replace oil immediately and check operating temperature'
         })
       } else if (viscChange > 15) {
         recommendations.push({
           icon: '⚡',
           severity: 'warning',
-          text: `Viscosity increasing: +${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil aging progressing`,
-          action: 'Schedule oil change within 2 weeks'
+          text: language === 'id'
+            ? `Viskositas meningkat: +${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Penuaan oli mulai terdeteksi`
+            : `Viscosity increasing: +${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil aging progressing`,
+          action: language === 'id'
+            ? 'Jadwalkan penggantian oli dalam 2 minggu'
+            : 'Schedule oil change within 2 weeks'
         })
       } else if (viscChange < -15) {
         recommendations.push({
           icon: '🔥',
           severity: 'critical',
-          text: `Low viscosity: ${viscChange.toFixed(1)}% below baseline [${baseline40} cSt → ${viscosity40c} cSt] - Fuel dilution suspected`,
-          action: 'Check for fuel leaks immediately - DO NOT operate'
+          text: language === 'id'
+            ? `Viskositas rendah: ${viscChange.toFixed(1)}% di bawah baseline [${baseline40} cSt → ${viscosity40c} cSt] - Diduga pengenceran bahan bakar (fuel dilution)`
+            : `Low viscosity: ${viscChange.toFixed(1)}% below baseline [${baseline40} cSt → ${viscosity40c} cSt] - Fuel dilution suspected`,
+          action: language === 'id'
+            ? 'Periksa kebocoran bahan bakar segera - Hentikan operasi sementara'
+            : 'Check for fuel leaks immediately - DO NOT operate'
         })
       }
     } else if ((mode === 'oil_type_based' || mode === 'new_oil_verification') && baseline40 && viscosity40c) {
@@ -1230,22 +1243,34 @@ export default function DashboardClient({
         recommendations.push({
           icon: '⚠️',
           severity: 'critical',
-          text: `Viscosity change critical: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil oxidation or contamination`,
-          action: 'Replace oil immediately and check operating temperature'
+          text: language === 'id'
+            ? `Perubahan viskositas kritis: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oksidasi oli atau kontaminasi berat`
+            : `Viscosity change critical: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil oxidation or contamination`,
+          action: language === 'id'
+            ? 'Ganti oli segera dan periksa suhu operasi'
+            : 'Replace oil immediately and check operating temperature'
         })
       } else if (absChange > viscThresholds.warning) {
         recommendations.push({
           icon: '⚡',
           severity: 'warning',
-          text: `Viscosity increasing: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil aging observed`,
-          action: 'Schedule oil change within 2-4 weeks'
+          text: language === 'id'
+            ? `Viskositas meningkat: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Terjadi degradasi/penuaan oli`
+            : `Viscosity increasing: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Oil aging observed`,
+          action: language === 'id'
+            ? 'Jadwalkan penggantian oli dalam 2-4 minggu'
+            : 'Schedule oil change within 2-4 weeks'
         })
       } else if (absChange > viscThresholds.normal && viscChange < 0) {
         recommendations.push({
           icon: '🔥',
           severity: 'critical',
-          text: `Viscosity decreased: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Fuel dilution or oil thinning`,
-          action: 'Check for fuel leaks immediately - DO NOT operate'
+          text: language === 'id'
+            ? `Viskositas turun drastis: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Pengenceran bahan bakar atau pelumas encer`
+            : `Viscosity decreased: ${viscChange.toFixed(1)}% vs baseline [${baseline40} cSt → ${viscosity40c} cSt] - Fuel dilution or oil thinning`,
+          action: language === 'id'
+            ? 'Periksa kebocoran bahan bakar segera - JANGAN operasikan mesin'
+            : 'Check for fuel leaks immediately - DO NOT operate'
         })
       }
     }
@@ -1253,16 +1278,20 @@ export default function DashboardClient({
     // ============================================================
     // VISCOSITY INDEX CHECK (Universal - applies all modes)
     // ============================================================
-    if (baseline100 && viscosity40c && viscosity40c > 30 && viscosity40c < 100) {
-      const currentVI = calculateVI(viscosity40c, baseline100)
+    const actual100 = (currentReport?.viscosity_100c && currentReport.viscosity_100c > 0) ? currentReport.viscosity_100c : baseline100
+    if (actual100 && viscosity40c && viscosity40c > 30 && viscosity40c < 100) {
+      const currentVI = calculateVI(viscosity40c, actual100)
       
       if (currentVI && currentVI < 85) {
-        const modeNote = useProductSpecific ? ' compared to baseline' : ''
         recommendations.push({
           icon: '📉',
           severity: 'warning',
-          text: `Low Viscosity Index (VI=${currentVI})${modeNote} - Oil quality degraded`,
-          action: 'Consider premium oil with higher VI for next change'
+          text: language === 'id'
+            ? `Indeks Viskositas Rendah (VI=${currentVI}) - Kualitas pelumas menurun`
+            : `Low Viscosity Index (VI=${currentVI}) - Oil quality degraded`,
+          action: language === 'id'
+            ? 'Pertimbangkan penggunaan oli dengan VI lebih tinggi pada penggantian berikutnya'
+            : 'Consider premium oil with higher VI for next change'
         })
       }
     }
@@ -1274,15 +1303,23 @@ export default function DashboardClient({
       recommendations.push({
         icon: '💧',
         severity: 'critical',
-        text: `High water content: ${waterPPM} PPM (critical for ${oilType} oil) - System contamination`,
-        action: 'Check for coolant leaks, seal failures, or condensation issues. Drain oil filter cart.'
+        text: language === 'id'
+          ? `Kandungan air tinggi: ${waterPPM} PPM (kritis untuk oli ${oilType}) - Kontaminasi sistem`
+          : `High water content: ${waterPPM} PPM (critical for ${oilType} oil) - System contamination`,
+        action: language === 'id'
+          ? 'Periksa kebocoran pendingin, seal, atau kondensasi. Lakukan draining atau filtrasi oli.'
+          : 'Check for coolant leaks, seal failures, or condensation issues. Drain oil filter cart.'
       })
     } else if (waterContent > waterThresholds.warning) {
       recommendations.push({
         icon: '💧',
         severity: 'warning',
-        text: `Elevated water content: ${waterPPM} PPM (warning for ${oilType} oil) - Trending upward`,
-        action: 'Inspect breather/vent system and check for external water ingress. Retest in 2 weeks.'
+        text: language === 'id'
+          ? `Kandungan air meningkat: ${waterPPM} PPM (waspada untuk oli ${oilType}) - Tren naik`
+          : `Elevated water content: ${waterPPM} PPM (warning for ${oilType} oil) - Trending upward`,
+        action: language === 'id'
+          ? 'Periksa sistem ventilasi/breather dan cegah masuknya air. Uji ulang dalam 2 minggu.'
+          : 'Inspect breather/vent system and check for external water ingress. Retest in 2 weeks.'
       })
     }
 
@@ -1291,27 +1328,33 @@ export default function DashboardClient({
     // ============================================================
     if (useProductSpecific && baseline40) {
       // MODE: product_specific
-      // Recommendations based on baseline comparison
       const tanIncrease = tanValue - baselineTan
       
       if (tanIncrease > 0.5) {
         recommendations.push({
           icon: '🔬',
           severity: 'critical',
-          text: `High TAN increase: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline [${baselineTan} → ${tanValue}] - Severe oil oxidation`,
-          action: 'Replace oil immediately - oxidation accelerating rapidly'
+          text: language === 'id'
+            ? `Kenaikan TAN tinggi: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline [${baselineTan} → ${tanValue}] - Oksidasi oli parah`
+            : `High TAN increase: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline [${baselineTan} → ${tanValue}] - Severe oil oxidation`,
+          action: language === 'id'
+            ? 'Ganti oli segera - laju oksidasi sangat cepat'
+            : 'Replace oil immediately - oxidation accelerating rapidly'
         })
       } else if (tanIncrease > 0.3) {
         recommendations.push({
           icon: '🔬',
           severity: 'warning',
-          text: `TAN increasing: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline - Oil aging, oxidation proceeding`,
-          action: 'Plan oil change within 1 month'
+          text: language === 'id'
+            ? `TAN meningkat: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline - Penuaan oli, oksidasi berjalan`
+            : `TAN increasing: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline - Oil aging, oxidation proceeding`,
+          action: language === 'id'
+            ? 'Rencanakan penggantian oli dalam 1 bulan'
+            : 'Plan oil change within 1 month'
         })
       }
     } else if (mode === 'oil_type_based' || mode === 'new_oil_verification') {
       // MODE: oil_type_based
-      // SysLab TAN increase thresholds (baseline or generic baseline)
       const tanIncrease = tanValue - baselineTan
       const tanThresholds = oilTypeThresholds.tanIncrease
 
@@ -1319,15 +1362,23 @@ export default function DashboardClient({
         recommendations.push({
           icon: '🔬',
           severity: 'critical',
-          text: `TAN increase critical: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline [${baselineTan} → ${tanValue}] - Severe oil oxidation`,
-          action: 'Replace oil immediately - oxidation is critical'
+          text: language === 'id'
+            ? `Kenaikan TAN kritis: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline [${baselineTan} → ${tanValue}] - Oksidasi oli parah`
+            : `TAN increase critical: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline [${baselineTan} → ${tanValue}] - Severe oil oxidation`,
+          action: language === 'id'
+            ? 'Ganti oli segera - oksidasi sudah pada tahap kritis'
+            : 'Replace oil immediately - oxidation is critical'
         })
       } else if (tanIncrease > tanThresholds.warning) {
         recommendations.push({
           icon: '🔬',
           severity: 'warning',
-          text: `TAN increasing: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline - Oil oxidation progressing`,
-          action: 'Plan oil change within 1 month'
+          text: language === 'id'
+            ? `TAN meningkat: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline - Oksidasi oli berkembang`
+            : `TAN increasing: +${tanIncrease.toFixed(2)} mg KOH/g vs baseline - Oil oxidation progressing`,
+          action: language === 'id'
+            ? 'Rencanakan penggantian oli dalam 1 bulan'
+            : 'Plan oil change within 1 month'
         })
       }
     }
@@ -1340,8 +1391,12 @@ export default function DashboardClient({
       recommendations.push({
         icon: '⚠️',
         severity: 'critical',
-        text: 'Water + oxidation detected simultaneously - Accelerated degradation risk',
-        action: 'Replace oil and fix water source - rust/corrosion risk is high, varnish buildup expected'
+        text: language === 'id'
+          ? 'Air + oksidasi terdeteksi bersamaan - Risiko degradasi dipercepat'
+          : 'Water + oxidation detected simultaneously - Accelerated degradation risk',
+        action: language === 'id'
+          ? 'Ganti oli dan perbaiki sumber air - risiko karat/korosi tinggi, potensi varnish tinggi'
+          : 'Replace oil and fix water source - rust/corrosion risk is high, varnish buildup expected'
       })
     }
 
@@ -1352,8 +1407,12 @@ export default function DashboardClient({
       recommendations.push({
         icon: '✅',
         severity: 'normal',
-        text: 'All parameters within acceptable range',
-        action: 'Continue regular monitoring schedule - no action required'
+        text: language === 'id'
+          ? 'Seluruh parameter dalam batas aman dan normal'
+          : 'All parameters within acceptable range',
+        action: language === 'id'
+          ? 'Lanjutkan jadwal pemantauan rutin - tidak diperlukan tindakan'
+          : 'Continue regular monitoring schedule - no action required'
       })
     }
     
@@ -1679,14 +1738,14 @@ export default function DashboardClient({
                 onClick={handleExportFleetReport}
                 disabled={exporting}
                 className="hidden lg:flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                title="Ekspor Laporan Armada PDF"
+                title={language === 'id' ? 'Ekspor Laporan Armada PDF' : 'Export Fleet Report (PDF)'}
               >
                 <svg className="w-3.5 h-3.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span>{exporting ? '...' : 'PDF'}</span>
               </button>
 
               {/* In-App Notification Center */}
-              <NotificationBell />
+              <NotificationBell language={language} />
 
               {/* Language Switcher */}
               <div className="flex items-center rounded-xl bg-slate-100 p-0.5 text-[10px] font-bold select-none">
@@ -1695,7 +1754,7 @@ export default function DashboardClient({
               </div>
 
               {/* Profile Link */}
-              <a href="/dashboard/profile" className="p-2 bg-slate-100 hover:bg-orange-50 text-slate-500 hover:text-orange-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title="Profil Saya">
+              <a href="/dashboard/profile" className="p-2 bg-slate-100 hover:bg-orange-50 text-slate-500 hover:text-orange-600 rounded-xl transition-all border border-slate-200/60 active:scale-95" title={language === 'id' ? 'Profil Saya' : 'My Profile'}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               </a>
 
@@ -1837,13 +1896,13 @@ export default function DashboardClient({
           <div className="w-full animate-pop-micro">
           <div className="mb-4 flex items-end justify-between px-2">
             <div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">Machine Health Overview</h2>
-              <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.2em] mt-0.5 opacity-60">Real-time condition monitoring</p>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">{copy.machineHealthTitle}</h2>
+              <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.2em] mt-0.5 opacity-60">{copy.machineHealthDesc}</p>
             </div>
             <div className="hidden sm:flex items-center gap-4 text-[7px] font-black uppercase tracking-[0.2em] text-slate-400">
-              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-emerald-500"></div> Normal</div>
-              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-amber-500"></div> Warning</div>
-              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-red-500"></div> Critical</div>
+              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-emerald-500"></div> {copy.normalLabel}</div>
+              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-amber-500"></div> {copy.warningLabel}</div>
+              <div className="flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-red-500"></div> {copy.criticalLabel}</div>
             </div>
           </div>
 
@@ -1853,7 +1912,7 @@ export default function DashboardClient({
               {/* LEFT SIDE: Equipment Fleet */}
               <div className="flex-1 p-5 sm:p-8 flex flex-col justify-center min-w-0 border-b lg:border-b-0 lg:border-r border-slate-50 bg-slate-50/20">
                 <div className="flex items-center justify-between mb-4 px-1">
-                  <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">Equipment Fleet</h3>
+                  <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">{language === 'id' ? 'Armada Mesin' : 'Equipment Fleet'}</h3>
                   <div className="flex gap-1.5">
                     <button onClick={() => document.getElementById('machine-list')?.scrollBy({ left: -180, behavior: 'smooth' })} className="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all active:scale-90"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg></button>
                     <button onClick={() => document.getElementById('machine-list')?.scrollBy({ left: 180, behavior: 'smooth' })} className="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all active:scale-90"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg></button>
@@ -1917,16 +1976,16 @@ export default function DashboardClient({
                           <div className={`w-1 h-1 rounded-full ${
                             selectedStatus.level === 'critical' ? 'bg-red-500' : selectedStatus.level === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
                           }`}></div>
-                          {selectedStatus.text}
+                          {selectedStatus.level === 'critical' ? copy.criticalLabel : selectedStatus.level === 'warning' ? copy.warningLabel : copy.normalLabel}
                         </span>
                         
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <h4 className="text-lg font-black text-slate-900 tracking-tighter leading-tight break-words">{selectedMachine.machine_name}</h4>
-                            <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em]">{selectedMachine.location || 'Factory Floor'}</p>
+                            <p className="text-[9px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em]">{selectedMachine.location || (language === 'id' ? 'Area Pabrik' : 'Factory Floor')}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-0.5">Health</p>
+                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-0.5">{language === 'id' ? 'Kesehatan' : 'Health'}</p>
                             <div className="flex items-baseline justify-end gap-0.5">
                               <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
                                 {selectedLatestTest ? calculateHealthScore(selectedLatestTest) : '--'}
@@ -1939,20 +1998,20 @@ export default function DashboardClient({
 
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Last Analysis</p>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">{language === 'id' ? 'Analisis Terakhir' : 'Last Analysis'}</p>
                           <p className="text-xl font-black text-slate-900 tracking-tight">
                             {selectedLatestTest
                               ? `${Math.floor((Date.now() - new Date(selectedLatestTest.test_date).getTime()) / (1000 * 60 * 60 * 24))}d`
                               : '--'}
-                            <span className="text-[8px] font-bold text-slate-400 ml-0.5">ago</span>
+                            <span className="text-[8px] font-bold text-slate-400 ml-0.5">{language === 'id' ? 'lalu' : 'ago'}</span>
                           </p>
                         </div>
                         <div className="bg-slate-50/50 p-4 rounded-[1.25rem] border border-slate-100 transition-all hover:bg-slate-50">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">Overall Status</p>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5">{language === 'id' ? 'Status Keseluruhan' : 'Overall Status'}</p>
                           <p className={`text-xl font-black tracking-tight ${
                             selectedStatus.level === 'critical' ? 'text-red-600' : selectedStatus.level === 'warning' ? 'text-amber-600' : 'text-emerald-600'
                           }`}>
-                            {selectedStatus.text}
+                            {selectedStatus.level === 'critical' ? copy.criticalLabel : selectedStatus.level === 'warning' ? copy.warningLabel : copy.normalLabel}
                           </p>
                         </div>
                       </div>
@@ -1963,7 +2022,7 @@ export default function DashboardClient({
                     <div className="w-12 h-12 bg-slate-50 rounded-[1.25rem] flex items-center justify-center mx-auto mb-3 border border-slate-100">
                       <svg className="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </div>
-                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] italic">Select equipment</p>
+                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] italic">{language === 'id' ? 'Pilih mesin' : 'Select equipment'}</p>
                   </div>
                 )}
               </div>

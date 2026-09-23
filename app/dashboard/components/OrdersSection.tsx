@@ -338,7 +338,7 @@ export default function OrdersSection({
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm font-extrabold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
-                          {order.quantity} Drum
+                          {order.quantity} {language === 'id' ? 'Drum' : (order.quantity > 1 ? 'Drums' : 'Drum')}
                         </span>
                       </td>
                       <td className="px-6 py-4">

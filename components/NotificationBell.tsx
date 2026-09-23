@@ -13,9 +13,10 @@ import toast from 'react-hot-toast'
 
 interface NotificationBellProps {
   className?: string
+  language?: 'id' | 'en'
 }
 
-export default function NotificationBell({ className = '' }: NotificationBellProps) {
+export default function NotificationBell({ className = '', language = 'id' }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<InAppNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -73,7 +74,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
                     <p className="text-xs font-black text-slate-800 tracking-tight">{newNotif.title}</p>
                     <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 leading-relaxed">{newNotif.message}</p>
                     <span className="inline-block mt-1 text-[9px] font-black uppercase tracking-wider text-orange-600">
-                      Klik untuk melihat detail →
+                      {language === 'id' ? 'Klik untuk melihat detail →' : 'Click to view details →'}
                     </span>
                   </div>
                 </div>
@@ -106,7 +107,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase])
+  }, [supabase, language])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -140,12 +141,12 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
   const formatRelativeTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime()
     const minutes = Math.floor(diff / (1000 * 60))
-    if (minutes < 1) return 'Baru saja'
-    if (minutes < 60) return `${minutes} menit lalu`
+    if (minutes < 1) return language === 'id' ? 'Baru saja' : 'Just now'
+    if (minutes < 60) return `${minutes} ${language === 'id' ? 'menit lalu' : 'm ago'}`
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours} jam lalu`
+    if (hours < 24) return `${hours} ${language === 'id' ? 'jam lalu' : 'h ago'}`
     const days = Math.floor(hours / 24)
-    return `${days} hari lalu`
+    return `${days} ${language === 'id' ? 'hari lalu' : 'd ago'}`
   }
 
   const getTypeIcon = (type: InAppNotification['type']) => {
@@ -166,7 +167,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Buka notifikasi"
+        aria-label={language === 'id' ? 'Buka notifikasi' : 'Open notifications'}
         className="relative p-2.5 rounded-2xl text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 active:scale-95"
       >
         <svg
@@ -196,10 +197,10 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Notifikasi</h3>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">{language === 'id' ? 'Notifikasi' : 'Notifications'}</h3>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-100 text-orange-700">
-                  {unreadCount} Baru
+                  {unreadCount} {language === 'id' ? 'Baru' : 'New'}
                 </span>
               )}
             </div>
@@ -208,7 +209,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
                 onClick={handleMarkAllRead}
                 className="text-[10px] font-bold text-orange-600 hover:text-orange-700 transition-colors"
               >
-                Tandai semua dibaca
+                {language === 'id' ? 'Tandai semua dibaca' : 'Mark all as read'}
               </button>
             )}
           </div>
@@ -220,9 +221,9 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
                 <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-lg">
                   🔔
                 </div>
-                <p className="text-xs font-bold text-slate-600">Belum ada notifikasi baru</p>
+                <p className="text-xs font-bold text-slate-600">{language === 'id' ? 'Belum ada notifikasi baru' : 'No new notifications'}</p>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Semua pemberitahuan hasil uji lab dan penawaran akan muncul di sini.
+                  {language === 'id' ? 'Semua pemberitahuan hasil uji lab dan penawaran akan muncul di sini.' : 'All lab test alerts and quotation updates will appear here.'}
                 </p>
               </div>
             ) : (
@@ -259,7 +260,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
                           setIsOpen(false)
                         }}
                       >
-                        Lihat Selengkapnya →
+                        {language === 'id' ? 'Lihat Selengkapnya →' : 'View Details →'}
                       </Link>
                     )}
                   </div>

@@ -224,13 +224,13 @@ export function LabReportsSection({
               <table className="w-full text-left">
                 <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-4">Tanggal Uji</th>
-                    <th className="px-6 py-4">Mesin</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Viskositas (40°C / 100°C)</th>
-                    <th className="px-6 py-4">Kandungan Air</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Tanggal Uji' : 'Test Date'}</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Mesin' : 'Machine'}</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Status' : 'Status'}</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Viskositas (40°C / 100°C)' : 'Viscosity (40°C / 100°C)'}</th>
+                    <th className="px-6 py-4">{language === 'id' ? 'Kandungan Air' : 'Water Content'}</th>
                     <th className="px-6 py-4">TAN</th>
-                    <th className="px-6 py-4 text-right">Aksi</th>
+                    <th className="px-6 py-4 text-right">{language === 'id' ? 'Aksi' : 'Action'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -248,7 +248,7 @@ export function LabReportsSection({
                       <tr key={report.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4">
                           <span className="font-bold text-gray-900 text-sm">
-                            {new Date(report.test_date).toLocaleDateString('id-ID', {
+                            {new Date(report.test_date).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric',
@@ -260,14 +260,14 @@ export function LabReportsSection({
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1 items-start">
-                            <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
-                              status.level === 'critical' ? 'bg-red-100 text-red-800' : status.level === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                            <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
+                              status.level === 'critical' ? 'bg-rose-50 text-rose-700 border-rose-200' : status.level === 'warning' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             }`}>
                               {status.text}
                             </span>
                             {report.notes && (
                               <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 flex items-center gap-1" title={report.notes}>
-                                💬 Catatan TS
+                                💬 {language === 'id' ? 'Catatan TS' : 'TS Notes'}
                               </span>
                             )}
                           </div>
@@ -359,15 +359,15 @@ export function LabReportsSection({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <p className="font-bold text-gray-900 text-lg">
-                          {new Date(report.test_date).toLocaleDateString('id-ID', {
+                          {new Date(report.test_date).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
                           })}
                         </p>
                         <div
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            status.level === 'critical' ? 'bg-red-100 text-red-800' : status.level === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                          className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                            status.level === 'critical' ? 'bg-rose-50 text-rose-700 border-rose-200' : status.level === 'warning' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}
                         >
                           {status.level === 'critical'
@@ -426,12 +426,12 @@ export function LabReportsSection({
                       <div className="flex items-center gap-3">
                         <h4 className="text-base font-black text-industrial-800">{completeAnalysisLabel}</h4>
                         <span
-                          className={`px-3 py-1 text-xs font-bold rounded-full uppercase ${
+                          className={`px-3 py-1 text-xs font-bold rounded-full uppercase border ${
                             status.level === 'critical'
-                              ? 'bg-red-100 text-red-800'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
                               : status.level === 'warning'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}
                         >
                           {(status.level === 'critical'

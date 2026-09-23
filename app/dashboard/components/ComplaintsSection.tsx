@@ -508,7 +508,7 @@ export default function ComplaintsSection({
                         onClick={(e) => handleCopyTicket(getTicketCode(selectedComplaint.id), selectedComplaint.id, e)}
                         className="text-[10px] text-slate-500 hover:text-slate-800 font-bold px-2 py-0.5 rounded bg-slate-200/60 transition-all"
                       >
-                        {copiedTicketId === selectedComplaint.id ? '✓ Tersalin' : 'Salin'}
+                        {copiedTicketId === selectedComplaint.id ? (language === 'id' ? '✓ Tersalin' : '✓ Copied') : (language === 'id' ? 'Salin' : 'Copy')}
                       </button>
                     </div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
@@ -552,7 +552,7 @@ export default function ComplaintsSection({
                   <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-600">
                     {selectedComplaint.machine?.machine_name && (
                       <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-semibold">
-                        ⚙️ Mesin: {selectedComplaint.machine.machine_name}
+                        ⚙️ {language === 'id' ? 'Mesin' : 'Machine'}: {selectedComplaint.machine.machine_name}
                       </span>
                     )}
                     {selectedComplaint.order?.product?.product_name && (
@@ -581,7 +581,7 @@ export default function ComplaintsSection({
                   {selectedComplaint.resolution_notes ? (
                     <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-950 leading-relaxed space-y-2">
                       <div className="flex items-center justify-between text-[10px] font-bold text-emerald-700">
-                        <span>🛡️ Tim Lab & Technical Support</span>
+                        <span>🛡️ {language === 'id' ? 'Tim Lab & Dukungan Teknis' : 'Lab & Technical Support Team'}</span>
                         {selectedComplaint.resolved_at && (
                           <span>{new Date(selectedComplaint.resolved_at).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')}</span>
                         )}

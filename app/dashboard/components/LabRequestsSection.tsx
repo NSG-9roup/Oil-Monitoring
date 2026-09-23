@@ -1,6 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import type { LabRequest, DashboardLanguage } from '@/app/dashboard/components/types'
+import { createClient } from '@/lib/supabase/client'
+import { Portal } from '@/app/components/Portal'
 
 interface LabRequestsSectionProps {
   labRequests: LabRequest[]
@@ -17,9 +20,22 @@ export function LabRequestsSection({
   toggleRequestExpand,
   onOpenRequestModal,
 }: LabRequestsSectionProps) {
-  const activeRequests = labRequests.filter((req) =>
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all')
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null)
+  const supabase = createClient()
+
+  const activeCount = labRequests.filter((req) =>
     ['pending', 'assigned', 'sampling'].includes(req.status)
-  )
+  ).length
+  const completedCount = labRequests.filter((req) => req.status === 'completed').length
+  const cancelledCount = labRequests.filter((req) => req.status === 'cancelled').length
+
+  const filteredRequests = labRequests.filter((req) => {
+    if (statusFilter === 'active') return ['pending', 'assigned', 'sampling'].includes(req.status)
+    if (statusFilter === 'completed') return req.status === 'completed'
+    if (statusFilter === 'cancelled') return req.status === 'cancelled'
+    return true
+  })
 
   const steps = [
     { key: 'pending', label: language === 'id' ? 'Permintaan Diterima' : 'Request Received', icon: '📋', desc: language === 'id' ? 'Tim sales akan segera menghubungi Anda' : 'Sales team will contact you soon' },
@@ -64,21 +80,67 @@ export function LabRequestsSection({
             </div>
           </div>
 
-          {activeRequests.length > 0 && (
-            <button
-              type="button"
-              onClick={onOpenRequestModal}
-              className="self-start sm:self-center px-5 py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-black uppercase tracking-wider border border-orange-200 shadow-sm transition-all active:scale-95 flex items-center gap-2"
-            >
-              <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              {language === 'id' ? 'Ajukan Uji Lab' : 'Request Lab Test'}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onOpenRequestModal}
+            className="self-start sm:self-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-orange-500/15 transition-all active:scale-95 flex items-center gap-2"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            {language === 'id' ? 'Ajukan Uji Lab' : 'Request Lab Test'}
+          </button>
         </div>
 
-        {activeRequests.length === 0 ? (
+        {/* Status Filter Tabs */}
+        {labRequests.length > 0 && (
+          <div className="flex items-center gap-2 pb-6 border-b border-slate-100 flex-wrap">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'all'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {language === 'id' ? 'Semua' : 'All'} ({labRequests.length})
+            </button>
+            <button
+              onClick={() => setStatusFilter('active')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'active'
+                  ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
+                  : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+              }`}
+            >
+              {language === 'id' ? 'Aktif' : 'Active'} ({activeCount})
+            </button>
+            <button
+              onClick={() => setStatusFilter('completed')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'completed'
+                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20'
+                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              }`}
+            >
+              {language === 'id' ? 'Selesai' : 'Completed'} ({completedCount})
+            </button>
+            {cancelledCount > 0 && (
+              <button
+                onClick={() => setStatusFilter('cancelled')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  statusFilter === 'cancelled'
+                    ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/20'
+                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                }`}
+              >
+                {language === 'id' ? 'Dibatalkan' : 'Cancelled'} ({cancelledCount})
+              </button>
+            )}
+          </div>
+        )}
+
+        {labRequests.length === 0 ? (
           <div className="py-10 text-center">
             <div className="w-16 h-16 bg-orange-50/80 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-orange-200/60 shadow-xs">
               <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +148,7 @@ export function LabRequestsSection({
               </svg>
             </div>
             <h3 className="text-base font-bold text-slate-800">
-              {language === 'id' ? 'Belum Ada Permintaan Uji Lab Aktif' : 'No Active Lab Requests'}
+              {language === 'id' ? 'Belum Ada Permintaan Uji Lab' : 'No Lab Requests Yet'}
             </h3>
             <p className="text-xs text-slate-500 mt-1 mb-6 max-w-md mx-auto">
               {language === 'id' 
@@ -129,11 +191,17 @@ export function LabRequestsSection({
               </div>
             </div>
           </div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="py-12 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+            <p className="text-xs font-bold text-slate-500">
+              {language === 'id' ? 'Tidak ada permintaan dengan status filter ini.' : 'No requests found for this filter.'}
+            </p>
+          </div>
         ) : (
           <div className="space-y-4">
-            {activeRequests.map((req) => {
+            {filteredRequests.map((req) => {
               const currentStepIdx = steps.findIndex(s => s.key === req.status)
-              const statusStep = currentStepIdx >= 0 ? currentStepIdx : 0
+              const statusStep = currentStepIdx >= 0 ? currentStepIdx : (req.status === 'completed' ? 3 : 0)
 
               return (
                 <div
@@ -301,12 +369,22 @@ export function LabRequestsSection({
                         </span>
                       </div>
                       {req.sample_photo_path && (
-                        <div className="flex items-center gap-1 text-emerald-600">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const { data } = supabase.storage
+                              .from('sample-photos')
+                              .getPublicUrl(req.sample_photo_path!)
+                            setPreviewPhotoUrl(data.publicUrl)
+                          }}
+                          className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-lg text-[10px] font-bold transition-all shadow-2xs active:scale-95 cursor-pointer"
+                        >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <span>{language === 'id' ? 'Foto Sampel Tersedia' : 'Sample Photo Available'}</span>
-                        </div>
+                          <span>{language === 'id' ? 'Lihat Foto Sampel' : 'View Sample Photo'}</span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -316,6 +394,64 @@ export function LabRequestsSection({
           </div>
         )}
       </div>
+
+      {/* Sample Photo Lightbox Modal */}
+      {previewPhotoUrl && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-fast"
+            onClick={() => setPreviewPhotoUrl(null)}
+          >
+            <div
+              className="bg-white rounded-3xl p-5 max-w-lg w-full max-h-[90vh] flex flex-col items-center gap-3 shadow-2xl relative animate-pop-micro border border-slate-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-orange-50 text-orange-600 rounded-lg">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    {language === 'id' ? 'Foto Sampel Pelumas' : 'Lubricant Sample Photo'}
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPhotoUrl(null)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="w-full flex-1 min-h-[220px] max-h-[65vh] rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewPhotoUrl}
+                  alt="Sample Preview"
+                  className="w-full h-full object-contain max-h-[60vh] rounded-lg"
+                />
+              </div>
+              <div className="w-full flex justify-end pt-1">
+                <a
+                  href={previewPhotoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1"
+                >
+                  <span>{language === 'id' ? 'Buka Gambar Asli' : 'Open Original Image'}</span>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
     </div>
   )
 }

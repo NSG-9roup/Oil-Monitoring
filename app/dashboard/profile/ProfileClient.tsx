@@ -75,14 +75,28 @@ export default function ProfileClient({
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
   const [notifPermission, setNotifPermission] = useState<string>('default')
+  const [language, setLanguage] = useState<'id' | 'en'>('id')
   
   const supabase = createClient()
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotifPermission(Notification.permission)
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('oiltrack_lang')
+      if (savedLang === 'id' || savedLang === 'en') {
+        setLanguage(savedLang)
+      }
+      if ('Notification' in window) {
+        setNotifPermission(Notification.permission)
+      }
     }
   }, [])
+
+  const handleLanguageChange = (lang: 'id' | 'en') => {
+    setLanguage(lang)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oiltrack_lang', lang)
+    }
+  }
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -362,7 +376,7 @@ export default function ProfileClient({
                   {/* Indication tag if using corporate logo fallback */}
                   {isUsingCompanyLogo && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200/60 px-2 py-0.5 rounded-md">
-                      <span>🏢 Logo Perusahaan</span>
+                      <span>{language === 'id' ? '🏢 Logo Perusahaan' : '🏢 Company Logo'}</span>
                     </span>
                   )}
 
@@ -375,15 +389,41 @@ export default function ProfileClient({
                       className="text-[10px] font-bold text-rose-500 hover:text-rose-700 hover:underline transition-all flex items-center gap-1 ml-1"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      Hapus Foto
+                      {language === 'id' ? 'Hapus Foto' : 'Remove Photo'}
                     </button>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Right: Edit Profile Button */}
-            <div className="pb-1">
+            {/* Right: Edit Profile Button & Language Switcher */}
+            <div className="pb-1 flex items-center gap-3 flex-wrap">
+              {/* Language Switcher */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange('id')}
+                  className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all ${
+                    language === 'id'
+                      ? 'bg-white text-orange-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  ID
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange('en')}
+                  className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all ${
+                    language === 'en'
+                      ? 'bg-white text-orange-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -392,7 +432,7 @@ export default function ProfileClient({
                   <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  Edit Informasi Profil
+                  {language === 'id' ? 'Edit Informasi Profil' : 'Edit Profile Info'}
                 </button>
               ) : (
                 <div className="flex gap-2">
@@ -408,14 +448,16 @@ export default function ProfileClient({
                     }}
                     className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95"
                   >
-                    Batal
+                    {language === 'id' ? 'Batal' : 'Cancel'}
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
                     className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
                   >
-                    {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    {isSaving 
+                      ? (language === 'id' ? 'Menyimpan...' : 'Saving...')
+                      : (language === 'id' ? 'Simpan Perubahan' : 'Save Changes')}
                   </button>
                 </div>
               )}
@@ -435,8 +477,12 @@ export default function ProfileClient({
                 </svg>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Mesin Terdaftar</span>
-                <span className="text-sm font-black text-slate-900">{stats.machinesCount} Mesin</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {language === 'id' ? 'Mesin Terdaftar' : 'Registered Machines'}
+                </span>
+                <span className="text-sm font-black text-slate-900">
+                  {stats.machinesCount} {language === 'id' ? 'Mesin' : (stats.machinesCount === 1 ? 'Machine' : 'Machines')}
+                </span>
               </div>
             </div>
 
@@ -447,8 +493,12 @@ export default function ProfileClient({
                 </svg>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Pengujian Lab</span>
-                <span className="text-sm font-black text-slate-900">{stats.labTestsCount} Laporan</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {language === 'id' ? 'Pengujian Lab' : 'Lab Tests'}
+                </span>
+                <span className="text-sm font-black text-slate-900">
+                  {stats.labTestsCount} {language === 'id' ? 'Laporan' : (stats.labTestsCount === 1 ? 'Report' : 'Reports')}
+                </span>
               </div>
             </div>
 
@@ -459,8 +509,12 @@ export default function ProfileClient({
                 </svg>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Request Lab</span>
-                <span className="text-sm font-black text-slate-900">{stats.labRequestsCount} Permintaan</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {language === 'id' ? 'Request Lab' : 'Lab Requests'}
+                </span>
+                <span className="text-sm font-black text-slate-900">
+                  {stats.labRequestsCount} {language === 'id' ? 'Permintaan' : (stats.labRequestsCount === 1 ? 'Request' : 'Requests')}
+                </span>
               </div>
             </div>
 
@@ -471,8 +525,12 @@ export default function ProfileClient({
                 </svg>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Penawaran Oli</span>
-                <span className="text-sm font-black text-slate-900">{stats.ordersCount} Penawaran</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {language === 'id' ? 'Penawaran Oli' : 'Oil Quotes'}
+                </span>
+                <span className="text-sm font-black text-slate-900">
+                  {stats.ordersCount} {language === 'id' ? 'Penawaran' : (stats.ordersCount === 1 ? 'Quote' : 'Quotes')}
+                </span>
               </div>
             </div>
           </div>
@@ -489,26 +547,32 @@ export default function ProfileClient({
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Detail Ringkasan
+              {language === 'id' ? 'Detail Ringkasan' : 'Overview Details'}
             </h3>
 
             <div className="space-y-3.5 divide-y divide-slate-100">
               <div className="pt-1">
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Role Akses Sistem</span>
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                  {language === 'id' ? 'Role Akses Sistem' : 'System Access Role'}
+                </span>
                 <span className="text-xs font-bold text-slate-800 mt-0.5 block capitalize">{roleDisplay}</span>
               </div>
 
               <div className="pt-3">
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Status Akun</span>
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                  {language === 'id' ? 'Status Akun' : 'Account Status'}
+                </span>
                 <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-[10px] font-black uppercase tracking-wider">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                  Aktif & Terverifikasi
+                  {language === 'id' ? 'Aktif & Terverifikasi' : 'Active & Verified'}
                 </span>
               </div>
 
               {initialProfile.customer && (
                 <div className="pt-3">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Perusahaan Terdaftar</span>
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                    {language === 'id' ? 'Perusahaan Terdaftar' : 'Registered Company'}
+                  </span>
                   <span className="text-xs font-bold text-slate-800 mt-0.5 block">{initialProfile.customer.company_name}</span>
                 </div>
               )}
@@ -522,7 +586,7 @@ export default function ProfileClient({
                 <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                Notifikasi Perangkat
+                {language === 'id' ? 'Notifikasi Perangkat' : 'Device Notifications'}
               </h3>
               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
                 notifPermission === 'granted'
@@ -531,12 +595,18 @@ export default function ProfileClient({
                   ? 'bg-red-50 text-red-600 border-red-200'
                   : 'bg-amber-50 text-amber-600 border-amber-200'
               }`}>
-                {notifPermission === 'granted' ? 'Aktif' : notifPermission === 'denied' ? 'Dibatasi' : 'Belum Izin'}
+                {notifPermission === 'granted'
+                  ? (language === 'id' ? 'Aktif' : 'Active')
+                  : notifPermission === 'denied'
+                  ? (language === 'id' ? 'Dibatasi' : 'Restricted')
+                  : (language === 'id' ? 'Belum Izin' : 'Permission Needed')}
               </span>
             </div>
 
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Dapatkan notifikasi instan secara otomatis saat hasil uji lab terbit atau penawaran produk disetujui.
+              {language === 'id'
+                ? 'Dapatkan notifikasi instan secara otomatis saat hasil uji lab terbit atau penawaran produk disetujui.'
+                : 'Get instant notifications automatically when lab test results are published or quotes are approved.'}
             </p>
 
             <div className="space-y-2 pt-1">
@@ -547,22 +617,24 @@ export default function ProfileClient({
                 <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                {notifPermission === 'granted' ? 'Perbarui Izin Notifikasi' : 'Aktifkan Notifikasi Push'}
+                {notifPermission === 'granted'
+                  ? (language === 'id' ? 'Perbarui Izin Notifikasi' : 'Update Notification Permission')
+                  : (language === 'id' ? 'Aktifkan Notifikasi Push' : 'Enable Push Notifications')}
               </button>
               
               <button
                 onClick={async () => {
                   if (!('Notification' in window) || Notification.permission !== 'granted') {
-                    toast.error('Harap aktifkan izin notifikasi terlebih dahulu.')
+                    toast.error(language === 'id' ? 'Harap aktifkan izin notifikasi terlebih dahulu.' : 'Please allow notification permission first.')
                     return
                   }
 
-                  const loadToast = toast.loading('Mengirim notifikasi push dari server...')
+                  const loadToast = toast.loading(language === 'id' ? 'Mengirim notifikasi push dari server...' : 'Sending server push notification...')
                   try {
                     const serverResult = await sendTestPushNotificationAction()
                     toast.dismiss(loadToast)
                     if (serverResult.success) {
-                      toast.success('Notifikasi Push berhasil dikirim langsung dari server!')
+                      toast.success(language === 'id' ? 'Notifikasi Push berhasil dikirim langsung dari server!' : 'Server push notification sent successfully!')
                       return
                     }
                   } catch {
@@ -572,24 +644,24 @@ export default function ProfileClient({
                   // Fallback: local browser test notification
                   try {
                     const reg = await navigator.serviceWorker.ready
-                    reg.showNotification('OilTrack System • Uji Coba', {
-                      body: 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.',
+                    reg.showNotification('OilTrack System • Test', {
+                      body: language === 'id' ? 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.' : 'Simulation notification: Latest lab test report ready for download.',
                       icon: 'https://i.imgur.com/8nqsjFz.png',
                       badge: 'https://i.imgur.com/8nqsjFz.png',
                       data: '/dashboard',
                     } as unknown as NotificationOptions)
-                    toast.success('Notifikasi simulasi lokal berhasil ditampilkan!')
+                    toast.success(language === 'id' ? 'Notifikasi simulasi lokal berhasil ditampilkan!' : 'Local test notification shown successfully!')
                   } catch {
-                    new Notification('OilTrack System • Uji Coba', {
-                      body: 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.',
+                    new Notification('OilTrack System • Test', {
+                      body: language === 'id' ? 'Notifikasi simulasi: Laporan hasil uji lab terbaru siap diunduh.' : 'Simulation notification: Latest lab test report ready for download.',
                       icon: 'https://i.imgur.com/8nqsjFz.png',
                     })
-                    toast.success('Notifikasi simulasi ditampilkan (browser fallback)!')
+                    toast.success(language === 'id' ? 'Notifikasi simulasi ditampilkan (browser fallback)!' : 'Simulation notification shown (browser fallback)!')
                   }
                 }}
                 className="w-full py-2.5 border border-slate-200 text-slate-600 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-colors uppercase tracking-wider flex items-center justify-center gap-2"
               >
-                Tes Notifikasi Push Server
+                {language === 'id' ? 'Tes Notifikasi Push Server' : 'Test Server Push Notification'}
               </button>
             </div>
           </div>
@@ -603,13 +675,13 @@ export default function ProfileClient({
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              Informasi Pribadi & Kontak
+              {language === 'id' ? 'Informasi Pribadi & Kontak' : 'Personal & Contact Information'}
             </h3>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
-                  Nama Lengkap
+                  {language === 'id' ? 'Nama Lengkap' : 'Full Name'}
                 </label>
                 <input
                   type="text"
@@ -619,14 +691,14 @@ export default function ProfileClient({
                   className={`w-full px-4 py-3 bg-slate-50/50 focus:bg-white border rounded-2xl text-xs font-bold text-slate-800 transition-all outline-none disabled:bg-slate-100/60 disabled:text-slate-500 ${
                     errors.full_name ? 'border-red-400 focus:ring-4 focus:ring-red-100' : 'border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50'
                   }`}
-                  placeholder="Nama Lengkap Anda"
+                  placeholder={language === 'id' ? 'Nama Lengkap Anda' : 'Your Full Name'}
                 />
                 {errors.full_name && <p className="text-red-500 text-xs mt-1 font-semibold">{errors.full_name}</p>}
               </div>
 
               <div>
                 <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
-                  Alamat Email (Pengenal Utama & Login)
+                  {language === 'id' ? 'Alamat Email (Pengenal Utama & Login)' : 'Email Address (Primary ID & Login)'}
                 </label>
                 <input
                   type="email"
@@ -643,18 +715,24 @@ export default function ProfileClient({
                 ) : isEditing ? (
                   <p className="text-[10px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
                     <span>⚠️</span>
-                    <span>Jika email diubah, Anda akan menggunakan email baru ini untuk login berikutnya.</span>
+                    <span>
+                      {language === 'id'
+                        ? 'Jika email diubah, Anda akan menggunakan email baru ini untuk login berikutnya.'
+                        : 'If email is changed, you will use this new email for future logins.'}
+                    </span>
                   </p>
                 ) : (
                   <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                    Email digunakan sebagai pengenal otentikasi utama dan kredensial login akun Anda.
+                    {language === 'id'
+                      ? 'Email digunakan sebagai pengenal otentikasi utama dan kredensial login akun Anda.'
+                      : 'Email is used as the primary authentication identifier and account login credential.'}
                   </p>
                 )}
               </div>
 
               <div>
                 <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
-                  Nomor Telepon / WhatsApp
+                  {language === 'id' ? 'Nomor Telepon / WhatsApp' : 'Phone Number / WhatsApp'}
                 </label>
                 <input
                   type="tel"
@@ -662,7 +740,7 @@ export default function ProfileClient({
                   value={formData.phone_number}
                   onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50 rounded-2xl text-xs font-bold text-slate-800 transition-all outline-none disabled:bg-slate-100/60 disabled:text-slate-500"
-                  placeholder="+62 811-1440-5183"
+                  placeholder="+62 812-xxxx-xxxx"
                 />
               </div>
             </div>
@@ -676,7 +754,7 @@ export default function ProfileClient({
                   <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  Anggota Tim Perusahaan ({teamMembers.length})
+                  {language === 'id' ? 'Anggota Tim Perusahaan' : 'Company Team Members'} ({teamMembers.length})
                 </h3>
                 <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
                   {initialProfile.customer?.company_name || 'Customer Team'}
@@ -708,11 +786,11 @@ export default function ProfileClient({
                         <div>
                           <div className="flex items-center gap-2">
                             <h4 className="text-xs font-bold text-slate-900">
-                              {member.full_name || 'Pengguna'}
+                              {member.full_name || (language === 'id' ? 'Pengguna' : 'User')}
                             </h4>
                             {isCurrent && (
                               <span className="px-2 py-0.2 bg-orange-100 text-orange-700 text-[9px] font-black uppercase rounded-full">
-                                Saya
+                                {language === 'id' ? 'Saya' : 'Me'}
                               </span>
                             )}
                           </div>
@@ -738,20 +816,26 @@ export default function ProfileClient({
               <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Keamanan Akun & Kata Sandi
+              {language === 'id' ? 'Keamanan Akun & Kata Sandi' : 'Account Security & Password'}
             </h3>
 
             {!showPasswordForm ? (
               <div className="flex items-center justify-between p-4 bg-orange-50/50 border border-orange-100 rounded-2xl">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-800">Kata Sandi Akun</h4>
-                  <p className="text-[11px] text-slate-500 font-medium">Perbarui kata sandi Anda secara berkala untuk menjaga keamanan akun.</p>
+                  <h4 className="text-xs font-bold text-slate-800">
+                    {language === 'id' ? 'Kata Sandi Akun' : 'Account Password'}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {language === 'id'
+                      ? 'Perbarui kata sandi Anda secara berkala untuk menjaga keamanan akun.'
+                      : 'Update your password periodically to keep your account secure.'}
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowPasswordForm(true)}
                   className="px-4 py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-600 font-black text-xs rounded-xl uppercase tracking-wider transition-all shadow-sm active:scale-95 shrink-0"
                 >
-                  Ubah Kata Sandi
+                  {language === 'id' ? 'Ubah Kata Sandi' : 'Change Password'}
                 </button>
               </div>
             ) : (
@@ -759,14 +843,14 @@ export default function ProfileClient({
                 <div className="space-y-3">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
-                      Kata Sandi Baru
+                      {language === 'id' ? 'Kata Sandi Baru' : 'New Password'}
                     </label>
                     <div className="relative">
                       <input
                         type={showNewPassword ? 'text' : 'password'}
                         value={passwordData.new_password}
                         onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                        placeholder="Minimal 6 karakter"
+                        placeholder={language === 'id' ? 'Minimal 6 karakter' : 'Minimum 6 characters'}
                         className="w-full px-4 py-3 pr-10 bg-white border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50 rounded-xl text-xs font-bold text-slate-800 transition-all outline-none"
                       />
                       <button
@@ -785,13 +869,13 @@ export default function ProfileClient({
 
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
-                      Konfirmasi Kata Sandi Baru
+                      {language === 'id' ? 'Konfirmasi Kata Sandi Baru' : 'Confirm New Password'}
                     </label>
                     <input
                       type={showNewPassword ? 'text' : 'password'}
                       value={passwordData.confirm_password}
                       onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                      placeholder="Masukkan ulang kata sandi"
+                      placeholder={language === 'id' ? 'Masukkan ulang kata sandi' : 'Re-enter new password'}
                       className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50 rounded-xl text-xs font-bold text-slate-800 transition-all outline-none"
                     />
                   </div>
@@ -804,14 +888,16 @@ export default function ProfileClient({
                       }}
                       className="px-4 py-2.5 bg-slate-200/80 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs uppercase tracking-wider transition-colors"
                     >
-                      Batal
+                      {language === 'id' ? 'Batal' : 'Cancel'}
                     </button>
                     <button
                       onClick={handleDirectPasswordChange}
                       disabled={isUpdatingPassword}
                       className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:from-orange-600 hover:to-red-700 transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:opacity-50"
                     >
-                      {isUpdatingPassword ? 'Memproses...' : 'Simpan Kata Sandi'}
+                      {isUpdatingPassword
+                        ? (language === 'id' ? 'Memproses...' : 'Processing...')
+                        : (language === 'id' ? 'Simpan Kata Sandi' : 'Save Password')}
                     </button>
                   </div>
                 </div>
