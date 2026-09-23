@@ -2,6 +2,7 @@
 
 import React from 'react'
 import type { AdminLabTest, Customer, AdminMachine } from '@/lib/types'
+import { parseRunningHoursMetadata, formatRunningHoursDisplay } from '@/lib/utils/runningHours'
 
 interface AdminTestsTabProps {
   recentTests: AdminLabTest[]
@@ -243,17 +244,28 @@ export default function AdminTestsTab({
                         {test.overall_status || 'normal'}
                       </span>
                       {test.running_hours ? (
-                        <span className="text-[10px] font-semibold text-slate-500 flex items-center gap-1">
-                          <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {test.running_hours} {test.running_hours_unit === 'months' ? 'Bulan' : test.running_hours_unit === 'years' ? 'Tahun' : 'hrs'}
-                        </span>
+                        (() => {
+                          const parsed = parseRunningHoursMetadata(test.notes, test.running_hours_unit)
+                          return (
+                            <span className="text-[10px] font-semibold text-slate-500 flex items-center gap-1">
+                              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {formatRunningHoursDisplay(test.running_hours, parsed.unit)}
+                            </span>
+                          )
+                        })()
                       ) : null}
                       {test.notes ? (
-                        <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 max-w-[160px] truncate block" title={test.notes}>
-                          💬 {test.notes}
-                        </span>
+                        (() => {
+                          const cleanNotes = test.notes.replace(/\[UNIT:(hours|months|years)\]/gi, '').trim()
+                          if (!cleanNotes) return null
+                          return (
+                            <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 max-w-[160px] truncate block" title={cleanNotes}>
+                              💬 {cleanNotes}
+                            </span>
+                          )
+                        })()
                       ) : null}
                     </div>
                   </td>

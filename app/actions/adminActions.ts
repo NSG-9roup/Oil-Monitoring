@@ -180,7 +180,16 @@ export async function createTest(data: Partial<LabTestFormData>, sendEmailNotifi
       const fallbackPayload = { ...cleanPayload }
       delete fallbackPayload.viscosity_100c_min
       delete fallbackPayload.viscosity_100c_max
+
+      const unit = fallbackPayload.running_hours_unit as string | undefined
       delete fallbackPayload.running_hours_unit
+
+      // Preserve non-default unit into notes metadata tag so user choice is never lost
+      if (unit && unit !== 'hours') {
+        const rawNotes = typeof fallbackPayload.notes === 'string' ? fallbackPayload.notes : ''
+        const cleanNotes = rawNotes.replace(/\[UNIT:(hours|months|years)\]/gi, '').trim()
+        fallbackPayload.notes = cleanNotes ? `${cleanNotes}\n[UNIT:${unit}]` : `[UNIT:${unit}]`
+      }
 
       insertRes = await supabase
         .from('oil_lab_tests')
@@ -292,7 +301,18 @@ export async function updateTest(id: string, data: Partial<LabTestFormData>) {
       const fallbackPayload = { ...cleanPayload }
       delete fallbackPayload.viscosity_100c_min
       delete fallbackPayload.viscosity_100c_max
+
+      const unit = fallbackPayload.running_hours_unit as string | undefined
       delete fallbackPayload.running_hours_unit
+
+      // Preserve unit into notes metadata tag so user choice is never lost
+      if (unit) {
+        const rawNotes = typeof fallbackPayload.notes === 'string' ? fallbackPayload.notes : ''
+        const cleanNotes = rawNotes.replace(/\[UNIT:(hours|months|years)\]/gi, '').trim()
+        fallbackPayload.notes = unit !== 'hours'
+          ? (cleanNotes ? `${cleanNotes}\n[UNIT:${unit}]` : `[UNIT:${unit}]`)
+          : cleanNotes
+      }
 
       updateRes = await supabase.from('oil_lab_tests').update(fallbackPayload).eq('id', id)
     }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SectionHeader } from '@/app/dashboard/components/SectionHeader'
+import { parseRunningHoursMetadata, formatRunningHoursDisplay } from '@/lib/utils/runningHours'
 import type {
   LabProduct,
   LabReportItem,
@@ -266,7 +267,7 @@ export function LabReportsSection({
                               {status.text}
                             </span>
                             {report.notes && (
-                              <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 flex items-center gap-1" title={report.notes}>
+                              <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 flex items-center gap-1" title={report.notes.replace(/\[UNIT:(hours|months|years)\]/gi, '').trim()}>
                                 💬 {language === 'id' ? 'Catatan TS' : 'TS Notes'}
                               </span>
                             )}
@@ -386,9 +387,14 @@ export function LabReportsSection({
                             : unknownLabel}
                         </div>
                         {report.running_hours ? (
-                          <span className="text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200/60 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                            ⏱️ {report.running_hours} {report.running_hours_unit === 'months' ? (language === 'id' ? 'Bulan' : 'mos') : report.running_hours_unit === 'years' ? (language === 'id' ? 'Tahun' : 'yrs') : (language === 'id' ? 'Jam' : 'hrs')}
-                          </span>
+                          (() => {
+                            const parsed = parseRunningHoursMetadata(report.notes, report.running_hours_unit)
+                            return (
+                              <span className="text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200/60 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                ⏱️ {formatRunningHoursDisplay(report.running_hours, parsed.unit, language)}
+                              </span>
+                            )
+                          })()
                         ) : null}
                       </div>
                       <div className="flex items-center gap-6 text-sm flex-wrap">
@@ -646,7 +652,7 @@ export function LabReportsSection({
                         </div>
                         <div className="pl-6 border-l-2 border-amber-400 mt-2.5">
                           <p className="text-xs sm:text-sm font-semibold text-amber-950 leading-relaxed whitespace-pre-line">
-                            {report.notes}
+                            {report.notes.replace(/\[UNIT:(hours|months|years)\]/gi, '').trim()}
                           </p>
                         </div>
                       </div>

@@ -26,6 +26,7 @@ import NotificationBell from '@/components/NotificationBell'
 import { SearchableSelect } from '@/app/components/SearchableSelect'
 import { ConfirmModal } from '@/app/components/ConfirmModal'
 import { Portal } from '@/app/components/Portal'
+import { parseRunningHoursMetadata } from '@/lib/utils/runningHours'
 
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -287,7 +288,16 @@ export default function AdminClient({
 
   const customers = initialCustomers
   const machines = initialMachines
-  const recentTests = initialRecentTests
+  const recentTests = useMemo(() => {
+    return (initialRecentTests || []).map(test => {
+      const parsed = parseRunningHoursMetadata(test.notes, (test as any).running_hours_unit)
+      return {
+        ...test,
+        running_hours_unit: parsed.unit,
+        notes: parsed.cleanNotes
+      }
+    })
+  }, [initialRecentTests])
   const labRequests = initialLabRequests
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
@@ -802,6 +812,8 @@ export default function AdminClient({
     const currentMachine = machines.find(m => m.id === test.machine_id)
     setSelectedCustomerIdForTest(currentMachine?.customer_id || customers[0]?.id || '')
 
+    const parsed = parseRunningHoursMetadata(test.notes, (test as any).running_hours_unit)
+
     setFormData({
       machine_id: test.machine_id,
       product_id: test.product_id,
@@ -814,14 +826,14 @@ export default function AdminClient({
       pdf_path: test.pdf_path || '',
       overall_status: test.overall_status || 'normal',
       running_hours: test.running_hours ?? '',
-      running_hours_unit: (test as any).running_hours_unit || 'hours',
+      running_hours_unit: parsed.unit,
       viscosity_40c_min: test.viscosity_40c_min ?? '',
       viscosity_40c_max: test.viscosity_40c_max ?? '',
       viscosity_100c_min: test.viscosity_100c_min ?? '',
       viscosity_100c_max: test.viscosity_100c_max ?? '',
       water_content_max: test.water_content_max ?? '',
       tan_max: test.tan_max ?? '',
-      notes: test.notes || ''
+      notes: parsed.cleanNotes
     })
     setPdfFile(null)
     setModalOpen('edit-test')
