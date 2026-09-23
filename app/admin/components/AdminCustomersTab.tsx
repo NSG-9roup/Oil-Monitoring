@@ -109,7 +109,7 @@ export default function AdminCustomersTab({
                 <tr key={customer.id} className="hover:bg-indigo-50/10 transition-colors duration-200">
                   {/* Logo Column */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="relative w-14 h-11 rounded-xl overflow-hidden bg-white border border-slate-150 flex items-center justify-center shadow-sm">
+                    <div className="relative w-14 h-11 rounded-xl overflow-hidden bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                       {customer.logo_url ? (
                         <Image
                           src={customer.logo_url}

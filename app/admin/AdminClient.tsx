@@ -351,6 +351,25 @@ export default function AdminClient({
   const [useCustomViscosity, setUseCustomViscosity] = useState(false)
   const [useCustomViscosityQuick, setUseCustomViscosityQuick] = useState(false)
   
+  const [language, setLanguage] = useState<'id' | 'en'>('id')
+  const [sendEmailNotification, setSendEmailNotification] = useState(false)
+
+  useEffect(() => {
+    const stored = typeof window !== 'undefined' ? (localStorage.getItem('oiltrack_lang') || localStorage.getItem('language')) : 'id'
+    if (stored === 'en' || stored === 'id') {
+      setLanguage(stored as 'en' | 'id')
+    }
+  }, [])
+
+  const handleLanguageChange = (newLang: 'id' | 'en') => {
+    setLanguage(newLang)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oiltrack_lang', newLang)
+      localStorage.setItem('language', newLang)
+      window.dispatchEvent(new Event('storage'))
+    }
+  }
+  
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
@@ -658,14 +677,7 @@ export default function AdminClient({
   const handleQuickSaveProduct = async () => {
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('oil_products')
-        .insert([quickAddData])
-        .select()
-        .single()
-      
-      if (error) throw error
-      
+      await createProduct(quickAddData)
       router.refresh()
       alert('Product added successfully!')
       setQuickAddModal(null)
@@ -758,6 +770,7 @@ export default function AdminClient({
     const defaultCustId = customers[0]?.id || ''
     setSelectedCustomerIdForTest(defaultCustId)
     const matchingMachines = machines.filter(m => m.customer_id === defaultCustId)
+    setSendEmailNotification(false)
 
     setFormData({
       machine_id: matchingMachines[0]?.id || machines[0]?.id || '',
@@ -847,7 +860,7 @@ export default function AdminClient({
       const payload = buildTestPayload({ ...formData, pdf_path: currentPdfPath })
 
       if (modalOpen === 'add-test') {
-        const res = await createTest(payload, false)
+        const res = await createTest(payload, sendEmailNotification)
         if (res && !res.success) {
           alert('Gagal menyimpan hasil uji lab: ' + (res.error || 'Terjadi kesalahan sistem.'))
           return
@@ -998,7 +1011,33 @@ export default function AdminClient({
             </div>
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <NotificationBell />
+              {/* Language Switcher */}
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[10px] font-black shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange('id')}
+                  className={`px-2 py-1 rounded-lg transition-all ${
+                    language === 'id'
+                      ? 'bg-white text-orange-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  ID
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange('en')}
+                  className={`px-2 py-1 rounded-lg transition-all ${
+                    language === 'en'
+                      ? 'bg-white text-orange-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+
+              <NotificationBell language={language} />
               <button
                 onClick={handleSignOut}
                 className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center w-full sm:w-auto justify-center gap-1.5 active:scale-95"
@@ -1006,7 +1045,7 @@ export default function AdminClient({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Sign Out
+                {language === 'en' ? 'Sign Out' : 'Keluar'}
               </button>
             </div>
           </div>
@@ -1021,7 +1060,7 @@ export default function AdminClient({
             {[
               { 
                 key: 'overview', 
-                label: 'OVERVIEW',
+                label: language === 'en' ? 'OVERVIEW' : 'IKHTISAR',
                 icon: (
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -1030,7 +1069,7 @@ export default function AdminClient({
               },
               { 
                 key: 'customers', 
-                label: 'CUSTOMERS',
+                label: language === 'en' ? 'CUSTOMERS' : 'PELANGGAN',
                 icon: (
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -1039,7 +1078,7 @@ export default function AdminClient({
               },
               { 
                 key: 'machines', 
-                label: 'MACHINES',
+                label: language === 'en' ? 'MACHINES' : 'MESIN',
                 icon: (
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -1049,7 +1088,7 @@ export default function AdminClient({
               },
               { 
                 key: 'products', 
-                label: 'PRODUCTS',
+                label: language === 'en' ? 'PRODUCTS' : 'PRODUK',
                 icon: (
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -1058,7 +1097,7 @@ export default function AdminClient({
               },
               { 
                 key: 'tests', 
-                label: 'TESTS',
+                label: language === 'en' ? 'TESTS' : 'UJI LAB',
                 icon: (
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1067,7 +1106,7 @@ export default function AdminClient({
               },
               { 
                 key: 'orders', 
-                label: 'PENAWARAN',
+                label: language === 'en' ? 'ORDERS' : 'PENAWARAN',
                 badge: initialOrders?.filter(o => o.status === 'pending').length || 0,
                 badgeColor: 'bg-amber-500 text-white',
                 icon: (
@@ -1078,7 +1117,7 @@ export default function AdminClient({
               },
               { 
                 key: 'users', 
-                label: 'USERS',
+                label: language === 'en' ? 'USERS' : 'PENGGUNA',
                 icon: (
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -1087,7 +1126,7 @@ export default function AdminClient({
               },
               { 
                 key: 'requests', 
-                label: 'REQUESTS',
+                label: language === 'en' ? 'REQUESTS' : 'PERMINTAAN',
                 badge: labRequests?.filter(r => r.status === 'pending').length || 0,
                 badgeColor: 'bg-red-500 text-white',
                 icon: (
@@ -1143,6 +1182,7 @@ export default function AdminClient({
                 recentTests={recentTests}
                 setActiveTab={(tab) => handleTabChange(tab)}
                 formatDate={formatDate}
+                language={language}
               />
             )}
 
@@ -1391,7 +1431,7 @@ export default function AdminClient({
                     type="file"
                     accept="image/*"
                     onChange={handleLogoFileChange}
-                    className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
                   />
                   <p className="text-[10px] font-medium text-slate-400 mt-2">
                     Max 5MB • PNG, JPG, WebP • Auto-compressed to 400x400px
@@ -1672,7 +1712,7 @@ export default function AdminClient({
                           setUseCustomViscosity(false)
                           setFormData({...formData, viscosity_grade: ''})
                         }}
-                        className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
+                        className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
                       >
                         Back
                       </button>
@@ -1909,7 +1949,7 @@ export default function AdminClient({
                         step="0.1"
                         value={toInputValue(formData.viscosity_40c)}
                         onChange={(e) => setFormData({...formData, viscosity_40c: e.target.value})}
-                        className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
+                        className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
                         placeholder="e.g., 46.5"
                       />
                     </div>
@@ -1960,7 +2000,7 @@ export default function AdminClient({
                         step="0.1"
                         value={toInputValue(formData.viscosity_100c)}
                         onChange={(e) => setFormData({...formData, viscosity_100c: e.target.value})}
-                        className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
+                        className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none"
                         placeholder="e.g., 6.8"
                       />
                     </div>
@@ -2009,7 +2049,7 @@ export default function AdminClient({
                       <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
                         Water Content <span className="text-rose-500">*</span>
                       </label>
-                      <div className="flex items-center rounded-xl border border-slate-250 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 bg-white overflow-hidden transition-all">
+                      <div className="flex items-center rounded-xl border border-slate-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 bg-white overflow-hidden transition-all">
                         <input
                           type="number"
                           step={formData.water_content_unit === 'PERCENT' ? '0.01' : '1'}
@@ -2067,7 +2107,7 @@ export default function AdminClient({
                           step="0.01"
                           value={toInputValue(formData.tan_value)}
                           onChange={(e) => setFormData({...formData, tan_value: e.target.value})}
-                          className="w-full bg-white border border-slate-250 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none pr-24"
+                          className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 transition-all outline-none pr-24"
                           placeholder="e.g., 0.85"
                         />
                         <span className="absolute right-2.5 top-2 text-[9px] font-bold text-slate-400 uppercase bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
@@ -2186,15 +2226,15 @@ export default function AdminClient({
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                    Berkas Laporan PDF (Maksimal 2MB)
+                    Berkas Laporan PDF (Maksimal 10MB)
                   </label>
                   <input
                     type="file"
                     accept="application/pdf"
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null
-                      if (file && file.size > 2 * 1024 * 1024) {
-                        alert('Berkas PDF terlalu besar! Batas maksimal adalah 2MB agar hemat ruang penyimpanan.')
+                      if (file && file.size > 10 * 1024 * 1024) {
+                        alert('Berkas PDF terlalu besar! Batas maksimal adalah 10MB.')
                         e.target.value = ''
                         setPdfFile(null)
                       } else {
@@ -2244,6 +2284,25 @@ export default function AdminClient({
                     </div>
                   )
                 })()}
+                {/* Opsi Kirim Email Notifikasi Otomatis */}
+                {modalOpen === 'add-test' && (
+                  <label className="flex items-center gap-3 cursor-pointer bg-orange-50/60 border border-orange-200/80 p-3.5 rounded-xl hover:bg-orange-100/50 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={sendEmailNotification}
+                      onChange={(e) => setSendEmailNotification(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black text-slate-800">
+                        Kirim notifikasi email otomatis ke PIC Customer
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Customer akan menerima email konfirmasi resmi saat laporan uji lab baru diterbitkan.
+                      </span>
+                    </div>
+                  </label>
+                )}
               </div>
 
             </div>
@@ -2339,16 +2398,18 @@ export default function AdminClient({
                     placeholder="Nama Lengkap"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email (Optional)</label>
-                  <input
-                    type="email"
-                    value={String(formData.contact_email ?? '')}
-                    onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
-                    placeholder="john@company.com"
-                  />
-                </div>
+                {modalOpen === 'edit-user' && (
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={String(formData.contact_email ?? '')}
+                      onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-900 transition-all outline-none"
+                      placeholder="user@example.com"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Phone Number (Optional)</label>
                   <input
@@ -2442,7 +2503,7 @@ export default function AdminClient({
                         <div className="text-slate-500">PT Astra Agro Lestari</div>
                         <div className="text-slate-500">PT United Tractors</div>
                         <div className="font-black text-slate-700 mt-3 mb-1">Option 2 - Column structure with header:</div>
-                        <div className="text-slate-650 font-bold">company_name</div>
+                        <div className="text-slate-600 font-bold">company_name</div>
                         <div className="text-slate-500">PT Nabel Sakha Gemilang</div>
                         <div className="text-slate-500">PT Astra Agro Lestari</div>
                       </div>
@@ -2476,7 +2537,7 @@ export default function AdminClient({
                             reader.readAsText(file)
                           }
                         }}
-                        className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
                       />
                     </div>
 
@@ -2568,7 +2629,7 @@ export default function AdminClient({
                             <p className="text-xs font-bold text-slate-600 mb-3">
                               🔴 <span className="text-red-600">{importResult.failed} customers</span> failed to process.
                             </p>
-                            <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
+                            <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-200 font-mono text-[10px] space-y-1">
                               <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
                               {importResult.errors.map((err, idx) => (
                                 <p key={idx} className="text-slate-500">• {err}</p>
@@ -2624,8 +2685,8 @@ export default function AdminClient({
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CSV File Format Guidance</label>
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-[11px] font-mono select-all">
                         <div className="font-black text-slate-700 mb-1">Required format with column headers:</div>
-                        <div className="text-slate-650 font-bold">product_name,product_type,base_oil,viscosity_grade</div>
-                        <div className="font-black text-slate-750 mt-3 mb-1">Example Rows:</div>
+                        <div className="text-slate-600 font-bold">product_name,product_type,base_oil,viscosity_grade</div>
+                        <div className="font-black text-slate-700 mt-3 mb-1">Example Rows:</div>
                         <div className="text-slate-500">Mobil DTE 25,Industrial Oil,Mineral,ISO VG 46</div>
                         <div className="text-slate-500">Shell Tellus S2 M 46,Hydraulic Oil,Mineral,ISO VG 46</div>
                         <div className="text-[10px] text-amber-700 font-bold mt-3">⚠️ Note: product_name and product_type columns must be filled for every row.</div>
@@ -2662,7 +2723,7 @@ export default function AdminClient({
                             reader.readAsText(file)
                           }
                         }}
-                        className="w-full bg-slate-50 border border-slate-250 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer"
                       />
                     </div>
 
@@ -2764,7 +2825,7 @@ export default function AdminClient({
                             <p className="text-xs font-bold text-slate-600 mb-3">
                               🔴 <span className="text-red-600">{importResult.failed} products</span> failed to process.
                             </p>
-                            <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-150 font-mono text-[10px] space-y-1">
+                            <div className="mt-3 max-h-40 overflow-y-auto bg-white p-3 rounded-xl border border-slate-200 font-mono text-[10px] space-y-1">
                               <p className="font-black text-red-600 mb-2">Detailed Error Logs:</p>
                               {importResult.errors.map((err, idx) => (
                                 <p key={idx} className="text-slate-500">• {err}</p>
@@ -3022,7 +3083,7 @@ export default function AdminClient({
                           setUseCustomViscosityQuick(false)
                           setQuickAddData({...quickAddData, viscosity_grade: ''})
                         }}
-                        className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl transition-all"
+                        className="px-3 py-2 text-xs font-black uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
                       >
                         Back
                       </button>

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { resolveComplaintAction, updateComplaintStatusAction } from '@/app/actions/adminActions'
 import { toast } from 'react-hot-toast'
 import { Portal } from '@/app/components/Portal'
+import { ConfirmModal } from '@/app/components/ConfirmModal'
 
 export interface AdminOrder {
   id: string
@@ -89,6 +90,9 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
   const [resolvingComplaint, setResolvingComplaint] = useState<AdminComplaint | null>(null)
   const [resolutionNotes, setResolutionNotes] = useState('')
 
+  // Delete confirm modal state
+  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<string | null>(null)
+
   // --- Orders ---
   const filteredOrders = orders.filter(o => {
     const matchSearch =
@@ -145,8 +149,11 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
     }
   }
 
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus permintaan penawaran ini?')) return
+  const handleDeleteOrder = (orderId: string) => {
+    setDeleteConfirmOrder(orderId)
+  }
+
+  const executeDeleteOrder = async (orderId: string) => {
     setLoadingId(orderId)
     try {
       const { error } = await supabase
@@ -161,6 +168,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
       toast.error('Gagal menghapus permintaan penawaran.')
     } finally {
       setLoadingId(null)
+      setDeleteConfirmOrder(null)
     }
   }
 
@@ -342,7 +350,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm font-bold text-slate-700">{order.quantity} Pcs</span>
+                          <span className="text-sm font-bold text-slate-700">{order.quantity} Drum</span>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${ORDER_STATUS_STYLES[order.status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
@@ -498,7 +506,7 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Kuantitas (Pcs)</label>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Kuantitas (Drum)</label>
                     <input
                       type="number"
                       min="1"
@@ -515,11 +523,10 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
                       onChange={(e) => setEditStatus(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 transition-colors outline-none"
                     >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="processing">Processing</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="pending">Menunggu Review (Pending)</option>
+                      <option value="processing">Diteruskan ke Admin Sales (Processing)</option>
+                      <option value="completed">Selesai / Penawaran Diterbitkan (Completed)</option>
+                      <option value="cancelled">Dibatalkan (Cancelled)</option>
                     </select>
                   </div>
                 </div>
@@ -620,6 +627,20 @@ export default function AdminOrdersTab({ initialOrders, initialComplaints, produ
           </div>
         </Portal>
       )}
+
+      {/* Confirm Delete Order Modal */}
+      <ConfirmModal
+        isOpen={!!deleteConfirmOrder}
+        title="Hapus Permintaan Penawaran"
+        message="Apakah Anda yakin ingin menghapus permintaan penawaran produk ini secara permanen dari sistem?"
+        confirmText="Hapus Penawaran"
+        confirmVariant="danger"
+        isLoading={loadingId === deleteConfirmOrder}
+        onConfirm={() => {
+          if (deleteConfirmOrder) executeDeleteOrder(deleteConfirmOrder)
+        }}
+        onCancel={() => setDeleteConfirmOrder(null)}
+      />
     </div>
   )
 }

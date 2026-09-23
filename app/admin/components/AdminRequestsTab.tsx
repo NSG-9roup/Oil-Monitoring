@@ -31,8 +31,29 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; title: string } | null>(null)
   const [confirmAction, setConfirmAction] = useState<{ message: string; onConfirm: () => void } | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'assigned' | 'sampling' | 'completed' | 'cancelled'>('all')
   
   const supabase = createClient()
+
+  const filteredRequests = labRequests.filter(req => {
+    const matchesStatus = statusFilter === 'all' || req.status === statusFilter
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return matchesStatus
+    
+    const customerName = (req.customer?.company_name || '').toLowerCase()
+    const machineName = (req.is_new_machine ? req.new_machine_data?.machine_name : req.machine?.machine_name) || ''
+    const title = (req.title || '').toLowerCase()
+    const requester = (req.requested_by?.full_name || '').toLowerCase()
+
+    const matchesSearch = 
+      customerName.includes(q) || 
+      machineName.toLowerCase().includes(q) || 
+      title.includes(q) || 
+      requester.includes(q)
+      
+    return matchesStatus && matchesSearch
+  })
 
   const executeUpdateStatus = async (id: string, newStatus: string) => {
     setLoadingId(id)
@@ -97,14 +118,61 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Lab Test Requests</h2>
             <p className="text-sm text-gray-500 mt-1">Monitor dan proses pengajuan uji lab dari pelanggan.</p>
           </div>
-          <span className="bg-gray-900 text-white text-xs font-black px-3 py-1.5 rounded-full">
-            {labRequests.filter(r => r.status === 'pending').length} PENDING
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="bg-amber-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-xs">
+              {labRequests.filter(r => r.status === 'pending').length} PENDING
+            </span>
+            <span className="bg-slate-900 text-white text-xs font-black px-3 py-1.5 rounded-full">
+              {labRequests.length} TOTAL
+            </span>
+          </div>
+        </div>
+
+        {/* Search & Filter Chip Bar */}
+        <div className="p-4 border-b border-gray-100 bg-white flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="Cari pelanggan, mesin, judul request, pemohon..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
+            />
+            <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 text-xs">
+            {(['all', 'pending', 'assigned', 'sampling', 'completed', 'cancelled'] as const).map((st) => (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+                  statusFilter === st
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {st} {st !== 'all' && `(${labRequests.filter(r => r.status === st).length})`}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -123,14 +191,14 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {labRequests.length === 0 ? (
+              {filteredRequests.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-gray-400 italic">
-                    Belum ada permintaan uji lab.
+                    {searchQuery || statusFilter !== 'all' ? 'Tidak ada permintaan uji lab yang sesuai dengan filter.' : 'Belum ada permintaan uji lab.'}
                   </td>
                 </tr>
               ) : (
-                labRequests.map((req) => (
+                filteredRequests.map((req) => (
                   <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <span className="font-bold text-gray-900 text-sm">{req.customer?.company_name ?? '-'}</span>
@@ -178,7 +246,7 @@ export default function AdminRequestsTab({ labRequests, onRefresh }: AdminReques
                           )
                         })()
                       ) : (
-                        <span className="text-[10px] font-black text-slate-450 uppercase tracking-wider select-none">-</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider select-none">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">

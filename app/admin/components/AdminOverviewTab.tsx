@@ -13,6 +13,7 @@ interface AdminOverviewTabProps {
   recentTests: AdminLabTest[]
   setActiveTab: (tab: 'overview' | 'customers' | 'machines' | 'products' | 'tests' | 'users' | 'requests' | 'orders') => void
   formatDate: (value?: string | number | Date) => string
+  language?: 'id' | 'en'
 }
 
 export default function AdminOverviewTab({
@@ -24,16 +25,23 @@ export default function AdminOverviewTab({
   products,
   recentTests,
   setActiveTab,
-  formatDate
+  formatDate,
+  language: languageProp
 }: AdminOverviewTabProps) {
-  const [language, setLanguage] = React.useState<'id' | 'en'>('id')
+  const [internalLang, setInternalLang] = React.useState<'id' | 'en'>('id')
 
   React.useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('language') : 'id'
-    if (stored === 'en' || stored === 'id') {
-      setLanguage(stored as 'en' | 'id')
+    if (languageProp) {
+      setInternalLang(languageProp)
+      return
     }
-  }, [])
+    const stored = typeof window !== 'undefined' ? (localStorage.getItem('oiltrack_lang') || localStorage.getItem('language')) : 'id'
+    if (stored === 'en' || stored === 'id') {
+      setInternalLang(stored as 'en' | 'id')
+    }
+  }, [languageProp])
+
+  const language = languageProp || internalLang
 
   const activeMachines = machines.filter(m => m.status === 'active').length
   const maintenanceMachines = machines.filter(m => m.status === 'maintenance').length
@@ -96,17 +104,26 @@ export default function AdminOverviewTab({
         </p>
       </div>
 
-      {/* Stats Cards Grid (Clean, Premium, No AI Rainbow Borders) */}
+      {/* Stats Cards Grid (Clean, Premium, Clickable to navigate) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Customers */}
-        <div className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.04)] hover:border-orange-500/15 hover:-translate-y-0.5 transition-all duration-350 relative overflow-hidden group">
+        <div 
+          onClick={() => setActiveTab('customers')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setActiveTab('customers')}
+          title={language === 'en' ? 'Click to view customers' : 'Klik untuk melihat pelanggan'}
+          className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.08)] hover:border-orange-500/30 hover:-translate-y-1 active:scale-[0.98] cursor-pointer transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+        >
           <div className="flex items-start justify-between">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">Client Base</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                {language === 'en' ? 'Client Base' : 'Basis Pelanggan'}
+              </span>
               <p className="mt-4 text-4xl font-extrabold text-slate-800 tracking-tight">{totalCustomers}</p>
               <p className="mt-2 text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                {activeCustomers} active clients
+                {activeCustomers} {language === 'en' ? 'active clients' : 'klien aktif'}
               </p>
             </div>
             <div className="h-12 w-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-orange-500 group-hover:text-white group-hover:shadow-lg group-hover:shadow-orange-500/20 transition-all duration-300">
@@ -118,14 +135,23 @@ export default function AdminOverviewTab({
         </div>
 
         {/* Total Machines */}
-        <div className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.04)] hover:border-orange-500/15 hover:-translate-y-0.5 transition-all duration-350 relative overflow-hidden group">
+        <div 
+          onClick={() => setActiveTab('machines')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setActiveTab('machines')}
+          title={language === 'en' ? 'Click to view machines' : 'Klik untuk melihat mesin'}
+          className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.08)] hover:border-orange-500/30 hover:-translate-y-1 active:scale-[0.98] cursor-pointer transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+        >
           <div className="flex items-start justify-between">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">Assets</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                {language === 'en' ? 'Assets' : 'Aset Mesin'}
+              </span>
               <p className="mt-4 text-4xl font-extrabold text-slate-800 tracking-tight">{totalMachines}</p>
               <p className="mt-2 text-xs font-semibold text-slate-500 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
-                {activeMachines} active machinery
+                {activeMachines} {language === 'en' ? 'active machinery' : 'mesin aktif'}
               </p>
             </div>
             <div className="h-12 w-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-orange-500 group-hover:text-white group-hover:shadow-lg group-hover:shadow-orange-500/20 transition-all duration-300">
@@ -137,14 +163,23 @@ export default function AdminOverviewTab({
         </div>
 
         {/* Total Lab Tests */}
-        <div className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.04)] hover:border-orange-500/15 hover:-translate-y-0.5 transition-all duration-350 relative overflow-hidden group">
+        <div 
+          onClick={() => setActiveTab('tests')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setActiveTab('tests')}
+          title={language === 'en' ? 'Click to view lab tests' : 'Klik untuk melihat uji lab'}
+          className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.08)] hover:border-orange-500/30 hover:-translate-y-1 active:scale-[0.98] cursor-pointer transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+        >
           <div className="flex items-start justify-between">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">Diagnostics</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                {language === 'en' ? 'Diagnostics' : 'Uji Lab'}
+              </span>
               <p className="mt-4 text-4xl font-extrabold text-slate-800 tracking-tight">{totalTests}</p>
               <p className="mt-2 text-xs font-semibold text-slate-500 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                Recorded reports
+                {language === 'en' ? 'Recorded reports' : 'Laporan terdata'}
               </p>
             </div>
             <div className="h-12 w-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-orange-500 group-hover:text-white group-hover:shadow-lg group-hover:shadow-orange-500/20 transition-all duration-300">
@@ -156,14 +191,23 @@ export default function AdminOverviewTab({
         </div>
 
         {/* Total Products */}
-        <div className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.04)] hover:border-orange-500/15 hover:-translate-y-0.5 transition-all duration-350 relative overflow-hidden group">
+        <div 
+          onClick={() => setActiveTab('products')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setActiveTab('products')}
+          title={language === 'en' ? 'Click to view products' : 'Klik untuk melihat katalog produk'}
+          className="bg-white rounded-[2rem] border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_15px_40px_rgba(234,88,12,0.08)] hover:border-orange-500/30 hover:-translate-y-1 active:scale-[0.98] cursor-pointer transition-all duration-300 relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+        >
           <div className="flex items-start justify-between">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">Catalog</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                {language === 'en' ? 'Catalog' : 'Katalog Produk'}
+              </span>
               <p className="mt-4 text-4xl font-extrabold text-slate-800 tracking-tight">{products.length}</p>
               <p className="mt-2 text-xs font-semibold text-slate-500 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                Active lubricants
+                {language === 'en' ? 'Active lubricants' : 'Pelumas aktif'}
               </p>
             </div>
             <div className="h-12 w-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-orange-500 group-hover:text-white group-hover:shadow-lg group-hover:shadow-orange-500/20 transition-all duration-300">
@@ -185,7 +229,7 @@ export default function AdminOverviewTab({
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 select-none">
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse"></span>
-                Recent Test Activities
+                {language === 'en' ? 'Recent Test Activities' : 'Aktivitas Uji Terbaru'}
               </h3>
               <button 
                 onClick={() => setActiveTab('tests')} 
@@ -239,7 +283,7 @@ export default function AdminOverviewTab({
           <div>
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2 select-none">
               <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
-              Top Customers by Tests
+              {language === 'en' ? 'Top Customers by Tests' : 'Pelanggan Teraktif Uji Lab'}
             </h3>
             
             <div className="space-y-3.5">
@@ -255,7 +299,7 @@ export default function AdminOverviewTab({
                     <span className="font-bold text-slate-700 text-xs truncate max-w-[200px]">{data.name}</span>
                   </div>
                   <span className="bg-orange-50 border border-orange-100/50 text-orange-600 px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider shrink-0 select-none">
-                    {data.count} tests
+                    {data.count} {language === 'en' ? 'tests' : 'uji'}
                   </span>
                 </div>
               ))}
@@ -268,7 +312,7 @@ export default function AdminOverviewTab({
       <div className="bg-white rounded-[2.5rem] border border-slate-100/80 p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2 select-none">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          Machine Asset Status Overview
+          {language === 'en' ? 'Machine Asset Status Overview' : 'Ikhtisar Status Aset Mesin'}
         </h3>
         
         {/* Sleek Segmented Horizontal Progress Visualizer */}
@@ -290,7 +334,7 @@ export default function AdminOverviewTab({
           {inactiveMachines > 0 && (
             <div 
               style={{ width: `${(inactiveMachines / totalMachines) * 100}%` }} 
-              className="h-full bg-slate-350 rounded-r-full transition-all duration-500"
+              className="h-full bg-slate-300 rounded-r-full transition-all duration-500"
               title={`Inactive: ${inactiveMachines}`}
             />
           )}
@@ -300,7 +344,9 @@ export default function AdminOverviewTab({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-slate-50/30 border border-slate-100/60 rounded-2xl p-4 flex items-center justify-between group hover:border-emerald-500/20 transition-all duration-355 hover:bg-white hover:shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
             <div>
-              <p className="text-emerald-600 text-[10px] font-bold uppercase tracking-wider">Active</p>
+              <p className="text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
+                {language === 'en' ? 'Active' : 'Aktif'}
+              </p>
               <p className="text-slate-800 text-2xl font-extrabold mt-1 tracking-tight">{activeMachines}</p>
             </div>
             <div className="h-9 w-9 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
@@ -312,7 +358,9 @@ export default function AdminOverviewTab({
 
           <div className="bg-slate-50/30 border border-slate-100/60 rounded-2xl p-4 flex items-center justify-between group hover:border-amber-500/20 transition-all duration-355 hover:bg-white hover:shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
             <div>
-              <p className="text-amber-600 text-[10px] font-bold uppercase tracking-wider">Maintenance</p>
+              <p className="text-amber-600 text-[10px] font-bold uppercase tracking-wider">
+                {language === 'en' ? 'Maintenance' : 'Pemeliharaan'}
+              </p>
               <p className="text-slate-800 text-2xl font-extrabold mt-1 tracking-tight">{maintenanceMachines}</p>
             </div>
             <div className="h-9 w-9 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-all duration-300">
@@ -322,9 +370,11 @@ export default function AdminOverviewTab({
             </div>
           </div>
 
-          <div className="bg-slate-50/30 border border-slate-100/60 rounded-2xl p-4 flex items-center justify-between group hover:border-slate-350 transition-all duration-355 hover:bg-white hover:shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
+          <div className="bg-slate-50/30 border border-slate-100/60 rounded-2xl p-4 flex items-center justify-between group hover:border-slate-300 transition-all duration-355 hover:bg-white hover:shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
             <div>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Inactive</p>
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                {language === 'en' ? 'Inactive' : 'Nonaktif'}
+              </p>
               <p className="text-slate-800 text-2xl font-extrabold mt-1 tracking-tight">{inactiveMachines}</p>
             </div>
             <div className="h-9 w-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-slate-500 group-hover:text-white transition-all duration-300">

@@ -20,12 +20,33 @@ export default function AdminMachinesTab({
   onOpenEdit,
   onDelete
 }: AdminMachinesTabProps) {
+  const [selectedCompany, setSelectedCompany] = React.useState('all')
+  const [selectedStatus, setSelectedStatus] = React.useState<'all' | 'active' | 'maintenance' | 'inactive'>('all')
 
-  const filteredMachines = machines.filter(machine => 
-    machine.machine_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    machine.customer?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    machine.location?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const uniqueCompanies = React.useMemo(() => {
+    const names = new Set<string>()
+    machines.forEach(m => {
+      if (m.customer?.company_name) names.add(m.customer.company_name)
+    })
+    return Array.from(names).sort()
+  }, [machines])
+
+  const filteredMachines = machines.filter(machine => {
+    const matchesCompany = selectedCompany === 'all' || machine.customer?.company_name === selectedCompany
+    const matchesStatus = selectedStatus === 'all' || machine.status === selectedStatus
+    
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return matchesCompany && matchesStatus
+    
+    const matchesSearch = 
+      machine.machine_name.toLowerCase().includes(q) ||
+      machine.customer?.company_name?.toLowerCase().includes(q) ||
+      machine.location?.toLowerCase().includes(q) ||
+      (machine.model && machine.model.toLowerCase().includes(q)) ||
+      (machine.serial_number && machine.serial_number.toLowerCase().includes(q))
+      
+    return matchesCompany && matchesStatus && matchesSearch
+  })
 
   return (
     <div className="space-y-6 animate-pop-micro">
@@ -52,16 +73,64 @@ export default function AdminMachinesTab({
         </button>
       </div>
 
-      {/* Search Input */}
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Search machines by name, customer, or location..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 rounded-2xl px-4 py-3 pl-10 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
-        />
-        <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      {/* Search & Filter Controls Bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
+        {/* Search Input */}
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Search machines by name, serial number, model, customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 focus:border-orange-500 focus:bg-white rounded-xl px-4 py-2.5 pl-10 text-xs font-semibold placeholder:text-slate-400 text-slate-900 transition-all outline-none"
+          />
+          <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Company Dropdown Filter */}
+        {uniqueCompanies.length > 0 && (
+          <div className="shrink-0">
+            <select
+              value={selectedCompany}
+              onChange={(e) => setSelectedCompany(e.target.value)}
+              className="w-full md:w-auto bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="all">Semua Perusahaan ({uniqueCompanies.length})</option>
+              {uniqueCompanies.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Status Filter Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+          {(['all', 'active', 'maintenance', 'inactive'] as const).map((st) => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setSelectedStatus(st)}
+              className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+                selectedStatus === st
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {st} {st !== 'all' && `(${machines.filter(m => m.status === st).length})`}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Spacious Premium Table Layout */}
@@ -90,6 +159,13 @@ export default function AdminMachinesTab({
                   {/* Machine Name */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-xs font-black text-slate-800">{machine.machine_name}</div>
+                    {(machine.model || machine.serial_number) && (
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        {machine.model && <span>{machine.model}</span>}
+                        {machine.model && machine.serial_number && <span> • </span>}
+                        {machine.serial_number && <span>SN: {machine.serial_number}</span>}
+                      </div>
+                    )}
                   </td>
 
                   {/* Customer Company */}

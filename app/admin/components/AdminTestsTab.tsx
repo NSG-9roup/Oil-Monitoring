@@ -179,7 +179,7 @@ export default function AdminTestsTab({
                   setCustomDateFrom(e.target.value)
                   setDateFilter('all')
                 }}
-                className="bg-slate-50 border border-slate-250 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none"
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function AdminTestsTab({
                   setCustomDateTo(e.target.value)
                   setDateFilter('all')
                 }}
-                className="bg-slate-50 border border-slate-250 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none"
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none"
               />
             </div>
           </div>
@@ -282,7 +282,7 @@ export default function AdminTestsTab({
                     {test.pdf_path ? (
                       <button
                         onClick={() => onOpenPdf(test.pdf_path!)}
-                        className="inline-flex items-center px-3 py-1.5 text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-xl transition-all duration-300 font-black text-[10px] uppercase tracking-wider border border-blue-150 hover:border-transparent active:scale-95"
+                        className="inline-flex items-center px-3 py-1.5 text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-xl transition-all duration-300 font-black text-[10px] uppercase tracking-wider border border-blue-200 hover:border-transparent active:scale-95"
                       >
                         <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -291,7 +291,7 @@ export default function AdminTestsTab({
                         View PDF
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-350 font-bold">-</span>
+                      <span className="text-xs text-slate-400 font-bold">-</span>
                     )}
                   </td>
 

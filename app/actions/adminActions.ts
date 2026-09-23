@@ -364,7 +364,7 @@ export async function createUser(data: UserFormData & { action?: string }) {
     .insert([{
       id: authData.user.id,
       full_name: fullName,
-      email: contactEmail,
+      email: contactEmail || email,
       phone_number: phoneNumber,
       role: data.role,
       customer_id: customerId,
