@@ -1550,6 +1550,9 @@ export default function DashboardClient({
   }))
 
   const selectedMachineTrendAlerts = buildTrendAlerts(filteredReports)
+  const selectedMachineInsight = chartMachine
+    ? machineInsights.find((item) => item.machine.id === chartMachine.id) || null
+    : null
 
 
 
@@ -2001,7 +2004,10 @@ export default function DashboardClient({
                 checkConsole={copy.checkConsole}
 
                 totalAnalysisCount={filteredReports.length}
-                fleetHealthIndex={avgHealthScore}
+                machineHealthScore={selectedMachineInsight?.healthScore ?? null}
+                machineStatusLevel={selectedMachineInsight?.status.level}
+                machineStatusText={selectedMachineInsight?.status.text}
+                fleetHealthIndex={selectedMachineInsight?.healthScore ?? avgHealthScore}
                 baselineViscosity40={activeBaselines?.viscosity40}
                 baselineViscosity100={activeBaselines?.viscosity100}
                 baselineTan={activeBaselines?.tan}

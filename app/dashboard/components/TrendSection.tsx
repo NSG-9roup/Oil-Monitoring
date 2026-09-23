@@ -13,7 +13,10 @@ interface TrendSectionProps {
   checkConsole?: string
 
   totalAnalysisCount: number
-  fleetHealthIndex: number | null
+  fleetHealthIndex?: number | null
+  machineHealthScore?: number | null
+  machineStatusLevel?: 'normal' | 'warning' | 'critical' | 'unknown'
+  machineStatusText?: string
   baselineViscosity40?: number | null
   baselineViscosity100?: number | null
   baselineTan?: number | null
@@ -234,6 +237,9 @@ export function TrendSection({
   noSampleData,
   totalAnalysisCount,
   fleetHealthIndex,
+  machineHealthScore,
+  machineStatusLevel,
+  machineStatusText,
   baselineViscosity40,
   baselineViscosity100,
   baselineTan,
@@ -301,66 +307,87 @@ export function TrendSection({
                 </div>
               </div>
               
-              <div className={`px-5 py-3 rounded-2xl border flex items-center gap-3 min-w-[190px] ${
-                fleetHealthIndex !== null && fleetHealthIndex >= 80 
-                  ? 'bg-emerald-50/80 border-emerald-100/80 shadow-sm' 
-                  : fleetHealthIndex !== null && fleetHealthIndex >= 60 
-                  ? 'bg-amber-50/80 border-amber-100/80 shadow-sm' 
-                  : 'bg-slate-50/80 border-slate-100'
-              }`}>
-                {/* Donut Gauge Ring SVG */}
-                <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
-                  <svg className="w-11 h-11 transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-slate-200 stroke-current"
-                      strokeWidth="3.5"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className={`${
-                        fleetHealthIndex !== null && fleetHealthIndex >= 80
-                          ? 'text-emerald-500'
-                          : fleetHealthIndex !== null && fleetHealthIndex >= 60
-                          ? 'text-amber-500'
-                          : 'text-rose-500'
-                      } stroke-current transition-all duration-1000 ease-out`}
-                      strokeDasharray={`${fleetHealthIndex ?? 0}, 100`}
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-black text-slate-800">
-                      {fleetHealthIndex !== null ? `${fleetHealthIndex}%` : '-'}
-                    </span>
-                  </div>
-                </div>
+              {(() => {
+                const currentHealthScore = machineHealthScore ?? fleetHealthIndex ?? null
+                const isHealthy = machineStatusLevel === 'normal' || (machineStatusLevel == null && currentHealthScore !== null && currentHealthScore >= 80)
+                const isWarning = machineStatusLevel === 'warning' || (machineStatusLevel == null && currentHealthScore !== null && currentHealthScore >= 60 && currentHealthScore < 80)
+                const isCritical = machineStatusLevel === 'critical' || (machineStatusLevel == null && currentHealthScore !== null && currentHealthScore < 60)
 
-                <div className="flex flex-col">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-0.5">
-                    {language === 'id' ? 'Indeks Armada' : 'Fleet Index'}
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${
-                      fleetHealthIndex !== null && fleetHealthIndex >= 80
-                        ? 'bg-emerald-500'
-                        : fleetHealthIndex !== null && fleetHealthIndex >= 60
-                        ? 'bg-amber-500'
-                        : 'bg-rose-500'
-                    }`}></span>
-                    <span className="text-xs font-bold text-slate-700">
-                      {fleetHealthIndex !== null && fleetHealthIndex >= 80
-                        ? (language === 'id' ? 'Sehat' : 'Healthy')
-                        : fleetHealthIndex !== null && fleetHealthIndex >= 60
-                        ? (language === 'id' ? 'Waspada' : 'Warning')
-                        : (language === 'id' ? 'Kritis' : 'Critical')}
-                    </span>
+                const statusBadgeText = machineStatusLevel
+                  ? (language === 'id' 
+                      ? (machineStatusLevel === 'normal' ? 'Normal' : machineStatusLevel === 'warning' ? 'Waspada' : machineStatusLevel === 'critical' ? 'Kritis' : (machineStatusText || 'Normal'))
+                      : (machineStatusLevel === 'normal' ? 'Normal' : machineStatusLevel === 'warning' ? 'Warning' : machineStatusLevel === 'critical' ? 'Critical' : (machineStatusText || 'Normal')))
+                  : isHealthy 
+                  ? 'Normal'
+                  : isWarning 
+                  ? (language === 'id' ? 'Waspada' : 'Warning')
+                  : isCritical
+                  ? (language === 'id' ? 'Kritis' : 'Critical')
+                  : '-'
+
+                return (
+                  <div className={`px-5 py-3 rounded-2xl border flex items-center gap-3 min-w-[190px] ${
+                    isHealthy 
+                      ? 'bg-emerald-50/80 border-emerald-100/80 shadow-sm' 
+                      : isWarning 
+                      ? 'bg-amber-50/80 border-amber-100/80 shadow-sm' 
+                      : currentHealthScore !== null
+                      ? 'bg-rose-50/80 border-rose-100/80 shadow-sm'
+                      : 'bg-slate-50/80 border-slate-100'
+                  }`}>
+                    {/* Donut Gauge Ring SVG */}
+                    <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
+                      <svg className="w-11 h-11 transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-slate-200 stroke-current"
+                          strokeWidth="3.5"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className={`${
+                            isHealthy
+                              ? 'text-emerald-500'
+                              : isWarning
+                              ? 'text-amber-500'
+                              : 'text-rose-500'
+                          } stroke-current transition-all duration-1000 ease-out`}
+                          strokeDasharray={`${currentHealthScore ?? 0}, 100`}
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-xs font-black text-slate-800">
+                          {currentHealthScore !== null ? `${currentHealthScore}%` : '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-0.5">
+                        {language === 'id' ? 'Kesehatan Mesin' : 'Machine Health'}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${
+                          isHealthy
+                            ? 'bg-emerald-500'
+                            : isWarning
+                            ? 'bg-amber-500'
+                            : currentHealthScore !== null
+                            ? 'bg-rose-500'
+                            : 'bg-slate-400'
+                        }`}></span>
+                        <span className="text-xs font-bold text-slate-700">
+                          {statusBadgeText}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )
+              })()}
 
               <button
                 type="button"
