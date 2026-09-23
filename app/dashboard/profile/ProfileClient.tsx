@@ -13,6 +13,7 @@ import { sendTestPushNotificationAction } from '@/app/actions/pushActions'
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Nama harus minimal 2 karakter'),
   phone_number: z.string().optional(),
+  email: z.string().email('Format email tidak valid'),
 })
 
 interface ProfileStats {
@@ -53,6 +54,7 @@ export default function ProfileClient({
 }: ProfileClientProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [currentEmail, setCurrentEmail] = useState(userEmail || (initialProfile.email as string) || '')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
     (initialProfile.avatar_url as string) || null
   )
@@ -62,6 +64,7 @@ export default function ProfileClient({
   const [formData, setFormData] = useState({
     full_name: initialProfile.full_name || '',
     phone_number: initialProfile.phone_number || '',
+    email: userEmail || (initialProfile.email as string) || '',
   })
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [showPasswordForm, setShowPasswordForm] = useState(false)
@@ -155,13 +158,22 @@ export default function ProfileClient({
       const result = await updateAnyUserProfile({
         full_name: formData.full_name,
         phone_number: formData.phone_number,
+        email: formData.email,
       })
 
       if (!result.success) {
         throw new Error(result.error || 'Gagal memperbarui profil')
       }
 
-      toast.success('Profil berhasil diperbarui!')
+      if (result.emailChanged && result.newEmail) {
+        setCurrentEmail(result.newEmail)
+        toast.success(
+          `Profil & email login berhasil diperbarui! Gunakan ${result.newEmail} untuk login selanjutnya.`,
+          { duration: 6000 }
+        )
+      } else {
+        toast.success('Profil berhasil diperbarui!')
+      }
       setIsEditing(false)
     } catch (err: unknown) {
       if (err instanceof z.ZodError) {
@@ -253,7 +265,7 @@ export default function ProfileClient({
     }
   }
 
-  const initialLetter = (formData.full_name?.charAt(0) || userEmail?.charAt(0) || '?').toUpperCase()
+  const initialLetter = (formData.full_name?.charAt(0) || currentEmail?.charAt(0) || '?').toUpperCase()
   const roleDisplay = initialProfile.role === 'sales' 
     ? 'Sales Representative' 
     : initialProfile.role === 'admin' 
@@ -390,6 +402,7 @@ export default function ProfileClient({
                       setFormData({
                         full_name: initialProfile.full_name || '',
                         phone_number: initialProfile.phone_number || '',
+                        email: currentEmail,
                       })
                       setErrors({})
                     }}
@@ -613,15 +626,30 @@ export default function ProfileClient({
 
               <div>
                 <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
-                  Alamat Email (Pengenal Utama)
+                  Alamat Email (Pengenal Utama & Login)
                 </label>
                 <input
                   type="email"
-                  disabled
-                  value={userEmail}
-                  className="w-full px-4 py-3 bg-slate-100/80 border border-slate-200/80 rounded-2xl text-xs font-bold text-slate-500 cursor-not-allowed"
+                  disabled={!isEditing}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className={`w-full px-4 py-3 bg-slate-50/50 focus:bg-white border rounded-2xl text-xs font-bold text-slate-800 transition-all outline-none disabled:bg-slate-100/80 disabled:text-slate-500 ${
+                    errors.email ? 'border-red-400 focus:ring-4 focus:ring-red-100' : 'border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100/50'
+                  }`}
+                  placeholder="email@perusahaan.com"
                 />
-                <p className="text-[10px] text-slate-400 font-semibold mt-1">Email akun ditautkan dari sistem otentikasi utama dan tidak dapat diubah secara langsung.</p>
+                {errors.email ? (
+                  <p className="text-red-500 text-xs mt-1 font-semibold">{errors.email}</p>
+                ) : isEditing ? (
+                  <p className="text-[10px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>Jika email diubah, Anda akan menggunakan email baru ini untuk login berikutnya.</span>
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-slate-400 font-semibold mt-1">
+                    Email digunakan sebagai pengenal otentikasi utama dan kredensial login akun Anda.
+                  </p>
+                )}
               </div>
 
               <div>

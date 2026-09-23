@@ -116,11 +116,12 @@ export async function createLabRequest(data: {
 }
 
 /**
- * Shared server action to update the authenticated user's own profile columns (full_name and phone_number).
+ * Shared server action to update the authenticated user's own profile columns (full_name, phone_number, and login email).
  */
 export async function updateAnyUserProfile(data: {
   full_name: string
   phone_number?: string
+  email?: string
 }) {
   try {
     const supabase = await createClient()
@@ -134,24 +135,66 @@ export async function updateAnyUserProfile(data: {
       return { success: false, error: 'Name must be at least 2 characters' }
     }
 
+    const newEmail = data.email?.trim().toLowerCase()
+    if (newEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(newEmail)) {
+        return { success: false, error: 'Format email tidak valid' }
+      }
+    }
+
     const supabaseService = createServiceClient()
+    const emailChanged = Boolean(newEmail && newEmail !== user.email?.toLowerCase())
+
+    // If email changed, directly update auth.users via service role
+    if (emailChanged && newEmail) {
+      const { error: authUpdateError } = await supabaseService.auth.admin.updateUserById(
+        user.id,
+        {
+          email: newEmail,
+          email_confirm: true,
+        }
+      )
+
+      if (authUpdateError) {
+        console.error('Error updating auth email:', authUpdateError)
+        if (
+          authUpdateError.message.toLowerCase().includes('already') ||
+          authUpdateError.message.toLowerCase().includes('exists')
+        ) {
+          return { success: false, error: 'Email tersebut sudah terdaftar pada akun lain' }
+        }
+        return { success: false, error: `Gagal memperbarui email login: ${authUpdateError.message}` }
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      full_name: data.full_name.trim(),
+      phone_number: data.phone_number?.trim() || null,
+    }
+    if (newEmail) {
+      updatePayload.email = newEmail
+    }
+
     const { error } = await supabaseService
       .from('oil_profiles')
-      .update({
-        full_name: data.full_name.trim(),
-        phone_number: data.phone_number?.trim() || null,
-      })
+      .update(updatePayload)
       .eq('id', user.id)
 
     if (error) {
       return { success: false, error: error.message }
     }
 
-    await createAuditLog('UPDATE_PROFILE', `User updated profile info`, { userId: user.id })
+    await createAuditLog('UPDATE_PROFILE', `User updated profile info${emailChanged ? ` and email to ${newEmail}` : ''}`, {
+      userId: user.id,
+      emailChanged,
+      newEmail: emailChanged ? newEmail : undefined,
+    })
 
     revalidatePath('/dashboard/profile')
     revalidatePath('/sales/profile')
-    return { success: true }
+    revalidatePath('/admin')
+    return { success: true, emailChanged, newEmail }
   } catch (err) {
     console.error('Error in updateAnyUserProfile:', err)
     return { success: false, error: err instanceof Error ? err.message : String(err) }

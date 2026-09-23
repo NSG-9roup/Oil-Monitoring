@@ -383,9 +383,20 @@ export async function updateUser(id: string, data: Partial<UserFormData> & { act
   
   const supabaseService = createServiceClient()
 
-  const contactEmail = data.contact_email?.toLowerCase() || null
+  const contactEmail = data.contact_email?.trim().toLowerCase() || null
   const phoneNumber = data.phone_number?.trim() || null
   const customerId = data.role === 'customer' ? data.customer_id : null
+
+  if (contactEmail) {
+    const { error: authError } = await supabaseService.auth.admin.updateUserById(id, {
+      email: contactEmail,
+      email_confirm: true,
+    })
+    if (authError) {
+      console.error('Error syncing auth user email in admin updateUser:', authError)
+      throw new Error(`Gagal update email login: ${authError.message}`)
+    }
+  }
 
   const { error } = await supabaseService
     .from('oil_profiles')
@@ -399,7 +410,7 @@ export async function updateUser(id: string, data: Partial<UserFormData> & { act
     .eq('id', id)
 
   if (error) throw new Error(error.message)
-  await createAuditLog('UPDATE_USER', `Updated user ID: ${id} details`, { id, role: data.role })
+  await createAuditLog('UPDATE_USER', `Updated user ID: ${id} details`, { id, role: data.role, email: contactEmail })
   revalidatePath('/admin')
   return { success: true }
 }
